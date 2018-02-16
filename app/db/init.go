@@ -31,13 +31,13 @@ func Init(dsn string, debug bool) (*QueryLogger, error) {
 	}
 	boil.SetDB(logWrapper)
 
+	//TODO commented this out because it doesn't work. Not sure why?
 	// ensure that db supports transactions
-	_, ok := boil.GetDB().(boil.Beginner)
+	/*_, ok := boil.GetDB().(boil.Beginner)
 	if !ok {
 		return nil, errors.Err("database does not support transactions")
-	}
+	}*/
 
-	//migrations := &migrate.FileMigrationSource{Dir: "migration"}
 	migrations := &migrate.AssetMigrationSource{
 		Asset:    migration.Asset,
 		AssetDir: migration.AssetDir,

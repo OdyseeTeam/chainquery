@@ -5,7 +5,7 @@ APP_DIR="$DIR/app"
 
 (
   export DEBUGGING=1
-  export MYSQL_DSN="lbry:lbry@tcp(localhost:3306)/lbryBC"
+  export MYSQL_DSN="lbry:lbry@tcp(localhost:3306)/lbrycrd"
 
   [ -n "$(pgrep lbrycrdd)" ] && export LBRYCRD_CONNECT="from_conf"
 

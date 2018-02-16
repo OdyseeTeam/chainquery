@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"time"
+	"time" //
 
 	"github.com/lbryio/chainquery/app/db"
 	"github.com/lbryio/chainquery/app/env"
@@ -73,6 +73,7 @@ func webServerSetup(conf *env.Config) func() {
 		if err != nil {
 			log.Panicf("Error connecting to lbrycrd: %+v", err)
 		}
+		print("Connected successfully to lbrycrd")
 	}
 
 	return func() {

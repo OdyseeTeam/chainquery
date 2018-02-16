@@ -88,18 +88,6 @@
   revision = "dd131cce3d6f9c0b2351537cec85955ebc0be5e0"
 
 [[projects]]
-  name = "github.com/lbryio/null.go"
-  packages = ["."]
-  revision = "40264a2e6b7972d183906cf17663983c23231c82"
-  version = "v6.3"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/lbryio/query.go"
-  packages = ["."]
-  revision = "2838cd8abdeb99507da080df5dc8abe388b28308"
-
-[[projects]]
   name = "github.com/lbryio/sqlboiler"
   packages = ["boil"]
   revision = "3b5ab423b3028967f3bbf289d60bd164347ecaf0"
@@ -144,15 +132,9 @@
   revision = "c87af80f3cc5036b55b83d77171e156791085e2e"
   version = "v1.7.1"
 
-[[projects]]
-  name = "gopkg.in/nullbio/null.v6"
-  packages = ["convert"]
-  revision = "40264a2e6b7972d183906cf17663983c23231c82"
-  version = "v6.3"
-
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "7755b576fd72b0e351ca7884787a3d374fdd12e935c69fb26c13453a51b917e2"
+  inputs-digest = "3c016928dde55e9575c183a16d172e510fafa915e36638721d34c98d9cca402b"
   solver-name = "gps-cdcl"
   solver-version = 1
