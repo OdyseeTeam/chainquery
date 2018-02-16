@@ -11,7 +11,7 @@ import (
 
 	"github.com/lbryio/chainquery/app/db"
 	"github.com/lbryio/chainquery/app/env"
-	"github.com/lbryio/chainquery/app/lbrycrd"
+	"github.com/lbryio/lbry.go/lbrycrd"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -60,19 +60,20 @@ func webServerSetup(conf *env.Config) func() {
 		panic(err)
 	}
 	teardownFuncs = append(teardownFuncs, func() { dbInstance.Close() })
-
+	println(conf.LbrycrdURL)
 	if conf.LbrycrdURL != "" {
 		lbrycrdClient, err := lbrycrd.New(conf.LbrycrdURL)
 		if err != nil {
 			panic(err)
 		}
+
 		teardownFuncs = append(teardownFuncs, func() { lbrycrdClient.Shutdown() })
 		lbrycrd.SetDefaultClient(lbrycrdClient)
 
 		_, err = lbrycrdClient.GetBalance("")
 		if err != nil {
 			log.Panicf("Error connecting to lbrycrd: %+v", err)
-		}
+		} //
 		print("Connected successfully to lbrycrd")
 	}
 

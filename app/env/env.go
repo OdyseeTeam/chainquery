@@ -10,10 +10,10 @@ import (
 )
 
 type Config struct {
-	Port                  string `env:"PORT" envDefault:"8080"`
-	MysqlDsn              string `env:"MYSQL_DSN"`
-	LbrycrdURL            string `env:"LBRYCRD_CONNECT"`
-	NewRelicKey           string `env:"NEW_RELIC_KEY"`
+	Port        string `env:"PORT" envDefault:"8080"`
+	MysqlDsn    string `env:"MYSQL_DSN"`
+	LbrycrdURL  string `env:"LBRYCRD_CONNECT"`
+	NewRelicKey string `env:"NEW_RELIC_KEY"`
 }
 
 // NewWithEnvVars creates an Config from environment variables
