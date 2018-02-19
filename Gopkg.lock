@@ -2,51 +2,9 @@
 
 
 [[projects]]
-  branch = "master"
-  name = "github.com/btcsuite/btcd"
-  packages = [
-    "btcec",
-    "btcjson",
-    "chaincfg",
-    "chaincfg/chainhash",
-    "rpcclient",
-    "wire"
-  ]
-  revision = "9866016012e7992f394888a4e65ec4315dfa8d49"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/btcsuite/btclog"
-  packages = ["."]
-  revision = "84c8d2346e9fc8c7b947e243b9c24e6df9fd206a"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/btcsuite/btcutil"
-  packages = [
-    ".",
-    "base58",
-    "bech32"
-  ]
-  revision = "501929d3d046174c3d39f0ea54ece471aa17238c"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/btcsuite/go-socks"
-  packages = ["socks"]
-  revision = "4720035b7bfd2a9bb130b1c184f8bbe41b6f0d0f"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/btcsuite/websocket"
-  packages = ["."]
-  revision = "31079b6807923eb23992c421b114992b95131b55"
-
-[[projects]]
   name = "github.com/caarlos0/env"
   packages = ["."]
-  revision = "7cd7992b3bc86f920394f8de92c13900da1a46b7"
-  version = "v3.2.0"
+  revision = "0cf029d5748c52beb2c9d20c81880cb4bdf8f788"
 
 [[projects]]
   branch = "master"
@@ -69,14 +27,18 @@
 [[projects]]
   name = "github.com/go-ini/ini"
   packages = ["."]
-  revision = "32e4c1e6bc4e7d0d8451aa6b75200d19e37a536a"
-  version = "v1.32.0"
+  revision = "e7fea39b01aea8d5671f6858f0532f56e8bff3a5"
 
 [[projects]]
   name = "github.com/go-sql-driver/mysql"
   packages = ["."]
-  revision = "a0583e0143b1624142adab07e0e97fe106d99561"
-  version = "v1.3"
+  revision = "26471af196a17ee75a22e6481b5a5897fb16b081"
+
+[[projects]]
+  name = "github.com/golang/protobuf"
+  packages = ["proto"]
+  revision = "925541529c1fa6821df4e44ce2723319eb2be768"
+  version = "v1.0.0"
 
 [[projects]]
   branch = "master"
@@ -95,13 +57,12 @@
   revision = "23c074d0eceb2b8a5bfdbb271ab780cde70f05a8"
 
 [[projects]]
-  branch = "master"
   name = "github.com/jmoiron/sqlx"
   packages = [
     ".",
     "reflectx"
   ]
-  revision = "05cef0741ade10ca668982355b3f3f0bcf0ff0a8"
+  revision = "d9bd385d68c068f1fabb5057e3dedcbcbb039d0f"
 
 [[projects]]
   name = "github.com/jteeuwen/go-bindata"
@@ -112,8 +73,7 @@
 [[projects]]
   name = "github.com/kat-co/vala"
   packages = ["."]
-  revision = "bfe9b50e828ad56312e486cbf4165ff1ac3a9bae"
-  version = "v1"
+  revision = "42e1d8b61f12b4fcadea0c062782e466924a3aaa"
 
 [[projects]]
   branch = "master"
@@ -122,23 +82,26 @@
   revision = "dd131cce3d6f9c0b2351537cec85955ebc0be5e0"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/lbryio/lbryschema.go"
+  packages = ["pb"]
+  revision = "dd814b834b5511d65d640bdbb46237f19f38a3e5"
+
+[[projects]]
   name = "github.com/lbryio/null.go"
   packages = ["."]
-  revision = "40264a2e6b7972d183906cf17663983c23231c82"
-  version = "v6.3"
+  revision = "109a79fb20ecd191f58366a452b38f7cf0ae1741"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/lbryio/query.go"
+  packages = ["."]
+  revision = "2838cd8abdeb99507da080df5dc8abe388b28308"
 
 [[projects]]
   name = "github.com/lbryio/sqlboiler"
-  packages = [
-    "bdb/drivers",
-    "boil",
-    "queries",
-    "queries/qm",
-    "randomize",
-    "strmangle"
-  ]
-  revision = "3b5ab423b3028967f3bbf289d60bd164347ecaf0"
-  version = "v2.3.0"
+  packages = ["boil"]
+  revision = "0b0a1f21c2c3512b0f08441302e5b2e1fce7fc9a"
 
 [[projects]]
   branch = "master"
@@ -162,12 +125,6 @@
   revision = "a4e142e9c047c904fa2f1e144d9a84e6133024bc"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/nullbio/inflect"
-  packages = ["."]
-  revision = "3edb4592a77b0072b13dc3ed0669c08c266f6c73"
-
-[[projects]]
   name = "github.com/pelletier/go-toml"
   packages = ["."]
   revision = "acdc4509485b587f5e675510c4f2c63e90ff68a8"
@@ -176,17 +133,15 @@
 [[projects]]
   name = "github.com/pkg/errors"
   packages = ["."]
-  revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
-  version = "v0.8.0"
+  revision = "c605e284fe17294bda444b34710735b29d1a9d90"
 
 [[projects]]
-  branch = "master"
   name = "github.com/rubenv/sql-migrate"
   packages = [
     ".",
     "sqlparse"
   ]
-  revision = "7067d4c948a09d1aa6901d1d205551fa76eda693"
+  revision = "38004e7a77f2b350ea8467038dca66073d907725"
 
 [[projects]]
   name = "github.com/satori/go.uuid"
@@ -195,10 +150,15 @@
   version = "v1.2.0"
 
 [[projects]]
+  name = "github.com/shopspring/decimal"
+  packages = ["."]
+  revision = "9ca7f51822d222ae4e246f070f9aad863599bd1a"
+  version = "1.0.0"
+
+[[projects]]
   name = "github.com/sirupsen/logrus"
   packages = ["."]
-  revision = "d682213848ed68c0a260ca37d6dd5ace8423f5ba"
-  version = "v1.0.4"
+  revision = "f006c2ac4710855cf0f916dd6b77acf6b048dc6e"
 
 [[projects]]
   name = "github.com/spf13/afero"
@@ -234,23 +194,37 @@
   version = "v1.0.0"
 
 [[projects]]
-  name = "github.com/vattle/sqlboiler"
+  branch = "master"
+  name = "github.com/volatiletech/inflect"
+  packages = ["."]
+  revision = "e7201282ae8da26cd97aed2e516f75c0bd91bb93"
+
+[[projects]]
+  name = "github.com/volatiletech/sqlboiler"
   packages = [
     "bdb",
+    "bdb/drivers",
     "boil",
     "queries",
+    "queries/qm",
+    "randomize",
     "strmangle",
     "types"
   ]
-  revision = "82e14d2e1acb4e1b6ef2193858820f9bff6f187c"
-  version = "v2.5.0"
+  revision = "6b95e5d3d7840a737841e2eb446e1c82641f8393"
+  version = "v2.6.0"
+
+[[projects]]
+  name = "github.com/ybbus/jsonrpc"
+  packages = ["."]
+  revision = "af3b3899128285b8a17568bb7936824759a12873"
+  version = "v1.0.1"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/crypto"
   packages = [
     "md4",
-    "ripemd160",
     "ssh/terminal"
   ]
   revision = "650f4a345ab4e5b245a3034b110ebc7299e68186"
@@ -285,12 +259,18 @@
 
 [[projects]]
   name = "gopkg.in/nullbio/null.v6"
+  packages = ["convert"]
+  revision = "40264a2e6b7972d183906cf17663983c23231c82"
+  version = "v6.3"
+
+[[projects]]
+  name = "gopkg.in/volatiletech/null.v6"
   packages = [
     ".",
     "convert"
   ]
-  revision = "40264a2e6b7972d183906cf17663983c23231c82"
-  version = "v6.3"
+  revision = "0bef4e07ae1b27a2a4efa23bbb3006c8c3d2e01d"
+  version = "v6.4"
 
 [[projects]]
   branch = "v2"
@@ -301,6 +281,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "dc833a13822120c22bce0ecbcf43512de9bd7ffd69af8ed56d8e12d437bbf3ac"
+  inputs-digest = "7a924c707cd583d63518293eb5f7c22ab2b532c55070fcccdbc5bc23eba6adb5"
   solver-name = "gps-cdcl"
   solver-version = 1

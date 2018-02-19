@@ -24,6 +24,61 @@
 #   go-tests = true
 #   unused-packages = true
 
-[prune]
-  go-tests = true
-  unused-packages = true
+required = ["github.com/lbryio/null.go"]
+
+#[[constraint]]
+#  name = "github.com/btcsuite/btcutil"
+#  revision = "a5ecb5d9547afe8d1672073dbdc348203de744a0"
+
+[[constraint]]
+  name = "github.com/caarlos0/env"
+  revision = "0cf029d5748c52beb2c9d20c81880cb4bdf8f788"
+
+[[constraint]]
+  name = "github.com/go-ini/ini"
+  revision = "e7fea39b01aea8d5671f6858f0532f56e8bff3a5"
+
+[[constraint]]
+  name = "github.com/go-sql-driver/mysql"
+  revision = "26471af196a17ee75a22e6481b5a5897fb16b081"
+
+[[constraint]]
+  name = "github.com/jmoiron/sqlx"
+  revision = "d9bd385d68c068f1fabb5057e3dedcbcbb039d0f"
+
+[[constraint]]
+  name = "github.com/kat-co/vala"
+  revision = "42e1d8b61f12b4fcadea0c062782e466924a3aaa"
+
+[[constraint]]
+  name = "github.com/lbryio/null.go"
+  revision = "109a79fb20ecd191f58366a452b38f7cf0ae1741"
+
+[[constraint]]
+  name = "github.com/lbryio/sqlboiler"
+  revision = "0b0a1f21c2c3512b0f08441302e5b2e1fce7fc9a"
+
+[[constraint]]
+  name = "github.com/pkg/errors"
+  revision = "c605e284fe17294bda444b34710735b29d1a9d90"
+
+[[constraint]]
+  name = "github.com/rubenv/sql-migrate"
+  revision = "38004e7a77f2b350ea8467038dca66073d907725"
+
+[[constraint]]
+  name = "github.com/sirupsen/logrus"
+  revision = "f006c2ac4710855cf0f916dd6b77acf6b048dc6e"
+
+[[constraint]]
+  name = "github.com/jteeuwen/go-bindata"
+  version = "3.0.7"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/lbryio/errors.go"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/lbryio/query.go"
+

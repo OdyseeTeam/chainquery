@@ -12,6 +12,7 @@ import (
 	"github.com/lbryio/chainquery/app/db"
 	"github.com/lbryio/chainquery/app/env"
 
+	"github.com/lbryio/chainquery/app/daemon"
 	"github.com/lbryio/chainquery/app/lbrycrd"
 	log "github.com/sirupsen/logrus"
 )
@@ -47,6 +48,8 @@ func main() {
 		}
 		teardown := webServerSetup(conf)
 		defer teardown()
+		daemon.InitDaemon()
+
 	default:
 		log.Errorf("Invalid command: '%s'\n", command)
 	}
@@ -57,10 +60,9 @@ func webServerSetup(conf *env.Config) func() {
 
 	dbInstance, err := db.Init(conf.MysqlDsn, DebugMode)
 	if err != nil {
-		panic(err)
+		panic(err) //
 	}
 	teardownFuncs = append(teardownFuncs, func() { dbInstance.Close() })
-	println(conf.LbrycrdURL)
 	if conf.LbrycrdURL != "" {
 		lbrycrdClient, err := lbrycrd.New(conf.LbrycrdURL)
 		if err != nil {
@@ -70,11 +72,12 @@ func webServerSetup(conf *env.Config) func() {
 		teardownFuncs = append(teardownFuncs, func() { lbrycrdClient.Shutdown() })
 		lbrycrd.SetDefaultClient(lbrycrdClient)
 
-		_, err = lbrycrdClient.GetBalance("")
+		/*_, err = lbrycrdClient.GetBalance("")
 		if err != nil {
 			log.Panicf("Error connecting to lbrycrd: %+v", err)
 		} //
-		print("Connected successfully to lbrycrd")
+		println("Connected successfully to lbrycrd")*/
+
 	}
 
 	return func() {
