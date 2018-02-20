@@ -16,7 +16,7 @@ Make sure you have Go 1.9+
 
 - Install and run mysql.(OSX: `brew install mysql`)
 - Create `lbrycrd` database.
-- Create user `lbry` with password `lbry` and grant it all permissions on `lbry` db.
+- Create user `lbry` with password `lbry` and grant it all permissions on `lbrycrd` db.
 
 
 ### Lbrycrd
