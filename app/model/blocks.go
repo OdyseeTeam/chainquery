@@ -22,7 +22,6 @@ import (
 
 // Block is an object representing the database table.
 type Block struct {
-	ID                    uint64      `boil:"id" json:"id" toml:"id" yaml:"id"`
 	Bits                  string      `boil:"bits" json:"bits" toml:"bits" yaml:"bits"`
 	Chainwork             string      `boil:"chainwork" json:"chainwork" toml:"chainwork" yaml:"chainwork"`
 	Confirmations         uint        `boil:"confirmations" json:"confirmations" toml:"confirmations" yaml:"confirmations"`
@@ -33,24 +32,21 @@ type Block struct {
 	MerkleRoot            string      `boil:"merkle_root" json:"merkle_root" toml:"merkle_root" yaml:"merkle_root"`
 	NameClaimRoot         string      `boil:"name_claim_root" json:"name_claim_root" toml:"name_claim_root" yaml:"name_claim_root"`
 	Nonce                 uint64      `boil:"nonce" json:"nonce" toml:"nonce" yaml:"nonce"`
-	PreviousBlockHash     null.String `boil:"previous_block_hash" json:"previous_block_hash,omitempty" toml:"previous_block_hash" yaml:"previous_block_hash,omitempty"`
-	NextBlockHash         null.String `boil:"next_block_hash" json:"next_block_hash,omitempty" toml:"next_block_hash" yaml:"next_block_hash,omitempty"`
+	PreviousBlockID       null.String `boil:"previous_block_id" json:"previous_block_id,omitempty" toml:"previous_block_id" yaml:"previous_block_id,omitempty"`
+	NextBlockID           null.String `boil:"next_block_id" json:"next_block_id,omitempty" toml:"next_block_id" yaml:"next_block_id,omitempty"`
 	BlockSize             uint64      `boil:"block_size" json:"block_size" toml:"block_size" yaml:"block_size"`
 	Target                string      `boil:"target" json:"target" toml:"target" yaml:"target"`
 	BlockTime             uint64      `boil:"block_time" json:"block_time" toml:"block_time" yaml:"block_time"`
 	Version               uint64      `boil:"version" json:"version" toml:"version" yaml:"version"`
 	VersionHex            string      `boil:"version_hex" json:"version_hex" toml:"version_hex" yaml:"version_hex"`
-	TransactionHashes     null.String `boil:"transaction_hashes" json:"transaction_hashes,omitempty" toml:"transaction_hashes" yaml:"transaction_hashes,omitempty"`
+	TransactionHashes     string      `boil:"transaction_hashes" json:"transaction_hashes" toml:"transaction_hashes" yaml:"transaction_hashes"`
 	TransactionsProcessed bool        `boil:"transactions_processed" json:"transactions_processed" toml:"transactions_processed" yaml:"transactions_processed"`
-	Created               time.Time   `boil:"created" json:"created" toml:"created" yaml:"created"`
-	Modified              time.Time   `boil:"modified" json:"modified" toml:"modified" yaml:"modified"`
 
 	R *blockR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L blockL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var BlockColumns = struct {
-	ID                    string
 	Bits                  string
 	Chainwork             string
 	Confirmations         string
@@ -61,8 +57,8 @@ var BlockColumns = struct {
 	MerkleRoot            string
 	NameClaimRoot         string
 	Nonce                 string
-	PreviousBlockHash     string
-	NextBlockHash         string
+	PreviousBlockID       string
+	NextBlockID           string
 	BlockSize             string
 	Target                string
 	BlockTime             string
@@ -70,10 +66,7 @@ var BlockColumns = struct {
 	VersionHex            string
 	TransactionHashes     string
 	TransactionsProcessed string
-	Created               string
-	Modified              string
 }{
-	ID:                    "id",
 	Bits:                  "bits",
 	Chainwork:             "chainwork",
 	Confirmations:         "confirmations",
@@ -84,8 +77,8 @@ var BlockColumns = struct {
 	MerkleRoot:            "merkle_root",
 	NameClaimRoot:         "name_claim_root",
 	Nonce:                 "nonce",
-	PreviousBlockHash:     "previous_block_hash",
-	NextBlockHash:         "next_block_hash",
+	PreviousBlockID:       "previous_block_id",
+	NextBlockID:           "next_block_id",
 	BlockSize:             "block_size",
 	Target:                "target",
 	BlockTime:             "block_time",
@@ -93,23 +86,25 @@ var BlockColumns = struct {
 	VersionHex:            "version_hex",
 	TransactionHashes:     "transaction_hashes",
 	TransactionsProcessed: "transactions_processed",
-	Created:               "created",
-	Modified:              "modified",
 }
 
 // blockR is where relationships are stored.
 type blockR struct {
-	Transactions TransactionSlice
+	NextBlock           *Block
+	PreviousBlock       *Block
+	NextBlockBlocks     BlockSlice
+	PreviousBlockBlocks BlockSlice
+	Transactions        TransactionSlice
 }
 
 // blockL is where Load methods for each relationship are stored.
 type blockL struct{}
 
 var (
-	blockColumns               = []string{"id", "bits", "chainwork", "confirmations", "difficulty", "hash", "height", "median_time", "merkle_root", "name_claim_root", "nonce", "previous_block_hash", "next_block_hash", "block_size", "target", "block_time", "version", "version_hex", "transaction_hashes", "transactions_processed", "created", "modified"}
-	blockColumnsWithoutDefault = []string{"bits", "chainwork", "confirmations", "difficulty", "hash", "height", "median_time", "merkle_root", "name_claim_root", "nonce", "previous_block_hash", "next_block_hash", "block_size", "target", "block_time", "version", "version_hex", "transaction_hashes", "created", "modified"}
-	blockColumnsWithDefault    = []string{"id", "transactions_processed"}
-	blockPrimaryKeyColumns     = []string{"id"}
+	blockColumns               = []string{"bits", "chainwork", "confirmations", "difficulty", "hash", "height", "median_time", "merkle_root", "name_claim_root", "nonce", "previous_block_id", "next_block_id", "block_size", "target", "block_time", "version", "version_hex", "transaction_hashes", "transactions_processed"}
+	blockColumnsWithoutDefault = []string{"bits", "chainwork", "confirmations", "difficulty", "hash", "height", "median_time", "merkle_root", "name_claim_root", "nonce", "previous_block_id", "next_block_id", "block_size", "target", "block_time", "version", "version_hex", "transaction_hashes"}
+	blockColumnsWithDefault    = []string{"transactions_processed"}
+	blockPrimaryKeyColumns     = []string{"hash"}
 )
 
 type (
@@ -241,6 +236,96 @@ func (q blockQuery) Exists() (bool, error) {
 	return count > 0, nil
 }
 
+// NextBlockG pointed to by the foreign key.
+func (o *Block) NextBlockG(mods ...qm.QueryMod) blockQuery {
+	return o.NextBlock(boil.GetDB(), mods...)
+}
+
+// NextBlock pointed to by the foreign key.
+func (o *Block) NextBlock(exec boil.Executor, mods ...qm.QueryMod) blockQuery {
+	queryMods := []qm.QueryMod{
+		qm.Where("hash=?", o.NextBlockID),
+	}
+
+	queryMods = append(queryMods, mods...)
+
+	query := Blocks(exec, queryMods...)
+	queries.SetFrom(query.Query, "`blocks`")
+
+	return query
+}
+
+// PreviousBlockG pointed to by the foreign key.
+func (o *Block) PreviousBlockG(mods ...qm.QueryMod) blockQuery {
+	return o.PreviousBlock(boil.GetDB(), mods...)
+}
+
+// PreviousBlock pointed to by the foreign key.
+func (o *Block) PreviousBlock(exec boil.Executor, mods ...qm.QueryMod) blockQuery {
+	queryMods := []qm.QueryMod{
+		qm.Where("hash=?", o.PreviousBlockID),
+	}
+
+	queryMods = append(queryMods, mods...)
+
+	query := Blocks(exec, queryMods...)
+	queries.SetFrom(query.Query, "`blocks`")
+
+	return query
+}
+
+// NextBlockBlocksG retrieves all the block's blocks via next_block_id column.
+func (o *Block) NextBlockBlocksG(mods ...qm.QueryMod) blockQuery {
+	return o.NextBlockBlocks(boil.GetDB(), mods...)
+}
+
+// NextBlockBlocks retrieves all the block's blocks with an executor via next_block_id column.
+func (o *Block) NextBlockBlocks(exec boil.Executor, mods ...qm.QueryMod) blockQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("`blocks`.`next_block_id`=?", o.Hash),
+	)
+
+	query := Blocks(exec, queryMods...)
+	queries.SetFrom(query.Query, "`blocks`")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"`blocks`.*"})
+	}
+
+	return query
+}
+
+// PreviousBlockBlocksG retrieves all the block's blocks via previous_block_id column.
+func (o *Block) PreviousBlockBlocksG(mods ...qm.QueryMod) blockQuery {
+	return o.PreviousBlockBlocks(boil.GetDB(), mods...)
+}
+
+// PreviousBlockBlocks retrieves all the block's blocks with an executor via previous_block_id column.
+func (o *Block) PreviousBlockBlocks(exec boil.Executor, mods ...qm.QueryMod) blockQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("`blocks`.`previous_block_id`=?", o.Hash),
+	)
+
+	query := Blocks(exec, queryMods...)
+	queries.SetFrom(query.Query, "`blocks`")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"`blocks`.*"})
+	}
+
+	return query
+}
+
 // TransactionsG retrieves all the transaction's transactions.
 func (o *Block) TransactionsG(mods ...qm.QueryMod) transactionQuery {
 	return o.Transactions(boil.GetDB(), mods...)
@@ -265,6 +350,276 @@ func (o *Block) Transactions(exec boil.Executor, mods ...qm.QueryMod) transactio
 	}
 
 	return query
+}
+
+// LoadNextBlock allows an eager lookup of values, cached into the
+// loaded structs of the objects.
+func (blockL) LoadNextBlock(e boil.Executor, singular bool, maybeBlock interface{}) error {
+	var slice []*Block
+	var object *Block
+
+	count := 1
+	if singular {
+		object = maybeBlock.(*Block)
+	} else {
+		slice = *maybeBlock.(*[]*Block)
+		count = len(slice)
+	}
+
+	args := make([]interface{}, count)
+	if singular {
+		if object.R == nil {
+			object.R = &blockR{}
+		}
+		args[0] = object.NextBlockID
+	} else {
+		for i, obj := range slice {
+			if obj.R == nil {
+				obj.R = &blockR{}
+			}
+			args[i] = obj.NextBlockID
+		}
+	}
+
+	query := fmt.Sprintf(
+		"select * from `blocks` where `hash` in (%s)",
+		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
+	)
+
+	if boil.DebugMode {
+		fmt.Fprintf(boil.DebugWriter, "%s\n%v\n", query, args)
+	}
+
+	results, err := e.Query(query, args...)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load Block")
+	}
+	defer results.Close()
+
+	var resultSlice []*Block
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice Block")
+	}
+
+	if len(resultSlice) == 0 {
+		return nil
+	}
+
+	if singular {
+		object.R.NextBlock = resultSlice[0]
+		return nil
+	}
+
+	for _, local := range slice {
+		for _, foreign := range resultSlice {
+			if local.NextBlockID.String == foreign.Hash {
+				local.R.NextBlock = foreign
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadPreviousBlock allows an eager lookup of values, cached into the
+// loaded structs of the objects.
+func (blockL) LoadPreviousBlock(e boil.Executor, singular bool, maybeBlock interface{}) error {
+	var slice []*Block
+	var object *Block
+
+	count := 1
+	if singular {
+		object = maybeBlock.(*Block)
+	} else {
+		slice = *maybeBlock.(*[]*Block)
+		count = len(slice)
+	}
+
+	args := make([]interface{}, count)
+	if singular {
+		if object.R == nil {
+			object.R = &blockR{}
+		}
+		args[0] = object.PreviousBlockID
+	} else {
+		for i, obj := range slice {
+			if obj.R == nil {
+				obj.R = &blockR{}
+			}
+			args[i] = obj.PreviousBlockID
+		}
+	}
+
+	query := fmt.Sprintf(
+		"select * from `blocks` where `hash` in (%s)",
+		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
+	)
+
+	if boil.DebugMode {
+		fmt.Fprintf(boil.DebugWriter, "%s\n%v\n", query, args)
+	}
+
+	results, err := e.Query(query, args...)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load Block")
+	}
+	defer results.Close()
+
+	var resultSlice []*Block
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice Block")
+	}
+
+	if len(resultSlice) == 0 {
+		return nil
+	}
+
+	if singular {
+		object.R.PreviousBlock = resultSlice[0]
+		return nil
+	}
+
+	for _, local := range slice {
+		for _, foreign := range resultSlice {
+			if local.PreviousBlockID.String == foreign.Hash {
+				local.R.PreviousBlock = foreign
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadNextBlockBlocks allows an eager lookup of values, cached into the
+// loaded structs of the objects.
+func (blockL) LoadNextBlockBlocks(e boil.Executor, singular bool, maybeBlock interface{}) error {
+	var slice []*Block
+	var object *Block
+
+	count := 1
+	if singular {
+		object = maybeBlock.(*Block)
+	} else {
+		slice = *maybeBlock.(*[]*Block)
+		count = len(slice)
+	}
+
+	args := make([]interface{}, count)
+	if singular {
+		if object.R == nil {
+			object.R = &blockR{}
+		}
+		args[0] = object.Hash
+	} else {
+		for i, obj := range slice {
+			if obj.R == nil {
+				obj.R = &blockR{}
+			}
+			args[i] = obj.Hash
+		}
+	}
+
+	query := fmt.Sprintf(
+		"select * from `blocks` where `next_block_id` in (%s)",
+		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
+	)
+	if boil.DebugMode {
+		fmt.Fprintf(boil.DebugWriter, "%s\n%v\n", query, args)
+	}
+
+	results, err := e.Query(query, args...)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load blocks")
+	}
+	defer results.Close()
+
+	var resultSlice []*Block
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice blocks")
+	}
+
+	if singular {
+		object.R.NextBlockBlocks = resultSlice
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.Hash == foreign.NextBlockID.String {
+				local.R.NextBlockBlocks = append(local.R.NextBlockBlocks, foreign)
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadPreviousBlockBlocks allows an eager lookup of values, cached into the
+// loaded structs of the objects.
+func (blockL) LoadPreviousBlockBlocks(e boil.Executor, singular bool, maybeBlock interface{}) error {
+	var slice []*Block
+	var object *Block
+
+	count := 1
+	if singular {
+		object = maybeBlock.(*Block)
+	} else {
+		slice = *maybeBlock.(*[]*Block)
+		count = len(slice)
+	}
+
+	args := make([]interface{}, count)
+	if singular {
+		if object.R == nil {
+			object.R = &blockR{}
+		}
+		args[0] = object.Hash
+	} else {
+		for i, obj := range slice {
+			if obj.R == nil {
+				obj.R = &blockR{}
+			}
+			args[i] = obj.Hash
+		}
+	}
+
+	query := fmt.Sprintf(
+		"select * from `blocks` where `previous_block_id` in (%s)",
+		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
+	)
+	if boil.DebugMode {
+		fmt.Fprintf(boil.DebugWriter, "%s\n%v\n", query, args)
+	}
+
+	results, err := e.Query(query, args...)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load blocks")
+	}
+	defer results.Close()
+
+	var resultSlice []*Block
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice blocks")
+	}
+
+	if singular {
+		object.R.PreviousBlockBlocks = resultSlice
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.Hash == foreign.PreviousBlockID.String {
+				local.R.PreviousBlockBlocks = append(local.R.PreviousBlockBlocks, foreign)
+				break
+			}
+		}
+	}
+
+	return nil
 }
 
 // LoadTransactions allows an eager lookup of values, cached into the
@@ -322,10 +677,726 @@ func (blockL) LoadTransactions(e boil.Executor, singular bool, maybeBlock interf
 
 	for _, foreign := range resultSlice {
 		for _, local := range slice {
-			if local.Hash == foreign.BlockID.String {
+			if local.Hash == foreign.BlockID {
 				local.R.Transactions = append(local.R.Transactions, foreign)
 				break
 			}
+		}
+	}
+
+	return nil
+}
+
+// SetNextBlockG of the block to the related item.
+// Sets o.R.NextBlock to related.
+// Adds o to related.R.NextBlockBlocks.
+// Uses the global database handle.
+func (o *Block) SetNextBlockG(insert bool, related *Block) error {
+	return o.SetNextBlock(boil.GetDB(), insert, related)
+}
+
+// SetNextBlockP of the block to the related item.
+// Sets o.R.NextBlock to related.
+// Adds o to related.R.NextBlockBlocks.
+// Panics on error.
+func (o *Block) SetNextBlockP(exec boil.Executor, insert bool, related *Block) {
+	if err := o.SetNextBlock(exec, insert, related); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// SetNextBlockGP of the block to the related item.
+// Sets o.R.NextBlock to related.
+// Adds o to related.R.NextBlockBlocks.
+// Uses the global database handle and panics on error.
+func (o *Block) SetNextBlockGP(insert bool, related *Block) {
+	if err := o.SetNextBlock(boil.GetDB(), insert, related); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// SetNextBlock of the block to the related item.
+// Sets o.R.NextBlock to related.
+// Adds o to related.R.NextBlockBlocks.
+func (o *Block) SetNextBlock(exec boil.Executor, insert bool, related *Block) error {
+	var err error
+	if insert {
+		if err = related.Insert(exec); err != nil {
+			return errors.Wrap(err, "failed to insert into foreign table")
+		}
+	}
+
+	updateQuery := fmt.Sprintf(
+		"UPDATE `blocks` SET %s WHERE %s",
+		strmangle.SetParamNames("`", "`", 0, []string{"next_block_id"}),
+		strmangle.WhereClause("`", "`", 0, blockPrimaryKeyColumns),
+	)
+	values := []interface{}{related.Hash, o.Hash}
+
+	if boil.DebugMode {
+		fmt.Fprintln(boil.DebugWriter, updateQuery)
+		fmt.Fprintln(boil.DebugWriter, values)
+	}
+
+	if _, err = exec.Exec(updateQuery, values...); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	o.NextBlockID.String = related.Hash
+	o.NextBlockID.Valid = true
+
+	if o.R == nil {
+		o.R = &blockR{
+			NextBlock: related,
+		}
+	} else {
+		o.R.NextBlock = related
+	}
+
+	if related.R == nil {
+		related.R = &blockR{
+			NextBlockBlocks: BlockSlice{o},
+		}
+	} else {
+		related.R.NextBlockBlocks = append(related.R.NextBlockBlocks, o)
+	}
+
+	return nil
+}
+
+// RemoveNextBlockG relationship.
+// Sets o.R.NextBlock to nil.
+// Removes o from all passed in related items' relationships struct (Optional).
+// Uses the global database handle.
+func (o *Block) RemoveNextBlockG(related *Block) error {
+	return o.RemoveNextBlock(boil.GetDB(), related)
+}
+
+// RemoveNextBlockP relationship.
+// Sets o.R.NextBlock to nil.
+// Removes o from all passed in related items' relationships struct (Optional).
+// Panics on error.
+func (o *Block) RemoveNextBlockP(exec boil.Executor, related *Block) {
+	if err := o.RemoveNextBlock(exec, related); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// RemoveNextBlockGP relationship.
+// Sets o.R.NextBlock to nil.
+// Removes o from all passed in related items' relationships struct (Optional).
+// Uses the global database handle and panics on error.
+func (o *Block) RemoveNextBlockGP(related *Block) {
+	if err := o.RemoveNextBlock(boil.GetDB(), related); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// RemoveNextBlock relationship.
+// Sets o.R.NextBlock to nil.
+// Removes o from all passed in related items' relationships struct (Optional).
+func (o *Block) RemoveNextBlock(exec boil.Executor, related *Block) error {
+	var err error
+
+	o.NextBlockID.Valid = false
+	if err = o.Update(exec, "next_block_id"); err != nil {
+		o.NextBlockID.Valid = true
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	o.R.NextBlock = nil
+	if related == nil || related.R == nil {
+		return nil
+	}
+
+	for i, ri := range related.R.NextBlockBlocks {
+		if o.NextBlockID.String != ri.NextBlockID.String {
+			continue
+		}
+
+		ln := len(related.R.NextBlockBlocks)
+		if ln > 1 && i < ln-1 {
+			related.R.NextBlockBlocks[i] = related.R.NextBlockBlocks[ln-1]
+		}
+		related.R.NextBlockBlocks = related.R.NextBlockBlocks[:ln-1]
+		break
+	}
+	return nil
+}
+
+// SetPreviousBlockG of the block to the related item.
+// Sets o.R.PreviousBlock to related.
+// Adds o to related.R.PreviousBlockBlocks.
+// Uses the global database handle.
+func (o *Block) SetPreviousBlockG(insert bool, related *Block) error {
+	return o.SetPreviousBlock(boil.GetDB(), insert, related)
+}
+
+// SetPreviousBlockP of the block to the related item.
+// Sets o.R.PreviousBlock to related.
+// Adds o to related.R.PreviousBlockBlocks.
+// Panics on error.
+func (o *Block) SetPreviousBlockP(exec boil.Executor, insert bool, related *Block) {
+	if err := o.SetPreviousBlock(exec, insert, related); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// SetPreviousBlockGP of the block to the related item.
+// Sets o.R.PreviousBlock to related.
+// Adds o to related.R.PreviousBlockBlocks.
+// Uses the global database handle and panics on error.
+func (o *Block) SetPreviousBlockGP(insert bool, related *Block) {
+	if err := o.SetPreviousBlock(boil.GetDB(), insert, related); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// SetPreviousBlock of the block to the related item.
+// Sets o.R.PreviousBlock to related.
+// Adds o to related.R.PreviousBlockBlocks.
+func (o *Block) SetPreviousBlock(exec boil.Executor, insert bool, related *Block) error {
+	var err error
+	if insert {
+		if err = related.Insert(exec); err != nil {
+			return errors.Wrap(err, "failed to insert into foreign table")
+		}
+	}
+
+	updateQuery := fmt.Sprintf(
+		"UPDATE `blocks` SET %s WHERE %s",
+		strmangle.SetParamNames("`", "`", 0, []string{"previous_block_id"}),
+		strmangle.WhereClause("`", "`", 0, blockPrimaryKeyColumns),
+	)
+	values := []interface{}{related.Hash, o.Hash}
+
+	if boil.DebugMode {
+		fmt.Fprintln(boil.DebugWriter, updateQuery)
+		fmt.Fprintln(boil.DebugWriter, values)
+	}
+
+	if _, err = exec.Exec(updateQuery, values...); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	o.PreviousBlockID.String = related.Hash
+	o.PreviousBlockID.Valid = true
+
+	if o.R == nil {
+		o.R = &blockR{
+			PreviousBlock: related,
+		}
+	} else {
+		o.R.PreviousBlock = related
+	}
+
+	if related.R == nil {
+		related.R = &blockR{
+			PreviousBlockBlocks: BlockSlice{o},
+		}
+	} else {
+		related.R.PreviousBlockBlocks = append(related.R.PreviousBlockBlocks, o)
+	}
+
+	return nil
+}
+
+// RemovePreviousBlockG relationship.
+// Sets o.R.PreviousBlock to nil.
+// Removes o from all passed in related items' relationships struct (Optional).
+// Uses the global database handle.
+func (o *Block) RemovePreviousBlockG(related *Block) error {
+	return o.RemovePreviousBlock(boil.GetDB(), related)
+}
+
+// RemovePreviousBlockP relationship.
+// Sets o.R.PreviousBlock to nil.
+// Removes o from all passed in related items' relationships struct (Optional).
+// Panics on error.
+func (o *Block) RemovePreviousBlockP(exec boil.Executor, related *Block) {
+	if err := o.RemovePreviousBlock(exec, related); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// RemovePreviousBlockGP relationship.
+// Sets o.R.PreviousBlock to nil.
+// Removes o from all passed in related items' relationships struct (Optional).
+// Uses the global database handle and panics on error.
+func (o *Block) RemovePreviousBlockGP(related *Block) {
+	if err := o.RemovePreviousBlock(boil.GetDB(), related); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// RemovePreviousBlock relationship.
+// Sets o.R.PreviousBlock to nil.
+// Removes o from all passed in related items' relationships struct (Optional).
+func (o *Block) RemovePreviousBlock(exec boil.Executor, related *Block) error {
+	var err error
+
+	o.PreviousBlockID.Valid = false
+	if err = o.Update(exec, "previous_block_id"); err != nil {
+		o.PreviousBlockID.Valid = true
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	o.R.PreviousBlock = nil
+	if related == nil || related.R == nil {
+		return nil
+	}
+
+	for i, ri := range related.R.PreviousBlockBlocks {
+		if o.PreviousBlockID.String != ri.PreviousBlockID.String {
+			continue
+		}
+
+		ln := len(related.R.PreviousBlockBlocks)
+		if ln > 1 && i < ln-1 {
+			related.R.PreviousBlockBlocks[i] = related.R.PreviousBlockBlocks[ln-1]
+		}
+		related.R.PreviousBlockBlocks = related.R.PreviousBlockBlocks[:ln-1]
+		break
+	}
+	return nil
+}
+
+// AddNextBlockBlocksG adds the given related objects to the existing relationships
+// of the block, optionally inserting them as new records.
+// Appends related to o.R.NextBlockBlocks.
+// Sets related.R.NextBlock appropriately.
+// Uses the global database handle.
+func (o *Block) AddNextBlockBlocksG(insert bool, related ...*Block) error {
+	return o.AddNextBlockBlocks(boil.GetDB(), insert, related...)
+}
+
+// AddNextBlockBlocksP adds the given related objects to the existing relationships
+// of the block, optionally inserting them as new records.
+// Appends related to o.R.NextBlockBlocks.
+// Sets related.R.NextBlock appropriately.
+// Panics on error.
+func (o *Block) AddNextBlockBlocksP(exec boil.Executor, insert bool, related ...*Block) {
+	if err := o.AddNextBlockBlocks(exec, insert, related...); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// AddNextBlockBlocksGP adds the given related objects to the existing relationships
+// of the block, optionally inserting them as new records.
+// Appends related to o.R.NextBlockBlocks.
+// Sets related.R.NextBlock appropriately.
+// Uses the global database handle and panics on error.
+func (o *Block) AddNextBlockBlocksGP(insert bool, related ...*Block) {
+	if err := o.AddNextBlockBlocks(boil.GetDB(), insert, related...); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// AddNextBlockBlocks adds the given related objects to the existing relationships
+// of the block, optionally inserting them as new records.
+// Appends related to o.R.NextBlockBlocks.
+// Sets related.R.NextBlock appropriately.
+func (o *Block) AddNextBlockBlocks(exec boil.Executor, insert bool, related ...*Block) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.NextBlockID.String = o.Hash
+			rel.NextBlockID.Valid = true
+			if err = rel.Insert(exec); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE `blocks` SET %s WHERE %s",
+				strmangle.SetParamNames("`", "`", 0, []string{"next_block_id"}),
+				strmangle.WhereClause("`", "`", 0, blockPrimaryKeyColumns),
+			)
+			values := []interface{}{o.Hash, rel.Hash}
+
+			if boil.DebugMode {
+				fmt.Fprintln(boil.DebugWriter, updateQuery)
+				fmt.Fprintln(boil.DebugWriter, values)
+			}
+
+			if _, err = exec.Exec(updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.NextBlockID.String = o.Hash
+			rel.NextBlockID.Valid = true
+		}
+	}
+
+	if o.R == nil {
+		o.R = &blockR{
+			NextBlockBlocks: related,
+		}
+	} else {
+		o.R.NextBlockBlocks = append(o.R.NextBlockBlocks, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &blockR{
+				NextBlock: o,
+			}
+		} else {
+			rel.R.NextBlock = o
+		}
+	}
+	return nil
+}
+
+// SetNextBlockBlocksG removes all previously related items of the
+// block replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.NextBlock's NextBlockBlocks accordingly.
+// Replaces o.R.NextBlockBlocks with related.
+// Sets related.R.NextBlock's NextBlockBlocks accordingly.
+// Uses the global database handle.
+func (o *Block) SetNextBlockBlocksG(insert bool, related ...*Block) error {
+	return o.SetNextBlockBlocks(boil.GetDB(), insert, related...)
+}
+
+// SetNextBlockBlocksP removes all previously related items of the
+// block replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.NextBlock's NextBlockBlocks accordingly.
+// Replaces o.R.NextBlockBlocks with related.
+// Sets related.R.NextBlock's NextBlockBlocks accordingly.
+// Panics on error.
+func (o *Block) SetNextBlockBlocksP(exec boil.Executor, insert bool, related ...*Block) {
+	if err := o.SetNextBlockBlocks(exec, insert, related...); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// SetNextBlockBlocksGP removes all previously related items of the
+// block replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.NextBlock's NextBlockBlocks accordingly.
+// Replaces o.R.NextBlockBlocks with related.
+// Sets related.R.NextBlock's NextBlockBlocks accordingly.
+// Uses the global database handle and panics on error.
+func (o *Block) SetNextBlockBlocksGP(insert bool, related ...*Block) {
+	if err := o.SetNextBlockBlocks(boil.GetDB(), insert, related...); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// SetNextBlockBlocks removes all previously related items of the
+// block replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.NextBlock's NextBlockBlocks accordingly.
+// Replaces o.R.NextBlockBlocks with related.
+// Sets related.R.NextBlock's NextBlockBlocks accordingly.
+func (o *Block) SetNextBlockBlocks(exec boil.Executor, insert bool, related ...*Block) error {
+	query := "update `blocks` set `next_block_id` = null where `next_block_id` = ?"
+	values := []interface{}{o.Hash}
+	if boil.DebugMode {
+		fmt.Fprintln(boil.DebugWriter, query)
+		fmt.Fprintln(boil.DebugWriter, values)
+	}
+
+	_, err := exec.Exec(query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.NextBlockBlocks {
+			rel.NextBlockID.Valid = false
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.NextBlock = nil
+		}
+
+		o.R.NextBlockBlocks = nil
+	}
+	return o.AddNextBlockBlocks(exec, insert, related...)
+}
+
+// RemoveNextBlockBlocksG relationships from objects passed in.
+// Removes related items from R.NextBlockBlocks (uses pointer comparison, removal does not keep order)
+// Sets related.R.NextBlock.
+// Uses the global database handle.
+func (o *Block) RemoveNextBlockBlocksG(related ...*Block) error {
+	return o.RemoveNextBlockBlocks(boil.GetDB(), related...)
+}
+
+// RemoveNextBlockBlocksP relationships from objects passed in.
+// Removes related items from R.NextBlockBlocks (uses pointer comparison, removal does not keep order)
+// Sets related.R.NextBlock.
+// Panics on error.
+func (o *Block) RemoveNextBlockBlocksP(exec boil.Executor, related ...*Block) {
+	if err := o.RemoveNextBlockBlocks(exec, related...); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// RemoveNextBlockBlocksGP relationships from objects passed in.
+// Removes related items from R.NextBlockBlocks (uses pointer comparison, removal does not keep order)
+// Sets related.R.NextBlock.
+// Uses the global database handle and panics on error.
+func (o *Block) RemoveNextBlockBlocksGP(related ...*Block) {
+	if err := o.RemoveNextBlockBlocks(boil.GetDB(), related...); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// RemoveNextBlockBlocks relationships from objects passed in.
+// Removes related items from R.NextBlockBlocks (uses pointer comparison, removal does not keep order)
+// Sets related.R.NextBlock.
+func (o *Block) RemoveNextBlockBlocks(exec boil.Executor, related ...*Block) error {
+	var err error
+	for _, rel := range related {
+		rel.NextBlockID.Valid = false
+		if rel.R != nil {
+			rel.R.NextBlock = nil
+		}
+		if err = rel.Update(exec, "next_block_id"); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.NextBlockBlocks {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.NextBlockBlocks)
+			if ln > 1 && i < ln-1 {
+				o.R.NextBlockBlocks[i] = o.R.NextBlockBlocks[ln-1]
+			}
+			o.R.NextBlockBlocks = o.R.NextBlockBlocks[:ln-1]
+			break
+		}
+	}
+
+	return nil
+}
+
+// AddPreviousBlockBlocksG adds the given related objects to the existing relationships
+// of the block, optionally inserting them as new records.
+// Appends related to o.R.PreviousBlockBlocks.
+// Sets related.R.PreviousBlock appropriately.
+// Uses the global database handle.
+func (o *Block) AddPreviousBlockBlocksG(insert bool, related ...*Block) error {
+	return o.AddPreviousBlockBlocks(boil.GetDB(), insert, related...)
+}
+
+// AddPreviousBlockBlocksP adds the given related objects to the existing relationships
+// of the block, optionally inserting them as new records.
+// Appends related to o.R.PreviousBlockBlocks.
+// Sets related.R.PreviousBlock appropriately.
+// Panics on error.
+func (o *Block) AddPreviousBlockBlocksP(exec boil.Executor, insert bool, related ...*Block) {
+	if err := o.AddPreviousBlockBlocks(exec, insert, related...); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// AddPreviousBlockBlocksGP adds the given related objects to the existing relationships
+// of the block, optionally inserting them as new records.
+// Appends related to o.R.PreviousBlockBlocks.
+// Sets related.R.PreviousBlock appropriately.
+// Uses the global database handle and panics on error.
+func (o *Block) AddPreviousBlockBlocksGP(insert bool, related ...*Block) {
+	if err := o.AddPreviousBlockBlocks(boil.GetDB(), insert, related...); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// AddPreviousBlockBlocks adds the given related objects to the existing relationships
+// of the block, optionally inserting them as new records.
+// Appends related to o.R.PreviousBlockBlocks.
+// Sets related.R.PreviousBlock appropriately.
+func (o *Block) AddPreviousBlockBlocks(exec boil.Executor, insert bool, related ...*Block) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.PreviousBlockID.String = o.Hash
+			rel.PreviousBlockID.Valid = true
+			if err = rel.Insert(exec); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE `blocks` SET %s WHERE %s",
+				strmangle.SetParamNames("`", "`", 0, []string{"previous_block_id"}),
+				strmangle.WhereClause("`", "`", 0, blockPrimaryKeyColumns),
+			)
+			values := []interface{}{o.Hash, rel.Hash}
+
+			if boil.DebugMode {
+				fmt.Fprintln(boil.DebugWriter, updateQuery)
+				fmt.Fprintln(boil.DebugWriter, values)
+			}
+
+			if _, err = exec.Exec(updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.PreviousBlockID.String = o.Hash
+			rel.PreviousBlockID.Valid = true
+		}
+	}
+
+	if o.R == nil {
+		o.R = &blockR{
+			PreviousBlockBlocks: related,
+		}
+	} else {
+		o.R.PreviousBlockBlocks = append(o.R.PreviousBlockBlocks, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &blockR{
+				PreviousBlock: o,
+			}
+		} else {
+			rel.R.PreviousBlock = o
+		}
+	}
+	return nil
+}
+
+// SetPreviousBlockBlocksG removes all previously related items of the
+// block replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.PreviousBlock's PreviousBlockBlocks accordingly.
+// Replaces o.R.PreviousBlockBlocks with related.
+// Sets related.R.PreviousBlock's PreviousBlockBlocks accordingly.
+// Uses the global database handle.
+func (o *Block) SetPreviousBlockBlocksG(insert bool, related ...*Block) error {
+	return o.SetPreviousBlockBlocks(boil.GetDB(), insert, related...)
+}
+
+// SetPreviousBlockBlocksP removes all previously related items of the
+// block replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.PreviousBlock's PreviousBlockBlocks accordingly.
+// Replaces o.R.PreviousBlockBlocks with related.
+// Sets related.R.PreviousBlock's PreviousBlockBlocks accordingly.
+// Panics on error.
+func (o *Block) SetPreviousBlockBlocksP(exec boil.Executor, insert bool, related ...*Block) {
+	if err := o.SetPreviousBlockBlocks(exec, insert, related...); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// SetPreviousBlockBlocksGP removes all previously related items of the
+// block replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.PreviousBlock's PreviousBlockBlocks accordingly.
+// Replaces o.R.PreviousBlockBlocks with related.
+// Sets related.R.PreviousBlock's PreviousBlockBlocks accordingly.
+// Uses the global database handle and panics on error.
+func (o *Block) SetPreviousBlockBlocksGP(insert bool, related ...*Block) {
+	if err := o.SetPreviousBlockBlocks(boil.GetDB(), insert, related...); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// SetPreviousBlockBlocks removes all previously related items of the
+// block replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.PreviousBlock's PreviousBlockBlocks accordingly.
+// Replaces o.R.PreviousBlockBlocks with related.
+// Sets related.R.PreviousBlock's PreviousBlockBlocks accordingly.
+func (o *Block) SetPreviousBlockBlocks(exec boil.Executor, insert bool, related ...*Block) error {
+	query := "update `blocks` set `previous_block_id` = null where `previous_block_id` = ?"
+	values := []interface{}{o.Hash}
+	if boil.DebugMode {
+		fmt.Fprintln(boil.DebugWriter, query)
+		fmt.Fprintln(boil.DebugWriter, values)
+	}
+
+	_, err := exec.Exec(query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.PreviousBlockBlocks {
+			rel.PreviousBlockID.Valid = false
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.PreviousBlock = nil
+		}
+
+		o.R.PreviousBlockBlocks = nil
+	}
+	return o.AddPreviousBlockBlocks(exec, insert, related...)
+}
+
+// RemovePreviousBlockBlocksG relationships from objects passed in.
+// Removes related items from R.PreviousBlockBlocks (uses pointer comparison, removal does not keep order)
+// Sets related.R.PreviousBlock.
+// Uses the global database handle.
+func (o *Block) RemovePreviousBlockBlocksG(related ...*Block) error {
+	return o.RemovePreviousBlockBlocks(boil.GetDB(), related...)
+}
+
+// RemovePreviousBlockBlocksP relationships from objects passed in.
+// Removes related items from R.PreviousBlockBlocks (uses pointer comparison, removal does not keep order)
+// Sets related.R.PreviousBlock.
+// Panics on error.
+func (o *Block) RemovePreviousBlockBlocksP(exec boil.Executor, related ...*Block) {
+	if err := o.RemovePreviousBlockBlocks(exec, related...); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// RemovePreviousBlockBlocksGP relationships from objects passed in.
+// Removes related items from R.PreviousBlockBlocks (uses pointer comparison, removal does not keep order)
+// Sets related.R.PreviousBlock.
+// Uses the global database handle and panics on error.
+func (o *Block) RemovePreviousBlockBlocksGP(related ...*Block) {
+	if err := o.RemovePreviousBlockBlocks(boil.GetDB(), related...); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// RemovePreviousBlockBlocks relationships from objects passed in.
+// Removes related items from R.PreviousBlockBlocks (uses pointer comparison, removal does not keep order)
+// Sets related.R.PreviousBlock.
+func (o *Block) RemovePreviousBlockBlocks(exec boil.Executor, related ...*Block) error {
+	var err error
+	for _, rel := range related {
+		rel.PreviousBlockID.Valid = false
+		if rel.R != nil {
+			rel.R.PreviousBlock = nil
+		}
+		if err = rel.Update(exec, "previous_block_id"); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.PreviousBlockBlocks {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.PreviousBlockBlocks)
+			if ln > 1 && i < ln-1 {
+				o.R.PreviousBlockBlocks[i] = o.R.PreviousBlockBlocks[ln-1]
+			}
+			o.R.PreviousBlockBlocks = o.R.PreviousBlockBlocks[:ln-1]
+			break
 		}
 	}
 
@@ -371,8 +1442,7 @@ func (o *Block) AddTransactions(exec boil.Executor, insert bool, related ...*Tra
 	var err error
 	for _, rel := range related {
 		if insert {
-			rel.BlockID.String = o.Hash
-			rel.BlockID.Valid = true
+			rel.BlockID = o.Hash
 			if err = rel.Insert(exec); err != nil {
 				return errors.Wrap(err, "failed to insert into foreign table")
 			}
@@ -382,7 +1452,7 @@ func (o *Block) AddTransactions(exec boil.Executor, insert bool, related ...*Tra
 				strmangle.SetParamNames("`", "`", 0, []string{"block_id"}),
 				strmangle.WhereClause("`", "`", 0, transactionPrimaryKeyColumns),
 			)
-			values := []interface{}{o.Hash, rel.ID}
+			values := []interface{}{o.Hash, rel.Hash}
 
 			if boil.DebugMode {
 				fmt.Fprintln(boil.DebugWriter, updateQuery)
@@ -393,8 +1463,7 @@ func (o *Block) AddTransactions(exec boil.Executor, insert bool, related ...*Tra
 				return errors.Wrap(err, "failed to update foreign table")
 			}
 
-			rel.BlockID.String = o.Hash
-			rel.BlockID.Valid = true
+			rel.BlockID = o.Hash
 		}
 	}
 
@@ -418,141 +1487,6 @@ func (o *Block) AddTransactions(exec boil.Executor, insert bool, related ...*Tra
 	return nil
 }
 
-// SetTransactionsG removes all previously related items of the
-// block replacing them completely with the passed
-// in related items, optionally inserting them as new records.
-// Sets o.R.Block's Transactions accordingly.
-// Replaces o.R.Transactions with related.
-// Sets related.R.Block's Transactions accordingly.
-// Uses the global database handle.
-func (o *Block) SetTransactionsG(insert bool, related ...*Transaction) error {
-	return o.SetTransactions(boil.GetDB(), insert, related...)
-}
-
-// SetTransactionsP removes all previously related items of the
-// block replacing them completely with the passed
-// in related items, optionally inserting them as new records.
-// Sets o.R.Block's Transactions accordingly.
-// Replaces o.R.Transactions with related.
-// Sets related.R.Block's Transactions accordingly.
-// Panics on error.
-func (o *Block) SetTransactionsP(exec boil.Executor, insert bool, related ...*Transaction) {
-	if err := o.SetTransactions(exec, insert, related...); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
-// SetTransactionsGP removes all previously related items of the
-// block replacing them completely with the passed
-// in related items, optionally inserting them as new records.
-// Sets o.R.Block's Transactions accordingly.
-// Replaces o.R.Transactions with related.
-// Sets related.R.Block's Transactions accordingly.
-// Uses the global database handle and panics on error.
-func (o *Block) SetTransactionsGP(insert bool, related ...*Transaction) {
-	if err := o.SetTransactions(boil.GetDB(), insert, related...); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
-// SetTransactions removes all previously related items of the
-// block replacing them completely with the passed
-// in related items, optionally inserting them as new records.
-// Sets o.R.Block's Transactions accordingly.
-// Replaces o.R.Transactions with related.
-// Sets related.R.Block's Transactions accordingly.
-func (o *Block) SetTransactions(exec boil.Executor, insert bool, related ...*Transaction) error {
-	query := "update `transactions` set `block_id` = null where `block_id` = ?"
-	values := []interface{}{o.Hash}
-	if boil.DebugMode {
-		fmt.Fprintln(boil.DebugWriter, query)
-		fmt.Fprintln(boil.DebugWriter, values)
-	}
-
-	_, err := exec.Exec(query, values...)
-	if err != nil {
-		return errors.Wrap(err, "failed to remove relationships before set")
-	}
-
-	if o.R != nil {
-		for _, rel := range o.R.Transactions {
-			rel.BlockID.Valid = false
-			if rel.R == nil {
-				continue
-			}
-
-			rel.R.Block = nil
-		}
-
-		o.R.Transactions = nil
-	}
-	return o.AddTransactions(exec, insert, related...)
-}
-
-// RemoveTransactionsG relationships from objects passed in.
-// Removes related items from R.Transactions (uses pointer comparison, removal does not keep order)
-// Sets related.R.Block.
-// Uses the global database handle.
-func (o *Block) RemoveTransactionsG(related ...*Transaction) error {
-	return o.RemoveTransactions(boil.GetDB(), related...)
-}
-
-// RemoveTransactionsP relationships from objects passed in.
-// Removes related items from R.Transactions (uses pointer comparison, removal does not keep order)
-// Sets related.R.Block.
-// Panics on error.
-func (o *Block) RemoveTransactionsP(exec boil.Executor, related ...*Transaction) {
-	if err := o.RemoveTransactions(exec, related...); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
-// RemoveTransactionsGP relationships from objects passed in.
-// Removes related items from R.Transactions (uses pointer comparison, removal does not keep order)
-// Sets related.R.Block.
-// Uses the global database handle and panics on error.
-func (o *Block) RemoveTransactionsGP(related ...*Transaction) {
-	if err := o.RemoveTransactions(boil.GetDB(), related...); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
-// RemoveTransactions relationships from objects passed in.
-// Removes related items from R.Transactions (uses pointer comparison, removal does not keep order)
-// Sets related.R.Block.
-func (o *Block) RemoveTransactions(exec boil.Executor, related ...*Transaction) error {
-	var err error
-	for _, rel := range related {
-		rel.BlockID.Valid = false
-		if rel.R != nil {
-			rel.R.Block = nil
-		}
-		if err = rel.Update(exec, "block_id"); err != nil {
-			return err
-		}
-	}
-	if o.R == nil {
-		return nil
-	}
-
-	for _, rel := range related {
-		for i, ri := range o.R.Transactions {
-			if rel != ri {
-				continue
-			}
-
-			ln := len(o.R.Transactions)
-			if ln > 1 && i < ln-1 {
-				o.R.Transactions[i] = o.R.Transactions[ln-1]
-			}
-			o.R.Transactions = o.R.Transactions[:ln-1]
-			break
-		}
-	}
-
-	return nil
-}
-
 // BlocksG retrieves all records.
 func BlocksG(mods ...qm.QueryMod) blockQuery {
 	return Blocks(boil.GetDB(), mods...)
@@ -565,13 +1499,13 @@ func Blocks(exec boil.Executor, mods ...qm.QueryMod) blockQuery {
 }
 
 // FindBlockG retrieves a single record by ID.
-func FindBlockG(id uint64, selectCols ...string) (*Block, error) {
-	return FindBlock(boil.GetDB(), id, selectCols...)
+func FindBlockG(hash string, selectCols ...string) (*Block, error) {
+	return FindBlock(boil.GetDB(), hash, selectCols...)
 }
 
 // FindBlockGP retrieves a single record by ID, and panics on error.
-func FindBlockGP(id uint64, selectCols ...string) *Block {
-	retobj, err := FindBlock(boil.GetDB(), id, selectCols...)
+func FindBlockGP(hash string, selectCols ...string) *Block {
+	retobj, err := FindBlock(boil.GetDB(), hash, selectCols...)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -581,7 +1515,7 @@ func FindBlockGP(id uint64, selectCols ...string) *Block {
 
 // FindBlock retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindBlock(exec boil.Executor, id uint64, selectCols ...string) (*Block, error) {
+func FindBlock(exec boil.Executor, hash string, selectCols ...string) (*Block, error) {
 	blockObj := &Block{}
 
 	sel := "*"
@@ -589,10 +1523,10 @@ func FindBlock(exec boil.Executor, id uint64, selectCols ...string) (*Block, err
 		sel = strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, selectCols), ",")
 	}
 	query := fmt.Sprintf(
-		"select %s from `blocks` where `id`=?", sel,
+		"select %s from `blocks` where `hash`=?", sel,
 	)
 
-	q := queries.Raw(exec, query, id)
+	q := queries.Raw(exec, query, hash)
 
 	err := q.Bind(blockObj)
 	if err != nil {
@@ -606,8 +1540,8 @@ func FindBlock(exec boil.Executor, id uint64, selectCols ...string) (*Block, err
 }
 
 // FindBlockP retrieves a single record by ID with an executor, and panics on error.
-func FindBlockP(exec boil.Executor, id uint64, selectCols ...string) *Block {
-	retobj, err := FindBlock(exec, id, selectCols...)
+func FindBlockP(exec boil.Executor, hash string, selectCols ...string) *Block {
+	retobj, err := FindBlock(exec, hash, selectCols...)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -697,31 +1631,19 @@ func (o *Block) Insert(exec boil.Executor, whitelist ...string) error {
 		fmt.Fprintln(boil.DebugWriter, vals)
 	}
 
-	result, err := exec.Exec(cache.query, vals...)
-
+	_, err = exec.Exec(cache.query, vals...)
 	if err != nil {
 		return errors.Wrap(err, "model: unable to insert into blocks")
 	}
 
-	var lastID int64
 	var identifierCols []interface{}
 
 	if len(cache.retMapping) == 0 {
 		goto CacheNoHooks
 	}
 
-	lastID, err = result.LastInsertId()
-	if err != nil {
-		return ErrSyncFail
-	}
-
-	o.ID = uint64(lastID)
-	if lastID != 0 && len(cache.retMapping) == 1 && cache.retMapping[0] == blockMapping["ID"] {
-		goto CacheNoHooks
-	}
-
 	identifierCols = []interface{}{
-		o.ID,
+		o.Hash,
 	}
 
 	if boil.DebugMode {
@@ -976,7 +1898,7 @@ func (o *Block) Upsert(exec boil.Executor, updateColumns []string, whitelist ...
 
 		cache.query = queries.BuildUpsertQueryMySQL(dialect, "blocks", update, insert)
 		cache.retQuery = fmt.Sprintf(
-			"SELECT %s FROM `blocks` WHERE `id`=?",
+			"SELECT %s FROM `blocks` WHERE `hash`=?",
 			strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, ret), ","),
 		)
 
@@ -1004,31 +1926,19 @@ func (o *Block) Upsert(exec boil.Executor, updateColumns []string, whitelist ...
 		fmt.Fprintln(boil.DebugWriter, vals)
 	}
 
-	result, err := exec.Exec(cache.query, vals...)
-
+	_, err = exec.Exec(cache.query, vals...)
 	if err != nil {
 		return errors.Wrap(err, "model: unable to upsert for blocks")
 	}
 
-	var lastID int64
 	var identifierCols []interface{}
 
 	if len(cache.retMapping) == 0 {
 		goto CacheNoHooks
 	}
 
-	lastID, err = result.LastInsertId()
-	if err != nil {
-		return ErrSyncFail
-	}
-
-	o.ID = uint64(lastID)
-	if lastID != 0 && len(cache.retMapping) == 1 && cache.retMapping[0] == blockMapping["ID"] {
-		goto CacheNoHooks
-	}
-
 	identifierCols = []interface{}{
-		o.ID,
+		o.Hash,
 	}
 
 	if boil.DebugMode {
@@ -1087,7 +1997,7 @@ func (o *Block) Delete(exec boil.Executor) error {
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), blockPrimaryKeyMapping)
-	sql := "DELETE FROM `blocks` WHERE `id`=?"
+	sql := "DELETE FROM `blocks` WHERE `hash`=?"
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, sql)
@@ -1205,7 +2115,7 @@ func (o *Block) ReloadG() error {
 // Reload refetches the object from the database
 // using the primary keys with an executor.
 func (o *Block) Reload(exec boil.Executor) error {
-	ret, err := FindBlock(exec, o.ID)
+	ret, err := FindBlock(exec, o.Hash)
 	if err != nil {
 		return err
 	}
@@ -1272,16 +2182,16 @@ func (o *BlockSlice) ReloadAll(exec boil.Executor) error {
 }
 
 // BlockExists checks if the Block row exists.
-func BlockExists(exec boil.Executor, id uint64) (bool, error) {
+func BlockExists(exec boil.Executor, hash string) (bool, error) {
 	var exists bool
-	sql := "select exists(select 1 from `blocks` where `id`=? limit 1)"
+	sql := "select exists(select 1 from `blocks` where `hash`=? limit 1)"
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, sql)
-		fmt.Fprintln(boil.DebugWriter, id)
+		fmt.Fprintln(boil.DebugWriter, hash)
 	}
 
-	row := exec.QueryRow(sql, id)
+	row := exec.QueryRow(sql, hash)
 
 	err := row.Scan(&exists)
 	if err != nil {
@@ -1292,13 +2202,13 @@ func BlockExists(exec boil.Executor, id uint64) (bool, error) {
 }
 
 // BlockExistsG checks if the Block row exists.
-func BlockExistsG(id uint64) (bool, error) {
-	return BlockExists(boil.GetDB(), id)
+func BlockExistsG(hash string) (bool, error) {
+	return BlockExists(boil.GetDB(), hash)
 }
 
 // BlockExistsGP checks if the Block row exists. Panics on error.
-func BlockExistsGP(id uint64) bool {
-	e, err := BlockExists(boil.GetDB(), id)
+func BlockExistsGP(hash string) bool {
+	e, err := BlockExists(boil.GetDB(), hash)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -1307,8 +2217,8 @@ func BlockExistsGP(id uint64) bool {
 }
 
 // BlockExistsP checks if the Block row exists. Panics on error.
-func BlockExistsP(exec boil.Executor, id uint64) bool {
-	e, err := BlockExists(exec, id)
+func BlockExistsP(exec boil.Executor, hash string) bool {
+	e, err := BlockExists(exec, hash)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}

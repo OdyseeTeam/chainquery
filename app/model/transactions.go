@@ -22,20 +22,17 @@ import (
 
 // Transaction is an object representing the database table.
 type Transaction struct {
-	ID              uint64      `boil:"id" json:"id" toml:"id" yaml:"id"`
-	BlockID         null.String `boil:"block_id" json:"block_id,omitempty" toml:"block_id" yaml:"block_id,omitempty"`
+	BlockID         string      `boil:"block_id" json:"block_id" toml:"block_id" yaml:"block_id"`
 	InputCount      uint        `boil:"input_count" json:"input_count" toml:"input_count" yaml:"input_count"`
 	OutputCount     uint        `boil:"output_count" json:"output_count" toml:"output_count" yaml:"output_count"`
-	Value           string      `boil:"value" json:"value" toml:"value" yaml:"value"`
-	Fee             string      `boil:"fee" json:"fee" toml:"fee" yaml:"fee"`
+	Value           float32     `boil:"value" json:"value" toml:"value" yaml:"value"`
+	Fee             float32     `boil:"fee" json:"fee" toml:"fee" yaml:"fee"`
 	TransactionTime null.Uint64 `boil:"transaction_time" json:"transaction_time,omitempty" toml:"transaction_time" yaml:"transaction_time,omitempty"`
 	TransactionSize uint64      `boil:"transaction_size" json:"transaction_size" toml:"transaction_size" yaml:"transaction_size"`
 	Hash            string      `boil:"hash" json:"hash" toml:"hash" yaml:"hash"`
 	Version         int         `boil:"version" json:"version" toml:"version" yaml:"version"`
 	LockTime        uint        `boil:"lock_time" json:"lock_time" toml:"lock_time" yaml:"lock_time"`
 	Raw             null.String `boil:"raw" json:"raw,omitempty" toml:"raw" yaml:"raw,omitempty"`
-	Created         time.Time   `boil:"created" json:"created" toml:"created" yaml:"created"`
-	Modified        time.Time   `boil:"modified" json:"modified" toml:"modified" yaml:"modified"`
 	CreatedTime     uint        `boil:"created_time" json:"created_time" toml:"created_time" yaml:"created_time"`
 
 	R *transactionR `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -43,7 +40,6 @@ type Transaction struct {
 }
 
 var TransactionColumns = struct {
-	ID              string
 	BlockID         string
 	InputCount      string
 	OutputCount     string
@@ -55,11 +51,8 @@ var TransactionColumns = struct {
 	Version         string
 	LockTime        string
 	Raw             string
-	Created         string
-	Modified        string
 	CreatedTime     string
 }{
-	ID:              "id",
 	BlockID:         "block_id",
 	InputCount:      "input_count",
 	OutputCount:     "output_count",
@@ -71,8 +64,6 @@ var TransactionColumns = struct {
 	Version:         "version",
 	LockTime:        "lock_time",
 	Raw:             "raw",
-	Created:         "created",
-	Modified:        "modified",
 	CreatedTime:     "created_time",
 }
 
@@ -89,10 +80,10 @@ type transactionR struct {
 type transactionL struct{}
 
 var (
-	transactionColumns               = []string{"id", "block_id", "input_count", "output_count", "value", "fee", "transaction_time", "transaction_size", "hash", "version", "lock_time", "raw", "created", "modified", "created_time"}
-	transactionColumnsWithoutDefault = []string{"block_id", "input_count", "output_count", "value", "transaction_time", "transaction_size", "hash", "version", "lock_time", "raw", "created", "modified", "created_time"}
-	transactionColumnsWithDefault    = []string{"id", "fee"}
-	transactionPrimaryKeyColumns     = []string{"id"}
+	transactionColumns               = []string{"block_id", "input_count", "output_count", "value", "fee", "transaction_time", "transaction_size", "hash", "version", "lock_time", "raw", "created_time"}
+	transactionColumnsWithoutDefault = []string{"block_id", "input_count", "output_count", "transaction_time", "transaction_size", "hash", "version", "lock_time", "raw", "created_time"}
+	transactionColumnsWithDefault    = []string{"value", "fee"}
+	transactionPrimaryKeyColumns     = []string{"hash"}
 )
 
 type (
@@ -282,7 +273,7 @@ func (o *Transaction) Inputs(exec boil.Executor, mods ...qm.QueryMod) inputQuery
 	}
 
 	queryMods = append(queryMods,
-		qm.Where("`inputs`.`transaction_id`=?", o.ID),
+		qm.Where("`inputs`.`transaction_id`=?", o.Hash),
 	)
 
 	query := Inputs(exec, queryMods...)
@@ -308,7 +299,7 @@ func (o *Transaction) Outputs(exec boil.Executor, mods ...qm.QueryMod) outputQue
 	}
 
 	queryMods = append(queryMods,
-		qm.Where("`outputs`.`transaction_id`=?", o.ID),
+		qm.Where("`outputs`.`transaction_id`=?", o.Hash),
 	)
 
 	query := Outputs(exec, queryMods...)
@@ -334,7 +325,7 @@ func (o *Transaction) TransactionAddresses(exec boil.Executor, mods ...qm.QueryM
 	}
 
 	queryMods = append(queryMods,
-		qm.Where("`transaction_addresses`.`transaction_id`=?", o.ID),
+		qm.Where("`transaction_addresses`.`transaction_id`=?", o.Hash),
 	)
 
 	query := TransactionAddresses(exec, queryMods...)
@@ -407,7 +398,7 @@ func (transactionL) LoadBlock(e boil.Executor, singular bool, maybeTransaction i
 
 	for _, local := range slice {
 		for _, foreign := range resultSlice {
-			if local.BlockID.String == foreign.Hash {
+			if local.BlockID == foreign.Hash {
 				local.R.Block = foreign
 				break
 			}
@@ -501,13 +492,13 @@ func (transactionL) LoadInputs(e boil.Executor, singular bool, maybeTransaction 
 		if object.R == nil {
 			object.R = &transactionR{}
 		}
-		args[0] = object.ID
+		args[0] = object.Hash
 	} else {
 		for i, obj := range slice {
 			if obj.R == nil {
 				obj.R = &transactionR{}
 			}
-			args[i] = obj.ID
+			args[i] = obj.Hash
 		}
 	}
 
@@ -537,7 +528,7 @@ func (transactionL) LoadInputs(e boil.Executor, singular bool, maybeTransaction 
 
 	for _, foreign := range resultSlice {
 		for _, local := range slice {
-			if local.ID == foreign.TransactionID {
+			if local.Hash == foreign.TransactionID {
 				local.R.Inputs = append(local.R.Inputs, foreign)
 				break
 			}
@@ -566,13 +557,13 @@ func (transactionL) LoadOutputs(e boil.Executor, singular bool, maybeTransaction
 		if object.R == nil {
 			object.R = &transactionR{}
 		}
-		args[0] = object.ID
+		args[0] = object.Hash
 	} else {
 		for i, obj := range slice {
 			if obj.R == nil {
 				obj.R = &transactionR{}
 			}
-			args[i] = obj.ID
+			args[i] = obj.Hash
 		}
 	}
 
@@ -602,7 +593,7 @@ func (transactionL) LoadOutputs(e boil.Executor, singular bool, maybeTransaction
 
 	for _, foreign := range resultSlice {
 		for _, local := range slice {
-			if local.ID == foreign.TransactionID {
+			if local.Hash == foreign.TransactionID {
 				local.R.Outputs = append(local.R.Outputs, foreign)
 				break
 			}
@@ -631,13 +622,13 @@ func (transactionL) LoadTransactionAddresses(e boil.Executor, singular bool, may
 		if object.R == nil {
 			object.R = &transactionR{}
 		}
-		args[0] = object.ID
+		args[0] = object.Hash
 	} else {
 		for i, obj := range slice {
 			if obj.R == nil {
 				obj.R = &transactionR{}
 			}
-			args[i] = obj.ID
+			args[i] = obj.Hash
 		}
 	}
 
@@ -667,7 +658,7 @@ func (transactionL) LoadTransactionAddresses(e boil.Executor, singular bool, may
 
 	for _, foreign := range resultSlice {
 		for _, local := range slice {
-			if local.ID == foreign.TransactionID {
+			if local.Hash == foreign.TransactionID {
 				local.R.TransactionAddresses = append(local.R.TransactionAddresses, foreign)
 				break
 			}
@@ -721,7 +712,7 @@ func (o *Transaction) SetBlock(exec boil.Executor, insert bool, related *Block) 
 		strmangle.SetParamNames("`", "`", 0, []string{"block_id"}),
 		strmangle.WhereClause("`", "`", 0, transactionPrimaryKeyColumns),
 	)
-	values := []interface{}{related.Hash, o.ID}
+	values := []interface{}{related.Hash, o.Hash}
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, updateQuery)
@@ -732,8 +723,7 @@ func (o *Transaction) SetBlock(exec boil.Executor, insert bool, related *Block) 
 		return errors.Wrap(err, "failed to update local table")
 	}
 
-	o.BlockID.String = related.Hash
-	o.BlockID.Valid = true
+	o.BlockID = related.Hash
 
 	if o.R == nil {
 		o.R = &transactionR{
@@ -751,66 +741,6 @@ func (o *Transaction) SetBlock(exec boil.Executor, insert bool, related *Block) 
 		related.R.Transactions = append(related.R.Transactions, o)
 	}
 
-	return nil
-}
-
-// RemoveBlockG relationship.
-// Sets o.R.Block to nil.
-// Removes o from all passed in related items' relationships struct (Optional).
-// Uses the global database handle.
-func (o *Transaction) RemoveBlockG(related *Block) error {
-	return o.RemoveBlock(boil.GetDB(), related)
-}
-
-// RemoveBlockP relationship.
-// Sets o.R.Block to nil.
-// Removes o from all passed in related items' relationships struct (Optional).
-// Panics on error.
-func (o *Transaction) RemoveBlockP(exec boil.Executor, related *Block) {
-	if err := o.RemoveBlock(exec, related); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
-// RemoveBlockGP relationship.
-// Sets o.R.Block to nil.
-// Removes o from all passed in related items' relationships struct (Optional).
-// Uses the global database handle and panics on error.
-func (o *Transaction) RemoveBlockGP(related *Block) {
-	if err := o.RemoveBlock(boil.GetDB(), related); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
-// RemoveBlock relationship.
-// Sets o.R.Block to nil.
-// Removes o from all passed in related items' relationships struct (Optional).
-func (o *Transaction) RemoveBlock(exec boil.Executor, related *Block) error {
-	var err error
-
-	o.BlockID.Valid = false
-	if err = o.Update(exec, "block_id"); err != nil {
-		o.BlockID.Valid = true
-		return errors.Wrap(err, "failed to update local table")
-	}
-
-	o.R.Block = nil
-	if related == nil || related.R == nil {
-		return nil
-	}
-
-	for i, ri := range related.R.Transactions {
-		if o.BlockID.String != ri.BlockID.String {
-			continue
-		}
-
-		ln := len(related.R.Transactions)
-		if ln > 1 && i < ln-1 {
-			related.R.Transactions[i] = related.R.Transactions[ln-1]
-		}
-		related.R.Transactions = related.R.Transactions[:ln-1]
-		break
-	}
 	return nil
 }
 
@@ -1074,7 +1004,7 @@ func (o *Transaction) AddInputs(exec boil.Executor, insert bool, related ...*Inp
 	var err error
 	for _, rel := range related {
 		if insert {
-			rel.TransactionID = o.ID
+			rel.TransactionID = o.Hash
 			if err = rel.Insert(exec); err != nil {
 				return errors.Wrap(err, "failed to insert into foreign table")
 			}
@@ -1084,7 +1014,7 @@ func (o *Transaction) AddInputs(exec boil.Executor, insert bool, related ...*Inp
 				strmangle.SetParamNames("`", "`", 0, []string{"transaction_id"}),
 				strmangle.WhereClause("`", "`", 0, inputPrimaryKeyColumns),
 			)
-			values := []interface{}{o.ID, rel.ID}
+			values := []interface{}{o.Hash, rel.TransactionID, rel.SequenceID}
 
 			if boil.DebugMode {
 				fmt.Fprintln(boil.DebugWriter, updateQuery)
@@ -1095,7 +1025,7 @@ func (o *Transaction) AddInputs(exec boil.Executor, insert bool, related ...*Inp
 				return errors.Wrap(err, "failed to update foreign table")
 			}
 
-			rel.TransactionID = o.ID
+			rel.TransactionID = o.Hash
 		}
 	}
 
@@ -1158,7 +1088,7 @@ func (o *Transaction) AddOutputs(exec boil.Executor, insert bool, related ...*Ou
 	var err error
 	for _, rel := range related {
 		if insert {
-			rel.TransactionID = o.ID
+			rel.TransactionID = o.Hash
 			if err = rel.Insert(exec); err != nil {
 				return errors.Wrap(err, "failed to insert into foreign table")
 			}
@@ -1168,7 +1098,7 @@ func (o *Transaction) AddOutputs(exec boil.Executor, insert bool, related ...*Ou
 				strmangle.SetParamNames("`", "`", 0, []string{"transaction_id"}),
 				strmangle.WhereClause("`", "`", 0, outputPrimaryKeyColumns),
 			)
-			values := []interface{}{o.ID, rel.ID}
+			values := []interface{}{o.Hash, rel.ID}
 
 			if boil.DebugMode {
 				fmt.Fprintln(boil.DebugWriter, updateQuery)
@@ -1179,7 +1109,7 @@ func (o *Transaction) AddOutputs(exec boil.Executor, insert bool, related ...*Ou
 				return errors.Wrap(err, "failed to update foreign table")
 			}
 
-			rel.TransactionID = o.ID
+			rel.TransactionID = o.Hash
 		}
 	}
 
@@ -1242,7 +1172,7 @@ func (o *Transaction) AddTransactionAddresses(exec boil.Executor, insert bool, r
 	var err error
 	for _, rel := range related {
 		if insert {
-			rel.TransactionID = o.ID
+			rel.TransactionID = o.Hash
 			if err = rel.Insert(exec); err != nil {
 				return errors.Wrap(err, "failed to insert into foreign table")
 			}
@@ -1252,7 +1182,7 @@ func (o *Transaction) AddTransactionAddresses(exec boil.Executor, insert bool, r
 				strmangle.SetParamNames("`", "`", 0, []string{"transaction_id"}),
 				strmangle.WhereClause("`", "`", 0, transactionAddressPrimaryKeyColumns),
 			)
-			values := []interface{}{o.ID, rel.TransactionID, rel.AddressID}
+			values := []interface{}{o.Hash, rel.TransactionID, rel.AddressID}
 
 			if boil.DebugMode {
 				fmt.Fprintln(boil.DebugWriter, updateQuery)
@@ -1263,7 +1193,7 @@ func (o *Transaction) AddTransactionAddresses(exec boil.Executor, insert bool, r
 				return errors.Wrap(err, "failed to update foreign table")
 			}
 
-			rel.TransactionID = o.ID
+			rel.TransactionID = o.Hash
 		}
 	}
 
@@ -1299,13 +1229,13 @@ func Transactions(exec boil.Executor, mods ...qm.QueryMod) transactionQuery {
 }
 
 // FindTransactionG retrieves a single record by ID.
-func FindTransactionG(id uint64, selectCols ...string) (*Transaction, error) {
-	return FindTransaction(boil.GetDB(), id, selectCols...)
+func FindTransactionG(hash string, selectCols ...string) (*Transaction, error) {
+	return FindTransaction(boil.GetDB(), hash, selectCols...)
 }
 
 // FindTransactionGP retrieves a single record by ID, and panics on error.
-func FindTransactionGP(id uint64, selectCols ...string) *Transaction {
-	retobj, err := FindTransaction(boil.GetDB(), id, selectCols...)
+func FindTransactionGP(hash string, selectCols ...string) *Transaction {
+	retobj, err := FindTransaction(boil.GetDB(), hash, selectCols...)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -1315,7 +1245,7 @@ func FindTransactionGP(id uint64, selectCols ...string) *Transaction {
 
 // FindTransaction retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindTransaction(exec boil.Executor, id uint64, selectCols ...string) (*Transaction, error) {
+func FindTransaction(exec boil.Executor, hash string, selectCols ...string) (*Transaction, error) {
 	transactionObj := &Transaction{}
 
 	sel := "*"
@@ -1323,10 +1253,10 @@ func FindTransaction(exec boil.Executor, id uint64, selectCols ...string) (*Tran
 		sel = strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, selectCols), ",")
 	}
 	query := fmt.Sprintf(
-		"select %s from `transactions` where `id`=?", sel,
+		"select %s from `transactions` where `hash`=?", sel,
 	)
 
-	q := queries.Raw(exec, query, id)
+	q := queries.Raw(exec, query, hash)
 
 	err := q.Bind(transactionObj)
 	if err != nil {
@@ -1340,8 +1270,8 @@ func FindTransaction(exec boil.Executor, id uint64, selectCols ...string) (*Tran
 }
 
 // FindTransactionP retrieves a single record by ID with an executor, and panics on error.
-func FindTransactionP(exec boil.Executor, id uint64, selectCols ...string) *Transaction {
-	retobj, err := FindTransaction(exec, id, selectCols...)
+func FindTransactionP(exec boil.Executor, hash string, selectCols ...string) *Transaction {
+	retobj, err := FindTransaction(exec, hash, selectCols...)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -1431,31 +1361,19 @@ func (o *Transaction) Insert(exec boil.Executor, whitelist ...string) error {
 		fmt.Fprintln(boil.DebugWriter, vals)
 	}
 
-	result, err := exec.Exec(cache.query, vals...)
-
+	_, err = exec.Exec(cache.query, vals...)
 	if err != nil {
 		return errors.Wrap(err, "model: unable to insert into transactions")
 	}
 
-	var lastID int64
 	var identifierCols []interface{}
 
 	if len(cache.retMapping) == 0 {
 		goto CacheNoHooks
 	}
 
-	lastID, err = result.LastInsertId()
-	if err != nil {
-		return ErrSyncFail
-	}
-
-	o.ID = uint64(lastID)
-	if lastID != 0 && len(cache.retMapping) == 1 && cache.retMapping[0] == transactionMapping["ID"] {
-		goto CacheNoHooks
-	}
-
 	identifierCols = []interface{}{
-		o.ID,
+		o.Hash,
 	}
 
 	if boil.DebugMode {
@@ -1710,7 +1628,7 @@ func (o *Transaction) Upsert(exec boil.Executor, updateColumns []string, whiteli
 
 		cache.query = queries.BuildUpsertQueryMySQL(dialect, "transactions", update, insert)
 		cache.retQuery = fmt.Sprintf(
-			"SELECT %s FROM `transactions` WHERE `id`=?",
+			"SELECT %s FROM `transactions` WHERE `hash`=?",
 			strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, ret), ","),
 		)
 
@@ -1738,31 +1656,19 @@ func (o *Transaction) Upsert(exec boil.Executor, updateColumns []string, whiteli
 		fmt.Fprintln(boil.DebugWriter, vals)
 	}
 
-	result, err := exec.Exec(cache.query, vals...)
-
+	_, err = exec.Exec(cache.query, vals...)
 	if err != nil {
 		return errors.Wrap(err, "model: unable to upsert for transactions")
 	}
 
-	var lastID int64
 	var identifierCols []interface{}
 
 	if len(cache.retMapping) == 0 {
 		goto CacheNoHooks
 	}
 
-	lastID, err = result.LastInsertId()
-	if err != nil {
-		return ErrSyncFail
-	}
-
-	o.ID = uint64(lastID)
-	if lastID != 0 && len(cache.retMapping) == 1 && cache.retMapping[0] == transactionMapping["ID"] {
-		goto CacheNoHooks
-	}
-
 	identifierCols = []interface{}{
-		o.ID,
+		o.Hash,
 	}
 
 	if boil.DebugMode {
@@ -1821,7 +1727,7 @@ func (o *Transaction) Delete(exec boil.Executor) error {
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), transactionPrimaryKeyMapping)
-	sql := "DELETE FROM `transactions` WHERE `id`=?"
+	sql := "DELETE FROM `transactions` WHERE `hash`=?"
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, sql)
@@ -1939,7 +1845,7 @@ func (o *Transaction) ReloadG() error {
 // Reload refetches the object from the database
 // using the primary keys with an executor.
 func (o *Transaction) Reload(exec boil.Executor) error {
-	ret, err := FindTransaction(exec, o.ID)
+	ret, err := FindTransaction(exec, o.Hash)
 	if err != nil {
 		return err
 	}
@@ -2006,16 +1912,16 @@ func (o *TransactionSlice) ReloadAll(exec boil.Executor) error {
 }
 
 // TransactionExists checks if the Transaction row exists.
-func TransactionExists(exec boil.Executor, id uint64) (bool, error) {
+func TransactionExists(exec boil.Executor, hash string) (bool, error) {
 	var exists bool
-	sql := "select exists(select 1 from `transactions` where `id`=? limit 1)"
+	sql := "select exists(select 1 from `transactions` where `hash`=? limit 1)"
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, sql)
-		fmt.Fprintln(boil.DebugWriter, id)
+		fmt.Fprintln(boil.DebugWriter, hash)
 	}
 
-	row := exec.QueryRow(sql, id)
+	row := exec.QueryRow(sql, hash)
 
 	err := row.Scan(&exists)
 	if err != nil {
@@ -2026,13 +1932,13 @@ func TransactionExists(exec boil.Executor, id uint64) (bool, error) {
 }
 
 // TransactionExistsG checks if the Transaction row exists.
-func TransactionExistsG(id uint64) (bool, error) {
-	return TransactionExists(boil.GetDB(), id)
+func TransactionExistsG(hash string) (bool, error) {
+	return TransactionExists(boil.GetDB(), hash)
 }
 
 // TransactionExistsGP checks if the Transaction row exists. Panics on error.
-func TransactionExistsGP(id uint64) bool {
-	e, err := TransactionExists(boil.GetDB(), id)
+func TransactionExistsGP(hash string) bool {
+	e, err := TransactionExists(boil.GetDB(), hash)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -2041,8 +1947,8 @@ func TransactionExistsGP(id uint64) bool {
 }
 
 // TransactionExistsP checks if the Transaction row exists. Panics on error.
-func TransactionExistsP(exec boil.Executor, id uint64) bool {
-	e, err := TransactionExists(exec, id)
+func TransactionExistsP(exec boil.Executor, hash string) bool {
+	e, err := TransactionExists(exec, hash)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}

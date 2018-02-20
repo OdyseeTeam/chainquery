@@ -129,7 +129,7 @@ func testTransactionsExists(t *testing.T) {
 		t.Error(err)
 	}
 
-	e, err := TransactionExists(tx, transaction.ID)
+	e, err := TransactionExists(tx, transaction.Hash)
 	if err != nil {
 		t.Errorf("Unable to check if Transaction exists: %s", err)
 	}
@@ -153,7 +153,7 @@ func testTransactionsFind(t *testing.T) {
 		t.Error(err)
 	}
 
-	transactionFound, err := FindTransaction(tx, transaction.ID)
+	transactionFound, err := FindTransaction(tx, transaction.Hash)
 	if err != nil {
 		t.Error(err)
 	}
@@ -418,8 +418,8 @@ func testTransactionToManyInputs(t *testing.T) {
 	randomize.Struct(seed, &b, inputDBTypes, false, inputColumnsWithDefault...)
 	randomize.Struct(seed, &c, inputDBTypes, false, inputColumnsWithDefault...)
 
-	b.TransactionID = a.ID
-	c.TransactionID = a.ID
+	b.TransactionID = a.Hash
+	c.TransactionID = a.Hash
 	if err = b.Insert(tx); err != nil {
 		t.Fatal(err)
 	}
@@ -490,8 +490,8 @@ func testTransactionToManyOutputs(t *testing.T) {
 	randomize.Struct(seed, &b, outputDBTypes, false, outputColumnsWithDefault...)
 	randomize.Struct(seed, &c, outputDBTypes, false, outputColumnsWithDefault...)
 
-	b.TransactionID = a.ID
-	c.TransactionID = a.ID
+	b.TransactionID = a.Hash
+	c.TransactionID = a.Hash
 	if err = b.Insert(tx); err != nil {
 		t.Fatal(err)
 	}
@@ -562,8 +562,8 @@ func testTransactionToManyTransactionAddresses(t *testing.T) {
 	randomize.Struct(seed, &b, transactionAddressDBTypes, false, transactionAddressColumnsWithDefault...)
 	randomize.Struct(seed, &c, transactionAddressDBTypes, false, transactionAddressColumnsWithDefault...)
 
-	b.TransactionID = a.ID
-	c.TransactionID = a.ID
+	b.TransactionID = a.Hash
+	c.TransactionID = a.Hash
 	if err = b.Insert(tx); err != nil {
 		t.Fatal(err)
 	}
@@ -906,11 +906,11 @@ func testTransactionToManyAddOpInputs(t *testing.T) {
 		first := x[0]
 		second := x[1]
 
-		if a.ID != first.TransactionID {
-			t.Error("foreign key was wrong value", a.ID, first.TransactionID)
+		if a.Hash != first.TransactionID {
+			t.Error("foreign key was wrong value", a.Hash, first.TransactionID)
 		}
-		if a.ID != second.TransactionID {
-			t.Error("foreign key was wrong value", a.ID, second.TransactionID)
+		if a.Hash != second.TransactionID {
+			t.Error("foreign key was wrong value", a.Hash, second.TransactionID)
 		}
 
 		if first.R.Transaction != &a {
@@ -980,11 +980,11 @@ func testTransactionToManyAddOpOutputs(t *testing.T) {
 		first := x[0]
 		second := x[1]
 
-		if a.ID != first.TransactionID {
-			t.Error("foreign key was wrong value", a.ID, first.TransactionID)
+		if a.Hash != first.TransactionID {
+			t.Error("foreign key was wrong value", a.Hash, first.TransactionID)
 		}
-		if a.ID != second.TransactionID {
-			t.Error("foreign key was wrong value", a.ID, second.TransactionID)
+		if a.Hash != second.TransactionID {
+			t.Error("foreign key was wrong value", a.Hash, second.TransactionID)
 		}
 
 		if first.R.Transaction != &a {
@@ -1054,11 +1054,11 @@ func testTransactionToManyAddOpTransactionAddresses(t *testing.T) {
 		first := x[0]
 		second := x[1]
 
-		if a.ID != first.TransactionID {
-			t.Error("foreign key was wrong value", a.ID, first.TransactionID)
+		if a.Hash != first.TransactionID {
+			t.Error("foreign key was wrong value", a.Hash, first.TransactionID)
 		}
-		if a.ID != second.TransactionID {
-			t.Error("foreign key was wrong value", a.ID, second.TransactionID)
+		if a.Hash != second.TransactionID {
+			t.Error("foreign key was wrong value", a.Hash, second.TransactionID)
 		}
 
 		if first.R.Transaction != &a {
@@ -1092,20 +1092,18 @@ func testTransactionToOneBlockUsingBlock(t *testing.T) {
 	var foreign Block
 
 	seed := randomize.NewSeed()
-	if err := randomize.Struct(seed, &local, transactionDBTypes, true, transactionColumnsWithDefault...); err != nil {
+	if err := randomize.Struct(seed, &local, transactionDBTypes, false, transactionColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize Transaction struct: %s", err)
 	}
 	if err := randomize.Struct(seed, &foreign, blockDBTypes, false, blockColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize Block struct: %s", err)
 	}
 
-	local.BlockID.Valid = true
-
 	if err := foreign.Insert(tx); err != nil {
 		t.Fatal(err)
 	}
 
-	local.BlockID.String = foreign.Hash
+	local.BlockID = foreign.Hash
 	if err := local.Insert(tx); err != nil {
 		t.Fatal(err)
 	}
@@ -1176,73 +1174,22 @@ func testTransactionToOneSetOpBlockUsingBlock(t *testing.T) {
 		if x.R.Transactions[0] != &a {
 			t.Error("failed to append to foreign relationship struct")
 		}
-		if a.BlockID.String != x.Hash {
-			t.Error("foreign key was wrong value", a.BlockID.String)
+		if a.BlockID != x.Hash {
+			t.Error("foreign key was wrong value", a.BlockID)
 		}
 
-		zero := reflect.Zero(reflect.TypeOf(a.BlockID.String))
-		reflect.Indirect(reflect.ValueOf(&a.BlockID.String)).Set(zero)
+		zero := reflect.Zero(reflect.TypeOf(a.BlockID))
+		reflect.Indirect(reflect.ValueOf(&a.BlockID)).Set(zero)
 
 		if err = a.Reload(tx); err != nil {
 			t.Fatal("failed to reload", err)
 		}
 
-		if a.BlockID.String != x.Hash {
-			t.Error("foreign key was wrong value", a.BlockID.String, x.Hash)
+		if a.BlockID != x.Hash {
+			t.Error("foreign key was wrong value", a.BlockID, x.Hash)
 		}
 	}
 }
-
-func testTransactionToOneRemoveOpBlockUsingBlock(t *testing.T) {
-	var err error
-
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-
-	var a Transaction
-	var b Block
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, transactionDBTypes, false, strmangle.SetComplement(transactionPrimaryKeyColumns, transactionColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &b, blockDBTypes, false, strmangle.SetComplement(blockPrimaryKeyColumns, blockColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-
-	if err = a.Insert(tx); err != nil {
-		t.Fatal(err)
-	}
-
-	if err = a.SetBlock(tx, true, &b); err != nil {
-		t.Fatal(err)
-	}
-
-	if err = a.RemoveBlock(tx, &b); err != nil {
-		t.Error("failed to remove relationship")
-	}
-
-	count, err := a.Block(tx).Count()
-	if err != nil {
-		t.Error(err)
-	}
-	if count != 0 {
-		t.Error("want no relationships remaining")
-	}
-
-	if a.R.Block != nil {
-		t.Error("R struct entry should be nil")
-	}
-
-	if a.BlockID.Valid {
-		t.Error("foreign key value should be nil")
-	}
-
-	if len(b.R.Transactions) != 0 {
-		t.Error("failed to remove a from b's relationships")
-	}
-}
-
 func testTransactionsReload(t *testing.T) {
 	t.Parallel()
 
@@ -1313,7 +1260,7 @@ func testTransactionsSelect(t *testing.T) {
 }
 
 var (
-	transactionDBTypes = map[string]string{`BlockID`: `varchar`, `Created`: `datetime`, `CreatedTime`: `int`, `Fee`: `decimal`, `Hash`: `varchar`, `ID`: `bigint`, `InputCount`: `int`, `LockTime`: `int`, `Modified`: `datetime`, `OutputCount`: `int`, `Raw`: `text`, `TransactionSize`: `bigint`, `TransactionTime`: `bigint`, `Value`: `decimal`, `Version`: `int`}
+	transactionDBTypes = map[string]string{`BlockID`: `varchar`, `CreatedTime`: `int`, `Fee`: `float`, `Hash`: `varchar`, `InputCount`: `int`, `LockTime`: `int`, `OutputCount`: `int`, `Raw`: `text`, `TransactionSize`: `bigint`, `TransactionTime`: `bigint`, `Value`: `float`, `Version`: `int`}
 	_                  = bytes.MinRead
 )
 

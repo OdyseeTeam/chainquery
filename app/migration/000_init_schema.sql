@@ -2,8 +2,6 @@
 
 -- +migrate StatementBegin
 CREATE TABLE IF NOT EXISTS blocks (
-    id SERIAL,
-
     bits VARCHAR(20) NOT NULL,
     chainwork VARCHAR(70) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
     confirmations INTEGER UNSIGNED NOT NULL,
@@ -14,41 +12,35 @@ CREATE TABLE IF NOT EXISTS blocks (
     merkle_root VARCHAR(70) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
     name_claim_root VARCHAR(70) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
     nonce BIGINT UNSIGNED NOT NULL,
-    previous_block_hash VARCHAR(70) CHARACTER SET latin1 COLLATE latin1_general_ci,
-    next_block_hash VARCHAR(70) CHARACTER SET latin1 COLLATE latin1_general_ci,
+    previous_block_id VARCHAR(70) CHARACTER SET latin1 COLLATE latin1_general_ci,
+    next_block_id VARCHAR(70) CHARACTER SET latin1 COLLATE latin1_general_ci,
     block_size BIGINT UNSIGNED NOT NULL,
     target VARCHAR(70) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
     block_time BIGINT UNSIGNED NOT NULL,
     version BIGINT UNSIGNED NOT NULL,
     version_hex VARCHAR(10) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
-    transaction_hashes TEXT,
+    transaction_hashes TEXT NOT NULL,
     transactions_processed TINYINT(1) DEFAULT 0 NOT NULL,
 
-    created DATETIME NOT NULL,
-    modified DATETIME NOT NULL,
 
-    PRIMARY KEY pk_block (id),
-    UNIQUE KEY idx_blockhash (hash),
+    PRIMARY KEY pk_blockhash (hash),
     CONSTRAINT Cnt_TransactionHashesValidJson CHECK(transaction_hashes IS NULL OR JSON_VALID(transaction_hashes)),
+    CONSTRAINT fk_previous_block FOREIGN KEY (previous_block_id) references blocks (hash) ON UPDATE NO ACTION ON DELETE NO ACTION,
+    CONSTRAINT fk_next_block FOREIGN KEY (next_block_id) references blocks (hash) ON UPDATE NO ACTION ON DELETE NO ACTION,
     INDEX idx_block_height (height),
     INDEX idx_block_time (block_time),
-    INDEX idx_median_time (median_time),
-    INDEX idx_previous_block_hash (previous_block_hash),
-    INDEX idx_block_created (created),
-    INDEX idx_block_modified (modified)
+    INDEX idx_median_time (median_time)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4;
 -- +migrate StatementEnd
 
 -- +migrate StatementBegin
 CREATE TABLE IF NOT EXISTS transactions
 (
-    id SERIAL,
-
-    block_id VARCHAR(70) CHARACTER SET latin1 COLLATE latin1_general_ci COMMENT 'named id instead of hash for SQLBoiler',
+    block_id VARCHAR(70) CHARACTER SET latin1 COLLATE latin1_general_ci COMMENT 'named id instead of hash for SQLBoiler' NOT NULL,
     input_count INTEGER UNSIGNED NOT NULL,
     output_count INTEGER UNSIGNED NOT NULL,
-    value DECIMAL(18,8) NOT NULL,
-    fee DECIMAL(18,8) DEFAULT 0 NOT NULL,
+    value FLOAT DEFAULT '0.00000000' NOT NULL,
+    fee FLOAT DEFAULT '0.00000000' NOT NULL,
     transaction_time BIGINT UNSIGNED,
     transaction_size BIGINT UNSIGNED NOT NULL,
     hash VARCHAR(70) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
@@ -56,17 +48,11 @@ CREATE TABLE IF NOT EXISTS transactions
     lock_time INTEGER UNSIGNED NOT NULL,
     raw TEXT,
 
-    created DATETIME NOT NULL,
-    modified DATETIME NOT NULL,
-
     created_time INTEGER UNSIGNED NOT NULL,
-    PRIMARY KEY pk_transaction (id),
+    PRIMARY KEY pk_transaction (hash),
     CONSTRAINT fk_transaction_block FOREIGN KEY (block_id) REFERENCES blocks (hash),
-    UNIQUE KEY idx_transaction_hash (hash),
     INDEX idx_transaction_time (transaction_time),
-    INDEX idx_transaction_created_time (created_time),
-    INDEX idx_transaction_created (created),
-    INDEX idx_transaction_modified (modified)
+    INDEX idx_transaction_created_time (created_time)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4;
 -- +migrate StatementEnd
 
@@ -100,17 +86,14 @@ CREATE TABLE IF NOT EXISTS addresses
 -- +migrate StatementBegin
 CREATE TABLE IF NOT EXISTS inputs
 (
-    id SERIAL,
-
-    transaction_id BIGINT UNSIGNED NOT NULL,
-    transaction_hash VARCHAR(70) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
+    transaction_id VARCHAR(70) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
     address_id BIGINT UNSIGNED,
     is_coinbase TINYINT(1) DEFAULT 0 NOT NULL,
     coinbase VARCHAR(70) CHARACTER SET latin1 COLLATE latin1_general_ci,
     prevout_hash VARCHAR(70) CHARACTER SET latin1 COLLATE latin1_general_ci,
     prevout_n INTEGER UNSIGNED,
     prevout_spend_updated TINYINT(1) DEFAULT 0 NOT NULL,
-    sequence INTEGER UNSIGNED,
+    sequence_id INTEGER UNSIGNED,
     value DECIMAL(18,8),
     script_sig_ssm TEXT CHARACTER SET latin1 COLLATE latin1_general_ci,
     script_sig_hex TEXT CHARACTER SET latin1 COLLATE latin1_general_ci,
@@ -118,8 +101,8 @@ CREATE TABLE IF NOT EXISTS inputs
     created DATETIME NOT NULL,
     modified DATETIME NOT NULL,
 
-    PRIMARY KEY pk_input (id),
-    CONSTRAINT fk_input_transaction FOREIGN KEY  (transaction_id) REFERENCES transactions (id),
+    PRIMARY KEY pk_input (transaction_id,sequence_id),
+    CONSTRAINT fk_input_transaction FOREIGN KEY  (transaction_id) REFERENCES transactions (hash),
     CONSTRAINT fk_input_address FOREIGN KEY (address_id) REFERENCES addresses (Id),
     INDEX idx_input_value (value),
     INDEX idx_prevout_hash (prevout_hash),
@@ -132,9 +115,10 @@ CREATE TABLE IF NOT EXISTS inputs
 CREATE TABLE IF NOT EXISTS outputs
 (
     id SERIAL,
-    transaction_id BIGINT UNSIGNED NOT NULL,
+
     value DECIMAL(18,8),
     v_out INTEGER UNSIGNED,
+    transaction_id VARCHAR(70) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
     type VARCHAR(20) CHARACTER SET latin1 COLLATE latin1_general_ci,
     script_pub_key_asm TEXT CHARACTER SET latin1 COLLATE latin1_general_ci,
     script_pub_key_hex TEXT CHARACTER SET latin1 COLLATE latin1_general_ci,
@@ -142,12 +126,13 @@ CREATE TABLE IF NOT EXISTS outputs
     hash160 VARCHAR(50) CHARACTER SET latin1 COLLATE latin1_general_ci,
     addresslist TEXT CHARACTER SET latin1 COLLATE latin1_general_ci,
     is_spent TINYINT(1) DEFAULT 0 NOT NULL,
-    spent_by_input_id BIGINT UNSIGNED,
+    spent_by_transaction_id VARCHAR(70) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
+    spent_by_transaction_sequence_id INTEGER UNSIGNED,
     created DATETIME NOT NULL,
     modified DATETIME NOT NULL,
     PRIMARY KEY pk_output (id),
-    CONSTRAINT fk_output_transaction FOREIGN KEY (transaction_id) REFERENCES transactions (id),
-    CONSTRAINT fk_output_spent_by_input FOREIGN KEY (spent_by_input_id) REFERENCES inputs (id),
+    CONSTRAINT fk_output_transaction FOREIGN KEY (transaction_id) REFERENCES transactions (hash),
+    CONSTRAINT fk_output_spent_by_input FOREIGN KEY (spent_by_transaction_id,spent_by_transaction_sequence_id) REFERENCES inputs (transaction_id,sequence_id),
     CONSTRAINT cnt_addresslist_valid_json CHECK(addresslist IS NULL OR JSON_VALID(addresses)),
     INDEX idx_output_value (value),
     INDEX idx_ouptut_created (created),
@@ -169,13 +154,13 @@ CREATE TABLE IF NOT EXISTS outputs_addresses
 -- +migrate StatementBegin
 CREATE TABLE IF NOT EXISTS transaction_addresses
 (
-    transaction_id BIGINT UNSIGNED NOT NULL,
+    transaction_id VARCHAR(70) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
     address_id BIGINT UNSIGNED NOT NULL,
     debit_amount DECIMAL(18,8) DEFAULT 0 NOT NULL COMMENT 'Sum of the inputs to this address for the tx',
     credit_amount DECIMAL(18,8) DEFAULT 0 NOT NULL COMMENT 'Sum of the outputs to this address for the tx',
     latest_transaction_time DATETIME NOT NULL,
     PRIMARY KEY pk_transaction_address (transaction_id, address_id),
-    CONSTRAINT idx_transactions_addresses_transaction FOREIGN KEY (transaction_id) REFERENCES transactions (id),
+    CONSTRAINT idx_transactions_addresses_transaction FOREIGN KEY (transaction_id) REFERENCES transactions (hash),
     CONSTRAINT idx_transactions_addresses_address FOREIGN KEY (address_id) REFERENCES addresses (id),
     INDEX idx_transactions_addresses_latest_transaction_time (latest_transaction_time),
     INDEX idx_transactions_addresses_debit (debit_amount),

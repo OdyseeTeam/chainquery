@@ -4,9 +4,9 @@ import (
 	"net/url"
 
 	"fmt"
-	//"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/lbryio/errors.go"
 	"github.com/mitchellh/mapstructure"
+	"github.com/sirupsen/logrus"
 	"github.com/ybbus/jsonrpc"
 	"reflect"
 	"sort"
@@ -67,16 +67,6 @@ type response struct {
 	err    error
 }
 
-// jsonRequest holds information about a json request that is used to properly
-// detect, interpret, and deliver a reply to it.
-type jsonRequest struct {
-	id             uint64
-	method         string
-	cmd            interface{}
-	marshalledJSON []byte
-	responseChan   chan *response
-}
-
 func decode(data interface{}, targetStruct interface{}) error {
 	config := &mapstructure.DecoderConfig{
 		Metadata: nil,
@@ -85,12 +75,10 @@ func decode(data interface{}, targetStruct interface{}) error {
 		//WeaklyTypedInput: true,
 		DecodeHook: FixDecodeProto,
 	}
-
 	decoder, err := mapstructure.NewDecoder(config)
 	if err != nil {
 		return errors.Wrap(err, 0)
 	}
-
 	err = decoder.Decode(data)
 	if err != nil {
 		return errors.Wrap(err, 0)
@@ -99,7 +87,6 @@ func decode(data interface{}, targetStruct interface{}) error {
 }
 
 func debugParams(params ...interface{}) string {
-	println("debug number params", len(params))
 	var s []string
 	for _, v := range params {
 		r := reflect.ValueOf(v)
@@ -116,36 +103,76 @@ func debugParams(params ...interface{}) string {
 }
 
 func (d *Client) call(response interface{}, command string, params ...interface{}) error {
-	println("number of params1", len(params))
-	var p []interface{}
-	if len(params) != 0 {
-		p = params
+	if len(params) == 0 {
+		result, err := d.callNoDecode(command)
+		if err != nil {
+			return err
+		}
+		return decode(result, response)
 	}
-	println("number of params2", len(p))
-	result, err := d.callNoDecode(command, p)
-	if err != nil {
-		return err
+	if len(params) == 1 {
+		result, err := d.callNoDecode(command, params[0])
+		if err != nil {
+			return err
+		}
+		return decode(result, response)
 	}
-	return decode(result, response)
+	if len(params) == 2 {
+		result, err := d.callNoDecode(command, params[0], params[1])
+		if err != nil {
+			return err
+		}
+		return decode(result, response)
+	}
+	logrus.Error("parameter size is greater than 1")
+	return nil
 }
 
 func (c *Client) GetBlock(blockHash string) (*GetBlockResponse, error) {
 	response := new(GetBlockResponse)
-	//hash, _ := chainhash.NewHashFromStr(blockHash)
-	return response, c.call(response, "getblock", "MarkieMark")
+	return response, c.call(&response, "getblock", blockHash)
 }
-func (c *Client) GetBlockHash(i int64) (string, error) {
-	//return "b6d31e06e38debfcb906ff262fd786c3a8dbd5cdc81469cf7a7d89ebe9257b5a", nil
-	var response string = ""
-	return response, c.call(response, "getblockhash", i)
+func (c *Client) GetBlockHash(i uint64) (*string, error) {
+	rawresponse, err := c.callNoDecode("getblockhash", i)
+	if err != nil {
+		return nil, err
+	}
+	value := rawresponse.(string)
+	logrus.Debug("GetBlockHashResponse ", value)
+	return &value, nil
 }
 func (client *Client) Shutdown() {
 	client.Shutdown()
 }
-func (c *Client) GetBlockCount() (int64, error) {
-	var response int64 = 0
-	return response, c.call(response, "getblockcount")
+
+func (c *Client) GetBlockCount() (*uint64, error) {
+	rawresponse, err := c.callNoDecode("getblockcount")
+	if err != nil {
+		return nil, err
+	}
+	value, err := decodeNumber(rawresponse)
+	if err != nil {
+		return nil, err
+	}
+	intValue := uint64(value.IntPart())
+	logrus.Debug("GetBlockCountResult ", intValue)
+	return &intValue, nil
+
 }
-func (client *Client) GetRawTransactionResponse(hash string) (*TxRawResult, error) {
-	return nil, nil
+func (c *Client) GetRawTransactionResponse(hash string) (*TxRawResult, error) {
+	response := new(TxRawResult)
+	return response, c.call(&response, "getrawtransaction", hash, 1)
+}
+func (c *Client) GetBalance(s string) (*float64, error) {
+	rawresponse, err := c.callNoDecode("getblance")
+	if err != nil {
+		return nil, err
+	}
+	value, err := decodeNumber(rawresponse)
+	if err != nil {
+		return nil, err
+	}
+	floatValue, _ := value.Float64()
+	logrus.Debug("getbalance ", floatValue)
+	return &floatValue, nil
 }

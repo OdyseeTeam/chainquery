@@ -36,11 +36,12 @@ type GetBlockResponse struct {
 	Tx            []string      `json:"tx,omitempty"`
 	RawTx         []TxRawResult `json:"rawtx,omitempty"`
 	Time          int64         `json:"time"`
-	Nonce         uint32        `json:"nonce"`
+	Nonce         uint64        `json:"nonce"`
 	Bits          string        `json:"bits"`
 	Difficulty    float64       `json:"difficulty"`
 	PreviousHash  string        `json:"previousblockhash"`
 	NextHash      string        `json:"nextblockhash,omitempty"`
+	ChainWork     string        `json:"chainwork"`
 }
 
 // TxRawResult models the data from the getrawtransaction command.
@@ -51,7 +52,7 @@ type TxRawResult struct {
 	Size          int32  `json:"size,omitempty"`
 	Vsize         int32  `json:"vsize,omitempty"`
 	Version       int32  `json:"version"`
-	LockTime      uint32 `json:"locktime"`
+	LockTime      uint64 `json:"locktime"`
 	Vin           []Vin  `json:"vin"`
 	Vout          []Vout `json:"vout"`
 	BlockHash     string `json:"blockhash,omitempty"`
@@ -64,7 +65,7 @@ type TxRawResult struct {
 // getrawtransaction and decoderawtransaction use the same structure.
 type Vout struct {
 	Value        float64            `json:"value"`
-	N            uint32             `json:"n"`
+	N            uint64             `json:"n"`
 	ScriptPubKey ScriptPubKeyResult `json:"scriptPubKey"`
 }
 
@@ -74,9 +75,9 @@ type Vout struct {
 type Vin struct {
 	Coinbase  string     `json:"coinbase"`
 	Txid      string     `json:"txid"`
-	Vout      uint32     `json:"vout"`
+	Vout      uint64     `json:"vout"`
 	ScriptSig *ScriptSig `json:"scriptSig"`
-	Sequence  uint32     `json:"sequence"`
+	Sequence  uint64     `json:"sequence"`
 	Witness   []string   `json:"txinwitness"`
 }
 

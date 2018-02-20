@@ -21,7 +21,7 @@ import (
 
 // TransactionAddress is an object representing the database table.
 type TransactionAddress struct {
-	TransactionID         uint64    `boil:"transaction_id" json:"transaction_id" toml:"transaction_id" yaml:"transaction_id"`
+	TransactionID         string    `boil:"transaction_id" json:"transaction_id" toml:"transaction_id" yaml:"transaction_id"`
 	AddressID             uint64    `boil:"address_id" json:"address_id" toml:"address_id" yaml:"address_id"`
 	DebitAmount           string    `boil:"debit_amount" json:"debit_amount" toml:"debit_amount" yaml:"debit_amount"`
 	CreditAmount          string    `boil:"credit_amount" json:"credit_amount" toml:"credit_amount" yaml:"credit_amount"`
@@ -217,7 +217,7 @@ func (o *TransactionAddress) TransactionG(mods ...qm.QueryMod) transactionQuery 
 // Transaction pointed to by the foreign key.
 func (o *TransactionAddress) Transaction(exec boil.Executor, mods ...qm.QueryMod) transactionQuery {
 	queryMods := []qm.QueryMod{
-		qm.Where("id=?", o.TransactionID),
+		qm.Where("hash=?", o.TransactionID),
 	}
 
 	queryMods = append(queryMods, mods...)
@@ -326,7 +326,7 @@ func (transactionAddressL) LoadTransaction(e boil.Executor, singular bool, maybe
 	}
 
 	query := fmt.Sprintf(
-		"select * from `transactions` where `id` in (%s)",
+		"select * from `transactions` where `hash` in (%s)",
 		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
 	)
 
@@ -356,7 +356,7 @@ func (transactionAddressL) LoadTransaction(e boil.Executor, singular bool, maybe
 
 	for _, local := range slice {
 		for _, foreign := range resultSlice {
-			if local.TransactionID == foreign.ID {
+			if local.TransactionID == foreign.Hash {
 				local.R.Transaction = foreign
 				break
 			}
@@ -486,7 +486,7 @@ func (o *TransactionAddress) SetTransaction(exec boil.Executor, insert bool, rel
 		strmangle.SetParamNames("`", "`", 0, []string{"transaction_id"}),
 		strmangle.WhereClause("`", "`", 0, transactionAddressPrimaryKeyColumns),
 	)
-	values := []interface{}{related.ID, o.TransactionID, o.AddressID}
+	values := []interface{}{related.Hash, o.TransactionID, o.AddressID}
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, updateQuery)
@@ -497,7 +497,7 @@ func (o *TransactionAddress) SetTransaction(exec boil.Executor, insert bool, rel
 		return errors.Wrap(err, "failed to update local table")
 	}
 
-	o.TransactionID = related.ID
+	o.TransactionID = related.Hash
 
 	if o.R == nil {
 		o.R = &transactionAddressR{
@@ -530,12 +530,12 @@ func TransactionAddresses(exec boil.Executor, mods ...qm.QueryMod) transactionAd
 }
 
 // FindTransactionAddressG retrieves a single record by ID.
-func FindTransactionAddressG(transactionID uint64, addressID uint64, selectCols ...string) (*TransactionAddress, error) {
+func FindTransactionAddressG(transactionID string, addressID uint64, selectCols ...string) (*TransactionAddress, error) {
 	return FindTransactionAddress(boil.GetDB(), transactionID, addressID, selectCols...)
 }
 
 // FindTransactionAddressGP retrieves a single record by ID, and panics on error.
-func FindTransactionAddressGP(transactionID uint64, addressID uint64, selectCols ...string) *TransactionAddress {
+func FindTransactionAddressGP(transactionID string, addressID uint64, selectCols ...string) *TransactionAddress {
 	retobj, err := FindTransactionAddress(boil.GetDB(), transactionID, addressID, selectCols...)
 	if err != nil {
 		panic(boil.WrapErr(err))
@@ -546,7 +546,7 @@ func FindTransactionAddressGP(transactionID uint64, addressID uint64, selectCols
 
 // FindTransactionAddress retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindTransactionAddress(exec boil.Executor, transactionID uint64, addressID uint64, selectCols ...string) (*TransactionAddress, error) {
+func FindTransactionAddress(exec boil.Executor, transactionID string, addressID uint64, selectCols ...string) (*TransactionAddress, error) {
 	transactionAddressObj := &TransactionAddress{}
 
 	sel := "*"
@@ -571,7 +571,7 @@ func FindTransactionAddress(exec boil.Executor, transactionID uint64, addressID 
 }
 
 // FindTransactionAddressP retrieves a single record by ID with an executor, and panics on error.
-func FindTransactionAddressP(exec boil.Executor, transactionID uint64, addressID uint64, selectCols ...string) *TransactionAddress {
+func FindTransactionAddressP(exec boil.Executor, transactionID string, addressID uint64, selectCols ...string) *TransactionAddress {
 	retobj, err := FindTransactionAddress(exec, transactionID, addressID, selectCols...)
 	if err != nil {
 		panic(boil.WrapErr(err))
@@ -1215,7 +1215,7 @@ func (o *TransactionAddressSlice) ReloadAll(exec boil.Executor) error {
 }
 
 // TransactionAddressExists checks if the TransactionAddress row exists.
-func TransactionAddressExists(exec boil.Executor, transactionID uint64, addressID uint64) (bool, error) {
+func TransactionAddressExists(exec boil.Executor, transactionID string, addressID uint64) (bool, error) {
 	var exists bool
 	sql := "select exists(select 1 from `transaction_addresses` where `transaction_id`=? AND `address_id`=? limit 1)"
 
@@ -1235,12 +1235,12 @@ func TransactionAddressExists(exec boil.Executor, transactionID uint64, addressI
 }
 
 // TransactionAddressExistsG checks if the TransactionAddress row exists.
-func TransactionAddressExistsG(transactionID uint64, addressID uint64) (bool, error) {
+func TransactionAddressExistsG(transactionID string, addressID uint64) (bool, error) {
 	return TransactionAddressExists(boil.GetDB(), transactionID, addressID)
 }
 
 // TransactionAddressExistsGP checks if the TransactionAddress row exists. Panics on error.
-func TransactionAddressExistsGP(transactionID uint64, addressID uint64) bool {
+func TransactionAddressExistsGP(transactionID string, addressID uint64) bool {
 	e, err := TransactionAddressExists(boil.GetDB(), transactionID, addressID)
 	if err != nil {
 		panic(boil.WrapErr(err))
@@ -1250,7 +1250,7 @@ func TransactionAddressExistsGP(transactionID uint64, addressID uint64) bool {
 }
 
 // TransactionAddressExistsP checks if the TransactionAddress row exists. Panics on error.
-func TransactionAddressExistsP(exec boil.Executor, transactionID uint64, addressID uint64) bool {
+func TransactionAddressExistsP(exec boil.Executor, transactionID string, addressID uint64) bool {
 	e, err := TransactionAddressExists(exec, transactionID, addressID)
 	if err != nil {
 		panic(boil.WrapErr(err))

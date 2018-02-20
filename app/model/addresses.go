@@ -401,7 +401,7 @@ func (addressL) LoadOutputs(e boil.Executor, singular bool, maybeAddress interfa
 		one := new(Output)
 		var localJoinCol uint64
 
-		err = results.Scan(&one.ID, &one.TransactionID, &one.Value, &one.VOut, &one.Type, &one.ScriptPubKeyAsm, &one.ScriptPubKeyHex, &one.RequiredSignatures, &one.Hash160, &one.Addresslist, &one.IsSpent, &one.SpentByInputID, &one.Created, &one.Modified, &localJoinCol)
+		err = results.Scan(&one.ID, &one.Value, &one.VOut, &one.TransactionID, &one.Type, &one.ScriptPubKeyAsm, &one.ScriptPubKeyHex, &one.RequiredSignatures, &one.Hash160, &one.Addresslist, &one.IsSpent, &one.SpentByTransactionID, &one.SpentByTransactionSequenceID, &one.Created, &one.Modified, &localJoinCol)
 		if err = results.Err(); err != nil {
 			return errors.Wrap(err, "failed to plebian-bind eager loaded slice outputs")
 		}
@@ -547,7 +547,7 @@ func (o *Address) AddInputs(exec boil.Executor, insert bool, related ...*Input) 
 				strmangle.SetParamNames("`", "`", 0, []string{"address_id"}),
 				strmangle.WhereClause("`", "`", 0, inputPrimaryKeyColumns),
 			)
-			values := []interface{}{o.ID, rel.ID}
+			values := []interface{}{o.ID, rel.TransactionID, rel.SequenceID}
 
 			if boil.DebugMode {
 				fmt.Fprintln(boil.DebugWriter, updateQuery)

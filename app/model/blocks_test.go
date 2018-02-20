@@ -129,7 +129,7 @@ func testBlocksExists(t *testing.T) {
 		t.Error(err)
 	}
 
-	e, err := BlockExists(tx, block.ID)
+	e, err := BlockExists(tx, block.Hash)
 	if err != nil {
 		t.Errorf("Unable to check if Block exists: %s", err)
 	}
@@ -153,7 +153,7 @@ func testBlocksFind(t *testing.T) {
 		t.Error(err)
 	}
 
-	blockFound, err := FindBlock(tx, block.ID)
+	blockFound, err := FindBlock(tx, block.Hash)
 	if err != nil {
 		t.Error(err)
 	}
@@ -324,6 +324,154 @@ func testBlocksInsertWhitelist(t *testing.T) {
 	}
 }
 
+func testBlockToManyNextBlockBlocks(t *testing.T) {
+	var err error
+	tx := MustTx(boil.Begin())
+	defer tx.Rollback()
+
+	var a Block
+	var b, c Block
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, blockDBTypes, true, blockColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Block struct: %s", err)
+	}
+
+	if err := a.Insert(tx); err != nil {
+		t.Fatal(err)
+	}
+
+	randomize.Struct(seed, &b, blockDBTypes, false, blockColumnsWithDefault...)
+	randomize.Struct(seed, &c, blockDBTypes, false, blockColumnsWithDefault...)
+
+	b.NextBlockID.Valid = true
+	c.NextBlockID.Valid = true
+	b.NextBlockID.String = a.Hash
+	c.NextBlockID.String = a.Hash
+	if err = b.Insert(tx); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(tx); err != nil {
+		t.Fatal(err)
+	}
+
+	block, err := a.NextBlockBlocks(tx).All()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range block {
+		if v.NextBlockID.String == b.NextBlockID.String {
+			bFound = true
+		}
+		if v.NextBlockID.String == c.NextBlockID.String {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := BlockSlice{&a}
+	if err = a.L.LoadNextBlockBlocks(tx, false, (*[]*Block)(&slice)); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.NextBlockBlocks); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.NextBlockBlocks = nil
+	if err = a.L.LoadNextBlockBlocks(tx, true, &a); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.NextBlockBlocks); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", block)
+	}
+}
+
+func testBlockToManyPreviousBlockBlocks(t *testing.T) {
+	var err error
+	tx := MustTx(boil.Begin())
+	defer tx.Rollback()
+
+	var a Block
+	var b, c Block
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, blockDBTypes, true, blockColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Block struct: %s", err)
+	}
+
+	if err := a.Insert(tx); err != nil {
+		t.Fatal(err)
+	}
+
+	randomize.Struct(seed, &b, blockDBTypes, false, blockColumnsWithDefault...)
+	randomize.Struct(seed, &c, blockDBTypes, false, blockColumnsWithDefault...)
+
+	b.PreviousBlockID.Valid = true
+	c.PreviousBlockID.Valid = true
+	b.PreviousBlockID.String = a.Hash
+	c.PreviousBlockID.String = a.Hash
+	if err = b.Insert(tx); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(tx); err != nil {
+		t.Fatal(err)
+	}
+
+	block, err := a.PreviousBlockBlocks(tx).All()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range block {
+		if v.PreviousBlockID.String == b.PreviousBlockID.String {
+			bFound = true
+		}
+		if v.PreviousBlockID.String == c.PreviousBlockID.String {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := BlockSlice{&a}
+	if err = a.L.LoadPreviousBlockBlocks(tx, false, (*[]*Block)(&slice)); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.PreviousBlockBlocks); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.PreviousBlockBlocks = nil
+	if err = a.L.LoadPreviousBlockBlocks(tx, true, &a); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.PreviousBlockBlocks); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", block)
+	}
+}
+
 func testBlockToManyTransactions(t *testing.T) {
 	var err error
 	tx := MustTx(boil.Begin())
@@ -344,10 +492,8 @@ func testBlockToManyTransactions(t *testing.T) {
 	randomize.Struct(seed, &b, transactionDBTypes, false, transactionColumnsWithDefault...)
 	randomize.Struct(seed, &c, transactionDBTypes, false, transactionColumnsWithDefault...)
 
-	b.BlockID.Valid = true
-	c.BlockID.Valid = true
-	b.BlockID.String = a.Hash
-	c.BlockID.String = a.Hash
+	b.BlockID = a.Hash
+	c.BlockID = a.Hash
 	if err = b.Insert(tx); err != nil {
 		t.Fatal(err)
 	}
@@ -362,10 +508,10 @@ func testBlockToManyTransactions(t *testing.T) {
 
 	bFound, cFound := false, false
 	for _, v := range transaction {
-		if v.BlockID.String == b.BlockID.String {
+		if v.BlockID == b.BlockID {
 			bFound = true
 		}
-		if v.BlockID.String == c.BlockID.String {
+		if v.BlockID == c.BlockID {
 			cFound = true
 		}
 	}
@@ -395,6 +541,502 @@ func testBlockToManyTransactions(t *testing.T) {
 
 	if t.Failed() {
 		t.Logf("%#v", transaction)
+	}
+}
+
+func testBlockToManyAddOpNextBlockBlocks(t *testing.T) {
+	var err error
+
+	tx := MustTx(boil.Begin())
+	defer tx.Rollback()
+
+	var a Block
+	var b, c, d, e Block
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, blockDBTypes, false, strmangle.SetComplement(blockPrimaryKeyColumns, blockColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Block{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, blockDBTypes, false, strmangle.SetComplement(blockPrimaryKeyColumns, blockColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(tx); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(tx); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(tx); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*Block{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddNextBlockBlocks(tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if a.Hash != first.NextBlockID.String {
+			t.Error("foreign key was wrong value", a.Hash, first.NextBlockID.String)
+		}
+		if a.Hash != second.NextBlockID.String {
+			t.Error("foreign key was wrong value", a.Hash, second.NextBlockID.String)
+		}
+
+		if first.R.NextBlock != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.NextBlock != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.NextBlockBlocks[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.NextBlockBlocks[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.NextBlockBlocks(tx).Count()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
+
+func testBlockToManySetOpNextBlockBlocks(t *testing.T) {
+	var err error
+
+	tx := MustTx(boil.Begin())
+	defer tx.Rollback()
+
+	var a Block
+	var b, c, d, e Block
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, blockDBTypes, false, strmangle.SetComplement(blockPrimaryKeyColumns, blockColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Block{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, blockDBTypes, false, strmangle.SetComplement(blockPrimaryKeyColumns, blockColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err = a.Insert(tx); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(tx); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(tx); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.SetNextBlockBlocks(tx, false, &b, &c)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.NextBlockBlocks(tx).Count()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.SetNextBlockBlocks(tx, true, &d, &e)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.NextBlockBlocks(tx).Count()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	if b.NextBlockID.Valid {
+		t.Error("want b's foreign key value to be nil")
+	}
+	if c.NextBlockID.Valid {
+		t.Error("want c's foreign key value to be nil")
+	}
+	if a.Hash != d.NextBlockID.String {
+		t.Error("foreign key was wrong value", a.Hash, d.NextBlockID.String)
+	}
+	if a.Hash != e.NextBlockID.String {
+		t.Error("foreign key was wrong value", a.Hash, e.NextBlockID.String)
+	}
+
+	if b.R.NextBlock != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if c.R.NextBlock != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if d.R.NextBlock != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+	if e.R.NextBlock != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+
+	if a.R.NextBlockBlocks[0] != &d {
+		t.Error("relationship struct slice not set to correct value")
+	}
+	if a.R.NextBlockBlocks[1] != &e {
+		t.Error("relationship struct slice not set to correct value")
+	}
+}
+
+func testBlockToManyRemoveOpNextBlockBlocks(t *testing.T) {
+	var err error
+
+	tx := MustTx(boil.Begin())
+	defer tx.Rollback()
+
+	var a Block
+	var b, c, d, e Block
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, blockDBTypes, false, strmangle.SetComplement(blockPrimaryKeyColumns, blockColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Block{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, blockDBTypes, false, strmangle.SetComplement(blockPrimaryKeyColumns, blockColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(tx); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.AddNextBlockBlocks(tx, true, foreigners...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.NextBlockBlocks(tx).Count()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 4 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.RemoveNextBlockBlocks(tx, foreigners[:2]...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.NextBlockBlocks(tx).Count()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	if b.NextBlockID.Valid {
+		t.Error("want b's foreign key value to be nil")
+	}
+	if c.NextBlockID.Valid {
+		t.Error("want c's foreign key value to be nil")
+	}
+
+	if b.R.NextBlock != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if c.R.NextBlock != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if d.R.NextBlock != &a {
+		t.Error("relationship to a should have been preserved")
+	}
+	if e.R.NextBlock != &a {
+		t.Error("relationship to a should have been preserved")
+	}
+
+	if len(a.R.NextBlockBlocks) != 2 {
+		t.Error("should have preserved two relationships")
+	}
+
+	// Removal doesn't do a stable deletion for performance so we have to flip the order
+	if a.R.NextBlockBlocks[1] != &d {
+		t.Error("relationship to d should have been preserved")
+	}
+	if a.R.NextBlockBlocks[0] != &e {
+		t.Error("relationship to e should have been preserved")
+	}
+}
+
+func testBlockToManyAddOpPreviousBlockBlocks(t *testing.T) {
+	var err error
+
+	tx := MustTx(boil.Begin())
+	defer tx.Rollback()
+
+	var a Block
+	var b, c, d, e Block
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, blockDBTypes, false, strmangle.SetComplement(blockPrimaryKeyColumns, blockColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Block{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, blockDBTypes, false, strmangle.SetComplement(blockPrimaryKeyColumns, blockColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(tx); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(tx); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(tx); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*Block{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddPreviousBlockBlocks(tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if a.Hash != first.PreviousBlockID.String {
+			t.Error("foreign key was wrong value", a.Hash, first.PreviousBlockID.String)
+		}
+		if a.Hash != second.PreviousBlockID.String {
+			t.Error("foreign key was wrong value", a.Hash, second.PreviousBlockID.String)
+		}
+
+		if first.R.PreviousBlock != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.PreviousBlock != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.PreviousBlockBlocks[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.PreviousBlockBlocks[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.PreviousBlockBlocks(tx).Count()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
+
+func testBlockToManySetOpPreviousBlockBlocks(t *testing.T) {
+	var err error
+
+	tx := MustTx(boil.Begin())
+	defer tx.Rollback()
+
+	var a Block
+	var b, c, d, e Block
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, blockDBTypes, false, strmangle.SetComplement(blockPrimaryKeyColumns, blockColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Block{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, blockDBTypes, false, strmangle.SetComplement(blockPrimaryKeyColumns, blockColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err = a.Insert(tx); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(tx); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(tx); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.SetPreviousBlockBlocks(tx, false, &b, &c)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.PreviousBlockBlocks(tx).Count()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.SetPreviousBlockBlocks(tx, true, &d, &e)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.PreviousBlockBlocks(tx).Count()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	if b.PreviousBlockID.Valid {
+		t.Error("want b's foreign key value to be nil")
+	}
+	if c.PreviousBlockID.Valid {
+		t.Error("want c's foreign key value to be nil")
+	}
+	if a.Hash != d.PreviousBlockID.String {
+		t.Error("foreign key was wrong value", a.Hash, d.PreviousBlockID.String)
+	}
+	if a.Hash != e.PreviousBlockID.String {
+		t.Error("foreign key was wrong value", a.Hash, e.PreviousBlockID.String)
+	}
+
+	if b.R.PreviousBlock != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if c.R.PreviousBlock != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if d.R.PreviousBlock != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+	if e.R.PreviousBlock != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+
+	if a.R.PreviousBlockBlocks[0] != &d {
+		t.Error("relationship struct slice not set to correct value")
+	}
+	if a.R.PreviousBlockBlocks[1] != &e {
+		t.Error("relationship struct slice not set to correct value")
+	}
+}
+
+func testBlockToManyRemoveOpPreviousBlockBlocks(t *testing.T) {
+	var err error
+
+	tx := MustTx(boil.Begin())
+	defer tx.Rollback()
+
+	var a Block
+	var b, c, d, e Block
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, blockDBTypes, false, strmangle.SetComplement(blockPrimaryKeyColumns, blockColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Block{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, blockDBTypes, false, strmangle.SetComplement(blockPrimaryKeyColumns, blockColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(tx); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.AddPreviousBlockBlocks(tx, true, foreigners...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.PreviousBlockBlocks(tx).Count()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 4 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.RemovePreviousBlockBlocks(tx, foreigners[:2]...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.PreviousBlockBlocks(tx).Count()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	if b.PreviousBlockID.Valid {
+		t.Error("want b's foreign key value to be nil")
+	}
+	if c.PreviousBlockID.Valid {
+		t.Error("want c's foreign key value to be nil")
+	}
+
+	if b.R.PreviousBlock != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if c.R.PreviousBlock != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if d.R.PreviousBlock != &a {
+		t.Error("relationship to a should have been preserved")
+	}
+	if e.R.PreviousBlock != &a {
+		t.Error("relationship to a should have been preserved")
+	}
+
+	if len(a.R.PreviousBlockBlocks) != 2 {
+		t.Error("should have preserved two relationships")
+	}
+
+	// Removal doesn't do a stable deletion for performance so we have to flip the order
+	if a.R.PreviousBlockBlocks[1] != &d {
+		t.Error("relationship to d should have been preserved")
+	}
+	if a.R.PreviousBlockBlocks[0] != &e {
+		t.Error("relationship to e should have been preserved")
 	}
 }
 
@@ -442,11 +1084,11 @@ func testBlockToManyAddOpTransactions(t *testing.T) {
 		first := x[0]
 		second := x[1]
 
-		if a.Hash != first.BlockID.String {
-			t.Error("foreign key was wrong value", a.Hash, first.BlockID.String)
+		if a.Hash != first.BlockID {
+			t.Error("foreign key was wrong value", a.Hash, first.BlockID)
 		}
-		if a.Hash != second.BlockID.String {
-			t.Error("foreign key was wrong value", a.Hash, second.BlockID.String)
+		if a.Hash != second.BlockID {
+			t.Error("foreign key was wrong value", a.Hash, second.BlockID)
 		}
 
 		if first.R.Block != &a {
@@ -472,177 +1114,321 @@ func testBlockToManyAddOpTransactions(t *testing.T) {
 		}
 	}
 }
-
-func testBlockToManySetOpTransactions(t *testing.T) {
-	var err error
-
+func testBlockToOneBlockUsingNextBlock(t *testing.T) {
 	tx := MustTx(boil.Begin())
 	defer tx.Rollback()
 
-	var a Block
-	var b, c, d, e Transaction
+	var local Block
+	var foreign Block
 
 	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, blockDBTypes, false, strmangle.SetComplement(blockPrimaryKeyColumns, blockColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
+	if err := randomize.Struct(seed, &local, blockDBTypes, true, blockColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Block struct: %s", err)
 	}
-	foreigners := []*Transaction{&b, &c, &d, &e}
-	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, transactionDBTypes, false, strmangle.SetComplement(transactionPrimaryKeyColumns, transactionColumnsWithoutDefault)...); err != nil {
-			t.Fatal(err)
-		}
+	if err := randomize.Struct(seed, &foreign, blockDBTypes, false, blockColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Block struct: %s", err)
 	}
 
-	if err = a.Insert(tx); err != nil {
-		t.Fatal(err)
-	}
-	if err = b.Insert(tx); err != nil {
-		t.Fatal(err)
-	}
-	if err = c.Insert(tx); err != nil {
+	local.NextBlockID.Valid = true
+
+	if err := foreign.Insert(tx); err != nil {
 		t.Fatal(err)
 	}
 
-	err = a.SetTransactions(tx, false, &b, &c)
+	local.NextBlockID.String = foreign.Hash
+	if err := local.Insert(tx); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := local.NextBlock(tx).One()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	count, err := a.Transactions(tx).Count()
-	if err != nil {
+	if check.Hash != foreign.Hash {
+		t.Errorf("want: %v, got %v", foreign.Hash, check.Hash)
+	}
+
+	slice := BlockSlice{&local}
+	if err = local.L.LoadNextBlock(tx, false, (*[]*Block)(&slice)); err != nil {
 		t.Fatal(err)
 	}
-	if count != 2 {
-		t.Error("count was wrong:", count)
+	if local.R.NextBlock == nil {
+		t.Error("struct should have been eager loaded")
 	}
 
-	err = a.SetTransactions(tx, true, &d, &e)
-	if err != nil {
+	local.R.NextBlock = nil
+	if err = local.L.LoadNextBlock(tx, true, &local); err != nil {
 		t.Fatal(err)
 	}
-
-	count, err = a.Transactions(tx).Count()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 2 {
-		t.Error("count was wrong:", count)
-	}
-
-	if b.BlockID.Valid {
-		t.Error("want b's foreign key value to be nil")
-	}
-	if c.BlockID.Valid {
-		t.Error("want c's foreign key value to be nil")
-	}
-	if a.Hash != d.BlockID.String {
-		t.Error("foreign key was wrong value", a.Hash, d.BlockID.String)
-	}
-	if a.Hash != e.BlockID.String {
-		t.Error("foreign key was wrong value", a.Hash, e.BlockID.String)
-	}
-
-	if b.R.Block != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if c.R.Block != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if d.R.Block != &a {
-		t.Error("relationship was not added properly to the foreign struct")
-	}
-	if e.R.Block != &a {
-		t.Error("relationship was not added properly to the foreign struct")
-	}
-
-	if a.R.Transactions[0] != &d {
-		t.Error("relationship struct slice not set to correct value")
-	}
-	if a.R.Transactions[1] != &e {
-		t.Error("relationship struct slice not set to correct value")
+	if local.R.NextBlock == nil {
+		t.Error("struct should have been eager loaded")
 	}
 }
 
-func testBlockToManyRemoveOpTransactions(t *testing.T) {
+func testBlockToOneBlockUsingPreviousBlock(t *testing.T) {
+	tx := MustTx(boil.Begin())
+	defer tx.Rollback()
+
+	var local Block
+	var foreign Block
+
+	seed := randomize.NewSeed()
+	if err := randomize.Struct(seed, &local, blockDBTypes, true, blockColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Block struct: %s", err)
+	}
+	if err := randomize.Struct(seed, &foreign, blockDBTypes, false, blockColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Block struct: %s", err)
+	}
+
+	local.PreviousBlockID.Valid = true
+
+	if err := foreign.Insert(tx); err != nil {
+		t.Fatal(err)
+	}
+
+	local.PreviousBlockID.String = foreign.Hash
+	if err := local.Insert(tx); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := local.PreviousBlock(tx).One()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if check.Hash != foreign.Hash {
+		t.Errorf("want: %v, got %v", foreign.Hash, check.Hash)
+	}
+
+	slice := BlockSlice{&local}
+	if err = local.L.LoadPreviousBlock(tx, false, (*[]*Block)(&slice)); err != nil {
+		t.Fatal(err)
+	}
+	if local.R.PreviousBlock == nil {
+		t.Error("struct should have been eager loaded")
+	}
+
+	local.R.PreviousBlock = nil
+	if err = local.L.LoadPreviousBlock(tx, true, &local); err != nil {
+		t.Fatal(err)
+	}
+	if local.R.PreviousBlock == nil {
+		t.Error("struct should have been eager loaded")
+	}
+}
+
+func testBlockToOneSetOpBlockUsingNextBlock(t *testing.T) {
 	var err error
 
 	tx := MustTx(boil.Begin())
 	defer tx.Rollback()
 
 	var a Block
-	var b, c, d, e Transaction
+	var b, c Block
 
 	seed := randomize.NewSeed()
 	if err = randomize.Struct(seed, &a, blockDBTypes, false, strmangle.SetComplement(blockPrimaryKeyColumns, blockColumnsWithoutDefault)...); err != nil {
 		t.Fatal(err)
 	}
-	foreigners := []*Transaction{&b, &c, &d, &e}
-	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, transactionDBTypes, false, strmangle.SetComplement(transactionPrimaryKeyColumns, transactionColumnsWithoutDefault)...); err != nil {
-			t.Fatal(err)
-		}
+	if err = randomize.Struct(seed, &b, blockDBTypes, false, strmangle.SetComplement(blockPrimaryKeyColumns, blockColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, blockDBTypes, false, strmangle.SetComplement(blockPrimaryKeyColumns, blockColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
 	}
 
 	if err := a.Insert(tx); err != nil {
 		t.Fatal(err)
 	}
-
-	err = a.AddTransactions(tx, true, foreigners...)
-	if err != nil {
+	if err = b.Insert(tx); err != nil {
 		t.Fatal(err)
 	}
 
-	count, err := a.Transactions(tx).Count()
-	if err != nil {
+	for i, x := range []*Block{&b, &c} {
+		err = a.SetNextBlock(tx, i != 0, x)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if a.R.NextBlock != x {
+			t.Error("relationship struct not set to correct value")
+		}
+
+		if x.R.NextBlockBlocks[0] != &a {
+			t.Error("failed to append to foreign relationship struct")
+		}
+		if a.NextBlockID.String != x.Hash {
+			t.Error("foreign key was wrong value", a.NextBlockID.String)
+		}
+
+		zero := reflect.Zero(reflect.TypeOf(a.NextBlockID.String))
+		reflect.Indirect(reflect.ValueOf(&a.NextBlockID.String)).Set(zero)
+
+		if err = a.Reload(tx); err != nil {
+			t.Fatal("failed to reload", err)
+		}
+
+		if a.NextBlockID.String != x.Hash {
+			t.Error("foreign key was wrong value", a.NextBlockID.String, x.Hash)
+		}
+	}
+}
+
+func testBlockToOneRemoveOpBlockUsingNextBlock(t *testing.T) {
+	var err error
+
+	tx := MustTx(boil.Begin())
+	defer tx.Rollback()
+
+	var a Block
+	var b Block
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, blockDBTypes, false, strmangle.SetComplement(blockPrimaryKeyColumns, blockColumnsWithoutDefault)...); err != nil {
 		t.Fatal(err)
 	}
-	if count != 4 {
-		t.Error("count was wrong:", count)
-	}
-
-	err = a.RemoveTransactions(tx, foreigners[:2]...)
-	if err != nil {
+	if err = randomize.Struct(seed, &b, blockDBTypes, false, strmangle.SetComplement(blockPrimaryKeyColumns, blockColumnsWithoutDefault)...); err != nil {
 		t.Fatal(err)
 	}
 
-	count, err = a.Transactions(tx).Count()
-	if err != nil {
+	if err = a.Insert(tx); err != nil {
 		t.Fatal(err)
 	}
-	if count != 2 {
-		t.Error("count was wrong:", count)
+
+	if err = a.SetNextBlock(tx, true, &b); err != nil {
+		t.Fatal(err)
 	}
 
-	if b.BlockID.Valid {
-		t.Error("want b's foreign key value to be nil")
-	}
-	if c.BlockID.Valid {
-		t.Error("want c's foreign key value to be nil")
+	if err = a.RemoveNextBlock(tx, &b); err != nil {
+		t.Error("failed to remove relationship")
 	}
 
-	if b.R.Block != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
+	count, err := a.NextBlock(tx).Count()
+	if err != nil {
+		t.Error(err)
 	}
-	if c.R.Block != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if d.R.Block != &a {
-		t.Error("relationship to a should have been preserved")
-	}
-	if e.R.Block != &a {
-		t.Error("relationship to a should have been preserved")
+	if count != 0 {
+		t.Error("want no relationships remaining")
 	}
 
-	if len(a.R.Transactions) != 2 {
-		t.Error("should have preserved two relationships")
+	if a.R.NextBlock != nil {
+		t.Error("R struct entry should be nil")
 	}
 
-	// Removal doesn't do a stable deletion for performance so we have to flip the order
-	if a.R.Transactions[1] != &d {
-		t.Error("relationship to d should have been preserved")
+	if a.NextBlockID.Valid {
+		t.Error("foreign key value should be nil")
 	}
-	if a.R.Transactions[0] != &e {
-		t.Error("relationship to e should have been preserved")
+
+	if len(b.R.NextBlockBlocks) != 0 {
+		t.Error("failed to remove a from b's relationships")
+	}
+}
+
+func testBlockToOneSetOpBlockUsingPreviousBlock(t *testing.T) {
+	var err error
+
+	tx := MustTx(boil.Begin())
+	defer tx.Rollback()
+
+	var a Block
+	var b, c Block
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, blockDBTypes, false, strmangle.SetComplement(blockPrimaryKeyColumns, blockColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &b, blockDBTypes, false, strmangle.SetComplement(blockPrimaryKeyColumns, blockColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, blockDBTypes, false, strmangle.SetComplement(blockPrimaryKeyColumns, blockColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := a.Insert(tx); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(tx); err != nil {
+		t.Fatal(err)
+	}
+
+	for i, x := range []*Block{&b, &c} {
+		err = a.SetPreviousBlock(tx, i != 0, x)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if a.R.PreviousBlock != x {
+			t.Error("relationship struct not set to correct value")
+		}
+
+		if x.R.PreviousBlockBlocks[0] != &a {
+			t.Error("failed to append to foreign relationship struct")
+		}
+		if a.PreviousBlockID.String != x.Hash {
+			t.Error("foreign key was wrong value", a.PreviousBlockID.String)
+		}
+
+		zero := reflect.Zero(reflect.TypeOf(a.PreviousBlockID.String))
+		reflect.Indirect(reflect.ValueOf(&a.PreviousBlockID.String)).Set(zero)
+
+		if err = a.Reload(tx); err != nil {
+			t.Fatal("failed to reload", err)
+		}
+
+		if a.PreviousBlockID.String != x.Hash {
+			t.Error("foreign key was wrong value", a.PreviousBlockID.String, x.Hash)
+		}
+	}
+}
+
+func testBlockToOneRemoveOpBlockUsingPreviousBlock(t *testing.T) {
+	var err error
+
+	tx := MustTx(boil.Begin())
+	defer tx.Rollback()
+
+	var a Block
+	var b Block
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, blockDBTypes, false, strmangle.SetComplement(blockPrimaryKeyColumns, blockColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &b, blockDBTypes, false, strmangle.SetComplement(blockPrimaryKeyColumns, blockColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = a.Insert(tx); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = a.SetPreviousBlock(tx, true, &b); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = a.RemovePreviousBlock(tx, &b); err != nil {
+		t.Error("failed to remove relationship")
+	}
+
+	count, err := a.PreviousBlock(tx).Count()
+	if err != nil {
+		t.Error(err)
+	}
+	if count != 0 {
+		t.Error("want no relationships remaining")
+	}
+
+	if a.R.PreviousBlock != nil {
+		t.Error("R struct entry should be nil")
+	}
+
+	if a.PreviousBlockID.Valid {
+		t.Error("foreign key value should be nil")
+	}
+
+	if len(b.R.PreviousBlockBlocks) != 0 {
+		t.Error("failed to remove a from b's relationships")
 	}
 }
 
@@ -716,7 +1502,7 @@ func testBlocksSelect(t *testing.T) {
 }
 
 var (
-	blockDBTypes = map[string]string{`Bits`: `varchar`, `BlockSize`: `bigint`, `BlockTime`: `bigint`, `Chainwork`: `varchar`, `Confirmations`: `int`, `Created`: `datetime`, `Difficulty`: `decimal`, `Hash`: `varchar`, `Height`: `bigint`, `ID`: `bigint`, `MedianTime`: `bigint`, `MerkleRoot`: `varchar`, `Modified`: `datetime`, `NameClaimRoot`: `varchar`, `NextBlockHash`: `varchar`, `Nonce`: `bigint`, `PreviousBlockHash`: `varchar`, `Target`: `varchar`, `TransactionHashes`: `text`, `TransactionsProcessed`: `tinyint`, `Version`: `bigint`, `VersionHex`: `varchar`}
+	blockDBTypes = map[string]string{`Bits`: `varchar`, `BlockSize`: `bigint`, `BlockTime`: `bigint`, `Chainwork`: `varchar`, `Confirmations`: `int`, `Difficulty`: `decimal`, `Hash`: `varchar`, `Height`: `bigint`, `MedianTime`: `bigint`, `MerkleRoot`: `varchar`, `NameClaimRoot`: `varchar`, `NextBlockID`: `varchar`, `Nonce`: `bigint`, `PreviousBlockID`: `varchar`, `Target`: `varchar`, `TransactionHashes`: `text`, `TransactionsProcessed`: `tinyint`, `Version`: `bigint`, `VersionHex`: `varchar`}
 	_            = bytes.MinRead
 )
 

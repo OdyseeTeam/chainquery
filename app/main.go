@@ -72,12 +72,11 @@ func webServerSetup(conf *env.Config) func() {
 		teardownFuncs = append(teardownFuncs, func() { lbrycrdClient.Shutdown() })
 		lbrycrd.SetDefaultClient(lbrycrdClient)
 
-		/*_, err = lbrycrdClient.GetBalance("")
-		if err != nil {
+		_, err = lbrycrdClient.GetBalance("")
+		if err != nil { //
 			log.Panicf("Error connecting to lbrycrd: %+v", err)
 		} //
-		println("Connected successfully to lbrycrd")*/
-
+		println("Connected successfully to lbrycrd")
 	}
 
 	return func() {

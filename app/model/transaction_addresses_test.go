@@ -393,7 +393,7 @@ func testTransactionAddressToOneTransactionUsingTransaction(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	local.TransactionID = foreign.ID
+	local.TransactionID = foreign.Hash
 	if err := local.Insert(tx); err != nil {
 		t.Fatal(err)
 	}
@@ -403,8 +403,8 @@ func testTransactionAddressToOneTransactionUsingTransaction(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if check.ID != foreign.ID {
-		t.Errorf("want: %v, got %v", foreign.ID, check.ID)
+	if check.Hash != foreign.Hash {
+		t.Errorf("want: %v, got %v", foreign.Hash, check.Hash)
 	}
 
 	slice := TransactionAddressSlice{&local}
@@ -516,7 +516,7 @@ func testTransactionAddressToOneSetOpTransactionUsingTransaction(t *testing.T) {
 		if x.R.TransactionAddresses[0] != &a {
 			t.Error("failed to append to foreign relationship struct")
 		}
-		if a.TransactionID != x.ID {
+		if a.TransactionID != x.Hash {
 			t.Error("foreign key was wrong value", a.TransactionID)
 		}
 
@@ -598,7 +598,7 @@ func testTransactionAddressesSelect(t *testing.T) {
 }
 
 var (
-	transactionAddressDBTypes = map[string]string{`AddressID`: `bigint`, `CreditAmount`: `decimal`, `DebitAmount`: `decimal`, `LatestTransactionTime`: `datetime`, `TransactionID`: `bigint`}
+	transactionAddressDBTypes = map[string]string{`AddressID`: `bigint`, `CreditAmount`: `decimal`, `DebitAmount`: `decimal`, `LatestTransactionTime`: `datetime`, `TransactionID`: `varchar`}
 	_                         = bytes.MinRead
 )
 

@@ -2,6 +2,7 @@ package lbrycrd
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/go-errors/errors"
 	lbryschema "github.com/lbryio/lbryschema.go/pb"
 	"github.com/shopspring/decimal"
@@ -11,34 +12,43 @@ import (
 
 func (d *Client) callNoDecode(command string, params ...interface{}) (interface{}, error) {
 	logrus.Debugln("jsonrpc: " + command + " " + debugParams(params))
-	var p interface{}
-	if len(params) != 0 {
-		p = params
+	if len(params) == 0 {
+		r, err := d.conn.Call(command)
+		if err != nil {
+			return nil, err
+		}
+		return r.Result, nil
 	}
-	println("Number of parameters", len(params), params)
-	r, err := d.conn.Call(command, p)
-
-	if err != nil {
-		return nil, errors.Wrap(err, 0)
+	if len(params) == 1 {
+		r, err := d.conn.Call(command, params[0])
+		if err != nil {
+			return nil, err
+		}
+		return r.Result, nil
 	}
-
-	if r.Error != nil {
-		return nil, errors.New("Error in daemon: " + r.Error.Message)
+	if len(params) == 2 {
+		r, err := d.conn.Call(command, params[0], params[1])
+		if err != nil {
+			return nil, err
+		}
+		return r.Result, nil
 	}
-
-	return r.Result, nil
+	logrus.Error("parameter size is greater than 1")
+	return nil, nil
 }
 
 func decodeNumber(data interface{}) (decimal.Decimal, error) {
 	var number string
-
 	switch d := data.(type) {
 	case json.Number:
 		number = d.String()
 	case string:
 		number = d
+	case nil:
+		number = "0"
 	default:
-		return decimal.Decimal{}, errors.New("unexpected number type")
+		fmt.Printf("I don't know about type %T!\n", d)
+		return decimal.Decimal{}, errors.New("unexpected number type ")
 	}
 
 	dec, err := decimal.NewFromString(number)

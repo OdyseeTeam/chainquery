@@ -27,16 +27,14 @@ func Init(dsn string, debug bool) (*QueryLogger, error) {
 	logWrapper := &QueryLogger{DB: dbConn}
 	if debug {
 		logWrapper.Logger = log.StandardLogger()
-		//boil.DebugMode = true // this just prints everything twice
+		boil.DebugMode = true // this just prints everything twice
 	}
 	boil.SetDB(logWrapper)
-
-	//TODO commented this out because it doesn't work. Not sure why?
 	// ensure that db supports transactions
-	/*_, ok := boil.GetDB().(boil.Beginner)
+	_, ok := boil.GetDB().(boil.Beginner)
 	if !ok {
 		return nil, errors.Err("database does not support transactions")
-	}*/
+	}
 
 	migrations := &migrate.AssetMigrationSource{
 		Asset:    migration.Asset,
