@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS blocks (
     chainwork VARCHAR(70) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
     confirmations INTEGER UNSIGNED NOT NULL,
     difficulty DECIMAL(18,8) NOT NULL,
-    hash VARCHAR(70) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL ,
+    hash VARCHAR(70) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
     height BIGINT UNSIGNED NOT NULL,
     median_time BIGINT UNSIGNED NOT NULL,
     merkle_root VARCHAR(70) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
@@ -59,65 +59,67 @@ CREATE TABLE IF NOT EXISTS transactions
 -- +migrate StatementBegin
 CREATE TABLE IF NOT EXISTS addresses
 (
-    id SERIAL,
-
     address VARCHAR(40) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
-    first_seen DATETIME,
     total_received DECIMAL(18,8) DEFAULT 0 NOT NULL,
     total_sent DECIMAL(18,8) DEFAULT 0 NOT NULL,
     balance DECIMAL(18,8) AS (total_received - total_sent),
-    tag VARCHAR(30) NOT NULL,
-    tag_url VARCHAR(200),
 
-    created DATETIME NOT NULL,
-    modified DATETIME NOT NULL,
-
-    PRIMARY KEY pk_address (id),
-    UNIQUE KEY idx_address_address (address),
-    UNIQUE KEY idx_address_tag (tag),
+    PRIMARY KEY pk_address (address),
     INDEX idx_address_total_received (total_received),
     INDEX idx_address_total_sent (total_sent),
-    INDEX idx_address_balance (balance),
-    INDEX Idx_address_created (created),
-    INDEX Idx_address_modified (modified)
+    INDEX idx_address_balance (balance)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4;
+-- +migrate StatementEnd
+
+-- +migrate StatementBegin
+CREATE TABLE IF NOT EXISTS transaction_addresses
+(
+    id VARCHAR(140) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
+    transaction_id VARCHAR(70) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
+    address_id VARCHAR(40) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
+    debit_amount DECIMAL(18,8) DEFAULT 0 NOT NULL COMMENT 'Sum of the inputs to this address for the tx',
+    credit_amount DECIMAL(18,8) DEFAULT 0 NOT NULL COMMENT 'Sum of the outputs to this address for the tx',
+    latest_transaction_time DATETIME NOT NULL,
+
+    PRIMARY KEY pk_transaction_address (id),
+    UNIQUE KEY uk_transaction_address_id (transaction_id, address_id),
+    CONSTRAINT fk_transactions_addresses_transaction FOREIGN KEY (transaction_id) REFERENCES transactions (hash),
+    CONSTRAINT fk_transactions_addresses_address FOREIGN KEY (address_id) REFERENCES addresses (address),
+    INDEX idx_transactions_addresses_latest_transaction_time (latest_transaction_time),
+    INDEX idx_transactions_addresses_debit (debit_amount),
+    INDEX idx_transactions_addresses_credit (credit_amount)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4;
 -- +migrate StatementEnd
 
 -- +migrate StatementBegin
 CREATE TABLE IF NOT EXISTS inputs
 (
+    id VARCHAR(140) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
     transaction_id VARCHAR(70) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
-    address_id BIGINT UNSIGNED,
-    is_coinbase TINYINT(1) DEFAULT 0 NOT NULL,
+    sequence_id INTEGER UNSIGNED NOT NULL,
+    address_id VARCHAR(40) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
+    transaction_address_id VARCHAR(140) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
     coinbase VARCHAR(70) CHARACTER SET latin1 COLLATE latin1_general_ci,
     prevout_hash VARCHAR(70) CHARACTER SET latin1 COLLATE latin1_general_ci,
     prevout_n INTEGER UNSIGNED,
-    prevout_spend_updated TINYINT(1) DEFAULT 0 NOT NULL,
-    sequence_id INTEGER UNSIGNED,
-    value DECIMAL(18,8),
     script_sig_ssm TEXT CHARACTER SET latin1 COLLATE latin1_general_ci,
     script_sig_hex TEXT CHARACTER SET latin1 COLLATE latin1_general_ci,
 
-    created DATETIME NOT NULL,
-    modified DATETIME NOT NULL,
-
-    PRIMARY KEY pk_input (transaction_id,sequence_id),
+    PRIMARY KEY pk_input (id),
+    UNIQUE KEY uk_input_id (transaction_id,sequence_id),
     CONSTRAINT fk_input_transaction FOREIGN KEY  (transaction_id) REFERENCES transactions (hash),
-    CONSTRAINT fk_input_address FOREIGN KEY (address_id) REFERENCES addresses (Id),
-    INDEX idx_input_value (value),
-    INDEX idx_prevout_hash (prevout_hash),
-    INDEX idx_input_created (created),
-    INDEX idx_input_modified (modified)
+    CONSTRAINT fk_input_address FOREIGN KEY (address_id) REFERENCES addresses (address),
+    CONSTRAINT fk_input_transaction_address FOREIGN KEY (transaction_address_id) REFERENCES transaction_addresses (id),
+    INDEX idx_prevout_hash (prevout_hash)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4;
 -- +migrate StatementEnd
 
 -- +migrate StatementBegin
 CREATE TABLE IF NOT EXISTS outputs
 (
-    id SERIAL,
-
+    id VARCHAR(140) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
     value DECIMAL(18,8),
-    v_out INTEGER UNSIGNED,
+    sequence_id INTEGER UNSIGNED NOT NULL,
     transaction_id VARCHAR(70) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
     type VARCHAR(20) CHARACTER SET latin1 COLLATE latin1_general_ci,
     script_pub_key_asm TEXT CHARACTER SET latin1 COLLATE latin1_general_ci,
@@ -128,11 +130,14 @@ CREATE TABLE IF NOT EXISTS outputs
     is_spent TINYINT(1) DEFAULT 0 NOT NULL,
     spent_by_transaction_id VARCHAR(70) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
     spent_by_transaction_sequence_id INTEGER UNSIGNED,
+    spent_by_input_id VARCHAR(140) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
     created DATETIME NOT NULL,
     modified DATETIME NOT NULL,
+
     PRIMARY KEY pk_output (id),
+    UNIQUE KEY uk_output_id (transaction_id,sequence_id),
     CONSTRAINT fk_output_transaction FOREIGN KEY (transaction_id) REFERENCES transactions (hash),
-    CONSTRAINT fk_output_spent_by_input FOREIGN KEY (spent_by_transaction_id,spent_by_transaction_sequence_id) REFERENCES inputs (transaction_id,sequence_id),
+    CONSTRAINT fk_output_spent_by_input FOREIGN KEY (spent_by_input_id) REFERENCES inputs (id),
     CONSTRAINT cnt_addresslist_valid_json CHECK(addresslist IS NULL OR JSON_VALID(addresses)),
     INDEX idx_output_value (value),
     INDEX idx_ouptut_created (created),
@@ -143,28 +148,16 @@ CREATE TABLE IF NOT EXISTS outputs
 -- +migrate StatementBegin
 CREATE TABLE IF NOT EXISTS outputs_addresses
 (
-    output_id BIGINT UNSIGNED NOT NULL,
-    address_id BIGINT UNSIGNED NOT NULL,
-    PRIMARY KEY pk_output_address (output_id, address_id),
-    CONSTRAINT idx_outputs_addresses_output FOREIGN KEY (output_id) REFERENCES outputs (id),
-    CONSTRAINT idx_outputs_addresses_address FOREIGN KEY (address_id) REFERENCES addresses (id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4;
--- +migrate StatementEnd
+    output_sequence_id INTEGER UNSIGNED NOT NULL,
+    output_transaction_id VARCHAR(70) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
+    output_id VARCHAR(140) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
+    transaction_address_id VARCHAR(140) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
+    address_id VARCHAR(40) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
 
--- +migrate StatementBegin
-CREATE TABLE IF NOT EXISTS transaction_addresses
-(
-    transaction_id VARCHAR(70) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
-    address_id BIGINT UNSIGNED NOT NULL,
-    debit_amount DECIMAL(18,8) DEFAULT 0 NOT NULL COMMENT 'Sum of the inputs to this address for the tx',
-    credit_amount DECIMAL(18,8) DEFAULT 0 NOT NULL COMMENT 'Sum of the outputs to this address for the tx',
-    latest_transaction_time DATETIME NOT NULL,
-    PRIMARY KEY pk_transaction_address (transaction_id, address_id),
-    CONSTRAINT idx_transactions_addresses_transaction FOREIGN KEY (transaction_id) REFERENCES transactions (hash),
-    CONSTRAINT idx_transactions_addresses_address FOREIGN KEY (address_id) REFERENCES addresses (id),
-    INDEX idx_transactions_addresses_latest_transaction_time (latest_transaction_time),
-    INDEX idx_transactions_addresses_debit (debit_amount),
-    INDEX idx_transactions_addresses_credit (credit_amount)
+    PRIMARY KEY pk_outputs_address (output_sequence_id,output_transaction_id, address_id),
+    CONSTRAINT fk_outputs_addresses_output  FOREIGN KEY (output_id) REFERENCES outputs (id),
+    CONSTRAINT fk_outputs_addresses_address FOREIGN KEY (address_id) REFERENCES addresses (address),
+    CONSTRAINT fk_outputs_transaction_address FOREIGN KEY (transaction_address_id) REFERENCES transaction_addresses (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4;
 -- +migrate StatementEnd
 

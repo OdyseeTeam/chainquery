@@ -129,7 +129,7 @@ func testTransactionAddressesExists(t *testing.T) {
 		t.Error(err)
 	}
 
-	e, err := TransactionAddressExists(tx, transactionAddress.TransactionID, transactionAddress.AddressID)
+	e, err := TransactionAddressExists(tx, transactionAddress.ID)
 	if err != nil {
 		t.Errorf("Unable to check if TransactionAddress exists: %s", err)
 	}
@@ -153,7 +153,7 @@ func testTransactionAddressesFind(t *testing.T) {
 		t.Error(err)
 	}
 
-	transactionAddressFound, err := FindTransactionAddress(tx, transactionAddress.TransactionID, transactionAddress.AddressID)
+	transactionAddressFound, err := FindTransactionAddress(tx, transactionAddress.ID)
 	if err != nil {
 		t.Error(err)
 	}
@@ -324,6 +324,298 @@ func testTransactionAddressesInsertWhitelist(t *testing.T) {
 	}
 }
 
+func testTransactionAddressToManyInputs(t *testing.T) {
+	var err error
+	tx := MustTx(boil.Begin())
+	defer tx.Rollback()
+
+	var a TransactionAddress
+	var b, c Input
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, transactionAddressDBTypes, true, transactionAddressColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize TransactionAddress struct: %s", err)
+	}
+
+	if err := a.Insert(tx); err != nil {
+		t.Fatal(err)
+	}
+
+	randomize.Struct(seed, &b, inputDBTypes, false, inputColumnsWithDefault...)
+	randomize.Struct(seed, &c, inputDBTypes, false, inputColumnsWithDefault...)
+
+	b.TransactionAddressID = a.ID
+	c.TransactionAddressID = a.ID
+	if err = b.Insert(tx); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(tx); err != nil {
+		t.Fatal(err)
+	}
+
+	input, err := a.Inputs(tx).All()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range input {
+		if v.TransactionAddressID == b.TransactionAddressID {
+			bFound = true
+		}
+		if v.TransactionAddressID == c.TransactionAddressID {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := TransactionAddressSlice{&a}
+	if err = a.L.LoadInputs(tx, false, (*[]*TransactionAddress)(&slice)); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.Inputs); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.Inputs = nil
+	if err = a.L.LoadInputs(tx, true, &a); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.Inputs); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", input)
+	}
+}
+
+func testTransactionAddressToManyOutputsAddresses(t *testing.T) {
+	var err error
+	tx := MustTx(boil.Begin())
+	defer tx.Rollback()
+
+	var a TransactionAddress
+	var b, c OutputsAddress
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, transactionAddressDBTypes, true, transactionAddressColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize TransactionAddress struct: %s", err)
+	}
+
+	if err := a.Insert(tx); err != nil {
+		t.Fatal(err)
+	}
+
+	randomize.Struct(seed, &b, outputsAddressDBTypes, false, outputsAddressColumnsWithDefault...)
+	randomize.Struct(seed, &c, outputsAddressDBTypes, false, outputsAddressColumnsWithDefault...)
+
+	b.TransactionAddressID = a.ID
+	c.TransactionAddressID = a.ID
+	if err = b.Insert(tx); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(tx); err != nil {
+		t.Fatal(err)
+	}
+
+	outputsAddress, err := a.OutputsAddresses(tx).All()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range outputsAddress {
+		if v.TransactionAddressID == b.TransactionAddressID {
+			bFound = true
+		}
+		if v.TransactionAddressID == c.TransactionAddressID {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := TransactionAddressSlice{&a}
+	if err = a.L.LoadOutputsAddresses(tx, false, (*[]*TransactionAddress)(&slice)); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.OutputsAddresses); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.OutputsAddresses = nil
+	if err = a.L.LoadOutputsAddresses(tx, true, &a); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.OutputsAddresses); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", outputsAddress)
+	}
+}
+
+func testTransactionAddressToManyAddOpInputs(t *testing.T) {
+	var err error
+
+	tx := MustTx(boil.Begin())
+	defer tx.Rollback()
+
+	var a TransactionAddress
+	var b, c, d, e Input
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, transactionAddressDBTypes, false, strmangle.SetComplement(transactionAddressPrimaryKeyColumns, transactionAddressColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Input{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, inputDBTypes, false, strmangle.SetComplement(inputPrimaryKeyColumns, inputColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(tx); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(tx); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(tx); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*Input{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddInputs(tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if a.ID != first.TransactionAddressID {
+			t.Error("foreign key was wrong value", a.ID, first.TransactionAddressID)
+		}
+		if a.ID != second.TransactionAddressID {
+			t.Error("foreign key was wrong value", a.ID, second.TransactionAddressID)
+		}
+
+		if first.R.TransactionAddress != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.TransactionAddress != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.Inputs[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.Inputs[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.Inputs(tx).Count()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
+func testTransactionAddressToManyAddOpOutputsAddresses(t *testing.T) {
+	var err error
+
+	tx := MustTx(boil.Begin())
+	defer tx.Rollback()
+
+	var a TransactionAddress
+	var b, c, d, e OutputsAddress
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, transactionAddressDBTypes, false, strmangle.SetComplement(transactionAddressPrimaryKeyColumns, transactionAddressColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*OutputsAddress{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, outputsAddressDBTypes, false, strmangle.SetComplement(outputsAddressPrimaryKeyColumns, outputsAddressColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(tx); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(tx); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(tx); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*OutputsAddress{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddOutputsAddresses(tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if a.ID != first.TransactionAddressID {
+			t.Error("foreign key was wrong value", a.ID, first.TransactionAddressID)
+		}
+		if a.ID != second.TransactionAddressID {
+			t.Error("foreign key was wrong value", a.ID, second.TransactionAddressID)
+		}
+
+		if first.R.TransactionAddress != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.TransactionAddress != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.OutputsAddresses[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.OutputsAddresses[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.OutputsAddresses(tx).Count()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
 func testTransactionAddressToOneAddressUsingAddress(t *testing.T) {
 	tx := MustTx(boil.Begin())
 	defer tx.Rollback()
@@ -343,7 +635,7 @@ func testTransactionAddressToOneAddressUsingAddress(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	local.AddressID = foreign.ID
+	local.AddressID = foreign.Address
 	if err := local.Insert(tx); err != nil {
 		t.Fatal(err)
 	}
@@ -353,8 +645,8 @@ func testTransactionAddressToOneAddressUsingAddress(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if check.ID != foreign.ID {
-		t.Errorf("want: %v, got %v", foreign.ID, check.ID)
+	if check.Address != foreign.Address {
+		t.Errorf("want: %v, got %v", foreign.Address, check.Address)
 	}
 
 	slice := TransactionAddressSlice{&local}
@@ -464,16 +756,20 @@ func testTransactionAddressToOneSetOpAddressUsingAddress(t *testing.T) {
 		if x.R.TransactionAddresses[0] != &a {
 			t.Error("failed to append to foreign relationship struct")
 		}
-		if a.AddressID != x.ID {
+		if a.AddressID != x.Address {
 			t.Error("foreign key was wrong value", a.AddressID)
 		}
 
-		if exists, err := TransactionAddressExists(tx, a.TransactionID, a.AddressID); err != nil {
-			t.Fatal(err)
-		} else if !exists {
-			t.Error("want 'a' to exist")
+		zero := reflect.Zero(reflect.TypeOf(a.AddressID))
+		reflect.Indirect(reflect.ValueOf(&a.AddressID)).Set(zero)
+
+		if err = a.Reload(tx); err != nil {
+			t.Fatal("failed to reload", err)
 		}
 
+		if a.AddressID != x.Address {
+			t.Error("foreign key was wrong value", a.AddressID, x.Address)
+		}
 	}
 }
 func testTransactionAddressToOneSetOpTransactionUsingTransaction(t *testing.T) {
@@ -520,12 +816,16 @@ func testTransactionAddressToOneSetOpTransactionUsingTransaction(t *testing.T) {
 			t.Error("foreign key was wrong value", a.TransactionID)
 		}
 
-		if exists, err := TransactionAddressExists(tx, a.TransactionID, a.AddressID); err != nil {
-			t.Fatal(err)
-		} else if !exists {
-			t.Error("want 'a' to exist")
+		zero := reflect.Zero(reflect.TypeOf(a.TransactionID))
+		reflect.Indirect(reflect.ValueOf(&a.TransactionID)).Set(zero)
+
+		if err = a.Reload(tx); err != nil {
+			t.Fatal("failed to reload", err)
 		}
 
+		if a.TransactionID != x.Hash {
+			t.Error("foreign key was wrong value", a.TransactionID, x.Hash)
+		}
 	}
 }
 func testTransactionAddressesReload(t *testing.T) {
@@ -598,7 +898,7 @@ func testTransactionAddressesSelect(t *testing.T) {
 }
 
 var (
-	transactionAddressDBTypes = map[string]string{`AddressID`: `bigint`, `CreditAmount`: `decimal`, `DebitAmount`: `decimal`, `LatestTransactionTime`: `datetime`, `TransactionID`: `varchar`}
+	transactionAddressDBTypes = map[string]string{`AddressID`: `varchar`, `CreditAmount`: `decimal`, `DebitAmount`: `decimal`, `ID`: `varchar`, `LatestTransactionTime`: `datetime`, `TransactionID`: `varchar`}
 	_                         = bytes.MinRead
 )
 

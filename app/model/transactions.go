@@ -1014,7 +1014,7 @@ func (o *Transaction) AddInputs(exec boil.Executor, insert bool, related ...*Inp
 				strmangle.SetParamNames("`", "`", 0, []string{"transaction_id"}),
 				strmangle.WhereClause("`", "`", 0, inputPrimaryKeyColumns),
 			)
-			values := []interface{}{o.Hash, rel.TransactionID, rel.SequenceID}
+			values := []interface{}{o.Hash, rel.ID}
 
 			if boil.DebugMode {
 				fmt.Fprintln(boil.DebugWriter, updateQuery)
@@ -1182,7 +1182,7 @@ func (o *Transaction) AddTransactionAddresses(exec boil.Executor, insert bool, r
 				strmangle.SetParamNames("`", "`", 0, []string{"transaction_id"}),
 				strmangle.WhereClause("`", "`", 0, transactionAddressPrimaryKeyColumns),
 			)
-			values := []interface{}{o.Hash, rel.TransactionID, rel.AddressID}
+			values := []interface{}{o.Hash, rel.ID}
 
 			if boil.DebugMode {
 				fmt.Fprintln(boil.DebugWriter, updateQuery)

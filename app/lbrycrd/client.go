@@ -161,7 +161,7 @@ func (c *Client) GetBlockCount() (*uint64, error) {
 }
 func (c *Client) GetRawTransactionResponse(hash string) (*TxRawResult, error) {
 	response := new(TxRawResult)
-	return response, c.call(&response, "getrawtransaction", hash, 1)
+	return response, c.call(&response, "getrawtransaction", "70dc0d7d625c4a65a2882b0c58a51dbe40944175e5bb015041219865771f9d03", 1)
 }
 func (c *Client) GetBalance(s string) (*float64, error) {
 	rawresponse, err := c.callNoDecode("getblance")

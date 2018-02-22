@@ -129,7 +129,7 @@ func testAddressesExists(t *testing.T) {
 		t.Error(err)
 	}
 
-	e, err := AddressExists(tx, address.ID)
+	e, err := AddressExists(tx, address.Address)
 	if err != nil {
 		t.Errorf("Unable to check if Address exists: %s", err)
 	}
@@ -153,7 +153,7 @@ func testAddressesFind(t *testing.T) {
 		t.Error(err)
 	}
 
-	addressFound, err := FindAddress(tx, address.ID)
+	addressFound, err := FindAddress(tx, address.Address)
 	if err != nil {
 		t.Error(err)
 	}
@@ -344,10 +344,8 @@ func testAddressToManyInputs(t *testing.T) {
 	randomize.Struct(seed, &b, inputDBTypes, false, inputColumnsWithDefault...)
 	randomize.Struct(seed, &c, inputDBTypes, false, inputColumnsWithDefault...)
 
-	b.AddressID.Valid = true
-	c.AddressID.Valid = true
-	b.AddressID.Uint64 = a.ID
-	c.AddressID.Uint64 = a.ID
+	b.AddressID = a.Address
+	c.AddressID = a.Address
 	if err = b.Insert(tx); err != nil {
 		t.Fatal(err)
 	}
@@ -362,10 +360,10 @@ func testAddressToManyInputs(t *testing.T) {
 
 	bFound, cFound := false, false
 	for _, v := range input {
-		if v.AddressID.Uint64 == b.AddressID.Uint64 {
+		if v.AddressID == b.AddressID {
 			bFound = true
 		}
-		if v.AddressID.Uint64 == c.AddressID.Uint64 {
+		if v.AddressID == c.AddressID {
 			cFound = true
 		}
 	}
@@ -398,13 +396,13 @@ func testAddressToManyInputs(t *testing.T) {
 	}
 }
 
-func testAddressToManyOutputs(t *testing.T) {
+func testAddressToManyOutputsAddresses(t *testing.T) {
 	var err error
 	tx := MustTx(boil.Begin())
 	defer tx.Rollback()
 
 	var a Address
-	var b, c Output
+	var b, c OutputsAddress
 
 	seed := randomize.NewSeed()
 	if err = randomize.Struct(seed, &a, addressDBTypes, true, addressColumnsWithDefault...); err != nil {
@@ -415,9 +413,11 @@ func testAddressToManyOutputs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	randomize.Struct(seed, &b, outputDBTypes, false, outputColumnsWithDefault...)
-	randomize.Struct(seed, &c, outputDBTypes, false, outputColumnsWithDefault...)
+	randomize.Struct(seed, &b, outputsAddressDBTypes, false, outputsAddressColumnsWithDefault...)
+	randomize.Struct(seed, &c, outputsAddressDBTypes, false, outputsAddressColumnsWithDefault...)
 
+	b.AddressID = a.Address
+	c.AddressID = a.Address
 	if err = b.Insert(tx); err != nil {
 		t.Fatal(err)
 	}
@@ -425,26 +425,17 @@ func testAddressToManyOutputs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = tx.Exec("insert into `outputs_addresses` (`address_id`, `output_id`) values (?, ?)", a.ID, b.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	_, err = tx.Exec("insert into `outputs_addresses` (`address_id`, `output_id`) values (?, ?)", a.ID, c.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	output, err := a.Outputs(tx).All()
+	outputsAddress, err := a.OutputsAddresses(tx).All()
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	bFound, cFound := false, false
-	for _, v := range output {
-		if v.ID == b.ID {
+	for _, v := range outputsAddress {
+		if v.AddressID == b.AddressID {
 			bFound = true
 		}
-		if v.ID == c.ID {
+		if v.AddressID == c.AddressID {
 			cFound = true
 		}
 	}
@@ -457,23 +448,23 @@ func testAddressToManyOutputs(t *testing.T) {
 	}
 
 	slice := AddressSlice{&a}
-	if err = a.L.LoadOutputs(tx, false, (*[]*Address)(&slice)); err != nil {
+	if err = a.L.LoadOutputsAddresses(tx, false, (*[]*Address)(&slice)); err != nil {
 		t.Fatal(err)
 	}
-	if got := len(a.R.Outputs); got != 2 {
+	if got := len(a.R.OutputsAddresses); got != 2 {
 		t.Error("number of eager loaded records wrong, got:", got)
 	}
 
-	a.R.Outputs = nil
-	if err = a.L.LoadOutputs(tx, true, &a); err != nil {
+	a.R.OutputsAddresses = nil
+	if err = a.L.LoadOutputsAddresses(tx, true, &a); err != nil {
 		t.Fatal(err)
 	}
-	if got := len(a.R.Outputs); got != 2 {
+	if got := len(a.R.OutputsAddresses); got != 2 {
 		t.Error("number of eager loaded records wrong, got:", got)
 	}
 
 	if t.Failed() {
-		t.Logf("%#v", output)
+		t.Logf("%#v", outputsAddress)
 	}
 }
 
@@ -497,8 +488,8 @@ func testAddressToManyTransactionAddresses(t *testing.T) {
 	randomize.Struct(seed, &b, transactionAddressDBTypes, false, transactionAddressColumnsWithDefault...)
 	randomize.Struct(seed, &c, transactionAddressDBTypes, false, transactionAddressColumnsWithDefault...)
 
-	b.AddressID = a.ID
-	c.AddressID = a.ID
+	b.AddressID = a.Address
+	c.AddressID = a.Address
 	if err = b.Insert(tx); err != nil {
 		t.Fatal(err)
 	}
@@ -593,11 +584,11 @@ func testAddressToManyAddOpInputs(t *testing.T) {
 		first := x[0]
 		second := x[1]
 
-		if a.ID != first.AddressID.Uint64 {
-			t.Error("foreign key was wrong value", a.ID, first.AddressID.Uint64)
+		if a.Address != first.AddressID {
+			t.Error("foreign key was wrong value", a.Address, first.AddressID)
 		}
-		if a.ID != second.AddressID.Uint64 {
-			t.Error("foreign key was wrong value", a.ID, second.AddressID.Uint64)
+		if a.Address != second.AddressID {
+			t.Error("foreign key was wrong value", a.Address, second.AddressID)
 		}
 
 		if first.R.Address != &a {
@@ -623,196 +614,22 @@ func testAddressToManyAddOpInputs(t *testing.T) {
 		}
 	}
 }
-
-func testAddressToManySetOpInputs(t *testing.T) {
+func testAddressToManyAddOpOutputsAddresses(t *testing.T) {
 	var err error
 
 	tx := MustTx(boil.Begin())
 	defer tx.Rollback()
 
 	var a Address
-	var b, c, d, e Input
+	var b, c, d, e OutputsAddress
 
 	seed := randomize.NewSeed()
 	if err = randomize.Struct(seed, &a, addressDBTypes, false, strmangle.SetComplement(addressPrimaryKeyColumns, addressColumnsWithoutDefault)...); err != nil {
 		t.Fatal(err)
 	}
-	foreigners := []*Input{&b, &c, &d, &e}
+	foreigners := []*OutputsAddress{&b, &c, &d, &e}
 	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, inputDBTypes, false, strmangle.SetComplement(inputPrimaryKeyColumns, inputColumnsWithoutDefault)...); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	if err = a.Insert(tx); err != nil {
-		t.Fatal(err)
-	}
-	if err = b.Insert(tx); err != nil {
-		t.Fatal(err)
-	}
-	if err = c.Insert(tx); err != nil {
-		t.Fatal(err)
-	}
-
-	err = a.SetInputs(tx, false, &b, &c)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err := a.Inputs(tx).Count()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 2 {
-		t.Error("count was wrong:", count)
-	}
-
-	err = a.SetInputs(tx, true, &d, &e)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err = a.Inputs(tx).Count()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 2 {
-		t.Error("count was wrong:", count)
-	}
-
-	if b.AddressID.Valid {
-		t.Error("want b's foreign key value to be nil")
-	}
-	if c.AddressID.Valid {
-		t.Error("want c's foreign key value to be nil")
-	}
-	if a.ID != d.AddressID.Uint64 {
-		t.Error("foreign key was wrong value", a.ID, d.AddressID.Uint64)
-	}
-	if a.ID != e.AddressID.Uint64 {
-		t.Error("foreign key was wrong value", a.ID, e.AddressID.Uint64)
-	}
-
-	if b.R.Address != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if c.R.Address != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if d.R.Address != &a {
-		t.Error("relationship was not added properly to the foreign struct")
-	}
-	if e.R.Address != &a {
-		t.Error("relationship was not added properly to the foreign struct")
-	}
-
-	if a.R.Inputs[0] != &d {
-		t.Error("relationship struct slice not set to correct value")
-	}
-	if a.R.Inputs[1] != &e {
-		t.Error("relationship struct slice not set to correct value")
-	}
-}
-
-func testAddressToManyRemoveOpInputs(t *testing.T) {
-	var err error
-
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-
-	var a Address
-	var b, c, d, e Input
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, addressDBTypes, false, strmangle.SetComplement(addressPrimaryKeyColumns, addressColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	foreigners := []*Input{&b, &c, &d, &e}
-	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, inputDBTypes, false, strmangle.SetComplement(inputPrimaryKeyColumns, inputColumnsWithoutDefault)...); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	if err := a.Insert(tx); err != nil {
-		t.Fatal(err)
-	}
-
-	err = a.AddInputs(tx, true, foreigners...)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err := a.Inputs(tx).Count()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 4 {
-		t.Error("count was wrong:", count)
-	}
-
-	err = a.RemoveInputs(tx, foreigners[:2]...)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err = a.Inputs(tx).Count()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 2 {
-		t.Error("count was wrong:", count)
-	}
-
-	if b.AddressID.Valid {
-		t.Error("want b's foreign key value to be nil")
-	}
-	if c.AddressID.Valid {
-		t.Error("want c's foreign key value to be nil")
-	}
-
-	if b.R.Address != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if c.R.Address != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if d.R.Address != &a {
-		t.Error("relationship to a should have been preserved")
-	}
-	if e.R.Address != &a {
-		t.Error("relationship to a should have been preserved")
-	}
-
-	if len(a.R.Inputs) != 2 {
-		t.Error("should have preserved two relationships")
-	}
-
-	// Removal doesn't do a stable deletion for performance so we have to flip the order
-	if a.R.Inputs[1] != &d {
-		t.Error("relationship to d should have been preserved")
-	}
-	if a.R.Inputs[0] != &e {
-		t.Error("relationship to e should have been preserved")
-	}
-}
-
-func testAddressToManyAddOpOutputs(t *testing.T) {
-	var err error
-
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-
-	var a Address
-	var b, c, d, e Output
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, addressDBTypes, false, strmangle.SetComplement(addressPrimaryKeyColumns, addressColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	foreigners := []*Output{&b, &c, &d, &e}
-	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, outputDBTypes, false, strmangle.SetComplement(outputPrimaryKeyColumns, outputColumnsWithoutDefault)...); err != nil {
+		if err = randomize.Struct(seed, x, outputsAddressDBTypes, false, strmangle.SetComplement(outputsAddressPrimaryKeyColumns, outputsAddressColumnsWithoutDefault)...); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -827,13 +644,13 @@ func testAddressToManyAddOpOutputs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	foreignersSplitByInsertion := [][]*Output{
+	foreignersSplitByInsertion := [][]*OutputsAddress{
 		{&b, &c},
 		{&d, &e},
 	}
 
 	for i, x := range foreignersSplitByInsertion {
-		err = a.AddOutputs(tx, i != 0, x...)
+		err = a.AddOutputsAddresses(tx, i != 0, x...)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -841,21 +658,28 @@ func testAddressToManyAddOpOutputs(t *testing.T) {
 		first := x[0]
 		second := x[1]
 
-		if first.R.Addresses[0] != &a {
-			t.Error("relationship was not added properly to the slice")
+		if a.Address != first.AddressID {
+			t.Error("foreign key was wrong value", a.Address, first.AddressID)
 		}
-		if second.R.Addresses[0] != &a {
-			t.Error("relationship was not added properly to the slice")
-		}
-
-		if a.R.Outputs[i*2] != first {
-			t.Error("relationship struct slice not set to correct value")
-		}
-		if a.R.Outputs[i*2+1] != second {
-			t.Error("relationship struct slice not set to correct value")
+		if a.Address != second.AddressID {
+			t.Error("foreign key was wrong value", a.Address, second.AddressID)
 		}
 
-		count, err := a.Outputs(tx).Count()
+		if first.R.Address != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.Address != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.OutputsAddresses[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.OutputsAddresses[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.OutputsAddresses(tx).Count()
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -864,164 +688,6 @@ func testAddressToManyAddOpOutputs(t *testing.T) {
 		}
 	}
 }
-
-func testAddressToManySetOpOutputs(t *testing.T) {
-	var err error
-
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-
-	var a Address
-	var b, c, d, e Output
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, addressDBTypes, false, strmangle.SetComplement(addressPrimaryKeyColumns, addressColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	foreigners := []*Output{&b, &c, &d, &e}
-	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, outputDBTypes, false, strmangle.SetComplement(outputPrimaryKeyColumns, outputColumnsWithoutDefault)...); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	if err = a.Insert(tx); err != nil {
-		t.Fatal(err)
-	}
-	if err = b.Insert(tx); err != nil {
-		t.Fatal(err)
-	}
-	if err = c.Insert(tx); err != nil {
-		t.Fatal(err)
-	}
-
-	err = a.SetOutputs(tx, false, &b, &c)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err := a.Outputs(tx).Count()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 2 {
-		t.Error("count was wrong:", count)
-	}
-
-	err = a.SetOutputs(tx, true, &d, &e)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err = a.Outputs(tx).Count()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 2 {
-		t.Error("count was wrong:", count)
-	}
-
-	// The following checks cannot be implemented since we have no handle
-	// to these when we call Set(). Leaving them here as wishful thinking
-	// and to let people know there's dragons.
-	//
-	// if len(b.R.Addresses) != 0 {
-	// 	t.Error("relationship was not removed properly from the slice")
-	// }
-	// if len(c.R.Addresses) != 0 {
-	// 	t.Error("relationship was not removed properly from the slice")
-	// }
-	if d.R.Addresses[0] != &a {
-		t.Error("relationship was not added properly to the slice")
-	}
-	if e.R.Addresses[0] != &a {
-		t.Error("relationship was not added properly to the slice")
-	}
-
-	if a.R.Outputs[0] != &d {
-		t.Error("relationship struct slice not set to correct value")
-	}
-	if a.R.Outputs[1] != &e {
-		t.Error("relationship struct slice not set to correct value")
-	}
-}
-
-func testAddressToManyRemoveOpOutputs(t *testing.T) {
-	var err error
-
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-
-	var a Address
-	var b, c, d, e Output
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, addressDBTypes, false, strmangle.SetComplement(addressPrimaryKeyColumns, addressColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	foreigners := []*Output{&b, &c, &d, &e}
-	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, outputDBTypes, false, strmangle.SetComplement(outputPrimaryKeyColumns, outputColumnsWithoutDefault)...); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	if err := a.Insert(tx); err != nil {
-		t.Fatal(err)
-	}
-
-	err = a.AddOutputs(tx, true, foreigners...)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err := a.Outputs(tx).Count()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 4 {
-		t.Error("count was wrong:", count)
-	}
-
-	err = a.RemoveOutputs(tx, foreigners[:2]...)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err = a.Outputs(tx).Count()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 2 {
-		t.Error("count was wrong:", count)
-	}
-
-	if len(b.R.Addresses) != 0 {
-		t.Error("relationship was not removed properly from the slice")
-	}
-	if len(c.R.Addresses) != 0 {
-		t.Error("relationship was not removed properly from the slice")
-	}
-	if d.R.Addresses[0] != &a {
-		t.Error("relationship was not added properly to the foreign struct")
-	}
-	if e.R.Addresses[0] != &a {
-		t.Error("relationship was not added properly to the foreign struct")
-	}
-
-	if len(a.R.Outputs) != 2 {
-		t.Error("should have preserved two relationships")
-	}
-
-	// Removal doesn't do a stable deletion for performance so we have to flip the order
-	if a.R.Outputs[1] != &d {
-		t.Error("relationship to d should have been preserved")
-	}
-	if a.R.Outputs[0] != &e {
-		t.Error("relationship to e should have been preserved")
-	}
-}
-
 func testAddressToManyAddOpTransactionAddresses(t *testing.T) {
 	var err error
 
@@ -1066,11 +732,11 @@ func testAddressToManyAddOpTransactionAddresses(t *testing.T) {
 		first := x[0]
 		second := x[1]
 
-		if a.ID != first.AddressID {
-			t.Error("foreign key was wrong value", a.ID, first.AddressID)
+		if a.Address != first.AddressID {
+			t.Error("foreign key was wrong value", a.Address, first.AddressID)
 		}
-		if a.ID != second.AddressID {
-			t.Error("foreign key was wrong value", a.ID, second.AddressID)
+		if a.Address != second.AddressID {
+			t.Error("foreign key was wrong value", a.Address, second.AddressID)
 		}
 
 		if first.R.Address != &a {
@@ -1167,7 +833,7 @@ func testAddressesSelect(t *testing.T) {
 }
 
 var (
-	addressDBTypes = map[string]string{`Address`: `varchar`, `Balance`: `decimal`, `Created`: `datetime`, `FirstSeen`: `datetime`, `ID`: `bigint`, `Modified`: `datetime`, `Tag`: `varchar`, `TagURL`: `varchar`, `TotalReceived`: `decimal`, `TotalSent`: `decimal`}
+	addressDBTypes = map[string]string{`Address`: `varchar`, `Balance`: `decimal`, `TotalReceived`: `decimal`, `TotalSent`: `decimal`}
 	_              = bytes.MinRead
 )
 

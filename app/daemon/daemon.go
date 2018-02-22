@@ -3,6 +3,8 @@ package daemon
 import (
 	"github.com/lbryio/chainquery/app/lbrycrd"
 	"github.com/lbryio/chainquery/app/model"
+	"github.com/lbryio/lbryschema.go/claim"
+	"github.com/lbryio/lbryschema.go/pb"
 	"github.com/lbryio/sqlboiler/boil"
 	log "github.com/sirupsen/logrus"
 	"runtime"
@@ -52,6 +54,20 @@ func daemonIteration() error {
 	return nil
 }
 
+func getBlockToProcess(height *uint64) (*lbrycrd.GetBlockResponse, error) {
+	hash, err := lbrycrd.DefaultClient().GetBlockHash(*height)
+	if err != nil {
+		log.Error("GetBlockHash Error: ", err)
+		return nil, err
+	}
+	jsonBlock, err := lbrycrd.DefaultClient().GetBlock(*hash)
+	if err != nil {
+		log.Error("GetBlock Error: ", *hash, err)
+		return nil, err
+	}
+	return jsonBlock, nil
+}
+
 func runBlockProcessing(height *uint64) {
 	running = true
 	jsonBlock, err := getBlockToProcess(height)
@@ -99,7 +115,7 @@ func runBlockProcessing(height *uint64) {
 
 	lastHeightProcess = block.Height
 	if lastHeightProcess+uint64(1) < blockHeight {
-		daemonIteration()
+		//daemonIteration()
 	}
 	running = false
 }
@@ -125,20 +141,72 @@ func processTx(jsonTx *lbrycrd.TxRawResult) error {
 	} else {
 		err = transaction.Insert(boil.GetDB())
 	}
+	if err != nil {
+		return err
+	}
+	vins := jsonTx.Vin
+	for i := range vins {
+		err = processVin(&vins[i], &transaction.Hash)
+		if err != nil {
+			log.Error("Vin Error->", err)
+			err = nil
+		}
+	}
+	vouts := jsonTx.Vout
+	for i := range vouts {
+		err := processVout(&vouts[i])
+		if err != nil {
+			log.Error("Vout Error->", err)
+			err = nil
+		}
+	}
 
 	return err
 }
 
-func getBlockToProcess(height *uint64) (*lbrycrd.GetBlockResponse, error) {
-	hash, err := lbrycrd.DefaultClient().GetBlockHash(*height)
-	if err != nil {
-		log.Error("GetBlockHash Error: ", err)
-		return nil, err
+func processVin(jsonVin *lbrycrd.Vin, txHash *string) error {
+	vin := &model.Input{}
+	inputid := *txHash + strconv.Itoa(int(jsonVin.Sequence))
+	foundVin, err := model.FindInput(boil.GetDB(), inputid)
+	if foundVin != nil {
+		vin = foundVin
 	}
-	jsonBlock, err := lbrycrd.DefaultClient().GetBlock(*hash)
-	if err != nil {
-		log.Error("GetBlock Error: ", *hash, err)
-		return nil, err
+	vin.ID = inputid
+	vin.TransactionID = *txHash
+	vin.SequenceID = uint(jsonVin.Sequence)
+	vin.Coinbase.String = jsonVin.Coinbase
+	vin.PrevoutHash.String = jsonVin.Txid
+	vin.PrevoutN.Uint = uint(jsonVin.Vout)
+	println("Nil ScriptSiq", jsonVin.ScriptSig == nil)
+	processScript(&jsonVin.ScriptSig.Hex)
+	//vin.ScriptSigHex.String = jsonVin.ScriptSig.Hex
+	//vin.ScriptSigSSM.String = jsonVin.ScriptSig.Asm
+	//ForeignKey
+	err = nil //reset to catch error for update/insert
+	if foundVin != nil {
+		//err = vin.Update(boil.GetDB())
+	} else {
+		//err = vin.Insert(boil.GetDB())
 	}
-	return jsonBlock, nil
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func processVout(jsonVout *lbrycrd.Vout) error {
+	return nil
+}
+
+func processScript(hex *string) {
+
+	c := new(claim.ClaimHelper)
+	c.Claim = new(pb.Claim)
+	log.Debug(c.String())
+	err := c.LoadFromHexString(*hex, "lbrycrd_main")
+	if err != nil {
+		log.Error(err)
+	} else {
+		log.Info("Sucess")
+	}
 }

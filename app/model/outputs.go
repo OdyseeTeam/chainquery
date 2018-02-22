@@ -22,9 +22,9 @@ import (
 
 // Output is an object representing the database table.
 type Output struct {
-	ID                           uint64      `boil:"id" json:"id" toml:"id" yaml:"id"`
+	ID                           string      `boil:"id" json:"id" toml:"id" yaml:"id"`
 	Value                        null.String `boil:"value" json:"value,omitempty" toml:"value" yaml:"value,omitempty"`
-	VOut                         null.Uint   `boil:"v_out" json:"v_out,omitempty" toml:"v_out" yaml:"v_out,omitempty"`
+	SequenceID                   uint        `boil:"sequence_id" json:"sequence_id" toml:"sequence_id" yaml:"sequence_id"`
 	TransactionID                string      `boil:"transaction_id" json:"transaction_id" toml:"transaction_id" yaml:"transaction_id"`
 	Type                         null.String `boil:"type" json:"type,omitempty" toml:"type" yaml:"type,omitempty"`
 	ScriptPubKeyAsm              null.String `boil:"script_pub_key_asm" json:"script_pub_key_asm,omitempty" toml:"script_pub_key_asm" yaml:"script_pub_key_asm,omitempty"`
@@ -35,6 +35,7 @@ type Output struct {
 	IsSpent                      bool        `boil:"is_spent" json:"is_spent" toml:"is_spent" yaml:"is_spent"`
 	SpentByTransactionID         string      `boil:"spent_by_transaction_id" json:"spent_by_transaction_id" toml:"spent_by_transaction_id" yaml:"spent_by_transaction_id"`
 	SpentByTransactionSequenceID null.Uint   `boil:"spent_by_transaction_sequence_id" json:"spent_by_transaction_sequence_id,omitempty" toml:"spent_by_transaction_sequence_id" yaml:"spent_by_transaction_sequence_id,omitempty"`
+	SpentByInputID               string      `boil:"spent_by_input_id" json:"spent_by_input_id" toml:"spent_by_input_id" yaml:"spent_by_input_id"`
 	Created                      time.Time   `boil:"created" json:"created" toml:"created" yaml:"created"`
 	Modified                     time.Time   `boil:"modified" json:"modified" toml:"modified" yaml:"modified"`
 
@@ -45,7 +46,7 @@ type Output struct {
 var OutputColumns = struct {
 	ID                           string
 	Value                        string
-	VOut                         string
+	SequenceID                   string
 	TransactionID                string
 	Type                         string
 	ScriptPubKeyAsm              string
@@ -56,12 +57,13 @@ var OutputColumns = struct {
 	IsSpent                      string
 	SpentByTransactionID         string
 	SpentByTransactionSequenceID string
+	SpentByInputID               string
 	Created                      string
 	Modified                     string
 }{
 	ID:                           "id",
 	Value:                        "value",
-	VOut:                         "v_out",
+	SequenceID:                   "sequence_id",
 	TransactionID:                "transaction_id",
 	Type:                         "type",
 	ScriptPubKeyAsm:              "script_pub_key_asm",
@@ -72,25 +74,25 @@ var OutputColumns = struct {
 	IsSpent:                      "is_spent",
 	SpentByTransactionID:         "spent_by_transaction_id",
 	SpentByTransactionSequenceID: "spent_by_transaction_sequence_id",
-	Created:  "created",
-	Modified: "modified",
+	SpentByInputID:               "spent_by_input_id",
+	Created:                      "created",
+	Modified:                     "modified",
 }
 
 // outputR is where relationships are stored.
 type outputR struct {
-	SpentByTransaction         *Input
-	SpentByTransactionSequence *Input
-	Transaction                *Transaction
-	Addresses                  AddressSlice
+	SpentByInput     *Input
+	Transaction      *Transaction
+	OutputsAddresses OutputsAddressSlice
 }
 
 // outputL is where Load methods for each relationship are stored.
 type outputL struct{}
 
 var (
-	outputColumns               = []string{"id", "value", "v_out", "transaction_id", "type", "script_pub_key_asm", "script_pub_key_hex", "required_signatures", "hash160", "addresslist", "is_spent", "spent_by_transaction_id", "spent_by_transaction_sequence_id", "created", "modified"}
-	outputColumnsWithoutDefault = []string{"value", "v_out", "transaction_id", "type", "script_pub_key_asm", "script_pub_key_hex", "required_signatures", "hash160", "addresslist", "spent_by_transaction_id", "spent_by_transaction_sequence_id", "created", "modified"}
-	outputColumnsWithDefault    = []string{"id", "is_spent"}
+	outputColumns               = []string{"id", "value", "sequence_id", "transaction_id", "type", "script_pub_key_asm", "script_pub_key_hex", "required_signatures", "hash160", "addresslist", "is_spent", "spent_by_transaction_id", "spent_by_transaction_sequence_id", "spent_by_input_id", "created", "modified"}
+	outputColumnsWithoutDefault = []string{"id", "value", "sequence_id", "transaction_id", "type", "script_pub_key_asm", "script_pub_key_hex", "required_signatures", "hash160", "addresslist", "spent_by_transaction_id", "spent_by_transaction_sequence_id", "spent_by_input_id", "created", "modified"}
+	outputColumnsWithDefault    = []string{"is_spent"}
 	outputPrimaryKeyColumns     = []string{"id"}
 )
 
@@ -223,34 +225,15 @@ func (q outputQuery) Exists() (bool, error) {
 	return count > 0, nil
 }
 
-// SpentByTransactionG pointed to by the foreign key.
-func (o *Output) SpentByTransactionG(mods ...qm.QueryMod) inputQuery {
-	return o.SpentByTransaction(boil.GetDB(), mods...)
+// SpentByInputG pointed to by the foreign key.
+func (o *Output) SpentByInputG(mods ...qm.QueryMod) inputQuery {
+	return o.SpentByInput(boil.GetDB(), mods...)
 }
 
-// SpentByTransaction pointed to by the foreign key.
-func (o *Output) SpentByTransaction(exec boil.Executor, mods ...qm.QueryMod) inputQuery {
+// SpentByInput pointed to by the foreign key.
+func (o *Output) SpentByInput(exec boil.Executor, mods ...qm.QueryMod) inputQuery {
 	queryMods := []qm.QueryMod{
-		qm.Where("transaction_id=?", o.SpentByTransactionID),
-	}
-
-	queryMods = append(queryMods, mods...)
-
-	query := Inputs(exec, queryMods...)
-	queries.SetFrom(query.Query, "`inputs`")
-
-	return query
-}
-
-// SpentByTransactionSequenceG pointed to by the foreign key.
-func (o *Output) SpentByTransactionSequenceG(mods ...qm.QueryMod) inputQuery {
-	return o.SpentByTransactionSequence(boil.GetDB(), mods...)
-}
-
-// SpentByTransactionSequence pointed to by the foreign key.
-func (o *Output) SpentByTransactionSequence(exec boil.Executor, mods ...qm.QueryMod) inputQuery {
-	queryMods := []qm.QueryMod{
-		qm.Where("sequence_id=?", o.SpentByTransactionSequenceID),
+		qm.Where("id=?", o.SpentByInputID),
 	}
 
 	queryMods = append(queryMods, mods...)
@@ -280,36 +263,35 @@ func (o *Output) Transaction(exec boil.Executor, mods ...qm.QueryMod) transactio
 	return query
 }
 
-// AddressesG retrieves all the address's addresses.
-func (o *Output) AddressesG(mods ...qm.QueryMod) addressQuery {
-	return o.Addresses(boil.GetDB(), mods...)
+// OutputsAddressesG retrieves all the outputs_address's outputs addresses.
+func (o *Output) OutputsAddressesG(mods ...qm.QueryMod) outputsAddressQuery {
+	return o.OutputsAddresses(boil.GetDB(), mods...)
 }
 
-// Addresses retrieves all the address's addresses with an executor.
-func (o *Output) Addresses(exec boil.Executor, mods ...qm.QueryMod) addressQuery {
+// OutputsAddresses retrieves all the outputs_address's outputs addresses with an executor.
+func (o *Output) OutputsAddresses(exec boil.Executor, mods ...qm.QueryMod) outputsAddressQuery {
 	var queryMods []qm.QueryMod
 	if len(mods) != 0 {
 		queryMods = append(queryMods, mods...)
 	}
 
 	queryMods = append(queryMods,
-		qm.InnerJoin("`outputs_addresses` on `addresses`.`id` = `outputs_addresses`.`address_id`"),
 		qm.Where("`outputs_addresses`.`output_id`=?", o.ID),
 	)
 
-	query := Addresses(exec, queryMods...)
-	queries.SetFrom(query.Query, "`addresses`")
+	query := OutputsAddresses(exec, queryMods...)
+	queries.SetFrom(query.Query, "`outputs_addresses`")
 
 	if len(queries.GetSelect(query.Query)) == 0 {
-		queries.SetSelect(query.Query, []string{"`addresses`.*"})
+		queries.SetSelect(query.Query, []string{"`outputs_addresses`.*"})
 	}
 
 	return query
 }
 
-// LoadSpentByTransaction allows an eager lookup of values, cached into the
+// LoadSpentByInput allows an eager lookup of values, cached into the
 // loaded structs of the objects.
-func (outputL) LoadSpentByTransaction(e boil.Executor, singular bool, maybeOutput interface{}) error {
+func (outputL) LoadSpentByInput(e boil.Executor, singular bool, maybeOutput interface{}) error {
 	var slice []*Output
 	var object *Output
 
@@ -326,18 +308,18 @@ func (outputL) LoadSpentByTransaction(e boil.Executor, singular bool, maybeOutpu
 		if object.R == nil {
 			object.R = &outputR{}
 		}
-		args[0] = object.SpentByTransactionID
+		args[0] = object.SpentByInputID
 	} else {
 		for i, obj := range slice {
 			if obj.R == nil {
 				obj.R = &outputR{}
 			}
-			args[i] = obj.SpentByTransactionID
+			args[i] = obj.SpentByInputID
 		}
 	}
 
 	query := fmt.Sprintf(
-		"select * from `inputs` where `transaction_id` in (%s)",
+		"select * from `inputs` where `id` in (%s)",
 		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
 	)
 
@@ -361,84 +343,14 @@ func (outputL) LoadSpentByTransaction(e boil.Executor, singular bool, maybeOutpu
 	}
 
 	if singular {
-		object.R.SpentByTransaction = resultSlice[0]
+		object.R.SpentByInput = resultSlice[0]
 		return nil
 	}
 
 	for _, local := range slice {
 		for _, foreign := range resultSlice {
-			if local.SpentByTransactionID == foreign.TransactionID {
-				local.R.SpentByTransaction = foreign
-				break
-			}
-		}
-	}
-
-	return nil
-}
-
-// LoadSpentByTransactionSequence allows an eager lookup of values, cached into the
-// loaded structs of the objects.
-func (outputL) LoadSpentByTransactionSequence(e boil.Executor, singular bool, maybeOutput interface{}) error {
-	var slice []*Output
-	var object *Output
-
-	count := 1
-	if singular {
-		object = maybeOutput.(*Output)
-	} else {
-		slice = *maybeOutput.(*[]*Output)
-		count = len(slice)
-	}
-
-	args := make([]interface{}, count)
-	if singular {
-		if object.R == nil {
-			object.R = &outputR{}
-		}
-		args[0] = object.SpentByTransactionSequenceID
-	} else {
-		for i, obj := range slice {
-			if obj.R == nil {
-				obj.R = &outputR{}
-			}
-			args[i] = obj.SpentByTransactionSequenceID
-		}
-	}
-
-	query := fmt.Sprintf(
-		"select * from `inputs` where `sequence_id` in (%s)",
-		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
-	)
-
-	if boil.DebugMode {
-		fmt.Fprintf(boil.DebugWriter, "%s\n%v\n", query, args)
-	}
-
-	results, err := e.Query(query, args...)
-	if err != nil {
-		return errors.Wrap(err, "failed to eager load Input")
-	}
-	defer results.Close()
-
-	var resultSlice []*Input
-	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice Input")
-	}
-
-	if len(resultSlice) == 0 {
-		return nil
-	}
-
-	if singular {
-		object.R.SpentByTransactionSequence = resultSlice[0]
-		return nil
-	}
-
-	for _, local := range slice {
-		for _, foreign := range resultSlice {
-			if local.SpentByTransactionSequenceID.Uint == foreign.SequenceID {
-				local.R.SpentByTransactionSequence = foreign
+			if local.SpentByInputID == foreign.ID {
+				local.R.SpentByInput = foreign
 				break
 			}
 		}
@@ -517,9 +429,9 @@ func (outputL) LoadTransaction(e boil.Executor, singular bool, maybeOutput inter
 	return nil
 }
 
-// LoadAddresses allows an eager lookup of values, cached into the
+// LoadOutputsAddresses allows an eager lookup of values, cached into the
 // loaded structs of the objects.
-func (outputL) LoadAddresses(e boil.Executor, singular bool, maybeOutput interface{}) error {
+func (outputL) LoadOutputsAddresses(e boil.Executor, singular bool, maybeOutput interface{}) error {
 	var slice []*Output
 	var object *Output
 
@@ -547,7 +459,7 @@ func (outputL) LoadAddresses(e boil.Executor, singular bool, maybeOutput interfa
 	}
 
 	query := fmt.Sprintf(
-		"select `a`.*, `b`.`output_id` from `addresses` as `a` inner join `outputs_addresses` as `b` on `a`.`id` = `b`.`address_id` where `b`.`output_id` in (%s)",
+		"select * from `outputs_addresses` where `output_id` in (%s)",
 		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
 	)
 	if boil.DebugMode {
@@ -556,40 +468,24 @@ func (outputL) LoadAddresses(e boil.Executor, singular bool, maybeOutput interfa
 
 	results, err := e.Query(query, args...)
 	if err != nil {
-		return errors.Wrap(err, "failed to eager load addresses")
+		return errors.Wrap(err, "failed to eager load outputs_addresses")
 	}
 	defer results.Close()
 
-	var resultSlice []*Address
-
-	var localJoinCols []uint64
-	for results.Next() {
-		one := new(Address)
-		var localJoinCol uint64
-
-		err = results.Scan(&one.ID, &one.Address, &one.FirstSeen, &one.TotalReceived, &one.TotalSent, &one.Balance, &one.Tag, &one.TagURL, &one.Created, &one.Modified, &localJoinCol)
-		if err = results.Err(); err != nil {
-			return errors.Wrap(err, "failed to plebian-bind eager loaded slice addresses")
-		}
-
-		resultSlice = append(resultSlice, one)
-		localJoinCols = append(localJoinCols, localJoinCol)
-	}
-
-	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "failed to plebian-bind eager loaded slice addresses")
+	var resultSlice []*OutputsAddress
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice outputs_addresses")
 	}
 
 	if singular {
-		object.R.Addresses = resultSlice
+		object.R.OutputsAddresses = resultSlice
 		return nil
 	}
 
-	for i, foreign := range resultSlice {
-		localJoinCol := localJoinCols[i]
+	for _, foreign := range resultSlice {
 		for _, local := range slice {
-			if local.ID == localJoinCol {
-				local.R.Addresses = append(local.R.Addresses, foreign)
+			if local.ID == foreign.OutputID {
+				local.R.OutputsAddresses = append(local.R.OutputsAddresses, foreign)
 				break
 			}
 		}
@@ -598,38 +494,38 @@ func (outputL) LoadAddresses(e boil.Executor, singular bool, maybeOutput interfa
 	return nil
 }
 
-// SetSpentByTransactionG of the output to the related item.
-// Sets o.R.SpentByTransaction to related.
-// Adds o to related.R.SpentByTransactionOutputs.
+// SetSpentByInputG of the output to the related item.
+// Sets o.R.SpentByInput to related.
+// Adds o to related.R.SpentByInputOutputs.
 // Uses the global database handle.
-func (o *Output) SetSpentByTransactionG(insert bool, related *Input) error {
-	return o.SetSpentByTransaction(boil.GetDB(), insert, related)
+func (o *Output) SetSpentByInputG(insert bool, related *Input) error {
+	return o.SetSpentByInput(boil.GetDB(), insert, related)
 }
 
-// SetSpentByTransactionP of the output to the related item.
-// Sets o.R.SpentByTransaction to related.
-// Adds o to related.R.SpentByTransactionOutputs.
+// SetSpentByInputP of the output to the related item.
+// Sets o.R.SpentByInput to related.
+// Adds o to related.R.SpentByInputOutputs.
 // Panics on error.
-func (o *Output) SetSpentByTransactionP(exec boil.Executor, insert bool, related *Input) {
-	if err := o.SetSpentByTransaction(exec, insert, related); err != nil {
+func (o *Output) SetSpentByInputP(exec boil.Executor, insert bool, related *Input) {
+	if err := o.SetSpentByInput(exec, insert, related); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
-// SetSpentByTransactionGP of the output to the related item.
-// Sets o.R.SpentByTransaction to related.
-// Adds o to related.R.SpentByTransactionOutputs.
+// SetSpentByInputGP of the output to the related item.
+// Sets o.R.SpentByInput to related.
+// Adds o to related.R.SpentByInputOutputs.
 // Uses the global database handle and panics on error.
-func (o *Output) SetSpentByTransactionGP(insert bool, related *Input) {
-	if err := o.SetSpentByTransaction(boil.GetDB(), insert, related); err != nil {
+func (o *Output) SetSpentByInputGP(insert bool, related *Input) {
+	if err := o.SetSpentByInput(boil.GetDB(), insert, related); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
-// SetSpentByTransaction of the output to the related item.
-// Sets o.R.SpentByTransaction to related.
-// Adds o to related.R.SpentByTransactionOutputs.
-func (o *Output) SetSpentByTransaction(exec boil.Executor, insert bool, related *Input) error {
+// SetSpentByInput of the output to the related item.
+// Sets o.R.SpentByInput to related.
+// Adds o to related.R.SpentByInputOutputs.
+func (o *Output) SetSpentByInput(exec boil.Executor, insert bool, related *Input) error {
 	var err error
 	if insert {
 		if err = related.Insert(exec); err != nil {
@@ -639,10 +535,10 @@ func (o *Output) SetSpentByTransaction(exec boil.Executor, insert bool, related 
 
 	updateQuery := fmt.Sprintf(
 		"UPDATE `outputs` SET %s WHERE %s",
-		strmangle.SetParamNames("`", "`", 0, []string{"spent_by_transaction_id"}),
+		strmangle.SetParamNames("`", "`", 0, []string{"spent_by_input_id"}),
 		strmangle.WhereClause("`", "`", 0, outputPrimaryKeyColumns),
 	)
-	values := []interface{}{related.TransactionID, o.ID}
+	values := []interface{}{related.ID, o.ID}
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, updateQuery)
@@ -653,161 +549,24 @@ func (o *Output) SetSpentByTransaction(exec boil.Executor, insert bool, related 
 		return errors.Wrap(err, "failed to update local table")
 	}
 
-	o.SpentByTransactionID = related.TransactionID
+	o.SpentByInputID = related.ID
 
 	if o.R == nil {
 		o.R = &outputR{
-			SpentByTransaction: related,
+			SpentByInput: related,
 		}
 	} else {
-		o.R.SpentByTransaction = related
+		o.R.SpentByInput = related
 	}
 
 	if related.R == nil {
 		related.R = &inputR{
-			SpentByTransactionOutputs: OutputSlice{o},
+			SpentByInputOutputs: OutputSlice{o},
 		}
 	} else {
-		related.R.SpentByTransactionOutputs = append(related.R.SpentByTransactionOutputs, o)
+		related.R.SpentByInputOutputs = append(related.R.SpentByInputOutputs, o)
 	}
 
-	return nil
-}
-
-// SetSpentByTransactionSequenceG of the output to the related item.
-// Sets o.R.SpentByTransactionSequence to related.
-// Adds o to related.R.SpentByTransactionSequenceOutputs.
-// Uses the global database handle.
-func (o *Output) SetSpentByTransactionSequenceG(insert bool, related *Input) error {
-	return o.SetSpentByTransactionSequence(boil.GetDB(), insert, related)
-}
-
-// SetSpentByTransactionSequenceP of the output to the related item.
-// Sets o.R.SpentByTransactionSequence to related.
-// Adds o to related.R.SpentByTransactionSequenceOutputs.
-// Panics on error.
-func (o *Output) SetSpentByTransactionSequenceP(exec boil.Executor, insert bool, related *Input) {
-	if err := o.SetSpentByTransactionSequence(exec, insert, related); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
-// SetSpentByTransactionSequenceGP of the output to the related item.
-// Sets o.R.SpentByTransactionSequence to related.
-// Adds o to related.R.SpentByTransactionSequenceOutputs.
-// Uses the global database handle and panics on error.
-func (o *Output) SetSpentByTransactionSequenceGP(insert bool, related *Input) {
-	if err := o.SetSpentByTransactionSequence(boil.GetDB(), insert, related); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
-// SetSpentByTransactionSequence of the output to the related item.
-// Sets o.R.SpentByTransactionSequence to related.
-// Adds o to related.R.SpentByTransactionSequenceOutputs.
-func (o *Output) SetSpentByTransactionSequence(exec boil.Executor, insert bool, related *Input) error {
-	var err error
-	if insert {
-		if err = related.Insert(exec); err != nil {
-			return errors.Wrap(err, "failed to insert into foreign table")
-		}
-	}
-
-	updateQuery := fmt.Sprintf(
-		"UPDATE `outputs` SET %s WHERE %s",
-		strmangle.SetParamNames("`", "`", 0, []string{"spent_by_transaction_sequence_id"}),
-		strmangle.WhereClause("`", "`", 0, outputPrimaryKeyColumns),
-	)
-	values := []interface{}{related.SequenceID, o.ID}
-
-	if boil.DebugMode {
-		fmt.Fprintln(boil.DebugWriter, updateQuery)
-		fmt.Fprintln(boil.DebugWriter, values)
-	}
-
-	if _, err = exec.Exec(updateQuery, values...); err != nil {
-		return errors.Wrap(err, "failed to update local table")
-	}
-
-	o.SpentByTransactionSequenceID.Uint = related.SequenceID
-	o.SpentByTransactionSequenceID.Valid = true
-
-	if o.R == nil {
-		o.R = &outputR{
-			SpentByTransactionSequence: related,
-		}
-	} else {
-		o.R.SpentByTransactionSequence = related
-	}
-
-	if related.R == nil {
-		related.R = &inputR{
-			SpentByTransactionSequenceOutputs: OutputSlice{o},
-		}
-	} else {
-		related.R.SpentByTransactionSequenceOutputs = append(related.R.SpentByTransactionSequenceOutputs, o)
-	}
-
-	return nil
-}
-
-// RemoveSpentByTransactionSequenceG relationship.
-// Sets o.R.SpentByTransactionSequence to nil.
-// Removes o from all passed in related items' relationships struct (Optional).
-// Uses the global database handle.
-func (o *Output) RemoveSpentByTransactionSequenceG(related *Input) error {
-	return o.RemoveSpentByTransactionSequence(boil.GetDB(), related)
-}
-
-// RemoveSpentByTransactionSequenceP relationship.
-// Sets o.R.SpentByTransactionSequence to nil.
-// Removes o from all passed in related items' relationships struct (Optional).
-// Panics on error.
-func (o *Output) RemoveSpentByTransactionSequenceP(exec boil.Executor, related *Input) {
-	if err := o.RemoveSpentByTransactionSequence(exec, related); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
-// RemoveSpentByTransactionSequenceGP relationship.
-// Sets o.R.SpentByTransactionSequence to nil.
-// Removes o from all passed in related items' relationships struct (Optional).
-// Uses the global database handle and panics on error.
-func (o *Output) RemoveSpentByTransactionSequenceGP(related *Input) {
-	if err := o.RemoveSpentByTransactionSequence(boil.GetDB(), related); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
-// RemoveSpentByTransactionSequence relationship.
-// Sets o.R.SpentByTransactionSequence to nil.
-// Removes o from all passed in related items' relationships struct (Optional).
-func (o *Output) RemoveSpentByTransactionSequence(exec boil.Executor, related *Input) error {
-	var err error
-
-	o.SpentByTransactionSequenceID.Valid = false
-	if err = o.Update(exec, "spent_by_transaction_sequence_id"); err != nil {
-		o.SpentByTransactionSequenceID.Valid = true
-		return errors.Wrap(err, "failed to update local table")
-	}
-
-	o.R.SpentByTransactionSequence = nil
-	if related == nil || related.R == nil {
-		return nil
-	}
-
-	for i, ri := range related.R.SpentByTransactionSequenceOutputs {
-		if o.SpentByTransactionSequenceID.Uint != ri.SpentByTransactionSequenceID.Uint {
-			continue
-		}
-
-		ln := len(related.R.SpentByTransactionSequenceOutputs)
-		if ln > 1 && i < ln-1 {
-			related.R.SpentByTransactionSequenceOutputs[i] = related.R.SpentByTransactionSequenceOutputs[ln-1]
-		}
-		related.R.SpentByTransactionSequenceOutputs = related.R.SpentByTransactionSequenceOutputs[:ln-1]
-		break
-	}
 	return nil
 }
 
@@ -887,240 +646,88 @@ func (o *Output) SetTransaction(exec boil.Executor, insert bool, related *Transa
 	return nil
 }
 
-// AddAddressesG adds the given related objects to the existing relationships
+// AddOutputsAddressesG adds the given related objects to the existing relationships
 // of the output, optionally inserting them as new records.
-// Appends related to o.R.Addresses.
-// Sets related.R.Outputs appropriately.
+// Appends related to o.R.OutputsAddresses.
+// Sets related.R.Output appropriately.
 // Uses the global database handle.
-func (o *Output) AddAddressesG(insert bool, related ...*Address) error {
-	return o.AddAddresses(boil.GetDB(), insert, related...)
+func (o *Output) AddOutputsAddressesG(insert bool, related ...*OutputsAddress) error {
+	return o.AddOutputsAddresses(boil.GetDB(), insert, related...)
 }
 
-// AddAddressesP adds the given related objects to the existing relationships
+// AddOutputsAddressesP adds the given related objects to the existing relationships
 // of the output, optionally inserting them as new records.
-// Appends related to o.R.Addresses.
-// Sets related.R.Outputs appropriately.
+// Appends related to o.R.OutputsAddresses.
+// Sets related.R.Output appropriately.
 // Panics on error.
-func (o *Output) AddAddressesP(exec boil.Executor, insert bool, related ...*Address) {
-	if err := o.AddAddresses(exec, insert, related...); err != nil {
+func (o *Output) AddOutputsAddressesP(exec boil.Executor, insert bool, related ...*OutputsAddress) {
+	if err := o.AddOutputsAddresses(exec, insert, related...); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
-// AddAddressesGP adds the given related objects to the existing relationships
+// AddOutputsAddressesGP adds the given related objects to the existing relationships
 // of the output, optionally inserting them as new records.
-// Appends related to o.R.Addresses.
-// Sets related.R.Outputs appropriately.
+// Appends related to o.R.OutputsAddresses.
+// Sets related.R.Output appropriately.
 // Uses the global database handle and panics on error.
-func (o *Output) AddAddressesGP(insert bool, related ...*Address) {
-	if err := o.AddAddresses(boil.GetDB(), insert, related...); err != nil {
+func (o *Output) AddOutputsAddressesGP(insert bool, related ...*OutputsAddress) {
+	if err := o.AddOutputsAddresses(boil.GetDB(), insert, related...); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
-// AddAddresses adds the given related objects to the existing relationships
+// AddOutputsAddresses adds the given related objects to the existing relationships
 // of the output, optionally inserting them as new records.
-// Appends related to o.R.Addresses.
-// Sets related.R.Outputs appropriately.
-func (o *Output) AddAddresses(exec boil.Executor, insert bool, related ...*Address) error {
+// Appends related to o.R.OutputsAddresses.
+// Sets related.R.Output appropriately.
+func (o *Output) AddOutputsAddresses(exec boil.Executor, insert bool, related ...*OutputsAddress) error {
 	var err error
 	for _, rel := range related {
 		if insert {
+			rel.OutputID = o.ID
 			if err = rel.Insert(exec); err != nil {
 				return errors.Wrap(err, "failed to insert into foreign table")
 			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE `outputs_addresses` SET %s WHERE %s",
+				strmangle.SetParamNames("`", "`", 0, []string{"output_id"}),
+				strmangle.WhereClause("`", "`", 0, outputsAddressPrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.OutputSequenceID, rel.OutputTransactionID, rel.AddressID}
+
+			if boil.DebugMode {
+				fmt.Fprintln(boil.DebugWriter, updateQuery)
+				fmt.Fprintln(boil.DebugWriter, values)
+			}
+
+			if _, err = exec.Exec(updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.OutputID = o.ID
 		}
 	}
 
-	for _, rel := range related {
-		query := "insert into `outputs_addresses` (`output_id`, `address_id`) values (?, ?)"
-		values := []interface{}{o.ID, rel.ID}
-
-		if boil.DebugMode {
-			fmt.Fprintln(boil.DebugWriter, query)
-			fmt.Fprintln(boil.DebugWriter, values)
-		}
-
-		_, err = exec.Exec(query, values...)
-		if err != nil {
-			return errors.Wrap(err, "failed to insert into join table")
-		}
-	}
 	if o.R == nil {
 		o.R = &outputR{
-			Addresses: related,
+			OutputsAddresses: related,
 		}
 	} else {
-		o.R.Addresses = append(o.R.Addresses, related...)
+		o.R.OutputsAddresses = append(o.R.OutputsAddresses, related...)
 	}
 
 	for _, rel := range related {
 		if rel.R == nil {
-			rel.R = &addressR{
-				Outputs: OutputSlice{o},
+			rel.R = &outputsAddressR{
+				Output: o,
 			}
 		} else {
-			rel.R.Outputs = append(rel.R.Outputs, o)
+			rel.R.Output = o
 		}
 	}
 	return nil
-}
-
-// SetAddressesG removes all previously related items of the
-// output replacing them completely with the passed
-// in related items, optionally inserting them as new records.
-// Sets o.R.Outputs's Addresses accordingly.
-// Replaces o.R.Addresses with related.
-// Sets related.R.Outputs's Addresses accordingly.
-// Uses the global database handle.
-func (o *Output) SetAddressesG(insert bool, related ...*Address) error {
-	return o.SetAddresses(boil.GetDB(), insert, related...)
-}
-
-// SetAddressesP removes all previously related items of the
-// output replacing them completely with the passed
-// in related items, optionally inserting them as new records.
-// Sets o.R.Outputs's Addresses accordingly.
-// Replaces o.R.Addresses with related.
-// Sets related.R.Outputs's Addresses accordingly.
-// Panics on error.
-func (o *Output) SetAddressesP(exec boil.Executor, insert bool, related ...*Address) {
-	if err := o.SetAddresses(exec, insert, related...); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
-// SetAddressesGP removes all previously related items of the
-// output replacing them completely with the passed
-// in related items, optionally inserting them as new records.
-// Sets o.R.Outputs's Addresses accordingly.
-// Replaces o.R.Addresses with related.
-// Sets related.R.Outputs's Addresses accordingly.
-// Uses the global database handle and panics on error.
-func (o *Output) SetAddressesGP(insert bool, related ...*Address) {
-	if err := o.SetAddresses(boil.GetDB(), insert, related...); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
-// SetAddresses removes all previously related items of the
-// output replacing them completely with the passed
-// in related items, optionally inserting them as new records.
-// Sets o.R.Outputs's Addresses accordingly.
-// Replaces o.R.Addresses with related.
-// Sets related.R.Outputs's Addresses accordingly.
-func (o *Output) SetAddresses(exec boil.Executor, insert bool, related ...*Address) error {
-	query := "delete from `outputs_addresses` where `output_id` = ?"
-	values := []interface{}{o.ID}
-	if boil.DebugMode {
-		fmt.Fprintln(boil.DebugWriter, query)
-		fmt.Fprintln(boil.DebugWriter, values)
-	}
-
-	_, err := exec.Exec(query, values...)
-	if err != nil {
-		return errors.Wrap(err, "failed to remove relationships before set")
-	}
-
-	removeAddressesFromOutputsSlice(o, related)
-	if o.R != nil {
-		o.R.Addresses = nil
-	}
-	return o.AddAddresses(exec, insert, related...)
-}
-
-// RemoveAddressesG relationships from objects passed in.
-// Removes related items from R.Addresses (uses pointer comparison, removal does not keep order)
-// Sets related.R.Outputs.
-// Uses the global database handle.
-func (o *Output) RemoveAddressesG(related ...*Address) error {
-	return o.RemoveAddresses(boil.GetDB(), related...)
-}
-
-// RemoveAddressesP relationships from objects passed in.
-// Removes related items from R.Addresses (uses pointer comparison, removal does not keep order)
-// Sets related.R.Outputs.
-// Panics on error.
-func (o *Output) RemoveAddressesP(exec boil.Executor, related ...*Address) {
-	if err := o.RemoveAddresses(exec, related...); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
-// RemoveAddressesGP relationships from objects passed in.
-// Removes related items from R.Addresses (uses pointer comparison, removal does not keep order)
-// Sets related.R.Outputs.
-// Uses the global database handle and panics on error.
-func (o *Output) RemoveAddressesGP(related ...*Address) {
-	if err := o.RemoveAddresses(boil.GetDB(), related...); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
-// RemoveAddresses relationships from objects passed in.
-// Removes related items from R.Addresses (uses pointer comparison, removal does not keep order)
-// Sets related.R.Outputs.
-func (o *Output) RemoveAddresses(exec boil.Executor, related ...*Address) error {
-	var err error
-	query := fmt.Sprintf(
-		"delete from `outputs_addresses` where `output_id` = ? and `address_id` in (%s)",
-		strmangle.Placeholders(dialect.IndexPlaceholders, len(related), 2, 1),
-	)
-	values := []interface{}{o.ID}
-	for _, rel := range related {
-		values = append(values, rel.ID)
-	}
-
-	if boil.DebugMode {
-		fmt.Fprintln(boil.DebugWriter, query)
-		fmt.Fprintln(boil.DebugWriter, values)
-	}
-
-	_, err = exec.Exec(query, values...)
-	if err != nil {
-		return errors.Wrap(err, "failed to remove relationships before set")
-	}
-	removeAddressesFromOutputsSlice(o, related)
-	if o.R == nil {
-		return nil
-	}
-
-	for _, rel := range related {
-		for i, ri := range o.R.Addresses {
-			if rel != ri {
-				continue
-			}
-
-			ln := len(o.R.Addresses)
-			if ln > 1 && i < ln-1 {
-				o.R.Addresses[i] = o.R.Addresses[ln-1]
-			}
-			o.R.Addresses = o.R.Addresses[:ln-1]
-			break
-		}
-	}
-
-	return nil
-}
-
-func removeAddressesFromOutputsSlice(o *Output, related []*Address) {
-	for _, rel := range related {
-		if rel.R == nil {
-			continue
-		}
-		for i, ri := range rel.R.Outputs {
-			if o.ID != ri.ID {
-				continue
-			}
-
-			ln := len(rel.R.Outputs)
-			if ln > 1 && i < ln-1 {
-				rel.R.Outputs[i] = rel.R.Outputs[ln-1]
-			}
-			rel.R.Outputs = rel.R.Outputs[:ln-1]
-			break
-		}
-	}
 }
 
 // OutputsG retrieves all records.
@@ -1135,12 +742,12 @@ func Outputs(exec boil.Executor, mods ...qm.QueryMod) outputQuery {
 }
 
 // FindOutputG retrieves a single record by ID.
-func FindOutputG(id uint64, selectCols ...string) (*Output, error) {
+func FindOutputG(id string, selectCols ...string) (*Output, error) {
 	return FindOutput(boil.GetDB(), id, selectCols...)
 }
 
 // FindOutputGP retrieves a single record by ID, and panics on error.
-func FindOutputGP(id uint64, selectCols ...string) *Output {
+func FindOutputGP(id string, selectCols ...string) *Output {
 	retobj, err := FindOutput(boil.GetDB(), id, selectCols...)
 	if err != nil {
 		panic(boil.WrapErr(err))
@@ -1151,7 +758,7 @@ func FindOutputGP(id uint64, selectCols ...string) *Output {
 
 // FindOutput retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindOutput(exec boil.Executor, id uint64, selectCols ...string) (*Output, error) {
+func FindOutput(exec boil.Executor, id string, selectCols ...string) (*Output, error) {
 	outputObj := &Output{}
 
 	sel := "*"
@@ -1176,7 +783,7 @@ func FindOutput(exec boil.Executor, id uint64, selectCols ...string) (*Output, e
 }
 
 // FindOutputP retrieves a single record by ID with an executor, and panics on error.
-func FindOutputP(exec boil.Executor, id uint64, selectCols ...string) *Output {
+func FindOutputP(exec boil.Executor, id string, selectCols ...string) *Output {
 	retobj, err := FindOutput(exec, id, selectCols...)
 	if err != nil {
 		panic(boil.WrapErr(err))
@@ -1267,26 +874,14 @@ func (o *Output) Insert(exec boil.Executor, whitelist ...string) error {
 		fmt.Fprintln(boil.DebugWriter, vals)
 	}
 
-	result, err := exec.Exec(cache.query, vals...)
-
+	_, err = exec.Exec(cache.query, vals...)
 	if err != nil {
 		return errors.Wrap(err, "model: unable to insert into outputs")
 	}
 
-	var lastID int64
 	var identifierCols []interface{}
 
 	if len(cache.retMapping) == 0 {
-		goto CacheNoHooks
-	}
-
-	lastID, err = result.LastInsertId()
-	if err != nil {
-		return ErrSyncFail
-	}
-
-	o.ID = uint64(lastID)
-	if lastID != 0 && len(cache.retMapping) == 1 && cache.retMapping[0] == outputMapping["ID"] {
 		goto CacheNoHooks
 	}
 
@@ -1574,26 +1169,14 @@ func (o *Output) Upsert(exec boil.Executor, updateColumns []string, whitelist ..
 		fmt.Fprintln(boil.DebugWriter, vals)
 	}
 
-	result, err := exec.Exec(cache.query, vals...)
-
+	_, err = exec.Exec(cache.query, vals...)
 	if err != nil {
 		return errors.Wrap(err, "model: unable to upsert for outputs")
 	}
 
-	var lastID int64
 	var identifierCols []interface{}
 
 	if len(cache.retMapping) == 0 {
-		goto CacheNoHooks
-	}
-
-	lastID, err = result.LastInsertId()
-	if err != nil {
-		return ErrSyncFail
-	}
-
-	o.ID = uint64(lastID)
-	if lastID != 0 && len(cache.retMapping) == 1 && cache.retMapping[0] == outputMapping["ID"] {
 		goto CacheNoHooks
 	}
 
@@ -1842,7 +1425,7 @@ func (o *OutputSlice) ReloadAll(exec boil.Executor) error {
 }
 
 // OutputExists checks if the Output row exists.
-func OutputExists(exec boil.Executor, id uint64) (bool, error) {
+func OutputExists(exec boil.Executor, id string) (bool, error) {
 	var exists bool
 	sql := "select exists(select 1 from `outputs` where `id`=? limit 1)"
 
@@ -1862,12 +1445,12 @@ func OutputExists(exec boil.Executor, id uint64) (bool, error) {
 }
 
 // OutputExistsG checks if the Output row exists.
-func OutputExistsG(id uint64) (bool, error) {
+func OutputExistsG(id string) (bool, error) {
 	return OutputExists(boil.GetDB(), id)
 }
 
 // OutputExistsGP checks if the Output row exists. Panics on error.
-func OutputExistsGP(id uint64) bool {
+func OutputExistsGP(id string) bool {
 	e, err := OutputExists(boil.GetDB(), id)
 	if err != nil {
 		panic(boil.WrapErr(err))
@@ -1877,7 +1460,7 @@ func OutputExistsGP(id uint64) bool {
 }
 
 // OutputExistsP checks if the Output row exists. Panics on error.
-func OutputExistsP(exec boil.Executor, id uint64) bool {
+func OutputExistsP(exec boil.Executor, id string) bool {
 	e, err := OutputExists(exec, id)
 	if err != nil {
 		panic(boil.WrapErr(err))
