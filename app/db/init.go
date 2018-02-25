@@ -1,15 +1,14 @@
 package db
 
 import (
-	"github.com/lbryio/errors.go"
-	"github.com/lbryio/sqlboiler/boil"
-
 	_ "github.com/go-sql-driver/mysql" // import mysql
 	"github.com/jmoiron/sqlx"
 	_ "github.com/jteeuwen/go-bindata" // so it's detected by `dep ensure`
 	"github.com/lbryio/chainquery/app/migration"
+	"github.com/lbryio/errors.go"
 	"github.com/rubenv/sql-migrate"
 	log "github.com/sirupsen/logrus"
+	"github.com/volatiletech/sqlboiler/boil"
 )
 
 func Init(dsn string, debug bool) (*QueryLogger, error) {
@@ -29,11 +28,13 @@ func Init(dsn string, debug bool) (*QueryLogger, error) {
 		logWrapper.Logger = log.StandardLogger()
 		boil.DebugMode = true // this just prints everything twice
 	}
+
 	boil.SetDB(logWrapper)
+
 	// ensure that db supports transactions
 	_, ok := boil.GetDB().(boil.Beginner)
 	if !ok {
-		return nil, errors.Err("database does not support transactions")
+		//return nil, errors.Err("database does not support transactions")
 	}
 
 	migrations := &migrate.AssetMigrationSource{

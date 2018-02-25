@@ -8,8 +8,8 @@ import (
 	_ "github.com/jteeuwen/go-bindata" // so it's detected by `dep ensure`
 	"github.com/lbryio/errors.go"
 	qtools "github.com/lbryio/query.go"
-	"github.com/lbryio/sqlboiler/boil"
 	log "github.com/sirupsen/logrus"
+	"github.com/volatiletech/sqlboiler/boil"
 )
 
 func logQueryTime(logger *log.Logger, startTime time.Time) {

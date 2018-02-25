@@ -2,6 +2,34 @@
 
 
 [[projects]]
+  branch = "master"
+  name = "github.com/btcsuite/btcd"
+  packages = [
+    "btcec",
+    "chaincfg",
+    "chaincfg/chainhash",
+    "txscript",
+    "wire"
+  ]
+  revision = "2be2f12b358dc57d70b8f501b00be450192efbc3"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/btcsuite/btclog"
+  packages = ["."]
+  revision = "84c8d2346e9fc8c7b947e243b9c24e6df9fd206a"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/btcsuite/btcutil"
+  packages = [
+    ".",
+    "base58",
+    "bech32"
+  ]
+  revision = "501929d3d046174c3d39f0ea54ece471aa17238c"
+
+[[projects]]
   name = "github.com/caarlos0/env"
   packages = ["."]
   revision = "0cf029d5748c52beb2c9d20c81880cb4bdf8f788"
@@ -36,7 +64,11 @@
 
 [[projects]]
   name = "github.com/golang/protobuf"
-  packages = ["proto"]
+  packages = [
+    "jsonpb",
+    "proto",
+    "ptypes/struct"
+  ]
   revision = "925541529c1fa6821df4e44ce2723319eb2be768"
   version = "v1.0.0"
 
@@ -84,7 +116,12 @@
 [[projects]]
   branch = "master"
   name = "github.com/lbryio/lbryschema.go"
-  packages = ["pb"]
+  packages = [
+    "address",
+    "address/base58",
+    "claim",
+    "pb"
+  ]
   revision = "dd814b834b5511d65d640bdbb46237f19f38a3e5"
 
 [[projects]]
@@ -97,11 +134,6 @@
   name = "github.com/lbryio/query.go"
   packages = ["."]
   revision = "2838cd8abdeb99507da080df5dc8abe388b28308"
-
-[[projects]]
-  name = "github.com/lbryio/sqlboiler"
-  packages = ["boil"]
-  revision = "0b0a1f21c2c3512b0f08441302e5b2e1fce7fc9a"
 
 [[projects]]
   branch = "master"
@@ -200,6 +232,7 @@
   revision = "e7201282ae8da26cd97aed2e516f75c0bd91bb93"
 
 [[projects]]
+  branch = "master"
   name = "github.com/volatiletech/sqlboiler"
   packages = [
     "bdb",
@@ -212,7 +245,6 @@
     "types"
   ]
   revision = "6b95e5d3d7840a737841e2eb446e1c82641f8393"
-  version = "v2.6.0"
 
 [[projects]]
   name = "github.com/ybbus/jsonrpc"
@@ -225,6 +257,7 @@
   name = "golang.org/x/crypto"
   packages = [
     "md4",
+    "ripemd160",
     "ssh/terminal"
   ]
   revision = "650f4a345ab4e5b245a3034b110ebc7299e68186"
@@ -281,6 +314,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "7a924c707cd583d63518293eb5f7c22ab2b532c55070fcccdbc5bc23eba6adb5"
+  inputs-digest = "864727c2ae8c8d3033abf1895f61e6afe8d0c86b8a5533d9764b54b64d5b92b1"
   solver-name = "gps-cdcl"
   solver-version = 1

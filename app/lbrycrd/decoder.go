@@ -11,7 +11,7 @@ import (
 )
 
 func (d *Client) callNoDecode(command string, params ...interface{}) (interface{}, error) {
-	logrus.Debugln("jsonrpc: " + command + " " + debugParams(params))
+	//logrus.Debugln("jsonrpc: " + command + " " + debugParams(params))
 	if len(params) == 0 {
 		r, err := d.conn.Call(command)
 		if err != nil {

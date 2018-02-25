@@ -55,8 +55,8 @@ required = ["github.com/lbryio/null.go"]
   revision = "109a79fb20ecd191f58366a452b38f7cf0ae1741"
 
 [[constraint]]
-  name = "github.com/lbryio/sqlboiler"
-  revision = "0b0a1f21c2c3512b0f08441302e5b2e1fce7fc9a"
+  branch = "master"
+  name = "github.com/volatiletech/sqlboiler"
 
 [[constraint]]
   name = "github.com/pkg/errors"

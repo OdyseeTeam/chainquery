@@ -138,7 +138,7 @@ func (c *Client) GetBlockHash(i uint64) (*string, error) {
 		return nil, err
 	}
 	value := rawresponse.(string)
-	logrus.Debug("GetBlockHashResponse ", value)
+	//logrus.Debug("GetBlockHashResponse ", value)
 	return &value, nil
 }
 func (client *Client) Shutdown() {
@@ -155,13 +155,13 @@ func (c *Client) GetBlockCount() (*uint64, error) {
 		return nil, err
 	}
 	intValue := uint64(value.IntPart())
-	logrus.Debug("GetBlockCountResult ", intValue)
+	//logrus.Debug("GetBlockCountResult ", intValue)
 	return &intValue, nil
 
 }
 func (c *Client) GetRawTransactionResponse(hash string) (*TxRawResult, error) {
 	response := new(TxRawResult)
-	return response, c.call(&response, "getrawtransaction", "70dc0d7d625c4a65a2882b0c58a51dbe40944175e5bb015041219865771f9d03", 1)
+	return response, c.call(&response, "getrawtransaction", hash, 1)
 }
 func (c *Client) GetBalance(s string) (*float64, error) {
 	rawresponse, err := c.callNoDecode("getblance")
@@ -173,6 +173,6 @@ func (c *Client) GetBalance(s string) (*float64, error) {
 		return nil, err
 	}
 	floatValue, _ := value.Float64()
-	logrus.Debug("getbalance ", floatValue)
+	//logrus.Debug("getbalance ", floatValue)
 	return &floatValue, nil
 }
