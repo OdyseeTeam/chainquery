@@ -31,7 +31,9 @@ func SetDefaultClient(client *Client) {
 	defaultClient = client
 }
 
-// New initializes a new Client
+// New initializes a new instance of a Client. If the url cannot be parsed
+// an error will be thrown. If the user information cannot be parsed, an
+// error will be thrown.
 func New(lbrycrdURL string) (*Client, error) {
 	// Connect to local bitcoin core RPC server using HTTP POST mode.
 	u, err := url.Parse(lbrycrdURL)
@@ -50,12 +52,9 @@ func New(lbrycrdURL string) (*Client, error) {
 	return &Client{client}, nil
 }
 
-func (c *Client) GetBlockHeight() int64 {
-	/*count, err := c.Client.GetBlockCount()
-	if err != nil {
-		return -1
-	}*/
-	return -1
+//Performs a shutdown of the jsonrpc client.
+func (client *Client) Shutdown() {
+	client.Shutdown()
 }
 
 var errInsufficientFunds = errors.Base("Our wallet is running low. We've been notified, and we will refill it ASAP. Please try again in a little while, or email us at hello@lbry.io for more info.")
@@ -126,53 +125,4 @@ func (d *Client) call(response interface{}, command string, params ...interface{
 	}
 	//TODO: It should be possible to have n arguments but it would not work with nested variadic arguments
 	return errors.Base("parameter size is greater than 2 which is not supported currently.")
-}
-
-func (c *Client) GetBlock(blockHash string) (*GetBlockResponse, error) {
-	response := new(GetBlockResponse)
-	return response, c.call(&response, "getblock", blockHash)
-}
-func (c *Client) GetBlockHash(i uint64) (*string, error) {
-	rawresponse, err := c.callNoDecode("getblockhash", i)
-	if err != nil {
-		return nil, err
-	}
-	value := rawresponse.(string)
-	//logrus.Debug("GetBlockHashResponse ", value)
-	return &value, nil
-}
-func (client *Client) Shutdown() {
-	client.Shutdown()
-}
-
-func (c *Client) GetBlockCount() (*uint64, error) {
-	rawresponse, err := c.callNoDecode("getblockcount")
-	if err != nil {
-		return nil, err
-	}
-	value, err := decodeNumber(rawresponse)
-	if err != nil {
-		return nil, err
-	}
-	intValue := uint64(value.IntPart())
-	//logrus.Debug("GetBlockCountResult ", intValue)
-	return &intValue, nil
-
-}
-func (c *Client) GetRawTransactionResponse(hash string) (*TxRawResult, error) {
-	response := new(TxRawResult)
-	return response, c.call(&response, "getrawtransaction", hash, 1)
-}
-func (c *Client) GetBalance(s string) (*float64, error) {
-	rawresponse, err := c.callNoDecode("getblance")
-	if err != nil {
-		return nil, err
-	}
-	value, err := decodeNumber(rawresponse)
-	if err != nil {
-		return nil, err
-	}
-	floatValue, _ := value.Float64()
-	//logrus.Debug("getbalance ", floatValue)
-	return &floatValue, nil
 }
