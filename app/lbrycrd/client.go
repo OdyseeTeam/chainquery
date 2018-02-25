@@ -124,8 +124,8 @@ func (d *Client) call(response interface{}, command string, params ...interface{
 		}
 		return decode(result, response)
 	}
-	logrus.Error("parameter size is greater than 1")
-	return nil
+	//TODO: It should be possible to have n arguments but it would not work with nested variadic arguments
+	return errors.Base("parameter size is greater than 2 which is not supported currently.")
 }
 
 func (c *Client) GetBlock(blockHash string) (*GetBlockResponse, error) {
