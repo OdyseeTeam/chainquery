@@ -91,11 +91,78 @@ func migrateV1Claim(vClaim schema_version_01.Claim) (*pb.Claim, error) {
 }
 
 func migrateV2Claim(vClaim schema_version_02.Claim) (*pb.Claim, error) {
-	return nil, nil
+
+	claim := new(pb.Claim)
+	stream := new(pb.Stream)
+	metadata := new(pb.Metadata)
+	source := new(pb.Source)
+	pubsig := new(pb.Signature)
+	fee := new(pb.Fee)
+	metadata.Fee = fee
+	stream.Metadata = metadata
+	stream.Source = source
+	claim.Stream = stream
+	claim.PublisherSignature = pubsig
+	//Stream
+	// -->Fee
+	setFee(*vClaim.Fee, *claim)
+	// -->MetaData
+	claim.GetStream().GetMetadata().Author = &vClaim.Author
+	claim.GetStream().GetMetadata().Description = &vClaim.Description
+	language := pb.Metadata_Language(pb.Metadata_Language_value[vClaim.Language])
+	claim.GetStream().GetMetadata().Language = &language
+	claim.GetStream().GetMetadata().License = &vClaim.License
+	claim.GetStream().GetMetadata().Title = &vClaim.Title
+	claim.GetStream().GetMetadata().Thumbnail = *&vClaim.Thumbnail
+	claim.GetStream().GetMetadata().LicenseUrl = vClaim.LicenseURL
+	claim.GetStream().GetMetadata().Nsfw = &vClaim.NSFW
+	// -->Source
+	claim.GetStream().GetSource().ContentType = &vClaim.ContentType
+	sourceType := pb.Source_SourceTypes(pb.Source_SourceTypes_value["lbry_sd_hash"])
+	claim.GetStream().GetSource().SourceType = &sourceType
+	src, _ := hex.DecodeString(vClaim.Sources.LbrySDHash)
+	claim.GetStream().GetSource().Source = src
+	// -->Publisher Signature
+	claim.GetPublisherSignature().Signature, _ = hex.DecodeString(*vClaim.PubKey)
+
+	return claim, nil
 }
 
 func migrateV3Claim(vClaim schema_version_03.Claim) (*pb.Claim, error) {
-	return nil, nil
+	claim := new(pb.Claim)
+	stream := new(pb.Stream)
+	metadata := new(pb.Metadata)
+	source := new(pb.Source)
+	pubsig := new(pb.Signature)
+	fee := new(pb.Fee)
+	metadata.Fee = fee
+	stream.Metadata = metadata
+	stream.Source = source
+	claim.Stream = stream
+	claim.PublisherSignature = pubsig
+	//Stream
+	// -->Fee
+	setFee(*vClaim.Fee, *claim)
+	// -->MetaData
+	claim.GetStream().GetMetadata().Author = &vClaim.Author
+	claim.GetStream().GetMetadata().Description = &vClaim.Description
+	language := pb.Metadata_Language(pb.Metadata_Language_value[vClaim.Language])
+	claim.GetStream().GetMetadata().Language = &language
+	claim.GetStream().GetMetadata().License = &vClaim.License
+	claim.GetStream().GetMetadata().Title = &vClaim.Title
+	claim.GetStream().GetMetadata().Thumbnail = *&vClaim.Thumbnail
+	claim.GetStream().GetMetadata().LicenseUrl = vClaim.LicenseURL
+	claim.GetStream().GetMetadata().Nsfw = &vClaim.NSFW
+	// -->Source
+	claim.GetStream().GetSource().ContentType = &vClaim.ContentType
+	sourceType := pb.Source_SourceTypes(pb.Source_SourceTypes_value["lbry_sd_hash"])
+	claim.GetStream().GetSource().SourceType = &sourceType
+	src, _ := hex.DecodeString(vClaim.Sources.LbrySDHash)
+	claim.GetStream().GetSource().Source = src
+	// -->Publisher Signature
+	claim.GetPublisherSignature().Signature, _ = hex.DecodeString(*vClaim.Sig)
+
+	return claim, nil
 }
 
 func setFee(fee schema_version_01.Fee, claim pb.Claim) {
