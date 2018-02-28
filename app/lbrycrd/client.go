@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/lbryio/errors.go"
 	"github.com/mitchellh/mapstructure"
-	"github.com/sirupsen/logrus"
 	"github.com/ybbus/jsonrpc"
 	"reflect"
 	"sort"

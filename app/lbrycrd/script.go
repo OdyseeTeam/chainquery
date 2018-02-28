@@ -26,7 +26,7 @@ func IsClaimNameScript(script []byte) bool {
 }
 
 func ParseClaimNameScript(script []byte) (name string, value []byte, pubkeyscript []byte, err error) {
-	// Valid formats: Already validated by blockchain so can be assumed
+	// Already validated by blockchain so can be assumed
 	// OP_CLAIM_NAME Name Value OP_2DROP OP_DROP pubkeyscript
 	nameBytesToRead := int(script[1])
 	if nameBytesToRead < OP_PUSHDATA1 {
@@ -63,6 +63,7 @@ func IsClaimSupportScript(script []byte) bool {
 }
 
 func ParseClaimSupportScript(script []byte) (name string, claimid string, pubkeyscript []byte, err error) {
+	// Already validated by blockchain so can be assumed
 	// OP_SUPPORT_CLAIM vchName vchClaimId OP_2DROP OP_DROP pubkeyscript
 	nameBytesToRead := int(script[1])
 	nameStart := 2
@@ -84,8 +85,44 @@ func IsClaimUpdateScript(script []byte) bool {
 	return false
 }
 
-func ParseClaimUpdateScript() {
+func ParseClaimUpdateScript(script []byte) (name string, claimid string, value []byte, pubkeyscript []byte, err error) {
 	// OP_UPDATE_CLAIM Name ClaimId Value OP_2DROP OP_2DROP pubkeyscript
+	nameBytesToRead := int(script[1])
+	if nameBytesToRead < OP_PUSHDATA1 {
+		//Name
+		nameStart := 2
+		nameEnd := nameStart + nameBytesToRead
+		name = string(script[nameStart:nameEnd])
+
+		//ClaimId
+		claimidBytesToRead := int(script[nameEnd])
+		claimidStart := nameEnd + 1
+		claimidEnd := claimidStart + claimidBytesToRead
+		claimid = hex.EncodeToString(script[claimidStart:claimidEnd])
+
+		//Value
+		dataPushType := int(script[claimidEnd])
+		valueBytesToRead := int(script[claimidEnd])
+		valueStart := claimidEnd + 1
+		if dataPushType == OP_PUSHDATA1 {
+			valueBytesToRead = int(script[claimidEnd+1])
+			valueStart = claimidEnd + 2
+		} else if dataPushType == OP_PUSHDATA2 {
+			valueStart = claimidEnd + 3
+			valueBytesToRead = int(binary.LittleEndian.Uint16(script[claimidEnd+1 : valueStart]))
+		} else if dataPushType == OP_PUSHDATA4 {
+			valueStart = claimidEnd + 5
+			valueBytesToRead = int(binary.LittleEndian.Uint32(script[claimidEnd+2 : valueStart]))
+		}
+		valueEnd := valueStart + valueBytesToRead
+		value = script[valueStart:valueEnd]
+
+		//PublicKeyScript
+		pksStart := valueEnd + 2         // +2 to ignore OP_2DROP and OP_DROP
+		pubkeyscript = script[pksStart:] //Remainder is always pubkeyscript
+	}
+
+	return name, claimid, value, pubkeyscript, err
 }
 
 func IsPayToHashScript(script []byte) bool {

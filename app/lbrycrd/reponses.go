@@ -1,9 +1,22 @@
 package lbrycrd
 
+type ClaimNameResult struct {
+	Name   string        `json:"name"`
+	Claims []ClaimResult `json:"claims,omitempty"`
+}
+
+type ClaimResult struct {
+	ClaimId  string  `json:"claimId"`
+	TxId     string  `json:"txid"`
+	Sequence uint64  `json:"n"`
+	Amount   float64 `json:"amount"`
+	Height   uint64  `json:"height"`
+	Value    string  `json:"value"`
+}
+
 // GetBlockHeaderVerboseResult models the data from the getblockheader command when
 // the verbose flag is set.  When the verbose flag is not set, getblockheader
 // returns a hex-encoded string.
-
 type GetBlockHeaderResponse struct {
 	Hash          string  `json:"hash"`
 	Confirmations uint64  `json:"confirmations"`

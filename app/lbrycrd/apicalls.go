@@ -62,3 +62,11 @@ func (c *Client) GetBalance(s string) (*float64, error) {
 
 	return &floatValue, nil
 }
+
+//Gets all the claims current active in the claim trie
+func (c *Client) GetClaimsInTrie() ([]ClaimNameResult, error) {
+
+	response := new([]ClaimNameResult)
+
+	return *response, c.call(&response, "getclaimsintrie")
+}

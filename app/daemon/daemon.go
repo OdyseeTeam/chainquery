@@ -2,6 +2,7 @@ package daemon
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/lbryio/chainquery/app/lbrycrd"
@@ -18,23 +19,61 @@ import (
 )
 
 var workers int = runtime.NumCPU() / 2 //Split cores between processors and lbycrd
-var lastHeightProcess uint64 = 160000  // Around 165,000 is when protobuf takes affect.
+var lastHeightProcess uint64 = 0       // Around 165,000 is when protobuf takes affect.
 var blockHeight uint64 = 0
 var running bool = false
 
 func InitDaemon() {
+	//testFunction()
 	initBlockQueue()
 	runDaemon()
 }
 
 func initBlockQueue() {
-	//
+
+}
+
+func testFunction(params ...interface{}) {
+	names, err := lbrycrd.DefaultClient().GetClaimsInTrie()
+	goodones := 0
+	if err != nil {
+		log.Error(err)
+	} else {
+		for i := range names {
+			if goodones < 10 {
+				name := names[i]
+				for i := range name.Claims {
+					claim := name.Claims[i]
+
+					decodedValue := []byte(claim.Value)
+					if err != nil {
+						//log.Error(err)
+						continue
+					}
+					decodedClaim, err := lbrycrd.DecodeClaimValue(name.Name, decodedValue)
+					if err != nil {
+						//log.Error(err)
+						continue
+					}
+					println(name.Name, " - ", decodedClaim.GetStream().GetMetadata().GetTitle())
+					jsonBytes, err := json.Marshal(*decodedClaim)
+					if err != nil {
+						//log.Error(err)
+						continue
+					}
+					println(string(jsonBytes))
+					goodones++
+				}
+			}
+		}
+	}
+	//panic(errors.Base("only run test method"))
 }
 
 func runDaemon() func() {
 	lastBlock, _ := model.Blocks(boil.GetDB(), qm.OrderBy(model.BlockColumns.Height+" DESC"), qm.Limit(1)).One()
 	if lastBlock != nil && lastBlock.Height > 100 {
-		//lastHeightProcess = lastBlock.Height - 100 //Start 100 sooner just in case something happened.
+		lastHeightProcess = lastBlock.Height - 100 //Start 100 sooner just in case something happened.
 	}
 	go daemonIteration()
 	log.Info("Daemon initialized and running")
@@ -127,7 +166,7 @@ func runBlockProcessing(height *uint64) {
 func goToNextBlock(height *uint64) {
 	lastHeightProcess = *height
 	if lastHeightProcess+uint64(1) < blockHeight {
-		daemonIteration()
+		//daemonIteration() //Used for beast mode. Will crunch CPU.
 	} else {
 		running = false
 	}
@@ -233,11 +272,11 @@ func processVout(jsonVout *lbrycrd.Vout, txHash *string) error {
 	isP2PKH := vout.Type.String == "pubkeyhash"
 	isNonStandard := vout.Type.String == "nonstandard"
 	if isP2SH {
-		//log.Debug("Found pay to script hash outpoint")
+		log.Debug("Found pay to script hash outpoint")
 	} else if isP2PK {
-		//log.Debug("Found pay to pub key outpoint")
+		log.Debug("Found pay to pub key outpoint")
 	} else if isP2PKH {
-		//log.Debug("Found pay to pub key hash outpoint")
+		log.Debug("Found pay to pub key hash outpoint")
 	} else if isNonStandard {
 		err = processAsClaim(scriptBytes, *vout)
 		if err != nil {
@@ -248,7 +287,7 @@ func processVout(jsonVout *lbrycrd.Vout, txHash *string) error {
 }
 
 func processCoinBaseVin(jsonVin *lbrycrd.Vin) {
-	//log.Debug("Coinbase transaction")
+	log.Debug("Coinbase transaction")
 }
 
 func processAsClaim(script []byte, vout model.Output) error {
@@ -259,13 +298,13 @@ func processAsClaim(script []byte, vout model.Output) error {
 		}
 		return nil
 	} else if lbrycrd.IsClaimSupportScript(script) {
-		_, _, err := processClaimSupportScript(&script)
+		_, _, err := processClaimSupportScript(&script, vout)
 		if err != nil {
 			return err
 		}
 		return nil
 	} else if lbrycrd.IsClaimUpdateScript(script) {
-		_, _, err := processClaimUpdateScript(&script)
+		_, _, err := processClaimUpdateScript(&script, vout)
 		if err != nil {
 			return err
 		}
@@ -277,6 +316,7 @@ func processAsClaim(script []byte, vout model.Output) error {
 func processClaimNameScript(script *[]byte, vout model.Output) (name string, claimid string, err error) {
 	name, value, _, err := lbrycrd.ParseClaimNameScript(*script)
 	if err != nil {
+		errors.Prefix("Claim name processing error: ", err)
 		return name, claimid, err
 	}
 	claim, err := lbrycrd.DecodeClaimValue(name, value)
@@ -285,22 +325,32 @@ func processClaimNameScript(script *[]byte, vout model.Output) (name string, cla
 		hasher.Write([]byte(vout.TransactionID + strconv.Itoa(int(vout.SequenceID))))
 		hashBytes := hasher.Sum(nil)
 		claimId := fmt.Sprintf("%x", hashBytes)
-		log.Info("ClaimName ", name, " ClaimId ", claimId)
+		log.Debug("ClaimName ", name, " ClaimId ", claimId)
 	}
 
 	return name, claimid, err
 }
 
-func processClaimSupportScript(script *[]byte) (name string, claimid string, err error) {
+func processClaimSupportScript(script *[]byte, vout model.Output) (name string, claimid string, err error) {
 	name, claimid, _, err = lbrycrd.ParseClaimSupportScript(*script)
 	if err != nil {
 		errors.Prefix("Claim support processing error: ", err)
+		return name, claimid, err
 	}
 	log.Debug("ClaimSupport ", name, " ClaimId ", claimid)
 
 	return name, claimid, err
 }
 
-func processClaimUpdateScript(script *[]byte) (name string, claimid string, err error) {
-	return name, claimid, err
+func processClaimUpdateScript(script *[]byte, vout model.Output) (name string, claimId string, err error) {
+	name, claimId, value, _, err := lbrycrd.ParseClaimUpdateScript(*script)
+	if err != nil {
+		errors.Prefix("Claim update processing error: ", err)
+		return name, claimId, err
+	}
+	claim, err := lbrycrd.DecodeClaimValue(name, value)
+	if claim != nil {
+		log.Debug("ClaimUpdate ", name, " ClaimId ", claimId)
+	}
+	return name, claimId, err
 }

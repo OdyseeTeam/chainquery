@@ -138,7 +138,7 @@ CREATE TABLE IF NOT EXISTS outputs
     UNIQUE KEY uk_output_id (transaction_id,sequence_id),
     CONSTRAINT fk_output_transaction FOREIGN KEY (transaction_id) REFERENCES transactions (hash),
     CONSTRAINT fk_output_spent_by_input FOREIGN KEY (spent_by_input_id) REFERENCES inputs (id),
-    CONSTRAINT cnt_addresslist_valid_json CHECK(addresslist IS NULL OR JSON_VALID(addresses)),
+    CONSTRAINT cnt_addresslist_valid_json CHECK(addresslist IS NULL OR JSON_VALID(addresslist)),
     INDEX idx_output_value (value),
     INDEX idx_ouptut_created (created),
     INDEX idx_output_modified (modified)
@@ -197,8 +197,6 @@ CREATE TABLE IF NOT EXISTS claims
     CONSTRAINT Cnt_claimCertificate CHECK(certificate IS NULL OR JSON_VALID(certificate)), -- certificate type
     INDEX Idx_claim (claim_id),
     INDEX Idx_claim_transaction_time (transaction_time),
-    INDEX Idx_claim_created (created),
-    INDEX Idx_claim_modified (modified),
 
     INDEX Idx_ClaimAuthor (author(191)),
     INDEX Idx_ClaimContentType (content_type),
