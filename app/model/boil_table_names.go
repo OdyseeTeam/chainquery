@@ -8,10 +8,10 @@ var TableNames = struct {
 	Blocks               string
 	ClaimStreams         string
 	Claims               string
+	InputAddresses       string
 	Inputs               string
+	OutputAddresses      string
 	Outputs              string
-	OutputsAddresses     string
-	PriceHistory         string
 	TransactionAddresses string
 	Transactions         string
 }{
@@ -19,10 +19,10 @@ var TableNames = struct {
 	Blocks:               "blocks",
 	ClaimStreams:         "claim_streams",
 	Claims:               "claims",
+	InputAddresses:       "input_addresses",
 	Inputs:               "inputs",
+	OutputAddresses:      "output_addresses",
 	Outputs:              "outputs",
-	OutputsAddresses:     "outputs_addresses",
-	PriceHistory:         "price_history",
 	TransactionAddresses: "transaction_addresses",
 	Transactions:         "transactions",
 }

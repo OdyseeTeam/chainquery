@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/btcsuite/btcd/txscript"
 	"github.com/lbryio/chainquery/app/lbrycrd"
 	"github.com/lbryio/chainquery/app/model"
 	"github.com/lbryio/errors.go"
@@ -125,7 +124,7 @@ func runBlockProcessing(height *uint64) {
 		return
 	}
 	block := &model.Block{}
-	foundBlock, _ := model.FindBlock(boil.GetDB(), jsonBlock.Hash)
+	foundBlock, _ := model.BlocksG(qm.Where(model.BlockColumns.Hash+"=?", jsonBlock.Hash)).One()
 	if foundBlock != nil {
 		block = foundBlock
 	}
@@ -139,9 +138,9 @@ func runBlockProcessing(height *uint64) {
 	block.Difficulty = strconv.FormatFloat(jsonBlock.Difficulty, 'f', -1, 64)
 	block.MerkleRoot = jsonBlock.MerkleRoot
 	block.NameClaimRoot = jsonBlock.NameClaimRoot
-	block.NextBlockID.String = jsonBlock.NextHash
-	block.PreviousBlockID.String = jsonBlock.PreviousHash
-	block.TransactionHashes = strings.Join(jsonBlock.Tx, ",")
+	block.NextBlockHash.String = jsonBlock.NextHash
+	block.PreviousBlockHash.String = jsonBlock.PreviousHash
+	block.TransactionHashes.String = strings.Join(jsonBlock.Tx, ",")
 	block.Version = uint64(jsonBlock.Version)
 	block.VersionHex = jsonBlock.VersionHex
 	if foundBlock != nil {
@@ -166,7 +165,7 @@ func runBlockProcessing(height *uint64) {
 func goToNextBlock(height *uint64) {
 	lastHeightProcess = *height
 	if lastHeightProcess+uint64(1) < blockHeight {
-		//daemonIteration() //Used for beast mode. Will crunch CPU.
+		daemonIteration() //Used for beast mode. Will crunch CPU.
 	} else {
 		running = false
 	}
@@ -174,20 +173,25 @@ func goToNextBlock(height *uint64) {
 
 func processTx(jsonTx *lbrycrd.TxRawResult) error {
 	transaction := &model.Transaction{}
-	foundTx, err := model.FindTransaction(boil.GetDB(), jsonTx.Txid)
+	foundTx, err := model.TransactionsG(qm.Where(model.TransactionColumns.Hash+"=?", jsonTx.Txid)).One()
 	if foundTx != nil {
 		transaction = foundTx
 	}
 	transaction.Hash = jsonTx.Txid
 	transaction.Version = int(jsonTx.Version)
-	transaction.BlockID = jsonTx.BlockHash
-	transaction.CreatedTime = uint(jsonTx.Blocktime)
+	transaction.BlockByHashID.String = jsonTx.BlockHash
+	transaction.CreatedTime = time.Unix(0, jsonTx.Blocktime)
 	transaction.TransactionTime.Uint64 = uint64(jsonTx.Blocktime)
 	transaction.LockTime = uint(jsonTx.LockTime)
 	transaction.InputCount = uint(len(jsonTx.Vin))
 	transaction.OutputCount = uint(len(jsonTx.Vout))
 	transaction.Raw.String = jsonTx.Hex
 	transaction.TransactionSize = uint64(jsonTx.Size)
+	totalValue := float64(0)
+	for i := range jsonTx.Vout {
+		totalValue = totalValue + jsonTx.Vout[i].Value
+	}
+	transaction.Value = strconv.FormatFloat(totalValue, 'f', -1, 64)
 	if foundTx != nil {
 		transaction.Update(boil.GetDB())
 	} else {
@@ -198,14 +202,14 @@ func processTx(jsonTx *lbrycrd.TxRawResult) error {
 	}
 	vins := jsonTx.Vin
 	for i := range vins {
-		err = processVin(&vins[i], &transaction.Hash)
+		err = processVin(&vins[i], &transaction.ID)
 		if err != nil {
 			log.Error("Vin Error->", err)
 		}
 	}
 	vouts := jsonTx.Vout
 	for i := range vouts {
-		err := processVout(&vouts[i], &transaction.Hash)
+		err := processVout(&vouts[i], &transaction.ID)
 		if err != nil {
 			log.Error("Vout Error->", err, " - ", transaction.Hash)
 		}
@@ -214,11 +218,11 @@ func processTx(jsonTx *lbrycrd.TxRawResult) error {
 	return err
 }
 
-func processVin(jsonVin *lbrycrd.Vin, txHash *string) error {
+func processVin(jsonVin *lbrycrd.Vin, txId *uint64) error {
 	vin := &model.Input{}
-	//ID is txid + sequence
-	inputid := *txHash + strconv.Itoa(int(jsonVin.Sequence))
-	foundVin, err := model.FindInput(boil.GetDB(), inputid)
+	foundVin, err := model.InputsG(
+		qm.Where(model.InputColumns.TransactionID+"=?", txId),
+		qm.And(model.InputColumns.Sequence+"=?", jsonVin.Sequence)).One() //boil.GetDB(), inputid)
 	if foundVin != nil {
 		vin = foundVin
 	}
@@ -226,13 +230,12 @@ func processVin(jsonVin *lbrycrd.Vin, txHash *string) error {
 	if jsonVin.Coinbase != "" {
 		processCoinBaseVin(jsonVin)
 	} else {
-		vin.ID = inputid
-		vin.TransactionID = *txHash
-		vin.SequenceID = uint(jsonVin.Sequence)
+		vin.TransactionID = *txId
+		vin.Sequence.Uint = uint(jsonVin.Sequence)
 		vin.PrevoutHash.String = jsonVin.Txid
 		vin.PrevoutN.Uint = uint(jsonVin.Vout)
 		vin.ScriptSigHex.String = jsonVin.ScriptSig.Hex
-		vin.ScriptSigSSM.String = jsonVin.ScriptSig.Asm
+		vin.ScriptSigAsm.String = jsonVin.ScriptSig.Asm
 
 	}
 	err = nil //reset to catch error for update/insert
@@ -247,36 +250,42 @@ func processVin(jsonVin *lbrycrd.Vin, txHash *string) error {
 	return nil
 }
 
-func processVout(jsonVout *lbrycrd.Vout, txHash *string) error {
+func processVout(jsonVout *lbrycrd.Vout, txId *uint64) error {
 	vout := &model.Output{}
-	//ID is txid + sequence
-	outputid := *txHash + strconv.Itoa(int(jsonVout.N))
-	foundVout, err := model.FindOutput(boil.GetDB(), outputid)
+	foundVout, err := model.OutputsG(
+		qm.Where(model.OutputColumns.TransactionID+"=?", txId),
+		qm.And(model.OutputColumns.Vout+"=?", jsonVout.N)).One() //boil.GetDB(), outputid)
 	if foundVout != nil {
 		vout = foundVout
 	}
 
-	vout.ID = outputid
-	vout.TransactionID = *txHash
-	vout.SequenceID = uint(jsonVout.N)
+	vout.TransactionID = *txId
+	vout.Vout.Uint = uint(jsonVout.N)
 	vout.Value.String = strconv.Itoa(int(jsonVout.Value))
 	vout.ScriptPubKeyAsm.String = jsonVout.ScriptPubKey.Asm
 	vout.ScriptPubKeyHex.String = jsonVout.ScriptPubKey.Hex
 	vout.Type.String = jsonVout.ScriptPubKey.Type
+	jsonAddresses, err := json.Marshal(jsonVout.ScriptPubKey.Addresses)
+	if err != nil {
+		log.Error("Could not marshall address list of Vout")
+		err = nil //reset error
+	} else {
+		vout.AddressList.String = string(jsonAddresses)
+	}
 	scriptBytes, err := hex.DecodeString(vout.ScriptPubKeyHex.String)
 	if err != nil {
 		return err
 	}
-	isP2SH := txscript.IsPayToScriptHash(scriptBytes)
+	isP2SH := vout.Type.String == "scripthash"
 	isP2PK := vout.Type.String == "pubkey"
 	isP2PKH := vout.Type.String == "pubkeyhash"
 	isNonStandard := vout.Type.String == "nonstandard"
 	if isP2SH {
-		log.Debug("Found pay to script hash outpoint")
+		//log.Debug("Found pay to script hash outpoint")
 	} else if isP2PK {
-		log.Debug("Found pay to pub key outpoint")
+		//log.Debug("Found pay to pub key outpoint")
 	} else if isP2PKH {
-		log.Debug("Found pay to pub key hash outpoint")
+		//log.Debug("Found pay to pub key hash outpoint")
 	} else if isNonStandard {
 		err = processAsClaim(scriptBytes, *vout)
 		if err != nil {
@@ -287,7 +296,7 @@ func processVout(jsonVout *lbrycrd.Vout, txHash *string) error {
 }
 
 func processCoinBaseVin(jsonVin *lbrycrd.Vin) {
-	log.Debug("Coinbase transaction")
+	//log.Debug("Coinbase transaction")
 }
 
 func processAsClaim(script []byte, vout model.Output) error {
@@ -319,13 +328,16 @@ func processClaimNameScript(script *[]byte, vout model.Output) (name string, cla
 		errors.Prefix("Claim name processing error: ", err)
 		return name, claimid, err
 	}
-	claim, err := lbrycrd.DecodeClaimValue(name, value)
-	if claim != nil {
+	_, err = lbrycrd.DecodeClaimValue(name, value)
+	if false { //claim != nil {
 		hasher := ripemd160.New()
-		hasher.Write([]byte(vout.TransactionID + strconv.Itoa(int(vout.SequenceID))))
+		value := strconv.Itoa(int(vout.TransactionID)) + strconv.Itoa(int(vout.Vout.Uint))
+		hasher.Write([]byte(value))
 		hashBytes := hasher.Sum(nil)
 		claimId := fmt.Sprintf("%x", hashBytes)
-		log.Debug("ClaimName ", name, " ClaimId ", claimId)
+		if claimId != "" {
+			//log.Debug("ClaimName ", name, " ClaimId ", claimId)
+		}
 	}
 
 	return name, claimid, err
@@ -337,7 +349,7 @@ func processClaimSupportScript(script *[]byte, vout model.Output) (name string, 
 		errors.Prefix("Claim support processing error: ", err)
 		return name, claimid, err
 	}
-	log.Debug("ClaimSupport ", name, " ClaimId ", claimid)
+	//log.Debug("ClaimSupport ", name, " ClaimId ", claimid)
 
 	return name, claimid, err
 }
@@ -350,7 +362,7 @@ func processClaimUpdateScript(script *[]byte, vout model.Output) (name string, c
 	}
 	claim, err := lbrycrd.DecodeClaimValue(name, value)
 	if claim != nil {
-		log.Debug("ClaimUpdate ", name, " ClaimId ", claimId)
+		//log.Debug("ClaimUpdate ", name, " ClaimId ", claimId)
 	}
 	return name, claimId, err
 }

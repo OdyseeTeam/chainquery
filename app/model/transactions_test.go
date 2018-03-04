@@ -129,7 +129,7 @@ func testTransactionsExists(t *testing.T) {
 		t.Error(err)
 	}
 
-	e, err := TransactionExists(tx, transaction.Hash)
+	e, err := TransactionExists(tx, transaction.ID)
 	if err != nil {
 		t.Errorf("Unable to check if Transaction exists: %s", err)
 	}
@@ -153,7 +153,7 @@ func testTransactionsFind(t *testing.T) {
 		t.Error(err)
 	}
 
-	transactionFound, err := FindTransaction(tx, transaction.Hash)
+	transactionFound, err := FindTransaction(tx, transaction.ID)
 	if err != nil {
 		t.Error(err)
 	}
@@ -324,7 +324,7 @@ func testTransactionsInsertWhitelist(t *testing.T) {
 	}
 }
 
-func testTransactionToManyTransactionOfClaimClaims(t *testing.T) {
+func testTransactionToManyTransactionByHashClaims(t *testing.T) {
 	var err error
 	tx := MustTx(boil.Begin())
 	defer tx.Rollback()
@@ -344,10 +344,10 @@ func testTransactionToManyTransactionOfClaimClaims(t *testing.T) {
 	randomize.Struct(seed, &b, claimDBTypes, false, claimColumnsWithDefault...)
 	randomize.Struct(seed, &c, claimDBTypes, false, claimColumnsWithDefault...)
 
-	b.TransactionOfClaimID.Valid = true
-	c.TransactionOfClaimID.Valid = true
-	b.TransactionOfClaimID.String = a.Hash
-	c.TransactionOfClaimID.String = a.Hash
+	b.TransactionByHashID.Valid = true
+	c.TransactionByHashID.Valid = true
+	b.TransactionByHashID.String = a.Hash
+	c.TransactionByHashID.String = a.Hash
 	if err = b.Insert(tx); err != nil {
 		t.Fatal(err)
 	}
@@ -355,17 +355,17 @@ func testTransactionToManyTransactionOfClaimClaims(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	claim, err := a.TransactionOfClaimClaims(tx).All()
+	claim, err := a.TransactionByHashClaims(tx).All()
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	bFound, cFound := false, false
 	for _, v := range claim {
-		if v.TransactionOfClaimID.String == b.TransactionOfClaimID.String {
+		if v.TransactionByHashID.String == b.TransactionByHashID.String {
 			bFound = true
 		}
-		if v.TransactionOfClaimID.String == c.TransactionOfClaimID.String {
+		if v.TransactionByHashID.String == c.TransactionByHashID.String {
 			cFound = true
 		}
 	}
@@ -378,18 +378,18 @@ func testTransactionToManyTransactionOfClaimClaims(t *testing.T) {
 	}
 
 	slice := TransactionSlice{&a}
-	if err = a.L.LoadTransactionOfClaimClaims(tx, false, (*[]*Transaction)(&slice)); err != nil {
+	if err = a.L.LoadTransactionByHashClaims(tx, false, (*[]*Transaction)(&slice)); err != nil {
 		t.Fatal(err)
 	}
-	if got := len(a.R.TransactionOfClaimClaims); got != 2 {
+	if got := len(a.R.TransactionByHashClaims); got != 2 {
 		t.Error("number of eager loaded records wrong, got:", got)
 	}
 
-	a.R.TransactionOfClaimClaims = nil
-	if err = a.L.LoadTransactionOfClaimClaims(tx, true, &a); err != nil {
+	a.R.TransactionByHashClaims = nil
+	if err = a.L.LoadTransactionByHashClaims(tx, true, &a); err != nil {
 		t.Fatal(err)
 	}
-	if got := len(a.R.TransactionOfClaimClaims); got != 2 {
+	if got := len(a.R.TransactionByHashClaims); got != 2 {
 		t.Error("number of eager loaded records wrong, got:", got)
 	}
 
@@ -418,8 +418,8 @@ func testTransactionToManyInputs(t *testing.T) {
 	randomize.Struct(seed, &b, inputDBTypes, false, inputColumnsWithDefault...)
 	randomize.Struct(seed, &c, inputDBTypes, false, inputColumnsWithDefault...)
 
-	b.TransactionID = a.Hash
-	c.TransactionID = a.Hash
+	b.TransactionID = a.ID
+	c.TransactionID = a.ID
 	if err = b.Insert(tx); err != nil {
 		t.Fatal(err)
 	}
@@ -490,8 +490,8 @@ func testTransactionToManyOutputs(t *testing.T) {
 	randomize.Struct(seed, &b, outputDBTypes, false, outputColumnsWithDefault...)
 	randomize.Struct(seed, &c, outputDBTypes, false, outputColumnsWithDefault...)
 
-	b.TransactionID = a.Hash
-	c.TransactionID = a.Hash
+	b.TransactionID = a.ID
+	c.TransactionID = a.ID
 	if err = b.Insert(tx); err != nil {
 		t.Fatal(err)
 	}
@@ -562,8 +562,8 @@ func testTransactionToManyTransactionAddresses(t *testing.T) {
 	randomize.Struct(seed, &b, transactionAddressDBTypes, false, transactionAddressColumnsWithDefault...)
 	randomize.Struct(seed, &c, transactionAddressDBTypes, false, transactionAddressColumnsWithDefault...)
 
-	b.TransactionID = a.Hash
-	c.TransactionID = a.Hash
+	b.TransactionID = a.ID
+	c.TransactionID = a.ID
 	if err = b.Insert(tx); err != nil {
 		t.Fatal(err)
 	}
@@ -614,7 +614,7 @@ func testTransactionToManyTransactionAddresses(t *testing.T) {
 	}
 }
 
-func testTransactionToManyAddOpTransactionOfClaimClaims(t *testing.T) {
+func testTransactionToManyAddOpTransactionByHashClaims(t *testing.T) {
 	var err error
 
 	tx := MustTx(boil.Begin())
@@ -650,7 +650,7 @@ func testTransactionToManyAddOpTransactionOfClaimClaims(t *testing.T) {
 	}
 
 	for i, x := range foreignersSplitByInsertion {
-		err = a.AddTransactionOfClaimClaims(tx, i != 0, x...)
+		err = a.AddTransactionByHashClaims(tx, i != 0, x...)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -658,28 +658,28 @@ func testTransactionToManyAddOpTransactionOfClaimClaims(t *testing.T) {
 		first := x[0]
 		second := x[1]
 
-		if a.Hash != first.TransactionOfClaimID.String {
-			t.Error("foreign key was wrong value", a.Hash, first.TransactionOfClaimID.String)
+		if a.Hash != first.TransactionByHashID.String {
+			t.Error("foreign key was wrong value", a.Hash, first.TransactionByHashID.String)
 		}
-		if a.Hash != second.TransactionOfClaimID.String {
-			t.Error("foreign key was wrong value", a.Hash, second.TransactionOfClaimID.String)
+		if a.Hash != second.TransactionByHashID.String {
+			t.Error("foreign key was wrong value", a.Hash, second.TransactionByHashID.String)
 		}
 
-		if first.R.TransactionOfClaim != &a {
+		if first.R.TransactionByHash != &a {
 			t.Error("relationship was not added properly to the foreign slice")
 		}
-		if second.R.TransactionOfClaim != &a {
+		if second.R.TransactionByHash != &a {
 			t.Error("relationship was not added properly to the foreign slice")
 		}
 
-		if a.R.TransactionOfClaimClaims[i*2] != first {
+		if a.R.TransactionByHashClaims[i*2] != first {
 			t.Error("relationship struct slice not set to correct value")
 		}
-		if a.R.TransactionOfClaimClaims[i*2+1] != second {
+		if a.R.TransactionByHashClaims[i*2+1] != second {
 			t.Error("relationship struct slice not set to correct value")
 		}
 
-		count, err := a.TransactionOfClaimClaims(tx).Count()
+		count, err := a.TransactionByHashClaims(tx).Count()
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -689,7 +689,7 @@ func testTransactionToManyAddOpTransactionOfClaimClaims(t *testing.T) {
 	}
 }
 
-func testTransactionToManySetOpTransactionOfClaimClaims(t *testing.T) {
+func testTransactionToManySetOpTransactionByHashClaims(t *testing.T) {
 	var err error
 
 	tx := MustTx(boil.Begin())
@@ -719,25 +719,12 @@ func testTransactionToManySetOpTransactionOfClaimClaims(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = a.SetTransactionOfClaimClaims(tx, false, &b, &c)
+	err = a.SetTransactionByHashClaims(tx, false, &b, &c)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	count, err := a.TransactionOfClaimClaims(tx).Count()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 2 {
-		t.Error("count was wrong:", count)
-	}
-
-	err = a.SetTransactionOfClaimClaims(tx, true, &d, &e)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err = a.TransactionOfClaimClaims(tx).Count()
+	count, err := a.TransactionByHashClaims(tx).Count()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -745,41 +732,54 @@ func testTransactionToManySetOpTransactionOfClaimClaims(t *testing.T) {
 		t.Error("count was wrong:", count)
 	}
 
-	if b.TransactionOfClaimID.Valid {
+	err = a.SetTransactionByHashClaims(tx, true, &d, &e)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.TransactionByHashClaims(tx).Count()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	if b.TransactionByHashID.Valid {
 		t.Error("want b's foreign key value to be nil")
 	}
-	if c.TransactionOfClaimID.Valid {
+	if c.TransactionByHashID.Valid {
 		t.Error("want c's foreign key value to be nil")
 	}
-	if a.Hash != d.TransactionOfClaimID.String {
-		t.Error("foreign key was wrong value", a.Hash, d.TransactionOfClaimID.String)
+	if a.Hash != d.TransactionByHashID.String {
+		t.Error("foreign key was wrong value", a.Hash, d.TransactionByHashID.String)
 	}
-	if a.Hash != e.TransactionOfClaimID.String {
-		t.Error("foreign key was wrong value", a.Hash, e.TransactionOfClaimID.String)
-	}
-
-	if b.R.TransactionOfClaim != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if c.R.TransactionOfClaim != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if d.R.TransactionOfClaim != &a {
-		t.Error("relationship was not added properly to the foreign struct")
-	}
-	if e.R.TransactionOfClaim != &a {
-		t.Error("relationship was not added properly to the foreign struct")
+	if a.Hash != e.TransactionByHashID.String {
+		t.Error("foreign key was wrong value", a.Hash, e.TransactionByHashID.String)
 	}
 
-	if a.R.TransactionOfClaimClaims[0] != &d {
+	if b.R.TransactionByHash != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if c.R.TransactionByHash != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if d.R.TransactionByHash != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+	if e.R.TransactionByHash != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+
+	if a.R.TransactionByHashClaims[0] != &d {
 		t.Error("relationship struct slice not set to correct value")
 	}
-	if a.R.TransactionOfClaimClaims[1] != &e {
+	if a.R.TransactionByHashClaims[1] != &e {
 		t.Error("relationship struct slice not set to correct value")
 	}
 }
 
-func testTransactionToManyRemoveOpTransactionOfClaimClaims(t *testing.T) {
+func testTransactionToManyRemoveOpTransactionByHashClaims(t *testing.T) {
 	var err error
 
 	tx := MustTx(boil.Begin())
@@ -803,12 +803,12 @@ func testTransactionToManyRemoveOpTransactionOfClaimClaims(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = a.AddTransactionOfClaimClaims(tx, true, foreigners...)
+	err = a.AddTransactionByHashClaims(tx, true, foreigners...)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	count, err := a.TransactionOfClaimClaims(tx).Count()
+	count, err := a.TransactionByHashClaims(tx).Count()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -816,12 +816,12 @@ func testTransactionToManyRemoveOpTransactionOfClaimClaims(t *testing.T) {
 		t.Error("count was wrong:", count)
 	}
 
-	err = a.RemoveTransactionOfClaimClaims(tx, foreigners[:2]...)
+	err = a.RemoveTransactionByHashClaims(tx, foreigners[:2]...)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	count, err = a.TransactionOfClaimClaims(tx).Count()
+	count, err = a.TransactionByHashClaims(tx).Count()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -829,35 +829,35 @@ func testTransactionToManyRemoveOpTransactionOfClaimClaims(t *testing.T) {
 		t.Error("count was wrong:", count)
 	}
 
-	if b.TransactionOfClaimID.Valid {
+	if b.TransactionByHashID.Valid {
 		t.Error("want b's foreign key value to be nil")
 	}
-	if c.TransactionOfClaimID.Valid {
+	if c.TransactionByHashID.Valid {
 		t.Error("want c's foreign key value to be nil")
 	}
 
-	if b.R.TransactionOfClaim != nil {
+	if b.R.TransactionByHash != nil {
 		t.Error("relationship was not removed properly from the foreign struct")
 	}
-	if c.R.TransactionOfClaim != nil {
+	if c.R.TransactionByHash != nil {
 		t.Error("relationship was not removed properly from the foreign struct")
 	}
-	if d.R.TransactionOfClaim != &a {
+	if d.R.TransactionByHash != &a {
 		t.Error("relationship to a should have been preserved")
 	}
-	if e.R.TransactionOfClaim != &a {
+	if e.R.TransactionByHash != &a {
 		t.Error("relationship to a should have been preserved")
 	}
 
-	if len(a.R.TransactionOfClaimClaims) != 2 {
+	if len(a.R.TransactionByHashClaims) != 2 {
 		t.Error("should have preserved two relationships")
 	}
 
 	// Removal doesn't do a stable deletion for performance so we have to flip the order
-	if a.R.TransactionOfClaimClaims[1] != &d {
+	if a.R.TransactionByHashClaims[1] != &d {
 		t.Error("relationship to d should have been preserved")
 	}
-	if a.R.TransactionOfClaimClaims[0] != &e {
+	if a.R.TransactionByHashClaims[0] != &e {
 		t.Error("relationship to e should have been preserved")
 	}
 }
@@ -906,11 +906,11 @@ func testTransactionToManyAddOpInputs(t *testing.T) {
 		first := x[0]
 		second := x[1]
 
-		if a.Hash != first.TransactionID {
-			t.Error("foreign key was wrong value", a.Hash, first.TransactionID)
+		if a.ID != first.TransactionID {
+			t.Error("foreign key was wrong value", a.ID, first.TransactionID)
 		}
-		if a.Hash != second.TransactionID {
-			t.Error("foreign key was wrong value", a.Hash, second.TransactionID)
+		if a.ID != second.TransactionID {
+			t.Error("foreign key was wrong value", a.ID, second.TransactionID)
 		}
 
 		if first.R.Transaction != &a {
@@ -980,11 +980,11 @@ func testTransactionToManyAddOpOutputs(t *testing.T) {
 		first := x[0]
 		second := x[1]
 
-		if a.Hash != first.TransactionID {
-			t.Error("foreign key was wrong value", a.Hash, first.TransactionID)
+		if a.ID != first.TransactionID {
+			t.Error("foreign key was wrong value", a.ID, first.TransactionID)
 		}
-		if a.Hash != second.TransactionID {
-			t.Error("foreign key was wrong value", a.Hash, second.TransactionID)
+		if a.ID != second.TransactionID {
+			t.Error("foreign key was wrong value", a.ID, second.TransactionID)
 		}
 
 		if first.R.Transaction != &a {
@@ -1054,11 +1054,11 @@ func testTransactionToManyAddOpTransactionAddresses(t *testing.T) {
 		first := x[0]
 		second := x[1]
 
-		if a.Hash != first.TransactionID {
-			t.Error("foreign key was wrong value", a.Hash, first.TransactionID)
+		if a.ID != first.TransactionID {
+			t.Error("foreign key was wrong value", a.ID, first.TransactionID)
 		}
-		if a.Hash != second.TransactionID {
-			t.Error("foreign key was wrong value", a.Hash, second.TransactionID)
+		if a.ID != second.TransactionID {
+			t.Error("foreign key was wrong value", a.ID, second.TransactionID)
 		}
 
 		if first.R.Transaction != &a {
@@ -1084,7 +1084,7 @@ func testTransactionToManyAddOpTransactionAddresses(t *testing.T) {
 		}
 	}
 }
-func testTransactionToOneBlockUsingBlock(t *testing.T) {
+func testTransactionToOneBlockUsingBlockByHash(t *testing.T) {
 	tx := MustTx(boil.Begin())
 	defer tx.Rollback()
 
@@ -1092,23 +1092,25 @@ func testTransactionToOneBlockUsingBlock(t *testing.T) {
 	var foreign Block
 
 	seed := randomize.NewSeed()
-	if err := randomize.Struct(seed, &local, transactionDBTypes, false, transactionColumnsWithDefault...); err != nil {
+	if err := randomize.Struct(seed, &local, transactionDBTypes, true, transactionColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize Transaction struct: %s", err)
 	}
 	if err := randomize.Struct(seed, &foreign, blockDBTypes, false, blockColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize Block struct: %s", err)
 	}
 
+	local.BlockByHashID.Valid = true
+
 	if err := foreign.Insert(tx); err != nil {
 		t.Fatal(err)
 	}
 
-	local.BlockID = foreign.Hash
+	local.BlockByHashID.String = foreign.Hash
 	if err := local.Insert(tx); err != nil {
 		t.Fatal(err)
 	}
 
-	check, err := local.Block(tx).One()
+	check, err := local.BlockByHash(tx).One()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1118,23 +1120,23 @@ func testTransactionToOneBlockUsingBlock(t *testing.T) {
 	}
 
 	slice := TransactionSlice{&local}
-	if err = local.L.LoadBlock(tx, false, (*[]*Transaction)(&slice)); err != nil {
+	if err = local.L.LoadBlockByHash(tx, false, (*[]*Transaction)(&slice)); err != nil {
 		t.Fatal(err)
 	}
-	if local.R.Block == nil {
+	if local.R.BlockByHash == nil {
 		t.Error("struct should have been eager loaded")
 	}
 
-	local.R.Block = nil
-	if err = local.L.LoadBlock(tx, true, &local); err != nil {
+	local.R.BlockByHash = nil
+	if err = local.L.LoadBlockByHash(tx, true, &local); err != nil {
 		t.Fatal(err)
 	}
-	if local.R.Block == nil {
+	if local.R.BlockByHash == nil {
 		t.Error("struct should have been eager loaded")
 	}
 }
 
-func testTransactionToOneSetOpBlockUsingBlock(t *testing.T) {
+func testTransactionToOneSetOpBlockUsingBlockByHash(t *testing.T) {
 	var err error
 
 	tx := MustTx(boil.Begin())
@@ -1162,34 +1164,85 @@ func testTransactionToOneSetOpBlockUsingBlock(t *testing.T) {
 	}
 
 	for i, x := range []*Block{&b, &c} {
-		err = a.SetBlock(tx, i != 0, x)
+		err = a.SetBlockByHash(tx, i != 0, x)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		if a.R.Block != x {
+		if a.R.BlockByHash != x {
 			t.Error("relationship struct not set to correct value")
 		}
 
-		if x.R.Transactions[0] != &a {
+		if x.R.BlockByHashTransactions[0] != &a {
 			t.Error("failed to append to foreign relationship struct")
 		}
-		if a.BlockID != x.Hash {
-			t.Error("foreign key was wrong value", a.BlockID)
+		if a.BlockByHashID.String != x.Hash {
+			t.Error("foreign key was wrong value", a.BlockByHashID.String)
 		}
 
-		zero := reflect.Zero(reflect.TypeOf(a.BlockID))
-		reflect.Indirect(reflect.ValueOf(&a.BlockID)).Set(zero)
+		zero := reflect.Zero(reflect.TypeOf(a.BlockByHashID.String))
+		reflect.Indirect(reflect.ValueOf(&a.BlockByHashID.String)).Set(zero)
 
 		if err = a.Reload(tx); err != nil {
 			t.Fatal("failed to reload", err)
 		}
 
-		if a.BlockID != x.Hash {
-			t.Error("foreign key was wrong value", a.BlockID, x.Hash)
+		if a.BlockByHashID.String != x.Hash {
+			t.Error("foreign key was wrong value", a.BlockByHashID.String, x.Hash)
 		}
 	}
 }
+
+func testTransactionToOneRemoveOpBlockUsingBlockByHash(t *testing.T) {
+	var err error
+
+	tx := MustTx(boil.Begin())
+	defer tx.Rollback()
+
+	var a Transaction
+	var b Block
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, transactionDBTypes, false, strmangle.SetComplement(transactionPrimaryKeyColumns, transactionColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &b, blockDBTypes, false, strmangle.SetComplement(blockPrimaryKeyColumns, blockColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = a.Insert(tx); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = a.SetBlockByHash(tx, true, &b); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = a.RemoveBlockByHash(tx, &b); err != nil {
+		t.Error("failed to remove relationship")
+	}
+
+	count, err := a.BlockByHash(tx).Count()
+	if err != nil {
+		t.Error(err)
+	}
+	if count != 0 {
+		t.Error("want no relationships remaining")
+	}
+
+	if a.R.BlockByHash != nil {
+		t.Error("R struct entry should be nil")
+	}
+
+	if a.BlockByHashID.Valid {
+		t.Error("foreign key value should be nil")
+	}
+
+	if len(b.R.BlockByHashTransactions) != 0 {
+		t.Error("failed to remove a from b's relationships")
+	}
+}
+
 func testTransactionsReload(t *testing.T) {
 	t.Parallel()
 
@@ -1260,7 +1313,7 @@ func testTransactionsSelect(t *testing.T) {
 }
 
 var (
-	transactionDBTypes = map[string]string{`BlockID`: `varchar`, `CreatedTime`: `int`, `Fee`: `float`, `Hash`: `varchar`, `InputCount`: `int`, `LockTime`: `int`, `OutputCount`: `int`, `Raw`: `text`, `TransactionSize`: `bigint`, `TransactionTime`: `bigint`, `Value`: `float`, `Version`: `int`}
+	transactionDBTypes = map[string]string{`BlockByHashID`: `varchar`, `Created`: `datetime`, `CreatedTime`: `datetime`, `Fee`: `decimal`, `Hash`: `varchar`, `ID`: `bigint`, `InputCount`: `int`, `LockTime`: `int`, `Modified`: `datetime`, `OutputCount`: `int`, `Raw`: `text`, `TransactionSize`: `bigint`, `TransactionTime`: `bigint`, `Value`: `decimal`, `Version`: `int`}
 	_                  = bytes.MinRead
 )
 

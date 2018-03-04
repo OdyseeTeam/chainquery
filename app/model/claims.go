@@ -22,99 +22,99 @@ import (
 
 // Claim is an object representing the database table.
 type Claim struct {
-	ID                   uint64      `boil:"id" json:"id" toml:"id" yaml:"id"`
-	TransactionOfClaimID null.String `boil:"transaction_of_claim_id" json:"transaction_of_claim_id,omitempty" toml:"transaction_of_claim_id" yaml:"transaction_of_claim_id,omitempty"`
-	VOut                 uint        `boil:"v_out" json:"v_out" toml:"v_out" yaml:"v_out"`
-	Name                 string      `boil:"name" json:"name" toml:"name" yaml:"name"`
-	ClaimID              string      `boil:"claim_id" json:"claim_id" toml:"claim_id" yaml:"claim_id"`
-	ClaimType            bool        `boil:"claim_type" json:"claim_type" toml:"claim_type" yaml:"claim_type"`
-	PublisherClaimID     null.String `boil:"publisher_claim_id" json:"publisher_claim_id,omitempty" toml:"publisher_claim_id" yaml:"publisher_claim_id,omitempty"`
-	PublisherSig         null.String `boil:"publisher_sig" json:"publisher_sig,omitempty" toml:"publisher_sig" yaml:"publisher_sig,omitempty"`
-	Certificate          null.String `boil:"certificate" json:"certificate,omitempty" toml:"certificate" yaml:"certificate,omitempty"`
-	TransactionTime      null.Uint   `boil:"transaction_time" json:"transaction_time,omitempty" toml:"transaction_time" yaml:"transaction_time,omitempty"`
-	Version              string      `boil:"version" json:"version" toml:"version" yaml:"version"`
-	Author               null.String `boil:"author" json:"author,omitempty" toml:"author" yaml:"author,omitempty"`
-	Description          null.String `boil:"description" json:"description,omitempty" toml:"description" yaml:"description,omitempty"`
-	ContentType          null.String `boil:"content_type" json:"content_type,omitempty" toml:"content_type" yaml:"content_type,omitempty"`
-	IsNSFW               bool        `boil:"is_n_s_f_w" json:"is_n_s_f_w" toml:"is_n_s_f_w" yaml:"is_n_s_f_w"`
-	Language             null.String `boil:"language" json:"language,omitempty" toml:"language" yaml:"language,omitempty"`
-	ThumbnailURL         null.String `boil:"thumbnail_url" json:"thumbnail_url,omitempty" toml:"thumbnail_url" yaml:"thumbnail_url,omitempty"`
-	Title                null.String `boil:"title" json:"title,omitempty" toml:"title" yaml:"title,omitempty"`
-	Fee                  string      `boil:"fee" json:"fee" toml:"fee" yaml:"fee"`
-	FeeCurrency          null.String `boil:"fee_currency" json:"fee_currency,omitempty" toml:"fee_currency" yaml:"fee_currency,omitempty"`
-	IsFiltered           bool        `boil:"is_filtered" json:"is_filtered" toml:"is_filtered" yaml:"is_filtered"`
-	Created              time.Time   `boil:"created" json:"created" toml:"created" yaml:"created"`
-	Modified             time.Time   `boil:"modified" json:"modified" toml:"modified" yaml:"modified"`
+	ID                  uint64      `boil:"id" json:"id" toml:"id" yaml:"id"`
+	TransactionByHashID null.String `boil:"transaction_by_hash_id" json:"transaction_by_hash_id,omitempty" toml:"transaction_by_hash_id" yaml:"transaction_by_hash_id,omitempty"`
+	Vout                uint        `boil:"vout" json:"vout" toml:"vout" yaml:"vout"`
+	Name                string      `boil:"name" json:"name" toml:"name" yaml:"name"`
+	ClaimID             string      `boil:"claim_id" json:"claim_id" toml:"claim_id" yaml:"claim_id"`
+	ClaimType           bool        `boil:"claim_type" json:"claim_type" toml:"claim_type" yaml:"claim_type"`
+	PublisherID         null.String `boil:"publisher_id" json:"publisher_id,omitempty" toml:"publisher_id" yaml:"publisher_id,omitempty"`
+	PublisherSig        null.String `boil:"publisher_sig" json:"publisher_sig,omitempty" toml:"publisher_sig" yaml:"publisher_sig,omitempty"`
+	Certificate         null.String `boil:"certificate" json:"certificate,omitempty" toml:"certificate" yaml:"certificate,omitempty"`
+	TransactionTime     null.Uint   `boil:"transaction_time" json:"transaction_time,omitempty" toml:"transaction_time" yaml:"transaction_time,omitempty"`
+	Version             string      `boil:"version" json:"version" toml:"version" yaml:"version"`
+	Author              null.String `boil:"author" json:"author,omitempty" toml:"author" yaml:"author,omitempty"`
+	Description         null.String `boil:"description" json:"description,omitempty" toml:"description" yaml:"description,omitempty"`
+	ContentType         null.String `boil:"content_type" json:"content_type,omitempty" toml:"content_type" yaml:"content_type,omitempty"`
+	IsNSFW              bool        `boil:"is_n_s_f_w" json:"is_n_s_f_w" toml:"is_n_s_f_w" yaml:"is_n_s_f_w"`
+	Language            null.String `boil:"language" json:"language,omitempty" toml:"language" yaml:"language,omitempty"`
+	ThumbnailURL        null.String `boil:"thumbnail_url" json:"thumbnail_url,omitempty" toml:"thumbnail_url" yaml:"thumbnail_url,omitempty"`
+	Title               null.String `boil:"title" json:"title,omitempty" toml:"title" yaml:"title,omitempty"`
+	Fee                 string      `boil:"fee" json:"fee" toml:"fee" yaml:"fee"`
+	FeeCurrency         null.String `boil:"fee_currency" json:"fee_currency,omitempty" toml:"fee_currency" yaml:"fee_currency,omitempty"`
+	IsFiltered          bool        `boil:"is_filtered" json:"is_filtered" toml:"is_filtered" yaml:"is_filtered"`
+	Created             time.Time   `boil:"created" json:"created" toml:"created" yaml:"created"`
+	Modified            time.Time   `boil:"modified" json:"modified" toml:"modified" yaml:"modified"`
 
 	R *claimR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L claimL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var ClaimColumns = struct {
-	ID                   string
-	TransactionOfClaimID string
-	VOut                 string
-	Name                 string
-	ClaimID              string
-	ClaimType            string
-	PublisherClaimID     string
-	PublisherSig         string
-	Certificate          string
-	TransactionTime      string
-	Version              string
-	Author               string
-	Description          string
-	ContentType          string
-	IsNSFW               string
-	Language             string
-	ThumbnailURL         string
-	Title                string
-	Fee                  string
-	FeeCurrency          string
-	IsFiltered           string
-	Created              string
-	Modified             string
+	ID                  string
+	TransactionByHashID string
+	Vout                string
+	Name                string
+	ClaimID             string
+	ClaimType           string
+	PublisherID         string
+	PublisherSig        string
+	Certificate         string
+	TransactionTime     string
+	Version             string
+	Author              string
+	Description         string
+	ContentType         string
+	IsNSFW              string
+	Language            string
+	ThumbnailURL        string
+	Title               string
+	Fee                 string
+	FeeCurrency         string
+	IsFiltered          string
+	Created             string
+	Modified            string
 }{
-	ID:                   "id",
-	TransactionOfClaimID: "transaction_of_claim_id",
-	VOut:                 "v_out",
-	Name:                 "name",
-	ClaimID:              "claim_id",
-	ClaimType:            "claim_type",
-	PublisherClaimID:     "publisher_claim_id",
-	PublisherSig:         "publisher_sig",
-	Certificate:          "certificate",
-	TransactionTime:      "transaction_time",
-	Version:              "version",
-	Author:               "author",
-	Description:          "description",
-	ContentType:          "content_type",
-	IsNSFW:               "is_n_s_f_w",
-	Language:             "language",
-	ThumbnailURL:         "thumbnail_url",
-	Title:                "title",
-	Fee:                  "fee",
-	FeeCurrency:          "fee_currency",
-	IsFiltered:           "is_filtered",
-	Created:              "created",
-	Modified:             "modified",
+	ID:                  "id",
+	TransactionByHashID: "transaction_by_hash_id",
+	Vout:                "vout",
+	Name:                "name",
+	ClaimID:             "claim_id",
+	ClaimType:           "claim_type",
+	PublisherID:         "publisher_id",
+	PublisherSig:        "publisher_sig",
+	Certificate:         "certificate",
+	TransactionTime:     "transaction_time",
+	Version:             "version",
+	Author:              "author",
+	Description:         "description",
+	ContentType:         "content_type",
+	IsNSFW:              "is_n_s_f_w",
+	Language:            "language",
+	ThumbnailURL:        "thumbnail_url",
+	Title:               "title",
+	Fee:                 "fee",
+	FeeCurrency:         "fee_currency",
+	IsFiltered:          "is_filtered",
+	Created:             "created",
+	Modified:            "modified",
 }
 
 // claimR is where relationships are stored.
 type claimR struct {
-	PublisherClaim       *Claim
-	TransactionOfClaim   *Transaction
-	ClaimStream          *ClaimStream
-	PublisherClaimClaims ClaimSlice
+	TransactionByHash *Transaction
+	Publisher         *Claim
+	ClaimStream       *ClaimStream
+	PublisherClaims   ClaimSlice
 }
 
 // claimL is where Load methods for each relationship are stored.
 type claimL struct{}
 
 var (
-	claimColumns               = []string{"id", "transaction_of_claim_id", "v_out", "name", "claim_id", "claim_type", "publisher_claim_id", "publisher_sig", "certificate", "transaction_time", "version", "author", "description", "content_type", "is_n_s_f_w", "language", "thumbnail_url", "title", "fee", "fee_currency", "is_filtered", "created", "modified"}
-	claimColumnsWithoutDefault = []string{"transaction_of_claim_id", "v_out", "name", "claim_id", "publisher_claim_id", "publisher_sig", "certificate", "transaction_time", "version", "author", "description", "content_type", "language", "thumbnail_url", "title", "fee_currency", "created", "modified"}
-	claimColumnsWithDefault    = []string{"id", "claim_type", "is_n_s_f_w", "fee", "is_filtered"}
+	claimColumns               = []string{"id", "transaction_by_hash_id", "vout", "name", "claim_id", "claim_type", "publisher_id", "publisher_sig", "certificate", "transaction_time", "version", "author", "description", "content_type", "is_n_s_f_w", "language", "thumbnail_url", "title", "fee", "fee_currency", "is_filtered", "created", "modified"}
+	claimColumnsWithoutDefault = []string{"transaction_by_hash_id", "vout", "name", "claim_id", "claim_type", "publisher_id", "publisher_sig", "certificate", "transaction_time", "version", "author", "description", "content_type", "language", "thumbnail_url", "title", "fee_currency"}
+	claimColumnsWithDefault    = []string{"id", "is_n_s_f_w", "fee", "is_filtered", "created", "modified"}
 	claimPrimaryKeyColumns     = []string{"id"}
 )
 
@@ -247,40 +247,40 @@ func (q claimQuery) Exists() (bool, error) {
 	return count > 0, nil
 }
 
-// PublisherClaimG pointed to by the foreign key.
-func (o *Claim) PublisherClaimG(mods ...qm.QueryMod) claimQuery {
-	return o.PublisherClaim(boil.GetDB(), mods...)
+// TransactionByHashG pointed to by the foreign key.
+func (o *Claim) TransactionByHashG(mods ...qm.QueryMod) transactionQuery {
+	return o.TransactionByHash(boil.GetDB(), mods...)
 }
 
-// PublisherClaim pointed to by the foreign key.
-func (o *Claim) PublisherClaim(exec boil.Executor, mods ...qm.QueryMod) claimQuery {
+// TransactionByHash pointed to by the foreign key.
+func (o *Claim) TransactionByHash(exec boil.Executor, mods ...qm.QueryMod) transactionQuery {
 	queryMods := []qm.QueryMod{
-		qm.Where("claim_id=?", o.PublisherClaimID),
-	}
-
-	queryMods = append(queryMods, mods...)
-
-	query := Claims(exec, queryMods...)
-	queries.SetFrom(query.Query, "`claims`")
-
-	return query
-}
-
-// TransactionOfClaimG pointed to by the foreign key.
-func (o *Claim) TransactionOfClaimG(mods ...qm.QueryMod) transactionQuery {
-	return o.TransactionOfClaim(boil.GetDB(), mods...)
-}
-
-// TransactionOfClaim pointed to by the foreign key.
-func (o *Claim) TransactionOfClaim(exec boil.Executor, mods ...qm.QueryMod) transactionQuery {
-	queryMods := []qm.QueryMod{
-		qm.Where("hash=?", o.TransactionOfClaimID),
+		qm.Where("hash=?", o.TransactionByHashID),
 	}
 
 	queryMods = append(queryMods, mods...)
 
 	query := Transactions(exec, queryMods...)
 	queries.SetFrom(query.Query, "`transactions`")
+
+	return query
+}
+
+// PublisherG pointed to by the foreign key.
+func (o *Claim) PublisherG(mods ...qm.QueryMod) claimQuery {
+	return o.Publisher(boil.GetDB(), mods...)
+}
+
+// Publisher pointed to by the foreign key.
+func (o *Claim) Publisher(exec boil.Executor, mods ...qm.QueryMod) claimQuery {
+	queryMods := []qm.QueryMod{
+		qm.Where("claim_id=?", o.PublisherID),
+	}
+
+	queryMods = append(queryMods, mods...)
+
+	query := Claims(exec, queryMods...)
+	queries.SetFrom(query.Query, "`claims`")
 
 	return query
 }
@@ -304,20 +304,20 @@ func (o *Claim) ClaimStream(exec boil.Executor, mods ...qm.QueryMod) claimStream
 	return query
 }
 
-// PublisherClaimClaimsG retrieves all the claim's claims via publisher_claim_id column.
-func (o *Claim) PublisherClaimClaimsG(mods ...qm.QueryMod) claimQuery {
-	return o.PublisherClaimClaims(boil.GetDB(), mods...)
+// PublisherClaimsG retrieves all the claim's claims via publisher_id column.
+func (o *Claim) PublisherClaimsG(mods ...qm.QueryMod) claimQuery {
+	return o.PublisherClaims(boil.GetDB(), mods...)
 }
 
-// PublisherClaimClaims retrieves all the claim's claims with an executor via publisher_claim_id column.
-func (o *Claim) PublisherClaimClaims(exec boil.Executor, mods ...qm.QueryMod) claimQuery {
+// PublisherClaims retrieves all the claim's claims with an executor via publisher_id column.
+func (o *Claim) PublisherClaims(exec boil.Executor, mods ...qm.QueryMod) claimQuery {
 	var queryMods []qm.QueryMod
 	if len(mods) != 0 {
 		queryMods = append(queryMods, mods...)
 	}
 
 	queryMods = append(queryMods,
-		qm.Where("`claims`.`publisher_claim_id`=?", o.ClaimID),
+		qm.Where("`claims`.`publisher_id`=?", o.ClaimID),
 	)
 
 	query := Claims(exec, queryMods...)
@@ -330,9 +330,9 @@ func (o *Claim) PublisherClaimClaims(exec boil.Executor, mods ...qm.QueryMod) cl
 	return query
 }
 
-// LoadPublisherClaim allows an eager lookup of values, cached into the
+// LoadTransactionByHash allows an eager lookup of values, cached into the
 // loaded structs of the objects.
-func (claimL) LoadPublisherClaim(e boil.Executor, singular bool, maybeClaim interface{}) error {
+func (claimL) LoadTransactionByHash(e boil.Executor, singular bool, maybeClaim interface{}) error {
 	var slice []*Claim
 	var object *Claim
 
@@ -349,83 +349,13 @@ func (claimL) LoadPublisherClaim(e boil.Executor, singular bool, maybeClaim inte
 		if object.R == nil {
 			object.R = &claimR{}
 		}
-		args[0] = object.PublisherClaimID
+		args[0] = object.TransactionByHashID
 	} else {
 		for i, obj := range slice {
 			if obj.R == nil {
 				obj.R = &claimR{}
 			}
-			args[i] = obj.PublisherClaimID
-		}
-	}
-
-	query := fmt.Sprintf(
-		"select * from `claims` where `claim_id` in (%s)",
-		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
-	)
-
-	if boil.DebugMode {
-		fmt.Fprintf(boil.DebugWriter, "%s\n%v\n", query, args)
-	}
-
-	results, err := e.Query(query, args...)
-	if err != nil {
-		return errors.Wrap(err, "failed to eager load Claim")
-	}
-	defer results.Close()
-
-	var resultSlice []*Claim
-	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice Claim")
-	}
-
-	if len(resultSlice) == 0 {
-		return nil
-	}
-
-	if singular {
-		object.R.PublisherClaim = resultSlice[0]
-		return nil
-	}
-
-	for _, local := range slice {
-		for _, foreign := range resultSlice {
-			if local.PublisherClaimID.String == foreign.ClaimID {
-				local.R.PublisherClaim = foreign
-				break
-			}
-		}
-	}
-
-	return nil
-}
-
-// LoadTransactionOfClaim allows an eager lookup of values, cached into the
-// loaded structs of the objects.
-func (claimL) LoadTransactionOfClaim(e boil.Executor, singular bool, maybeClaim interface{}) error {
-	var slice []*Claim
-	var object *Claim
-
-	count := 1
-	if singular {
-		object = maybeClaim.(*Claim)
-	} else {
-		slice = *maybeClaim.(*[]*Claim)
-		count = len(slice)
-	}
-
-	args := make([]interface{}, count)
-	if singular {
-		if object.R == nil {
-			object.R = &claimR{}
-		}
-		args[0] = object.TransactionOfClaimID
-	} else {
-		for i, obj := range slice {
-			if obj.R == nil {
-				obj.R = &claimR{}
-			}
-			args[i] = obj.TransactionOfClaimID
+			args[i] = obj.TransactionByHashID
 		}
 	}
 
@@ -454,14 +384,84 @@ func (claimL) LoadTransactionOfClaim(e boil.Executor, singular bool, maybeClaim 
 	}
 
 	if singular {
-		object.R.TransactionOfClaim = resultSlice[0]
+		object.R.TransactionByHash = resultSlice[0]
 		return nil
 	}
 
 	for _, local := range slice {
 		for _, foreign := range resultSlice {
-			if local.TransactionOfClaimID.String == foreign.Hash {
-				local.R.TransactionOfClaim = foreign
+			if local.TransactionByHashID.String == foreign.Hash {
+				local.R.TransactionByHash = foreign
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadPublisher allows an eager lookup of values, cached into the
+// loaded structs of the objects.
+func (claimL) LoadPublisher(e boil.Executor, singular bool, maybeClaim interface{}) error {
+	var slice []*Claim
+	var object *Claim
+
+	count := 1
+	if singular {
+		object = maybeClaim.(*Claim)
+	} else {
+		slice = *maybeClaim.(*[]*Claim)
+		count = len(slice)
+	}
+
+	args := make([]interface{}, count)
+	if singular {
+		if object.R == nil {
+			object.R = &claimR{}
+		}
+		args[0] = object.PublisherID
+	} else {
+		for i, obj := range slice {
+			if obj.R == nil {
+				obj.R = &claimR{}
+			}
+			args[i] = obj.PublisherID
+		}
+	}
+
+	query := fmt.Sprintf(
+		"select * from `claims` where `claim_id` in (%s)",
+		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
+	)
+
+	if boil.DebugMode {
+		fmt.Fprintf(boil.DebugWriter, "%s\n%v\n", query, args)
+	}
+
+	results, err := e.Query(query, args...)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load Claim")
+	}
+	defer results.Close()
+
+	var resultSlice []*Claim
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice Claim")
+	}
+
+	if len(resultSlice) == 0 {
+		return nil
+	}
+
+	if singular {
+		object.R.Publisher = resultSlice[0]
+		return nil
+	}
+
+	for _, local := range slice {
+		for _, foreign := range resultSlice {
+			if local.PublisherID.String == foreign.ClaimID {
+				local.R.Publisher = foreign
 				break
 			}
 		}
@@ -540,9 +540,9 @@ func (claimL) LoadClaimStream(e boil.Executor, singular bool, maybeClaim interfa
 	return nil
 }
 
-// LoadPublisherClaimClaims allows an eager lookup of values, cached into the
+// LoadPublisherClaims allows an eager lookup of values, cached into the
 // loaded structs of the objects.
-func (claimL) LoadPublisherClaimClaims(e boil.Executor, singular bool, maybeClaim interface{}) error {
+func (claimL) LoadPublisherClaims(e boil.Executor, singular bool, maybeClaim interface{}) error {
 	var slice []*Claim
 	var object *Claim
 
@@ -570,7 +570,7 @@ func (claimL) LoadPublisherClaimClaims(e boil.Executor, singular bool, maybeClai
 	}
 
 	query := fmt.Sprintf(
-		"select * from `claims` where `publisher_claim_id` in (%s)",
+		"select * from `claims` where `publisher_id` in (%s)",
 		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
 	)
 	if boil.DebugMode {
@@ -589,14 +589,14 @@ func (claimL) LoadPublisherClaimClaims(e boil.Executor, singular bool, maybeClai
 	}
 
 	if singular {
-		object.R.PublisherClaimClaims = resultSlice
+		object.R.PublisherClaims = resultSlice
 		return nil
 	}
 
 	for _, foreign := range resultSlice {
 		for _, local := range slice {
-			if local.ClaimID == foreign.PublisherClaimID.String {
-				local.R.PublisherClaimClaims = append(local.R.PublisherClaimClaims, foreign)
+			if local.ClaimID == foreign.PublisherID.String {
+				local.R.PublisherClaims = append(local.R.PublisherClaims, foreign)
 				break
 			}
 		}
@@ -605,38 +605,38 @@ func (claimL) LoadPublisherClaimClaims(e boil.Executor, singular bool, maybeClai
 	return nil
 }
 
-// SetPublisherClaimG of the claim to the related item.
-// Sets o.R.PublisherClaim to related.
-// Adds o to related.R.PublisherClaimClaims.
+// SetTransactionByHashG of the claim to the related item.
+// Sets o.R.TransactionByHash to related.
+// Adds o to related.R.TransactionByHashClaims.
 // Uses the global database handle.
-func (o *Claim) SetPublisherClaimG(insert bool, related *Claim) error {
-	return o.SetPublisherClaim(boil.GetDB(), insert, related)
+func (o *Claim) SetTransactionByHashG(insert bool, related *Transaction) error {
+	return o.SetTransactionByHash(boil.GetDB(), insert, related)
 }
 
-// SetPublisherClaimP of the claim to the related item.
-// Sets o.R.PublisherClaim to related.
-// Adds o to related.R.PublisherClaimClaims.
+// SetTransactionByHashP of the claim to the related item.
+// Sets o.R.TransactionByHash to related.
+// Adds o to related.R.TransactionByHashClaims.
 // Panics on error.
-func (o *Claim) SetPublisherClaimP(exec boil.Executor, insert bool, related *Claim) {
-	if err := o.SetPublisherClaim(exec, insert, related); err != nil {
+func (o *Claim) SetTransactionByHashP(exec boil.Executor, insert bool, related *Transaction) {
+	if err := o.SetTransactionByHash(exec, insert, related); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
-// SetPublisherClaimGP of the claim to the related item.
-// Sets o.R.PublisherClaim to related.
-// Adds o to related.R.PublisherClaimClaims.
+// SetTransactionByHashGP of the claim to the related item.
+// Sets o.R.TransactionByHash to related.
+// Adds o to related.R.TransactionByHashClaims.
 // Uses the global database handle and panics on error.
-func (o *Claim) SetPublisherClaimGP(insert bool, related *Claim) {
-	if err := o.SetPublisherClaim(boil.GetDB(), insert, related); err != nil {
+func (o *Claim) SetTransactionByHashGP(insert bool, related *Transaction) {
+	if err := o.SetTransactionByHash(boil.GetDB(), insert, related); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
-// SetPublisherClaim of the claim to the related item.
-// Sets o.R.PublisherClaim to related.
-// Adds o to related.R.PublisherClaimClaims.
-func (o *Claim) SetPublisherClaim(exec boil.Executor, insert bool, related *Claim) error {
+// SetTransactionByHash of the claim to the related item.
+// Sets o.R.TransactionByHash to related.
+// Adds o to related.R.TransactionByHashClaims.
+func (o *Claim) SetTransactionByHash(exec boil.Executor, insert bool, related *Transaction) error {
 	var err error
 	if insert {
 		if err = related.Insert(exec); err != nil {
@@ -646,144 +646,7 @@ func (o *Claim) SetPublisherClaim(exec boil.Executor, insert bool, related *Clai
 
 	updateQuery := fmt.Sprintf(
 		"UPDATE `claims` SET %s WHERE %s",
-		strmangle.SetParamNames("`", "`", 0, []string{"publisher_claim_id"}),
-		strmangle.WhereClause("`", "`", 0, claimPrimaryKeyColumns),
-	)
-	values := []interface{}{related.ClaimID, o.ID}
-
-	if boil.DebugMode {
-		fmt.Fprintln(boil.DebugWriter, updateQuery)
-		fmt.Fprintln(boil.DebugWriter, values)
-	}
-
-	if _, err = exec.Exec(updateQuery, values...); err != nil {
-		return errors.Wrap(err, "failed to update local table")
-	}
-
-	o.PublisherClaimID.String = related.ClaimID
-	o.PublisherClaimID.Valid = true
-
-	if o.R == nil {
-		o.R = &claimR{
-			PublisherClaim: related,
-		}
-	} else {
-		o.R.PublisherClaim = related
-	}
-
-	if related.R == nil {
-		related.R = &claimR{
-			PublisherClaimClaims: ClaimSlice{o},
-		}
-	} else {
-		related.R.PublisherClaimClaims = append(related.R.PublisherClaimClaims, o)
-	}
-
-	return nil
-}
-
-// RemovePublisherClaimG relationship.
-// Sets o.R.PublisherClaim to nil.
-// Removes o from all passed in related items' relationships struct (Optional).
-// Uses the global database handle.
-func (o *Claim) RemovePublisherClaimG(related *Claim) error {
-	return o.RemovePublisherClaim(boil.GetDB(), related)
-}
-
-// RemovePublisherClaimP relationship.
-// Sets o.R.PublisherClaim to nil.
-// Removes o from all passed in related items' relationships struct (Optional).
-// Panics on error.
-func (o *Claim) RemovePublisherClaimP(exec boil.Executor, related *Claim) {
-	if err := o.RemovePublisherClaim(exec, related); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
-// RemovePublisherClaimGP relationship.
-// Sets o.R.PublisherClaim to nil.
-// Removes o from all passed in related items' relationships struct (Optional).
-// Uses the global database handle and panics on error.
-func (o *Claim) RemovePublisherClaimGP(related *Claim) {
-	if err := o.RemovePublisherClaim(boil.GetDB(), related); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
-// RemovePublisherClaim relationship.
-// Sets o.R.PublisherClaim to nil.
-// Removes o from all passed in related items' relationships struct (Optional).
-func (o *Claim) RemovePublisherClaim(exec boil.Executor, related *Claim) error {
-	var err error
-
-	o.PublisherClaimID.Valid = false
-	if err = o.Update(exec, "publisher_claim_id"); err != nil {
-		o.PublisherClaimID.Valid = true
-		return errors.Wrap(err, "failed to update local table")
-	}
-
-	o.R.PublisherClaim = nil
-	if related == nil || related.R == nil {
-		return nil
-	}
-
-	for i, ri := range related.R.PublisherClaimClaims {
-		if o.PublisherClaimID.String != ri.PublisherClaimID.String {
-			continue
-		}
-
-		ln := len(related.R.PublisherClaimClaims)
-		if ln > 1 && i < ln-1 {
-			related.R.PublisherClaimClaims[i] = related.R.PublisherClaimClaims[ln-1]
-		}
-		related.R.PublisherClaimClaims = related.R.PublisherClaimClaims[:ln-1]
-		break
-	}
-	return nil
-}
-
-// SetTransactionOfClaimG of the claim to the related item.
-// Sets o.R.TransactionOfClaim to related.
-// Adds o to related.R.TransactionOfClaimClaims.
-// Uses the global database handle.
-func (o *Claim) SetTransactionOfClaimG(insert bool, related *Transaction) error {
-	return o.SetTransactionOfClaim(boil.GetDB(), insert, related)
-}
-
-// SetTransactionOfClaimP of the claim to the related item.
-// Sets o.R.TransactionOfClaim to related.
-// Adds o to related.R.TransactionOfClaimClaims.
-// Panics on error.
-func (o *Claim) SetTransactionOfClaimP(exec boil.Executor, insert bool, related *Transaction) {
-	if err := o.SetTransactionOfClaim(exec, insert, related); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
-// SetTransactionOfClaimGP of the claim to the related item.
-// Sets o.R.TransactionOfClaim to related.
-// Adds o to related.R.TransactionOfClaimClaims.
-// Uses the global database handle and panics on error.
-func (o *Claim) SetTransactionOfClaimGP(insert bool, related *Transaction) {
-	if err := o.SetTransactionOfClaim(boil.GetDB(), insert, related); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
-// SetTransactionOfClaim of the claim to the related item.
-// Sets o.R.TransactionOfClaim to related.
-// Adds o to related.R.TransactionOfClaimClaims.
-func (o *Claim) SetTransactionOfClaim(exec boil.Executor, insert bool, related *Transaction) error {
-	var err error
-	if insert {
-		if err = related.Insert(exec); err != nil {
-			return errors.Wrap(err, "failed to insert into foreign table")
-		}
-	}
-
-	updateQuery := fmt.Sprintf(
-		"UPDATE `claims` SET %s WHERE %s",
-		strmangle.SetParamNames("`", "`", 0, []string{"transaction_of_claim_id"}),
+		strmangle.SetParamNames("`", "`", 0, []string{"transaction_by_hash_id"}),
 		strmangle.WhereClause("`", "`", 0, claimPrimaryKeyColumns),
 	)
 	values := []interface{}{related.Hash, o.ID}
@@ -797,83 +660,220 @@ func (o *Claim) SetTransactionOfClaim(exec boil.Executor, insert bool, related *
 		return errors.Wrap(err, "failed to update local table")
 	}
 
-	o.TransactionOfClaimID.String = related.Hash
-	o.TransactionOfClaimID.Valid = true
+	o.TransactionByHashID.String = related.Hash
+	o.TransactionByHashID.Valid = true
 
 	if o.R == nil {
 		o.R = &claimR{
-			TransactionOfClaim: related,
+			TransactionByHash: related,
 		}
 	} else {
-		o.R.TransactionOfClaim = related
+		o.R.TransactionByHash = related
 	}
 
 	if related.R == nil {
 		related.R = &transactionR{
-			TransactionOfClaimClaims: ClaimSlice{o},
+			TransactionByHashClaims: ClaimSlice{o},
 		}
 	} else {
-		related.R.TransactionOfClaimClaims = append(related.R.TransactionOfClaimClaims, o)
+		related.R.TransactionByHashClaims = append(related.R.TransactionByHashClaims, o)
 	}
 
 	return nil
 }
 
-// RemoveTransactionOfClaimG relationship.
-// Sets o.R.TransactionOfClaim to nil.
+// RemoveTransactionByHashG relationship.
+// Sets o.R.TransactionByHash to nil.
 // Removes o from all passed in related items' relationships struct (Optional).
 // Uses the global database handle.
-func (o *Claim) RemoveTransactionOfClaimG(related *Transaction) error {
-	return o.RemoveTransactionOfClaim(boil.GetDB(), related)
+func (o *Claim) RemoveTransactionByHashG(related *Transaction) error {
+	return o.RemoveTransactionByHash(boil.GetDB(), related)
 }
 
-// RemoveTransactionOfClaimP relationship.
-// Sets o.R.TransactionOfClaim to nil.
+// RemoveTransactionByHashP relationship.
+// Sets o.R.TransactionByHash to nil.
 // Removes o from all passed in related items' relationships struct (Optional).
 // Panics on error.
-func (o *Claim) RemoveTransactionOfClaimP(exec boil.Executor, related *Transaction) {
-	if err := o.RemoveTransactionOfClaim(exec, related); err != nil {
+func (o *Claim) RemoveTransactionByHashP(exec boil.Executor, related *Transaction) {
+	if err := o.RemoveTransactionByHash(exec, related); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
-// RemoveTransactionOfClaimGP relationship.
-// Sets o.R.TransactionOfClaim to nil.
+// RemoveTransactionByHashGP relationship.
+// Sets o.R.TransactionByHash to nil.
 // Removes o from all passed in related items' relationships struct (Optional).
 // Uses the global database handle and panics on error.
-func (o *Claim) RemoveTransactionOfClaimGP(related *Transaction) {
-	if err := o.RemoveTransactionOfClaim(boil.GetDB(), related); err != nil {
+func (o *Claim) RemoveTransactionByHashGP(related *Transaction) {
+	if err := o.RemoveTransactionByHash(boil.GetDB(), related); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
-// RemoveTransactionOfClaim relationship.
-// Sets o.R.TransactionOfClaim to nil.
+// RemoveTransactionByHash relationship.
+// Sets o.R.TransactionByHash to nil.
 // Removes o from all passed in related items' relationships struct (Optional).
-func (o *Claim) RemoveTransactionOfClaim(exec boil.Executor, related *Transaction) error {
+func (o *Claim) RemoveTransactionByHash(exec boil.Executor, related *Transaction) error {
 	var err error
 
-	o.TransactionOfClaimID.Valid = false
-	if err = o.Update(exec, "transaction_of_claim_id"); err != nil {
-		o.TransactionOfClaimID.Valid = true
+	o.TransactionByHashID.Valid = false
+	if err = o.Update(exec, "transaction_by_hash_id"); err != nil {
+		o.TransactionByHashID.Valid = true
 		return errors.Wrap(err, "failed to update local table")
 	}
 
-	o.R.TransactionOfClaim = nil
+	o.R.TransactionByHash = nil
 	if related == nil || related.R == nil {
 		return nil
 	}
 
-	for i, ri := range related.R.TransactionOfClaimClaims {
-		if o.TransactionOfClaimID.String != ri.TransactionOfClaimID.String {
+	for i, ri := range related.R.TransactionByHashClaims {
+		if o.TransactionByHashID.String != ri.TransactionByHashID.String {
 			continue
 		}
 
-		ln := len(related.R.TransactionOfClaimClaims)
+		ln := len(related.R.TransactionByHashClaims)
 		if ln > 1 && i < ln-1 {
-			related.R.TransactionOfClaimClaims[i] = related.R.TransactionOfClaimClaims[ln-1]
+			related.R.TransactionByHashClaims[i] = related.R.TransactionByHashClaims[ln-1]
 		}
-		related.R.TransactionOfClaimClaims = related.R.TransactionOfClaimClaims[:ln-1]
+		related.R.TransactionByHashClaims = related.R.TransactionByHashClaims[:ln-1]
+		break
+	}
+	return nil
+}
+
+// SetPublisherG of the claim to the related item.
+// Sets o.R.Publisher to related.
+// Adds o to related.R.PublisherClaims.
+// Uses the global database handle.
+func (o *Claim) SetPublisherG(insert bool, related *Claim) error {
+	return o.SetPublisher(boil.GetDB(), insert, related)
+}
+
+// SetPublisherP of the claim to the related item.
+// Sets o.R.Publisher to related.
+// Adds o to related.R.PublisherClaims.
+// Panics on error.
+func (o *Claim) SetPublisherP(exec boil.Executor, insert bool, related *Claim) {
+	if err := o.SetPublisher(exec, insert, related); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// SetPublisherGP of the claim to the related item.
+// Sets o.R.Publisher to related.
+// Adds o to related.R.PublisherClaims.
+// Uses the global database handle and panics on error.
+func (o *Claim) SetPublisherGP(insert bool, related *Claim) {
+	if err := o.SetPublisher(boil.GetDB(), insert, related); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// SetPublisher of the claim to the related item.
+// Sets o.R.Publisher to related.
+// Adds o to related.R.PublisherClaims.
+func (o *Claim) SetPublisher(exec boil.Executor, insert bool, related *Claim) error {
+	var err error
+	if insert {
+		if err = related.Insert(exec); err != nil {
+			return errors.Wrap(err, "failed to insert into foreign table")
+		}
+	}
+
+	updateQuery := fmt.Sprintf(
+		"UPDATE `claims` SET %s WHERE %s",
+		strmangle.SetParamNames("`", "`", 0, []string{"publisher_id"}),
+		strmangle.WhereClause("`", "`", 0, claimPrimaryKeyColumns),
+	)
+	values := []interface{}{related.ClaimID, o.ID}
+
+	if boil.DebugMode {
+		fmt.Fprintln(boil.DebugWriter, updateQuery)
+		fmt.Fprintln(boil.DebugWriter, values)
+	}
+
+	if _, err = exec.Exec(updateQuery, values...); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	o.PublisherID.String = related.ClaimID
+	o.PublisherID.Valid = true
+
+	if o.R == nil {
+		o.R = &claimR{
+			Publisher: related,
+		}
+	} else {
+		o.R.Publisher = related
+	}
+
+	if related.R == nil {
+		related.R = &claimR{
+			PublisherClaims: ClaimSlice{o},
+		}
+	} else {
+		related.R.PublisherClaims = append(related.R.PublisherClaims, o)
+	}
+
+	return nil
+}
+
+// RemovePublisherG relationship.
+// Sets o.R.Publisher to nil.
+// Removes o from all passed in related items' relationships struct (Optional).
+// Uses the global database handle.
+func (o *Claim) RemovePublisherG(related *Claim) error {
+	return o.RemovePublisher(boil.GetDB(), related)
+}
+
+// RemovePublisherP relationship.
+// Sets o.R.Publisher to nil.
+// Removes o from all passed in related items' relationships struct (Optional).
+// Panics on error.
+func (o *Claim) RemovePublisherP(exec boil.Executor, related *Claim) {
+	if err := o.RemovePublisher(exec, related); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// RemovePublisherGP relationship.
+// Sets o.R.Publisher to nil.
+// Removes o from all passed in related items' relationships struct (Optional).
+// Uses the global database handle and panics on error.
+func (o *Claim) RemovePublisherGP(related *Claim) {
+	if err := o.RemovePublisher(boil.GetDB(), related); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// RemovePublisher relationship.
+// Sets o.R.Publisher to nil.
+// Removes o from all passed in related items' relationships struct (Optional).
+func (o *Claim) RemovePublisher(exec boil.Executor, related *Claim) error {
+	var err error
+
+	o.PublisherID.Valid = false
+	if err = o.Update(exec, "publisher_id"); err != nil {
+		o.PublisherID.Valid = true
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	o.R.Publisher = nil
+	if related == nil || related.R == nil {
+		return nil
+	}
+
+	for i, ri := range related.R.PublisherClaims {
+		if o.PublisherID.String != ri.PublisherID.String {
+			continue
+		}
+
+		ln := len(related.R.PublisherClaims)
+		if ln > 1 && i < ln-1 {
+			related.R.PublisherClaims[i] = related.R.PublisherClaims[ln-1]
+		}
+		related.R.PublisherClaims = related.R.PublisherClaims[:ln-1]
 		break
 	}
 	return nil
@@ -958,54 +958,54 @@ func (o *Claim) SetClaimStream(exec boil.Executor, insert bool, related *ClaimSt
 	return nil
 }
 
-// AddPublisherClaimClaimsG adds the given related objects to the existing relationships
+// AddPublisherClaimsG adds the given related objects to the existing relationships
 // of the claim, optionally inserting them as new records.
-// Appends related to o.R.PublisherClaimClaims.
-// Sets related.R.PublisherClaim appropriately.
+// Appends related to o.R.PublisherClaims.
+// Sets related.R.Publisher appropriately.
 // Uses the global database handle.
-func (o *Claim) AddPublisherClaimClaimsG(insert bool, related ...*Claim) error {
-	return o.AddPublisherClaimClaims(boil.GetDB(), insert, related...)
+func (o *Claim) AddPublisherClaimsG(insert bool, related ...*Claim) error {
+	return o.AddPublisherClaims(boil.GetDB(), insert, related...)
 }
 
-// AddPublisherClaimClaimsP adds the given related objects to the existing relationships
+// AddPublisherClaimsP adds the given related objects to the existing relationships
 // of the claim, optionally inserting them as new records.
-// Appends related to o.R.PublisherClaimClaims.
-// Sets related.R.PublisherClaim appropriately.
+// Appends related to o.R.PublisherClaims.
+// Sets related.R.Publisher appropriately.
 // Panics on error.
-func (o *Claim) AddPublisherClaimClaimsP(exec boil.Executor, insert bool, related ...*Claim) {
-	if err := o.AddPublisherClaimClaims(exec, insert, related...); err != nil {
+func (o *Claim) AddPublisherClaimsP(exec boil.Executor, insert bool, related ...*Claim) {
+	if err := o.AddPublisherClaims(exec, insert, related...); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
-// AddPublisherClaimClaimsGP adds the given related objects to the existing relationships
+// AddPublisherClaimsGP adds the given related objects to the existing relationships
 // of the claim, optionally inserting them as new records.
-// Appends related to o.R.PublisherClaimClaims.
-// Sets related.R.PublisherClaim appropriately.
+// Appends related to o.R.PublisherClaims.
+// Sets related.R.Publisher appropriately.
 // Uses the global database handle and panics on error.
-func (o *Claim) AddPublisherClaimClaimsGP(insert bool, related ...*Claim) {
-	if err := o.AddPublisherClaimClaims(boil.GetDB(), insert, related...); err != nil {
+func (o *Claim) AddPublisherClaimsGP(insert bool, related ...*Claim) {
+	if err := o.AddPublisherClaims(boil.GetDB(), insert, related...); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
-// AddPublisherClaimClaims adds the given related objects to the existing relationships
+// AddPublisherClaims adds the given related objects to the existing relationships
 // of the claim, optionally inserting them as new records.
-// Appends related to o.R.PublisherClaimClaims.
-// Sets related.R.PublisherClaim appropriately.
-func (o *Claim) AddPublisherClaimClaims(exec boil.Executor, insert bool, related ...*Claim) error {
+// Appends related to o.R.PublisherClaims.
+// Sets related.R.Publisher appropriately.
+func (o *Claim) AddPublisherClaims(exec boil.Executor, insert bool, related ...*Claim) error {
 	var err error
 	for _, rel := range related {
 		if insert {
-			rel.PublisherClaimID.String = o.ClaimID
-			rel.PublisherClaimID.Valid = true
+			rel.PublisherID.String = o.ClaimID
+			rel.PublisherID.Valid = true
 			if err = rel.Insert(exec); err != nil {
 				return errors.Wrap(err, "failed to insert into foreign table")
 			}
 		} else {
 			updateQuery := fmt.Sprintf(
 				"UPDATE `claims` SET %s WHERE %s",
-				strmangle.SetParamNames("`", "`", 0, []string{"publisher_claim_id"}),
+				strmangle.SetParamNames("`", "`", 0, []string{"publisher_id"}),
 				strmangle.WhereClause("`", "`", 0, claimPrimaryKeyColumns),
 			)
 			values := []interface{}{o.ClaimID, rel.ID}
@@ -1019,76 +1019,76 @@ func (o *Claim) AddPublisherClaimClaims(exec boil.Executor, insert bool, related
 				return errors.Wrap(err, "failed to update foreign table")
 			}
 
-			rel.PublisherClaimID.String = o.ClaimID
-			rel.PublisherClaimID.Valid = true
+			rel.PublisherID.String = o.ClaimID
+			rel.PublisherID.Valid = true
 		}
 	}
 
 	if o.R == nil {
 		o.R = &claimR{
-			PublisherClaimClaims: related,
+			PublisherClaims: related,
 		}
 	} else {
-		o.R.PublisherClaimClaims = append(o.R.PublisherClaimClaims, related...)
+		o.R.PublisherClaims = append(o.R.PublisherClaims, related...)
 	}
 
 	for _, rel := range related {
 		if rel.R == nil {
 			rel.R = &claimR{
-				PublisherClaim: o,
+				Publisher: o,
 			}
 		} else {
-			rel.R.PublisherClaim = o
+			rel.R.Publisher = o
 		}
 	}
 	return nil
 }
 
-// SetPublisherClaimClaimsG removes all previously related items of the
+// SetPublisherClaimsG removes all previously related items of the
 // claim replacing them completely with the passed
 // in related items, optionally inserting them as new records.
-// Sets o.R.PublisherClaim's PublisherClaimClaims accordingly.
-// Replaces o.R.PublisherClaimClaims with related.
-// Sets related.R.PublisherClaim's PublisherClaimClaims accordingly.
+// Sets o.R.Publisher's PublisherClaims accordingly.
+// Replaces o.R.PublisherClaims with related.
+// Sets related.R.Publisher's PublisherClaims accordingly.
 // Uses the global database handle.
-func (o *Claim) SetPublisherClaimClaimsG(insert bool, related ...*Claim) error {
-	return o.SetPublisherClaimClaims(boil.GetDB(), insert, related...)
+func (o *Claim) SetPublisherClaimsG(insert bool, related ...*Claim) error {
+	return o.SetPublisherClaims(boil.GetDB(), insert, related...)
 }
 
-// SetPublisherClaimClaimsP removes all previously related items of the
+// SetPublisherClaimsP removes all previously related items of the
 // claim replacing them completely with the passed
 // in related items, optionally inserting them as new records.
-// Sets o.R.PublisherClaim's PublisherClaimClaims accordingly.
-// Replaces o.R.PublisherClaimClaims with related.
-// Sets related.R.PublisherClaim's PublisherClaimClaims accordingly.
+// Sets o.R.Publisher's PublisherClaims accordingly.
+// Replaces o.R.PublisherClaims with related.
+// Sets related.R.Publisher's PublisherClaims accordingly.
 // Panics on error.
-func (o *Claim) SetPublisherClaimClaimsP(exec boil.Executor, insert bool, related ...*Claim) {
-	if err := o.SetPublisherClaimClaims(exec, insert, related...); err != nil {
+func (o *Claim) SetPublisherClaimsP(exec boil.Executor, insert bool, related ...*Claim) {
+	if err := o.SetPublisherClaims(exec, insert, related...); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
-// SetPublisherClaimClaimsGP removes all previously related items of the
+// SetPublisherClaimsGP removes all previously related items of the
 // claim replacing them completely with the passed
 // in related items, optionally inserting them as new records.
-// Sets o.R.PublisherClaim's PublisherClaimClaims accordingly.
-// Replaces o.R.PublisherClaimClaims with related.
-// Sets related.R.PublisherClaim's PublisherClaimClaims accordingly.
+// Sets o.R.Publisher's PublisherClaims accordingly.
+// Replaces o.R.PublisherClaims with related.
+// Sets related.R.Publisher's PublisherClaims accordingly.
 // Uses the global database handle and panics on error.
-func (o *Claim) SetPublisherClaimClaimsGP(insert bool, related ...*Claim) {
-	if err := o.SetPublisherClaimClaims(boil.GetDB(), insert, related...); err != nil {
+func (o *Claim) SetPublisherClaimsGP(insert bool, related ...*Claim) {
+	if err := o.SetPublisherClaims(boil.GetDB(), insert, related...); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
-// SetPublisherClaimClaims removes all previously related items of the
+// SetPublisherClaims removes all previously related items of the
 // claim replacing them completely with the passed
 // in related items, optionally inserting them as new records.
-// Sets o.R.PublisherClaim's PublisherClaimClaims accordingly.
-// Replaces o.R.PublisherClaimClaims with related.
-// Sets related.R.PublisherClaim's PublisherClaimClaims accordingly.
-func (o *Claim) SetPublisherClaimClaims(exec boil.Executor, insert bool, related ...*Claim) error {
-	query := "update `claims` set `publisher_claim_id` = null where `publisher_claim_id` = ?"
+// Sets o.R.Publisher's PublisherClaims accordingly.
+// Replaces o.R.PublisherClaims with related.
+// Sets related.R.Publisher's PublisherClaims accordingly.
+func (o *Claim) SetPublisherClaims(exec boil.Executor, insert bool, related ...*Claim) error {
+	query := "update `claims` set `publisher_id` = null where `publisher_id` = ?"
 	values := []interface{}{o.ClaimID}
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, query)
@@ -1101,59 +1101,59 @@ func (o *Claim) SetPublisherClaimClaims(exec boil.Executor, insert bool, related
 	}
 
 	if o.R != nil {
-		for _, rel := range o.R.PublisherClaimClaims {
-			rel.PublisherClaimID.Valid = false
+		for _, rel := range o.R.PublisherClaims {
+			rel.PublisherID.Valid = false
 			if rel.R == nil {
 				continue
 			}
 
-			rel.R.PublisherClaim = nil
+			rel.R.Publisher = nil
 		}
 
-		o.R.PublisherClaimClaims = nil
+		o.R.PublisherClaims = nil
 	}
-	return o.AddPublisherClaimClaims(exec, insert, related...)
+	return o.AddPublisherClaims(exec, insert, related...)
 }
 
-// RemovePublisherClaimClaimsG relationships from objects passed in.
-// Removes related items from R.PublisherClaimClaims (uses pointer comparison, removal does not keep order)
-// Sets related.R.PublisherClaim.
+// RemovePublisherClaimsG relationships from objects passed in.
+// Removes related items from R.PublisherClaims (uses pointer comparison, removal does not keep order)
+// Sets related.R.Publisher.
 // Uses the global database handle.
-func (o *Claim) RemovePublisherClaimClaimsG(related ...*Claim) error {
-	return o.RemovePublisherClaimClaims(boil.GetDB(), related...)
+func (o *Claim) RemovePublisherClaimsG(related ...*Claim) error {
+	return o.RemovePublisherClaims(boil.GetDB(), related...)
 }
 
-// RemovePublisherClaimClaimsP relationships from objects passed in.
-// Removes related items from R.PublisherClaimClaims (uses pointer comparison, removal does not keep order)
-// Sets related.R.PublisherClaim.
+// RemovePublisherClaimsP relationships from objects passed in.
+// Removes related items from R.PublisherClaims (uses pointer comparison, removal does not keep order)
+// Sets related.R.Publisher.
 // Panics on error.
-func (o *Claim) RemovePublisherClaimClaimsP(exec boil.Executor, related ...*Claim) {
-	if err := o.RemovePublisherClaimClaims(exec, related...); err != nil {
+func (o *Claim) RemovePublisherClaimsP(exec boil.Executor, related ...*Claim) {
+	if err := o.RemovePublisherClaims(exec, related...); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
-// RemovePublisherClaimClaimsGP relationships from objects passed in.
-// Removes related items from R.PublisherClaimClaims (uses pointer comparison, removal does not keep order)
-// Sets related.R.PublisherClaim.
+// RemovePublisherClaimsGP relationships from objects passed in.
+// Removes related items from R.PublisherClaims (uses pointer comparison, removal does not keep order)
+// Sets related.R.Publisher.
 // Uses the global database handle and panics on error.
-func (o *Claim) RemovePublisherClaimClaimsGP(related ...*Claim) {
-	if err := o.RemovePublisherClaimClaims(boil.GetDB(), related...); err != nil {
+func (o *Claim) RemovePublisherClaimsGP(related ...*Claim) {
+	if err := o.RemovePublisherClaims(boil.GetDB(), related...); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
-// RemovePublisherClaimClaims relationships from objects passed in.
-// Removes related items from R.PublisherClaimClaims (uses pointer comparison, removal does not keep order)
-// Sets related.R.PublisherClaim.
-func (o *Claim) RemovePublisherClaimClaims(exec boil.Executor, related ...*Claim) error {
+// RemovePublisherClaims relationships from objects passed in.
+// Removes related items from R.PublisherClaims (uses pointer comparison, removal does not keep order)
+// Sets related.R.Publisher.
+func (o *Claim) RemovePublisherClaims(exec boil.Executor, related ...*Claim) error {
 	var err error
 	for _, rel := range related {
-		rel.PublisherClaimID.Valid = false
+		rel.PublisherID.Valid = false
 		if rel.R != nil {
-			rel.R.PublisherClaim = nil
+			rel.R.Publisher = nil
 		}
-		if err = rel.Update(exec, "publisher_claim_id"); err != nil {
+		if err = rel.Update(exec, "publisher_id"); err != nil {
 			return err
 		}
 	}
@@ -1162,16 +1162,16 @@ func (o *Claim) RemovePublisherClaimClaims(exec boil.Executor, related ...*Claim
 	}
 
 	for _, rel := range related {
-		for i, ri := range o.R.PublisherClaimClaims {
+		for i, ri := range o.R.PublisherClaims {
 			if rel != ri {
 				continue
 			}
 
-			ln := len(o.R.PublisherClaimClaims)
+			ln := len(o.R.PublisherClaims)
 			if ln > 1 && i < ln-1 {
-				o.R.PublisherClaimClaims[i] = o.R.PublisherClaimClaims[ln-1]
+				o.R.PublisherClaims[i] = o.R.PublisherClaims[ln-1]
 			}
-			o.R.PublisherClaimClaims = o.R.PublisherClaimClaims[:ln-1]
+			o.R.PublisherClaims = o.R.PublisherClaims[:ln-1]
 			break
 		}
 	}

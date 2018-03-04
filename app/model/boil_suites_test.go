@@ -18,8 +18,6 @@ func TestParent(t *testing.T) {
 	t.Run("Claims", testClaims)
 	t.Run("Inputs", testInputs)
 	t.Run("Outputs", testOutputs)
-	t.Run("OutputsAddresses", testOutputsAddresses)
-	t.Run("PriceHistories", testPriceHistories)
 	t.Run("TransactionAddresses", testTransactionAddresses)
 	t.Run("Transactions", testTransactions)
 }
@@ -31,8 +29,6 @@ func TestDelete(t *testing.T) {
 	t.Run("Claims", testClaimsDelete)
 	t.Run("Inputs", testInputsDelete)
 	t.Run("Outputs", testOutputsDelete)
-	t.Run("OutputsAddresses", testOutputsAddressesDelete)
-	t.Run("PriceHistories", testPriceHistoriesDelete)
 	t.Run("TransactionAddresses", testTransactionAddressesDelete)
 	t.Run("Transactions", testTransactionsDelete)
 }
@@ -44,8 +40,6 @@ func TestQueryDeleteAll(t *testing.T) {
 	t.Run("Claims", testClaimsQueryDeleteAll)
 	t.Run("Inputs", testInputsQueryDeleteAll)
 	t.Run("Outputs", testOutputsQueryDeleteAll)
-	t.Run("OutputsAddresses", testOutputsAddressesQueryDeleteAll)
-	t.Run("PriceHistories", testPriceHistoriesQueryDeleteAll)
 	t.Run("TransactionAddresses", testTransactionAddressesQueryDeleteAll)
 	t.Run("Transactions", testTransactionsQueryDeleteAll)
 }
@@ -57,8 +51,6 @@ func TestSliceDeleteAll(t *testing.T) {
 	t.Run("Claims", testClaimsSliceDeleteAll)
 	t.Run("Inputs", testInputsSliceDeleteAll)
 	t.Run("Outputs", testOutputsSliceDeleteAll)
-	t.Run("OutputsAddresses", testOutputsAddressesSliceDeleteAll)
-	t.Run("PriceHistories", testPriceHistoriesSliceDeleteAll)
 	t.Run("TransactionAddresses", testTransactionAddressesSliceDeleteAll)
 	t.Run("Transactions", testTransactionsSliceDeleteAll)
 }
@@ -70,8 +62,6 @@ func TestExists(t *testing.T) {
 	t.Run("Claims", testClaimsExists)
 	t.Run("Inputs", testInputsExists)
 	t.Run("Outputs", testOutputsExists)
-	t.Run("OutputsAddresses", testOutputsAddressesExists)
-	t.Run("PriceHistories", testPriceHistoriesExists)
 	t.Run("TransactionAddresses", testTransactionAddressesExists)
 	t.Run("Transactions", testTransactionsExists)
 }
@@ -83,8 +73,6 @@ func TestFind(t *testing.T) {
 	t.Run("Claims", testClaimsFind)
 	t.Run("Inputs", testInputsFind)
 	t.Run("Outputs", testOutputsFind)
-	t.Run("OutputsAddresses", testOutputsAddressesFind)
-	t.Run("PriceHistories", testPriceHistoriesFind)
 	t.Run("TransactionAddresses", testTransactionAddressesFind)
 	t.Run("Transactions", testTransactionsFind)
 }
@@ -96,8 +84,6 @@ func TestBind(t *testing.T) {
 	t.Run("Claims", testClaimsBind)
 	t.Run("Inputs", testInputsBind)
 	t.Run("Outputs", testOutputsBind)
-	t.Run("OutputsAddresses", testOutputsAddressesBind)
-	t.Run("PriceHistories", testPriceHistoriesBind)
 	t.Run("TransactionAddresses", testTransactionAddressesBind)
 	t.Run("Transactions", testTransactionsBind)
 }
@@ -109,8 +95,6 @@ func TestOne(t *testing.T) {
 	t.Run("Claims", testClaimsOne)
 	t.Run("Inputs", testInputsOne)
 	t.Run("Outputs", testOutputsOne)
-	t.Run("OutputsAddresses", testOutputsAddressesOne)
-	t.Run("PriceHistories", testPriceHistoriesOne)
 	t.Run("TransactionAddresses", testTransactionAddressesOne)
 	t.Run("Transactions", testTransactionsOne)
 }
@@ -122,8 +106,6 @@ func TestAll(t *testing.T) {
 	t.Run("Claims", testClaimsAll)
 	t.Run("Inputs", testInputsAll)
 	t.Run("Outputs", testOutputsAll)
-	t.Run("OutputsAddresses", testOutputsAddressesAll)
-	t.Run("PriceHistories", testPriceHistoriesAll)
 	t.Run("TransactionAddresses", testTransactionAddressesAll)
 	t.Run("Transactions", testTransactionsAll)
 }
@@ -135,8 +117,6 @@ func TestCount(t *testing.T) {
 	t.Run("Claims", testClaimsCount)
 	t.Run("Inputs", testInputsCount)
 	t.Run("Outputs", testOutputsCount)
-	t.Run("OutputsAddresses", testOutputsAddressesCount)
-	t.Run("PriceHistories", testPriceHistoriesCount)
 	t.Run("TransactionAddresses", testTransactionAddressesCount)
 	t.Run("Transactions", testTransactionsCount)
 }
@@ -154,10 +134,6 @@ func TestInsert(t *testing.T) {
 	t.Run("Inputs", testInputsInsertWhitelist)
 	t.Run("Outputs", testOutputsInsert)
 	t.Run("Outputs", testOutputsInsertWhitelist)
-	t.Run("OutputsAddresses", testOutputsAddressesInsert)
-	t.Run("OutputsAddresses", testOutputsAddressesInsertWhitelist)
-	t.Run("PriceHistories", testPriceHistoriesInsert)
-	t.Run("PriceHistories", testPriceHistoriesInsertWhitelist)
 	t.Run("TransactionAddresses", testTransactionAddressesInsert)
 	t.Run("TransactionAddresses", testTransactionAddressesInsertWhitelist)
 	t.Run("Transactions", testTransactionsInsert)
@@ -167,22 +143,16 @@ func TestInsert(t *testing.T) {
 // TestToOne tests cannot be run in parallel
 // or deadlocks can occur.
 func TestToOne(t *testing.T) {
-	t.Run("BlockToBlockUsingNextBlock", testBlockToOneBlockUsingNextBlock)
-	t.Run("BlockToBlockUsingPreviousBlock", testBlockToOneBlockUsingPreviousBlock)
 	t.Run("ClaimStreamToClaimUsingClaim", testClaimStreamToOneClaimUsingClaim)
-	t.Run("ClaimToClaimUsingPublisherClaim", testClaimToOneClaimUsingPublisherClaim)
-	t.Run("ClaimToTransactionUsingTransactionOfClaim", testClaimToOneTransactionUsingTransactionOfClaim)
-	t.Run("InputToAddressUsingAddress", testInputToOneAddressUsingAddress)
+	t.Run("ClaimToTransactionUsingTransactionByHash", testClaimToOneTransactionUsingTransactionByHash)
+	t.Run("ClaimToClaimUsingPublisher", testClaimToOneClaimUsingPublisher)
+	t.Run("InputToAddressUsingInputAddress", testInputToOneAddressUsingInputAddress)
 	t.Run("InputToTransactionUsingTransaction", testInputToOneTransactionUsingTransaction)
-	t.Run("InputToTransactionAddressUsingTransactionAddress", testInputToOneTransactionAddressUsingTransactionAddress)
-	t.Run("OutputToInputUsingSpentByInput", testOutputToOneInputUsingSpentByInput)
 	t.Run("OutputToTransactionUsingTransaction", testOutputToOneTransactionUsingTransaction)
-	t.Run("OutputsAddressToAddressUsingAddress", testOutputsAddressToOneAddressUsingAddress)
-	t.Run("OutputsAddressToOutputUsingOutput", testOutputsAddressToOneOutputUsingOutput)
-	t.Run("OutputsAddressToTransactionAddressUsingTransactionAddress", testOutputsAddressToOneTransactionAddressUsingTransactionAddress)
-	t.Run("TransactionAddressToAddressUsingAddress", testTransactionAddressToOneAddressUsingAddress)
+	t.Run("OutputToInputUsingSpentByInput", testOutputToOneInputUsingSpentByInput)
 	t.Run("TransactionAddressToTransactionUsingTransaction", testTransactionAddressToOneTransactionUsingTransaction)
-	t.Run("TransactionToBlockUsingBlock", testTransactionToOneBlockUsingBlock)
+	t.Run("TransactionAddressToAddressUsingAddress", testTransactionAddressToOneAddressUsingAddress)
+	t.Run("TransactionToBlockUsingBlockByHash", testTransactionToOneBlockUsingBlockByHash)
 }
 
 // TestOneToOne tests cannot be run in parallel
@@ -195,17 +165,15 @@ func TestOneToOne(t *testing.T) {
 // or deadlocks can occur.
 func TestToMany(t *testing.T) {
 	t.Run("AddressToInputs", testAddressToManyInputs)
-	t.Run("AddressToOutputsAddresses", testAddressToManyOutputsAddresses)
+	t.Run("AddressToInputAddressInputs", testAddressToManyInputAddressInputs)
+	t.Run("AddressToOutputs", testAddressToManyOutputs)
 	t.Run("AddressToTransactionAddresses", testAddressToManyTransactionAddresses)
-	t.Run("BlockToNextBlockBlocks", testBlockToManyNextBlockBlocks)
-	t.Run("BlockToPreviousBlockBlocks", testBlockToManyPreviousBlockBlocks)
-	t.Run("BlockToTransactions", testBlockToManyTransactions)
-	t.Run("ClaimToPublisherClaimClaims", testClaimToManyPublisherClaimClaims)
+	t.Run("BlockToBlockByHashTransactions", testBlockToManyBlockByHashTransactions)
+	t.Run("ClaimToPublisherClaims", testClaimToManyPublisherClaims)
+	t.Run("InputToAddresses", testInputToManyAddresses)
 	t.Run("InputToSpentByInputOutputs", testInputToManySpentByInputOutputs)
-	t.Run("OutputToOutputsAddresses", testOutputToManyOutputsAddresses)
-	t.Run("TransactionAddressToInputs", testTransactionAddressToManyInputs)
-	t.Run("TransactionAddressToOutputsAddresses", testTransactionAddressToManyOutputsAddresses)
-	t.Run("TransactionToTransactionOfClaimClaims", testTransactionToManyTransactionOfClaimClaims)
+	t.Run("OutputToAddresses", testOutputToManyAddresses)
+	t.Run("TransactionToTransactionByHashClaims", testTransactionToManyTransactionByHashClaims)
 	t.Run("TransactionToInputs", testTransactionToManyInputs)
 	t.Run("TransactionToOutputs", testTransactionToManyOutputs)
 	t.Run("TransactionToTransactionAddresses", testTransactionToManyTransactionAddresses)
@@ -214,31 +182,26 @@ func TestToMany(t *testing.T) {
 // TestToOneSet tests cannot be run in parallel
 // or deadlocks can occur.
 func TestToOneSet(t *testing.T) {
-	t.Run("BlockToBlockUsingNextBlock", testBlockToOneSetOpBlockUsingNextBlock)
-	t.Run("BlockToBlockUsingPreviousBlock", testBlockToOneSetOpBlockUsingPreviousBlock)
 	t.Run("ClaimStreamToClaimUsingClaim", testClaimStreamToOneSetOpClaimUsingClaim)
-	t.Run("ClaimToClaimUsingPublisherClaim", testClaimToOneSetOpClaimUsingPublisherClaim)
-	t.Run("ClaimToTransactionUsingTransactionOfClaim", testClaimToOneSetOpTransactionUsingTransactionOfClaim)
-	t.Run("InputToAddressUsingAddress", testInputToOneSetOpAddressUsingAddress)
+	t.Run("ClaimToTransactionUsingTransactionByHash", testClaimToOneSetOpTransactionUsingTransactionByHash)
+	t.Run("ClaimToClaimUsingPublisher", testClaimToOneSetOpClaimUsingPublisher)
+	t.Run("InputToAddressUsingInputAddress", testInputToOneSetOpAddressUsingInputAddress)
 	t.Run("InputToTransactionUsingTransaction", testInputToOneSetOpTransactionUsingTransaction)
-	t.Run("InputToTransactionAddressUsingTransactionAddress", testInputToOneSetOpTransactionAddressUsingTransactionAddress)
-	t.Run("OutputToInputUsingSpentByInput", testOutputToOneSetOpInputUsingSpentByInput)
 	t.Run("OutputToTransactionUsingTransaction", testOutputToOneSetOpTransactionUsingTransaction)
-	t.Run("OutputsAddressToAddressUsingAddress", testOutputsAddressToOneSetOpAddressUsingAddress)
-	t.Run("OutputsAddressToOutputUsingOutput", testOutputsAddressToOneSetOpOutputUsingOutput)
-	t.Run("OutputsAddressToTransactionAddressUsingTransactionAddress", testOutputsAddressToOneSetOpTransactionAddressUsingTransactionAddress)
-	t.Run("TransactionAddressToAddressUsingAddress", testTransactionAddressToOneSetOpAddressUsingAddress)
+	t.Run("OutputToInputUsingSpentByInput", testOutputToOneSetOpInputUsingSpentByInput)
 	t.Run("TransactionAddressToTransactionUsingTransaction", testTransactionAddressToOneSetOpTransactionUsingTransaction)
-	t.Run("TransactionToBlockUsingBlock", testTransactionToOneSetOpBlockUsingBlock)
+	t.Run("TransactionAddressToAddressUsingAddress", testTransactionAddressToOneSetOpAddressUsingAddress)
+	t.Run("TransactionToBlockUsingBlockByHash", testTransactionToOneSetOpBlockUsingBlockByHash)
 }
 
 // TestToOneRemove tests cannot be run in parallel
 // or deadlocks can occur.
 func TestToOneRemove(t *testing.T) {
-	t.Run("BlockToBlockUsingNextBlock", testBlockToOneRemoveOpBlockUsingNextBlock)
-	t.Run("BlockToBlockUsingPreviousBlock", testBlockToOneRemoveOpBlockUsingPreviousBlock)
-	t.Run("ClaimToClaimUsingPublisherClaim", testClaimToOneRemoveOpClaimUsingPublisherClaim)
-	t.Run("ClaimToTransactionUsingTransactionOfClaim", testClaimToOneRemoveOpTransactionUsingTransactionOfClaim)
+	t.Run("ClaimToTransactionUsingTransactionByHash", testClaimToOneRemoveOpTransactionUsingTransactionByHash)
+	t.Run("ClaimToClaimUsingPublisher", testClaimToOneRemoveOpClaimUsingPublisher)
+	t.Run("InputToAddressUsingInputAddress", testInputToOneRemoveOpAddressUsingInputAddress)
+	t.Run("OutputToInputUsingSpentByInput", testOutputToOneRemoveOpInputUsingSpentByInput)
+	t.Run("TransactionToBlockUsingBlockByHash", testTransactionToOneRemoveOpBlockUsingBlockByHash)
 }
 
 // TestOneToOneSet tests cannot be run in parallel
@@ -255,17 +218,15 @@ func TestOneToOneRemove(t *testing.T) {}
 // or deadlocks can occur.
 func TestToManyAdd(t *testing.T) {
 	t.Run("AddressToInputs", testAddressToManyAddOpInputs)
-	t.Run("AddressToOutputsAddresses", testAddressToManyAddOpOutputsAddresses)
+	t.Run("AddressToInputAddressInputs", testAddressToManyAddOpInputAddressInputs)
+	t.Run("AddressToOutputs", testAddressToManyAddOpOutputs)
 	t.Run("AddressToTransactionAddresses", testAddressToManyAddOpTransactionAddresses)
-	t.Run("BlockToNextBlockBlocks", testBlockToManyAddOpNextBlockBlocks)
-	t.Run("BlockToPreviousBlockBlocks", testBlockToManyAddOpPreviousBlockBlocks)
-	t.Run("BlockToTransactions", testBlockToManyAddOpTransactions)
-	t.Run("ClaimToPublisherClaimClaims", testClaimToManyAddOpPublisherClaimClaims)
+	t.Run("BlockToBlockByHashTransactions", testBlockToManyAddOpBlockByHashTransactions)
+	t.Run("ClaimToPublisherClaims", testClaimToManyAddOpPublisherClaims)
+	t.Run("InputToAddresses", testInputToManyAddOpAddresses)
 	t.Run("InputToSpentByInputOutputs", testInputToManyAddOpSpentByInputOutputs)
-	t.Run("OutputToOutputsAddresses", testOutputToManyAddOpOutputsAddresses)
-	t.Run("TransactionAddressToInputs", testTransactionAddressToManyAddOpInputs)
-	t.Run("TransactionAddressToOutputsAddresses", testTransactionAddressToManyAddOpOutputsAddresses)
-	t.Run("TransactionToTransactionOfClaimClaims", testTransactionToManyAddOpTransactionOfClaimClaims)
+	t.Run("OutputToAddresses", testOutputToManyAddOpAddresses)
+	t.Run("TransactionToTransactionByHashClaims", testTransactionToManyAddOpTransactionByHashClaims)
 	t.Run("TransactionToInputs", testTransactionToManyAddOpInputs)
 	t.Run("TransactionToOutputs", testTransactionToManyAddOpOutputs)
 	t.Run("TransactionToTransactionAddresses", testTransactionToManyAddOpTransactionAddresses)
@@ -274,19 +235,29 @@ func TestToManyAdd(t *testing.T) {
 // TestToManySet tests cannot be run in parallel
 // or deadlocks can occur.
 func TestToManySet(t *testing.T) {
-	t.Run("BlockToNextBlockBlocks", testBlockToManySetOpNextBlockBlocks)
-	t.Run("BlockToPreviousBlockBlocks", testBlockToManySetOpPreviousBlockBlocks)
-	t.Run("ClaimToPublisherClaimClaims", testClaimToManySetOpPublisherClaimClaims)
-	t.Run("TransactionToTransactionOfClaimClaims", testTransactionToManySetOpTransactionOfClaimClaims)
+	t.Run("AddressToInputs", testAddressToManySetOpInputs)
+	t.Run("AddressToInputAddressInputs", testAddressToManySetOpInputAddressInputs)
+	t.Run("AddressToOutputs", testAddressToManySetOpOutputs)
+	t.Run("BlockToBlockByHashTransactions", testBlockToManySetOpBlockByHashTransactions)
+	t.Run("ClaimToPublisherClaims", testClaimToManySetOpPublisherClaims)
+	t.Run("InputToAddresses", testInputToManySetOpAddresses)
+	t.Run("InputToSpentByInputOutputs", testInputToManySetOpSpentByInputOutputs)
+	t.Run("OutputToAddresses", testOutputToManySetOpAddresses)
+	t.Run("TransactionToTransactionByHashClaims", testTransactionToManySetOpTransactionByHashClaims)
 }
 
 // TestToManyRemove tests cannot be run in parallel
 // or deadlocks can occur.
 func TestToManyRemove(t *testing.T) {
-	t.Run("BlockToNextBlockBlocks", testBlockToManyRemoveOpNextBlockBlocks)
-	t.Run("BlockToPreviousBlockBlocks", testBlockToManyRemoveOpPreviousBlockBlocks)
-	t.Run("ClaimToPublisherClaimClaims", testClaimToManyRemoveOpPublisherClaimClaims)
-	t.Run("TransactionToTransactionOfClaimClaims", testTransactionToManyRemoveOpTransactionOfClaimClaims)
+	t.Run("AddressToInputs", testAddressToManyRemoveOpInputs)
+	t.Run("AddressToInputAddressInputs", testAddressToManyRemoveOpInputAddressInputs)
+	t.Run("AddressToOutputs", testAddressToManyRemoveOpOutputs)
+	t.Run("BlockToBlockByHashTransactions", testBlockToManyRemoveOpBlockByHashTransactions)
+	t.Run("ClaimToPublisherClaims", testClaimToManyRemoveOpPublisherClaims)
+	t.Run("InputToAddresses", testInputToManyRemoveOpAddresses)
+	t.Run("InputToSpentByInputOutputs", testInputToManyRemoveOpSpentByInputOutputs)
+	t.Run("OutputToAddresses", testOutputToManyRemoveOpAddresses)
+	t.Run("TransactionToTransactionByHashClaims", testTransactionToManyRemoveOpTransactionByHashClaims)
 }
 
 func TestReload(t *testing.T) {
@@ -296,8 +267,6 @@ func TestReload(t *testing.T) {
 	t.Run("Claims", testClaimsReload)
 	t.Run("Inputs", testInputsReload)
 	t.Run("Outputs", testOutputsReload)
-	t.Run("OutputsAddresses", testOutputsAddressesReload)
-	t.Run("PriceHistories", testPriceHistoriesReload)
 	t.Run("TransactionAddresses", testTransactionAddressesReload)
 	t.Run("Transactions", testTransactionsReload)
 }
@@ -309,8 +278,6 @@ func TestReloadAll(t *testing.T) {
 	t.Run("Claims", testClaimsReloadAll)
 	t.Run("Inputs", testInputsReloadAll)
 	t.Run("Outputs", testOutputsReloadAll)
-	t.Run("OutputsAddresses", testOutputsAddressesReloadAll)
-	t.Run("PriceHistories", testPriceHistoriesReloadAll)
 	t.Run("TransactionAddresses", testTransactionAddressesReloadAll)
 	t.Run("Transactions", testTransactionsReloadAll)
 }
@@ -322,8 +289,6 @@ func TestSelect(t *testing.T) {
 	t.Run("Claims", testClaimsSelect)
 	t.Run("Inputs", testInputsSelect)
 	t.Run("Outputs", testOutputsSelect)
-	t.Run("OutputsAddresses", testOutputsAddressesSelect)
-	t.Run("PriceHistories", testPriceHistoriesSelect)
 	t.Run("TransactionAddresses", testTransactionAddressesSelect)
 	t.Run("Transactions", testTransactionsSelect)
 }
@@ -335,8 +300,6 @@ func TestUpdate(t *testing.T) {
 	t.Run("Claims", testClaimsUpdate)
 	t.Run("Inputs", testInputsUpdate)
 	t.Run("Outputs", testOutputsUpdate)
-	t.Run("OutputsAddresses", testOutputsAddressesUpdate)
-	t.Run("PriceHistories", testPriceHistoriesUpdate)
 	t.Run("TransactionAddresses", testTransactionAddressesUpdate)
 	t.Run("Transactions", testTransactionsUpdate)
 }
@@ -348,8 +311,6 @@ func TestSliceUpdateAll(t *testing.T) {
 	t.Run("Claims", testClaimsSliceUpdateAll)
 	t.Run("Inputs", testInputsSliceUpdateAll)
 	t.Run("Outputs", testOutputsSliceUpdateAll)
-	t.Run("OutputsAddresses", testOutputsAddressesSliceUpdateAll)
-	t.Run("PriceHistories", testPriceHistoriesSliceUpdateAll)
 	t.Run("TransactionAddresses", testTransactionAddressesSliceUpdateAll)
 	t.Run("Transactions", testTransactionsSliceUpdateAll)
 }
@@ -361,8 +322,6 @@ func TestUpsert(t *testing.T) {
 	t.Run("Claims", testClaimsUpsert)
 	t.Run("Inputs", testInputsUpsert)
 	t.Run("Outputs", testOutputsUpsert)
-	t.Run("OutputsAddresses", testOutputsAddressesUpsert)
-	t.Run("PriceHistories", testPriceHistoriesUpsert)
 	t.Run("TransactionAddresses", testTransactionAddressesUpsert)
 	t.Run("Transactions", testTransactionsUpsert)
 }

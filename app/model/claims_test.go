@@ -433,7 +433,7 @@ func testClaimOneToOneSetOpClaimStreamUsingClaimStream(t *testing.T) {
 		}
 	}
 }
-func testClaimToManyPublisherClaimClaims(t *testing.T) {
+func testClaimToManyPublisherClaims(t *testing.T) {
 	var err error
 	tx := MustTx(boil.Begin())
 	defer tx.Rollback()
@@ -453,10 +453,10 @@ func testClaimToManyPublisherClaimClaims(t *testing.T) {
 	randomize.Struct(seed, &b, claimDBTypes, false, claimColumnsWithDefault...)
 	randomize.Struct(seed, &c, claimDBTypes, false, claimColumnsWithDefault...)
 
-	b.PublisherClaimID.Valid = true
-	c.PublisherClaimID.Valid = true
-	b.PublisherClaimID.String = a.ClaimID
-	c.PublisherClaimID.String = a.ClaimID
+	b.PublisherID.Valid = true
+	c.PublisherID.Valid = true
+	b.PublisherID.String = a.ClaimID
+	c.PublisherID.String = a.ClaimID
 	if err = b.Insert(tx); err != nil {
 		t.Fatal(err)
 	}
@@ -464,17 +464,17 @@ func testClaimToManyPublisherClaimClaims(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	claim, err := a.PublisherClaimClaims(tx).All()
+	claim, err := a.PublisherClaims(tx).All()
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	bFound, cFound := false, false
 	for _, v := range claim {
-		if v.PublisherClaimID.String == b.PublisherClaimID.String {
+		if v.PublisherID.String == b.PublisherID.String {
 			bFound = true
 		}
-		if v.PublisherClaimID.String == c.PublisherClaimID.String {
+		if v.PublisherID.String == c.PublisherID.String {
 			cFound = true
 		}
 	}
@@ -487,18 +487,18 @@ func testClaimToManyPublisherClaimClaims(t *testing.T) {
 	}
 
 	slice := ClaimSlice{&a}
-	if err = a.L.LoadPublisherClaimClaims(tx, false, (*[]*Claim)(&slice)); err != nil {
+	if err = a.L.LoadPublisherClaims(tx, false, (*[]*Claim)(&slice)); err != nil {
 		t.Fatal(err)
 	}
-	if got := len(a.R.PublisherClaimClaims); got != 2 {
+	if got := len(a.R.PublisherClaims); got != 2 {
 		t.Error("number of eager loaded records wrong, got:", got)
 	}
 
-	a.R.PublisherClaimClaims = nil
-	if err = a.L.LoadPublisherClaimClaims(tx, true, &a); err != nil {
+	a.R.PublisherClaims = nil
+	if err = a.L.LoadPublisherClaims(tx, true, &a); err != nil {
 		t.Fatal(err)
 	}
-	if got := len(a.R.PublisherClaimClaims); got != 2 {
+	if got := len(a.R.PublisherClaims); got != 2 {
 		t.Error("number of eager loaded records wrong, got:", got)
 	}
 
@@ -507,7 +507,7 @@ func testClaimToManyPublisherClaimClaims(t *testing.T) {
 	}
 }
 
-func testClaimToManyAddOpPublisherClaimClaims(t *testing.T) {
+func testClaimToManyAddOpPublisherClaims(t *testing.T) {
 	var err error
 
 	tx := MustTx(boil.Begin())
@@ -543,7 +543,7 @@ func testClaimToManyAddOpPublisherClaimClaims(t *testing.T) {
 	}
 
 	for i, x := range foreignersSplitByInsertion {
-		err = a.AddPublisherClaimClaims(tx, i != 0, x...)
+		err = a.AddPublisherClaims(tx, i != 0, x...)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -551,28 +551,28 @@ func testClaimToManyAddOpPublisherClaimClaims(t *testing.T) {
 		first := x[0]
 		second := x[1]
 
-		if a.ClaimID != first.PublisherClaimID.String {
-			t.Error("foreign key was wrong value", a.ClaimID, first.PublisherClaimID.String)
+		if a.ClaimID != first.PublisherID.String {
+			t.Error("foreign key was wrong value", a.ClaimID, first.PublisherID.String)
 		}
-		if a.ClaimID != second.PublisherClaimID.String {
-			t.Error("foreign key was wrong value", a.ClaimID, second.PublisherClaimID.String)
+		if a.ClaimID != second.PublisherID.String {
+			t.Error("foreign key was wrong value", a.ClaimID, second.PublisherID.String)
 		}
 
-		if first.R.PublisherClaim != &a {
+		if first.R.Publisher != &a {
 			t.Error("relationship was not added properly to the foreign slice")
 		}
-		if second.R.PublisherClaim != &a {
+		if second.R.Publisher != &a {
 			t.Error("relationship was not added properly to the foreign slice")
 		}
 
-		if a.R.PublisherClaimClaims[i*2] != first {
+		if a.R.PublisherClaims[i*2] != first {
 			t.Error("relationship struct slice not set to correct value")
 		}
-		if a.R.PublisherClaimClaims[i*2+1] != second {
+		if a.R.PublisherClaims[i*2+1] != second {
 			t.Error("relationship struct slice not set to correct value")
 		}
 
-		count, err := a.PublisherClaimClaims(tx).Count()
+		count, err := a.PublisherClaims(tx).Count()
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -582,7 +582,7 @@ func testClaimToManyAddOpPublisherClaimClaims(t *testing.T) {
 	}
 }
 
-func testClaimToManySetOpPublisherClaimClaims(t *testing.T) {
+func testClaimToManySetOpPublisherClaims(t *testing.T) {
 	var err error
 
 	tx := MustTx(boil.Begin())
@@ -612,25 +612,12 @@ func testClaimToManySetOpPublisherClaimClaims(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = a.SetPublisherClaimClaims(tx, false, &b, &c)
+	err = a.SetPublisherClaims(tx, false, &b, &c)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	count, err := a.PublisherClaimClaims(tx).Count()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 2 {
-		t.Error("count was wrong:", count)
-	}
-
-	err = a.SetPublisherClaimClaims(tx, true, &d, &e)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err = a.PublisherClaimClaims(tx).Count()
+	count, err := a.PublisherClaims(tx).Count()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -638,41 +625,54 @@ func testClaimToManySetOpPublisherClaimClaims(t *testing.T) {
 		t.Error("count was wrong:", count)
 	}
 
-	if b.PublisherClaimID.Valid {
+	err = a.SetPublisherClaims(tx, true, &d, &e)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.PublisherClaims(tx).Count()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	if b.PublisherID.Valid {
 		t.Error("want b's foreign key value to be nil")
 	}
-	if c.PublisherClaimID.Valid {
+	if c.PublisherID.Valid {
 		t.Error("want c's foreign key value to be nil")
 	}
-	if a.ClaimID != d.PublisherClaimID.String {
-		t.Error("foreign key was wrong value", a.ClaimID, d.PublisherClaimID.String)
+	if a.ClaimID != d.PublisherID.String {
+		t.Error("foreign key was wrong value", a.ClaimID, d.PublisherID.String)
 	}
-	if a.ClaimID != e.PublisherClaimID.String {
-		t.Error("foreign key was wrong value", a.ClaimID, e.PublisherClaimID.String)
-	}
-
-	if b.R.PublisherClaim != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if c.R.PublisherClaim != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if d.R.PublisherClaim != &a {
-		t.Error("relationship was not added properly to the foreign struct")
-	}
-	if e.R.PublisherClaim != &a {
-		t.Error("relationship was not added properly to the foreign struct")
+	if a.ClaimID != e.PublisherID.String {
+		t.Error("foreign key was wrong value", a.ClaimID, e.PublisherID.String)
 	}
 
-	if a.R.PublisherClaimClaims[0] != &d {
+	if b.R.Publisher != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if c.R.Publisher != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if d.R.Publisher != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+	if e.R.Publisher != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+
+	if a.R.PublisherClaims[0] != &d {
 		t.Error("relationship struct slice not set to correct value")
 	}
-	if a.R.PublisherClaimClaims[1] != &e {
+	if a.R.PublisherClaims[1] != &e {
 		t.Error("relationship struct slice not set to correct value")
 	}
 }
 
-func testClaimToManyRemoveOpPublisherClaimClaims(t *testing.T) {
+func testClaimToManyRemoveOpPublisherClaims(t *testing.T) {
 	var err error
 
 	tx := MustTx(boil.Begin())
@@ -696,12 +696,12 @@ func testClaimToManyRemoveOpPublisherClaimClaims(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = a.AddPublisherClaimClaims(tx, true, foreigners...)
+	err = a.AddPublisherClaims(tx, true, foreigners...)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	count, err := a.PublisherClaimClaims(tx).Count()
+	count, err := a.PublisherClaims(tx).Count()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -709,12 +709,12 @@ func testClaimToManyRemoveOpPublisherClaimClaims(t *testing.T) {
 		t.Error("count was wrong:", count)
 	}
 
-	err = a.RemovePublisherClaimClaims(tx, foreigners[:2]...)
+	err = a.RemovePublisherClaims(tx, foreigners[:2]...)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	count, err = a.PublisherClaimClaims(tx).Count()
+	count, err = a.PublisherClaims(tx).Count()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -722,92 +722,40 @@ func testClaimToManyRemoveOpPublisherClaimClaims(t *testing.T) {
 		t.Error("count was wrong:", count)
 	}
 
-	if b.PublisherClaimID.Valid {
+	if b.PublisherID.Valid {
 		t.Error("want b's foreign key value to be nil")
 	}
-	if c.PublisherClaimID.Valid {
+	if c.PublisherID.Valid {
 		t.Error("want c's foreign key value to be nil")
 	}
 
-	if b.R.PublisherClaim != nil {
+	if b.R.Publisher != nil {
 		t.Error("relationship was not removed properly from the foreign struct")
 	}
-	if c.R.PublisherClaim != nil {
+	if c.R.Publisher != nil {
 		t.Error("relationship was not removed properly from the foreign struct")
 	}
-	if d.R.PublisherClaim != &a {
+	if d.R.Publisher != &a {
 		t.Error("relationship to a should have been preserved")
 	}
-	if e.R.PublisherClaim != &a {
+	if e.R.Publisher != &a {
 		t.Error("relationship to a should have been preserved")
 	}
 
-	if len(a.R.PublisherClaimClaims) != 2 {
+	if len(a.R.PublisherClaims) != 2 {
 		t.Error("should have preserved two relationships")
 	}
 
 	// Removal doesn't do a stable deletion for performance so we have to flip the order
-	if a.R.PublisherClaimClaims[1] != &d {
+	if a.R.PublisherClaims[1] != &d {
 		t.Error("relationship to d should have been preserved")
 	}
-	if a.R.PublisherClaimClaims[0] != &e {
+	if a.R.PublisherClaims[0] != &e {
 		t.Error("relationship to e should have been preserved")
 	}
 }
 
-func testClaimToOneClaimUsingPublisherClaim(t *testing.T) {
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-
-	var local Claim
-	var foreign Claim
-
-	seed := randomize.NewSeed()
-	if err := randomize.Struct(seed, &local, claimDBTypes, true, claimColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Claim struct: %s", err)
-	}
-	if err := randomize.Struct(seed, &foreign, claimDBTypes, false, claimColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Claim struct: %s", err)
-	}
-
-	local.PublisherClaimID.Valid = true
-
-	if err := foreign.Insert(tx); err != nil {
-		t.Fatal(err)
-	}
-
-	local.PublisherClaimID.String = foreign.ClaimID
-	if err := local.Insert(tx); err != nil {
-		t.Fatal(err)
-	}
-
-	check, err := local.PublisherClaim(tx).One()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if check.ClaimID != foreign.ClaimID {
-		t.Errorf("want: %v, got %v", foreign.ClaimID, check.ClaimID)
-	}
-
-	slice := ClaimSlice{&local}
-	if err = local.L.LoadPublisherClaim(tx, false, (*[]*Claim)(&slice)); err != nil {
-		t.Fatal(err)
-	}
-	if local.R.PublisherClaim == nil {
-		t.Error("struct should have been eager loaded")
-	}
-
-	local.R.PublisherClaim = nil
-	if err = local.L.LoadPublisherClaim(tx, true, &local); err != nil {
-		t.Fatal(err)
-	}
-	if local.R.PublisherClaim == nil {
-		t.Error("struct should have been eager loaded")
-	}
-}
-
-func testClaimToOneTransactionUsingTransactionOfClaim(t *testing.T) {
+func testClaimToOneTransactionUsingTransactionByHash(t *testing.T) {
 	tx := MustTx(boil.Begin())
 	defer tx.Rollback()
 
@@ -822,18 +770,18 @@ func testClaimToOneTransactionUsingTransactionOfClaim(t *testing.T) {
 		t.Errorf("Unable to randomize Transaction struct: %s", err)
 	}
 
-	local.TransactionOfClaimID.Valid = true
+	local.TransactionByHashID.Valid = true
 
 	if err := foreign.Insert(tx); err != nil {
 		t.Fatal(err)
 	}
 
-	local.TransactionOfClaimID.String = foreign.Hash
+	local.TransactionByHashID.String = foreign.Hash
 	if err := local.Insert(tx); err != nil {
 		t.Fatal(err)
 	}
 
-	check, err := local.TransactionOfClaim(tx).One()
+	check, err := local.TransactionByHash(tx).One()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -843,130 +791,75 @@ func testClaimToOneTransactionUsingTransactionOfClaim(t *testing.T) {
 	}
 
 	slice := ClaimSlice{&local}
-	if err = local.L.LoadTransactionOfClaim(tx, false, (*[]*Claim)(&slice)); err != nil {
+	if err = local.L.LoadTransactionByHash(tx, false, (*[]*Claim)(&slice)); err != nil {
 		t.Fatal(err)
 	}
-	if local.R.TransactionOfClaim == nil {
+	if local.R.TransactionByHash == nil {
 		t.Error("struct should have been eager loaded")
 	}
 
-	local.R.TransactionOfClaim = nil
-	if err = local.L.LoadTransactionOfClaim(tx, true, &local); err != nil {
+	local.R.TransactionByHash = nil
+	if err = local.L.LoadTransactionByHash(tx, true, &local); err != nil {
 		t.Fatal(err)
 	}
-	if local.R.TransactionOfClaim == nil {
+	if local.R.TransactionByHash == nil {
 		t.Error("struct should have been eager loaded")
 	}
 }
 
-func testClaimToOneSetOpClaimUsingPublisherClaim(t *testing.T) {
-	var err error
-
+func testClaimToOneClaimUsingPublisher(t *testing.T) {
 	tx := MustTx(boil.Begin())
 	defer tx.Rollback()
 
-	var a Claim
-	var b, c Claim
+	var local Claim
+	var foreign Claim
 
 	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, claimDBTypes, false, strmangle.SetComplement(claimPrimaryKeyColumns, claimColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
+	if err := randomize.Struct(seed, &local, claimDBTypes, true, claimColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Claim struct: %s", err)
 	}
-	if err = randomize.Struct(seed, &b, claimDBTypes, false, strmangle.SetComplement(claimPrimaryKeyColumns, claimColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &c, claimDBTypes, false, strmangle.SetComplement(claimPrimaryKeyColumns, claimColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
+	if err := randomize.Struct(seed, &foreign, claimDBTypes, false, claimColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Claim struct: %s", err)
 	}
 
-	if err := a.Insert(tx); err != nil {
-		t.Fatal(err)
-	}
-	if err = b.Insert(tx); err != nil {
+	local.PublisherID.Valid = true
+
+	if err := foreign.Insert(tx); err != nil {
 		t.Fatal(err)
 	}
 
-	for i, x := range []*Claim{&b, &c} {
-		err = a.SetPublisherClaim(tx, i != 0, x)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if a.R.PublisherClaim != x {
-			t.Error("relationship struct not set to correct value")
-		}
-
-		if x.R.PublisherClaimClaims[0] != &a {
-			t.Error("failed to append to foreign relationship struct")
-		}
-		if a.PublisherClaimID.String != x.ClaimID {
-			t.Error("foreign key was wrong value", a.PublisherClaimID.String)
-		}
-
-		zero := reflect.Zero(reflect.TypeOf(a.PublisherClaimID.String))
-		reflect.Indirect(reflect.ValueOf(&a.PublisherClaimID.String)).Set(zero)
-
-		if err = a.Reload(tx); err != nil {
-			t.Fatal("failed to reload", err)
-		}
-
-		if a.PublisherClaimID.String != x.ClaimID {
-			t.Error("foreign key was wrong value", a.PublisherClaimID.String, x.ClaimID)
-		}
-	}
-}
-
-func testClaimToOneRemoveOpClaimUsingPublisherClaim(t *testing.T) {
-	var err error
-
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-
-	var a Claim
-	var b Claim
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, claimDBTypes, false, strmangle.SetComplement(claimPrimaryKeyColumns, claimColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &b, claimDBTypes, false, strmangle.SetComplement(claimPrimaryKeyColumns, claimColumnsWithoutDefault)...); err != nil {
+	local.PublisherID.String = foreign.ClaimID
+	if err := local.Insert(tx); err != nil {
 		t.Fatal(err)
 	}
 
-	if err = a.Insert(tx); err != nil {
-		t.Fatal(err)
-	}
-
-	if err = a.SetPublisherClaim(tx, true, &b); err != nil {
-		t.Fatal(err)
-	}
-
-	if err = a.RemovePublisherClaim(tx, &b); err != nil {
-		t.Error("failed to remove relationship")
-	}
-
-	count, err := a.PublisherClaim(tx).Count()
+	check, err := local.Publisher(tx).One()
 	if err != nil {
-		t.Error(err)
-	}
-	if count != 0 {
-		t.Error("want no relationships remaining")
+		t.Fatal(err)
 	}
 
-	if a.R.PublisherClaim != nil {
-		t.Error("R struct entry should be nil")
+	if check.ClaimID != foreign.ClaimID {
+		t.Errorf("want: %v, got %v", foreign.ClaimID, check.ClaimID)
 	}
 
-	if a.PublisherClaimID.Valid {
-		t.Error("foreign key value should be nil")
+	slice := ClaimSlice{&local}
+	if err = local.L.LoadPublisher(tx, false, (*[]*Claim)(&slice)); err != nil {
+		t.Fatal(err)
+	}
+	if local.R.Publisher == nil {
+		t.Error("struct should have been eager loaded")
 	}
 
-	if len(b.R.PublisherClaimClaims) != 0 {
-		t.Error("failed to remove a from b's relationships")
+	local.R.Publisher = nil
+	if err = local.L.LoadPublisher(tx, true, &local); err != nil {
+		t.Fatal(err)
+	}
+	if local.R.Publisher == nil {
+		t.Error("struct should have been eager loaded")
 	}
 }
 
-func testClaimToOneSetOpTransactionUsingTransactionOfClaim(t *testing.T) {
+func testClaimToOneSetOpTransactionUsingTransactionByHash(t *testing.T) {
 	var err error
 
 	tx := MustTx(boil.Begin())
@@ -994,36 +887,36 @@ func testClaimToOneSetOpTransactionUsingTransactionOfClaim(t *testing.T) {
 	}
 
 	for i, x := range []*Transaction{&b, &c} {
-		err = a.SetTransactionOfClaim(tx, i != 0, x)
+		err = a.SetTransactionByHash(tx, i != 0, x)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		if a.R.TransactionOfClaim != x {
+		if a.R.TransactionByHash != x {
 			t.Error("relationship struct not set to correct value")
 		}
 
-		if x.R.TransactionOfClaimClaims[0] != &a {
+		if x.R.TransactionByHashClaims[0] != &a {
 			t.Error("failed to append to foreign relationship struct")
 		}
-		if a.TransactionOfClaimID.String != x.Hash {
-			t.Error("foreign key was wrong value", a.TransactionOfClaimID.String)
+		if a.TransactionByHashID.String != x.Hash {
+			t.Error("foreign key was wrong value", a.TransactionByHashID.String)
 		}
 
-		zero := reflect.Zero(reflect.TypeOf(a.TransactionOfClaimID.String))
-		reflect.Indirect(reflect.ValueOf(&a.TransactionOfClaimID.String)).Set(zero)
+		zero := reflect.Zero(reflect.TypeOf(a.TransactionByHashID.String))
+		reflect.Indirect(reflect.ValueOf(&a.TransactionByHashID.String)).Set(zero)
 
 		if err = a.Reload(tx); err != nil {
 			t.Fatal("failed to reload", err)
 		}
 
-		if a.TransactionOfClaimID.String != x.Hash {
-			t.Error("foreign key was wrong value", a.TransactionOfClaimID.String, x.Hash)
+		if a.TransactionByHashID.String != x.Hash {
+			t.Error("foreign key was wrong value", a.TransactionByHashID.String, x.Hash)
 		}
 	}
 }
 
-func testClaimToOneRemoveOpTransactionUsingTransactionOfClaim(t *testing.T) {
+func testClaimToOneRemoveOpTransactionUsingTransactionByHash(t *testing.T) {
 	var err error
 
 	tx := MustTx(boil.Begin())
@@ -1044,15 +937,15 @@ func testClaimToOneRemoveOpTransactionUsingTransactionOfClaim(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err = a.SetTransactionOfClaim(tx, true, &b); err != nil {
+	if err = a.SetTransactionByHash(tx, true, &b); err != nil {
 		t.Fatal(err)
 	}
 
-	if err = a.RemoveTransactionOfClaim(tx, &b); err != nil {
+	if err = a.RemoveTransactionByHash(tx, &b); err != nil {
 		t.Error("failed to remove relationship")
 	}
 
-	count, err := a.TransactionOfClaim(tx).Count()
+	count, err := a.TransactionByHash(tx).Count()
 	if err != nil {
 		t.Error(err)
 	}
@@ -1060,15 +953,122 @@ func testClaimToOneRemoveOpTransactionUsingTransactionOfClaim(t *testing.T) {
 		t.Error("want no relationships remaining")
 	}
 
-	if a.R.TransactionOfClaim != nil {
+	if a.R.TransactionByHash != nil {
 		t.Error("R struct entry should be nil")
 	}
 
-	if a.TransactionOfClaimID.Valid {
+	if a.TransactionByHashID.Valid {
 		t.Error("foreign key value should be nil")
 	}
 
-	if len(b.R.TransactionOfClaimClaims) != 0 {
+	if len(b.R.TransactionByHashClaims) != 0 {
+		t.Error("failed to remove a from b's relationships")
+	}
+}
+
+func testClaimToOneSetOpClaimUsingPublisher(t *testing.T) {
+	var err error
+
+	tx := MustTx(boil.Begin())
+	defer tx.Rollback()
+
+	var a Claim
+	var b, c Claim
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, claimDBTypes, false, strmangle.SetComplement(claimPrimaryKeyColumns, claimColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &b, claimDBTypes, false, strmangle.SetComplement(claimPrimaryKeyColumns, claimColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, claimDBTypes, false, strmangle.SetComplement(claimPrimaryKeyColumns, claimColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := a.Insert(tx); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(tx); err != nil {
+		t.Fatal(err)
+	}
+
+	for i, x := range []*Claim{&b, &c} {
+		err = a.SetPublisher(tx, i != 0, x)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if a.R.Publisher != x {
+			t.Error("relationship struct not set to correct value")
+		}
+
+		if x.R.PublisherClaims[0] != &a {
+			t.Error("failed to append to foreign relationship struct")
+		}
+		if a.PublisherID.String != x.ClaimID {
+			t.Error("foreign key was wrong value", a.PublisherID.String)
+		}
+
+		zero := reflect.Zero(reflect.TypeOf(a.PublisherID.String))
+		reflect.Indirect(reflect.ValueOf(&a.PublisherID.String)).Set(zero)
+
+		if err = a.Reload(tx); err != nil {
+			t.Fatal("failed to reload", err)
+		}
+
+		if a.PublisherID.String != x.ClaimID {
+			t.Error("foreign key was wrong value", a.PublisherID.String, x.ClaimID)
+		}
+	}
+}
+
+func testClaimToOneRemoveOpClaimUsingPublisher(t *testing.T) {
+	var err error
+
+	tx := MustTx(boil.Begin())
+	defer tx.Rollback()
+
+	var a Claim
+	var b Claim
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, claimDBTypes, false, strmangle.SetComplement(claimPrimaryKeyColumns, claimColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &b, claimDBTypes, false, strmangle.SetComplement(claimPrimaryKeyColumns, claimColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = a.Insert(tx); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = a.SetPublisher(tx, true, &b); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = a.RemovePublisher(tx, &b); err != nil {
+		t.Error("failed to remove relationship")
+	}
+
+	count, err := a.Publisher(tx).Count()
+	if err != nil {
+		t.Error(err)
+	}
+	if count != 0 {
+		t.Error("want no relationships remaining")
+	}
+
+	if a.R.Publisher != nil {
+		t.Error("R struct entry should be nil")
+	}
+
+	if a.PublisherID.Valid {
+		t.Error("foreign key value should be nil")
+	}
+
+	if len(b.R.PublisherClaims) != 0 {
 		t.Error("failed to remove a from b's relationships")
 	}
 }
@@ -1143,7 +1143,7 @@ func testClaimsSelect(t *testing.T) {
 }
 
 var (
-	claimDBTypes = map[string]string{`Author`: `varchar`, `Certificate`: `text`, `ClaimID`: `char`, `ClaimType`: `tinyint`, `ContentType`: `varchar`, `Created`: `datetime`, `Description`: `mediumtext`, `Fee`: `decimal`, `FeeCurrency`: `char`, `ID`: `bigint`, `IsFiltered`: `tinyint`, `IsNSFW`: `tinyint`, `Language`: `varchar`, `Modified`: `datetime`, `Name`: `varchar`, `PublisherClaimID`: `char`, `PublisherSig`: `varchar`, `ThumbnailURL`: `text`, `Title`: `text`, `TransactionOfClaimID`: `varchar`, `TransactionTime`: `int`, `VOut`: `int`, `Version`: `varchar`}
+	claimDBTypes = map[string]string{`Author`: `varchar`, `Certificate`: `text`, `ClaimID`: `char`, `ClaimType`: `tinyint`, `ContentType`: `varchar`, `Created`: `datetime`, `Description`: `mediumtext`, `Fee`: `decimal`, `FeeCurrency`: `char`, `ID`: `bigint`, `IsFiltered`: `tinyint`, `IsNSFW`: `tinyint`, `Language`: `varchar`, `Modified`: `datetime`, `Name`: `varchar`, `PublisherID`: `char`, `PublisherSig`: `varchar`, `ThumbnailURL`: `text`, `Title`: `text`, `TransactionByHashID`: `varchar`, `TransactionTime`: `int`, `Version`: `varchar`, `Vout`: `int`}
 	_            = bytes.MinRead
 )
 
