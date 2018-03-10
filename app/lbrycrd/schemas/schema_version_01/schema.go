@@ -9,10 +9,10 @@ type Claim struct {
 	License     string  `json:"license"`      //Required
 	Sources     Sources `json:"sources"`      //Required
 	ContentType string  `json:"content-type"` //Required
-	Thumbnail   string  `json:"thumbnail,omitempty"`
-	Fee         Fee     `json:"fee,omitempty"`
-	Contact     int     `json:"contact,omitempty"`
-	PubKey      string  `json:"pubkey,omitempty"`
+	Thumbnail   *string `json:"thumbnail,omitempty"`
+	Fee         *Fee    `json:"fee,omitempty"`
+	Contact     *int    `json:"contact,omitempty"`
+	PubKey      *string `json:"pubkey,omitempty"`
 }
 
 type FeeInfo struct {
@@ -27,7 +27,7 @@ type Sources struct {
 }
 
 type Fee struct {
-	LBC FeeInfo `json:"fee_info,omitempty"`
-	BTC FeeInfo `json:"fee_info,omitempty"`
-	USD FeeInfo `json:"fee_info,omitempty"`
+	LBC *FeeInfo `json:"fee_info,omitempty"`
+	BTC *FeeInfo `json:"fee_info,omitempty"`
+	USD *FeeInfo `json:"fee_info,omitempty"`
 }

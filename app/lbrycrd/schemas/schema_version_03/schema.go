@@ -12,7 +12,7 @@ type Claim struct {
 	Language    string     `json:"language"`     //Required
 	License     string     `json:"license"`      //Required
 	Sources     v1.Sources `json:"sources"`      //Required
-	ContentType string     `json:"content-type"` //Required
+	ContentType string     `json:"content_type"` //Required
 	Thumbnail   *string    `json:"thumbnail,omitempty"`
 	Fee         *v1.Fee    `json:"fee,omitempty"`
 	Contact     *int       `json:"contact,omitempty"`
