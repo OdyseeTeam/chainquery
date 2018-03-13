@@ -4,9 +4,9 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/lbryio/chainquery/lbrycrd"
@@ -19,10 +19,9 @@ import (
 	"golang.org/x/crypto/ripemd160"
 )
 
-var workers int = runtime.NumCPU() / 2 //Split cores between processors and lbycrd
-var lastHeightProcess uint64 = 0       // Around 165,000 is when protobuf takes affect.
-var blockHeight uint64 = 0
-var running bool = false
+var blockQueue = make(chan int)
+var queuedHeightMutex sync.Mutex
+var lastQueuedHeight int
 
 func InitDaemon() {
 	//testFunction()
@@ -71,44 +70,55 @@ func testFunction(params ...interface{}) {
 	//panic(errors.Base("only run test method"))
 }
 
-func runDaemon() func() {
+func runDaemon() {
 	lastBlock, _ := model.Blocks(boil.GetDB(), qm.OrderBy(model.BlockColumns.Height+" DESC"), qm.Limit(1)).One()
 	if lastBlock != nil && lastBlock.Height > 100 {
-		lastHeightProcess = lastBlock.Height - 100 //Start 100 sooner just in case something happened.
+		queuedHeightMutex.Lock()
+		lastQueuedHeight = int(lastBlock.Height) - 100 // Start 100 sooner just in case something happened.
+		queuedHeightMutex.Unlock()
 	}
-	go daemonIteration()
+
 	log.Info("Daemon initialized and running")
-	for {
-		time.Sleep(1 * time.Second)
-		if !running {
-			go daemonIteration()
+
+	// create worker
+	go func() {
+		for {
+			height := <-blockQueue
+			runBlockProcessing(height)
 		}
-	}
-	return func() {}
+	}()
+
+	// queue blocks
+	queueBlocks()
 }
 
-func daemonIteration() error {
+func queueBlocks() {
+	for {
+		height, err := lbrycrd.DefaultClient().GetBlockCount()
+		if err != nil {
+			log.Errorln(err)
+		}
+		blockHeight := int(*height)
 
-	height, err := lbrycrd.DefaultClient().GetBlockCount()
-	if err != nil {
-		return err
-	}
-	blockHeight = *height
-	next := lastHeightProcess + uint64(1)
-	if *height >= next {
-		go runBlockProcessing(&next)
-	}
-	if next%200 == 0 {
-		log.Info("running iteration at block height ", next)
-	}
+		queuedHeightMutex.Lock()
+		if blockHeight > lastQueuedHeight {
+			if blockHeight%200 == 0 {
+				log.Info("queued block ", blockHeight)
+			}
+			lastQueuedHeight++
+			queuedHeightMutex.Unlock()
+			blockQueue <- blockHeight
+			continue
+		}
 
-	return nil
+		time.Sleep(10 * time.Second)
+	}
 }
 
-func getBlockToProcess(height *uint64) (*lbrycrd.GetBlockResponse, error) {
-	hash, err := lbrycrd.DefaultClient().GetBlockHash(*height)
+func getBlockToProcess(height int) (*lbrycrd.GetBlockResponse, error) {
+	hash, err := lbrycrd.DefaultClient().GetBlockHash(uint64(height))
 	if err != nil {
-		return nil, errors.Prefix("GetBlockHash Error("+string(*height)+"): ", err)
+		return nil, errors.Prefix("GetBlockHash Error("+strconv.Itoa(height)+"): ", err)
 	}
 	jsonBlock, err := lbrycrd.DefaultClient().GetBlock(*hash)
 	if err != nil {
@@ -117,12 +127,10 @@ func getBlockToProcess(height *uint64) (*lbrycrd.GetBlockResponse, error) {
 	return jsonBlock, nil
 }
 
-func runBlockProcessing(height *uint64) {
-	running = true
+func runBlockProcessing(height int) {
 	jsonBlock, err := getBlockToProcess(height)
 	if err != nil {
 		log.Error("Get Block Error: ", err)
-		goToNextBlock(height)
 		return
 	}
 	block := &model.Block{}
@@ -130,7 +138,7 @@ func runBlockProcessing(height *uint64) {
 	if foundBlock != nil {
 		block = foundBlock
 	}
-	block.Height = uint64(*height)
+	block.Height = uint64(height)
 	block.Confirmations = uint(jsonBlock.Confirmations)
 	block.Hash = jsonBlock.Hash
 	block.BlockTime = uint64(jsonBlock.Time)
@@ -160,16 +168,6 @@ func runBlockProcessing(height *uint64) {
 		if err != nil {
 			log.Error(err)
 		}
-	}
-	goToNextBlock(height)
-}
-
-func goToNextBlock(height *uint64) {
-	lastHeightProcess = *height
-	if lastHeightProcess+uint64(1) < blockHeight {
-		daemonIteration() //Used for beast mode. Will crunch CPU.
-	} else {
-		running = false
 	}
 }
 
