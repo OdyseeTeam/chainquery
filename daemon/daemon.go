@@ -4,17 +4,19 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/lbryio/chainquery/app/lbrycrd"
-	"github.com/lbryio/chainquery/app/model"
-	"github.com/lbryio/errors.go"
-	log "github.com/sirupsen/logrus"
-	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/queries/qm"
-	"golang.org/x/crypto/ripemd160"
 	"runtime"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/lbryio/chainquery/lbrycrd"
+	"github.com/lbryio/chainquery/model"
+	"github.com/lbryio/errors.go"
+
+	log "github.com/sirupsen/logrus"
+	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/queries/qm"
+	"golang.org/x/crypto/ripemd160"
 )
 
 var workers int = runtime.NumCPU() / 2 //Split cores between processors and lbycrd

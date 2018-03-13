@@ -3,6 +3,7 @@ package lbrycrd
 import (
 	"encoding/binary"
 	"encoding/hex"
+
 	log "github.com/sirupsen/logrus"
 )
 

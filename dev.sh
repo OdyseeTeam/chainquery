@@ -1,9 +1,10 @@
 #!/bin/bash
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-APP_DIR="$DIR/app"
 
 (
+  cd "$DIR"
+
   export DEBUGGING=1
   export MYSQL_DSN="lbry:lbry@tcp(localhost:3306)/lbrycrd"
 
@@ -14,9 +15,8 @@ APP_DIR="$DIR/app"
 
   hash go-bindata 2>/dev/null || go get github.com/jteeuwen/go-bindata/...
 
-  cd "$APP_DIR"
 
-  if [ ! -d "$APP_DIR/vendor" ]; then
+  if [ ! -d "$DIR/vendor" ]; then
     hash dep 2>/dev/null || go get github.com/golang/dep/cmd/dep
     echo "Installing vendor deps (this takes a while) ..."
     go get

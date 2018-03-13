@@ -3,11 +3,12 @@ package lbrycrd
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
+
 	"github.com/go-errors/errors"
 	lbryschema "github.com/lbryio/lbryschema.go/pb"
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
-	"reflect"
 )
 
 func (d *Client) callNoDecode(command string, params ...interface{}) (interface{}, error) {
