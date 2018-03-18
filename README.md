@@ -58,6 +58,6 @@ schema may be out of sync with the migrations. Here's the safe way to ensure tha
 - Put all the schema changes you want to make into a migration.
 - In mysql, drop and recreate the db you're using, so that it's empty.
 - Run `./dev.sh`. This will run all the migrations on the empty db.
-- Run `./app/gen_models.sh` to update the models.
+- Run `./gen_models.sh` to update the models.
 
 This process ensures that the generated models will match the updated schema exactly, so there are no surprises when the migrations are applied to the live db.
