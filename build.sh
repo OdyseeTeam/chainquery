@@ -3,7 +3,7 @@
  set -euo pipefail
 
  DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
- cd "$DIR/app"
+ cd "$DIR"
 
 
  echo "== Installing dependencies =="
@@ -24,7 +24,7 @@
 
 
  echo "== Compiling =="
- importpath="github.com/lbryio/internal-apis/app"
+ importpath="github.com/lbryio/chainquery"
  mkdir -p "$DIR/bin"
  go generate -v
  VERSION="${TRAVIS_COMMIT:-"$(git describe --always --dirty --long)"}"

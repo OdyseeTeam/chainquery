@@ -1,15 +1,16 @@
 package lbrycrd
 
 import (
-	"net/url"
-
 	"fmt"
-	"github.com/lbryio/errors.go"
-	"github.com/mitchellh/mapstructure"
-	"github.com/ybbus/jsonrpc"
+	"net/url"
 	"reflect"
 	"sort"
 	"strings"
+
+	"github.com/lbryio/errors.go"
+
+	"github.com/mitchellh/mapstructure"
+	"github.com/ybbus/jsonrpc"
 )
 
 // Client connects to a lbrycrd instance

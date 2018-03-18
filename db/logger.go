@@ -4,10 +4,11 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/jmoiron/sqlx"
-	_ "github.com/jteeuwen/go-bindata" // so it's detected by `dep ensure`
 	"github.com/lbryio/errors.go"
 	qtools "github.com/lbryio/query.go"
+
+	"github.com/jmoiron/sqlx"
+	_ "github.com/jteeuwen/go-bindata" // so it's detected by `dep ensure`
 	log "github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/boil"
 )

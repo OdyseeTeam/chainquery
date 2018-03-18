@@ -3,13 +3,15 @@ package processing
 import (
 	"encoding/hex"
 	"encoding/json"
+	"strconv"
+	"time"
+
 	ds "github.com/lbryio/chainquery/datastore"
 	"github.com/lbryio/chainquery/lbrycrd"
 	m "github.com/lbryio/chainquery/model"
 	"github.com/lbryio/errors.go"
+
 	"github.com/sirupsen/logrus"
-	"strconv"
-	"time"
 )
 
 func ProcessVin(jsonVin *lbrycrd.Vin, txId *uint64, txHash string, dbcrMap map[string]AddrDebitCredits) error {

@@ -2,17 +2,19 @@ package daemon
 
 import (
 	"encoding/json"
-	p "github.com/lbryio/chainquery/daemon/processing"
-	"github.com/lbryio/chainquery/lbrycrd"
-	"github.com/lbryio/chainquery/model"
-	"github.com/lbryio/errors.go"
-	log "github.com/sirupsen/logrus"
-	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/queries/qm"
 	"runtime"
 	"strconv"
 	"strings"
 	"time"
+
+	p "github.com/lbryio/chainquery/daemon/processing"
+	"github.com/lbryio/chainquery/lbrycrd"
+	"github.com/lbryio/chainquery/model"
+	"github.com/lbryio/errors.go"
+
+	log "github.com/sirupsen/logrus"
+	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 const (

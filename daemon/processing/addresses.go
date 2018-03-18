@@ -2,11 +2,13 @@ package processing
 
 import (
 	"encoding/hex"
+	"time"
+
 	"github.com/lbryio/chainquery/datastore"
 	"github.com/lbryio/chainquery/lbrycrd"
 	"github.com/lbryio/chainquery/model"
+
 	"github.com/volatiletech/sqlboiler/queries/qm"
-	"time"
 )
 
 func CreateUpdateAddresses(outputs []lbrycrd.Vout, blockSeconds uint64) (map[string]uint64, error) {

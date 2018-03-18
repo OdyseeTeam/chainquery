@@ -3,9 +3,11 @@ package lbrycrd
 import (
 	"encoding/binary"
 	"encoding/hex"
+
+	"github.com/lbryio/errors.go"
+
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcutil"
-	"github.com/lbryio/errors.go"
 	log "github.com/sirupsen/logrus"
 )
 

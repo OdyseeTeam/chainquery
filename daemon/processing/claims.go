@@ -3,13 +3,15 @@ package processing
 import (
 	"encoding/hex"
 	"fmt"
+	"strconv"
+	"strings"
+
 	"github.com/lbryio/chainquery/lbrycrd"
 	"github.com/lbryio/chainquery/model"
 	"github.com/lbryio/errors.go"
+
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ripemd160"
-	"strconv"
-	"strings"
 )
 
 func processAsClaim(script []byte, vout model.Output) (address *string, err error) {
