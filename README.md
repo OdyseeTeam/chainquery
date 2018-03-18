@@ -18,7 +18,7 @@ Make sure you have Go 1.9+
 - Create `lbrycrd` database.
 - Create user `lbry` with password `lbry` and grant it all permissions on `lbrycrd` db.
 
-###Active Development Notice
+### Active Development Notice
  
 The project is under active development so sql migrations are not being used yet. All changes to the schema are being added to the initial schema since there are so many changes currently. Please be sure to drop all tables before starting the app to ensure that you will have the latest schema if this is not the first time using the application.
 
