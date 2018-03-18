@@ -2,9 +2,9 @@ package daemon
 
 import (
 	"encoding/json"
-	p "github.com/lbryio/chainquery/app/daemon/processing"
-	"github.com/lbryio/chainquery/app/lbrycrd"
-	"github.com/lbryio/chainquery/app/model"
+	p "github.com/lbryio/chainquery/daemon/processing"
+	"github.com/lbryio/chainquery/lbrycrd"
+	"github.com/lbryio/chainquery/model"
 	"github.com/lbryio/errors.go"
 	log "github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/boil"

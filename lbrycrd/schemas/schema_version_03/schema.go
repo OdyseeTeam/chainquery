@@ -1,7 +1,7 @@
 package schema_version_03
 
 import (
-	v1 "github.com/lbryio/chainquery/app/lbrycrd/schemas/schema_version_01"
+	v1 "github.com/lbryio/chainquery/lbrycrd/schemas/schema_version_01"
 )
 
 type Claim struct {

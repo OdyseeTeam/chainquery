@@ -2,9 +2,9 @@ package processing
 
 import (
 	"encoding/hex"
-	"github.com/lbryio/chainquery/app/datastore"
-	"github.com/lbryio/chainquery/app/lbrycrd"
-	"github.com/lbryio/chainquery/app/model"
+	"github.com/lbryio/chainquery/datastore"
+	"github.com/lbryio/chainquery/lbrycrd"
+	"github.com/lbryio/chainquery/model"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"time"
 )

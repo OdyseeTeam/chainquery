@@ -1,7 +1,7 @@
 #!/bin/bash
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-APP_DIR="$DIR/app"
+APP_DIR="$DIR"
 
 (
   export DEBUGGING=1

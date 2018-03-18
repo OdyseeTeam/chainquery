@@ -3,9 +3,9 @@ package processing
 import (
 	"encoding/hex"
 	"encoding/json"
-	ds "github.com/lbryio/chainquery/app/datastore"
-	"github.com/lbryio/chainquery/app/lbrycrd"
-	m "github.com/lbryio/chainquery/app/model"
+	ds "github.com/lbryio/chainquery/datastore"
+	"github.com/lbryio/chainquery/lbrycrd"
+	m "github.com/lbryio/chainquery/model"
 	"github.com/lbryio/errors.go"
 	"github.com/sirupsen/logrus"
 	"strconv"

@@ -1,7 +1,7 @@
 package datastore
 
 import (
-	"github.com/lbryio/chainquery/app/model"
+	"github.com/lbryio/chainquery/model"
 	"github.com/lbryio/errors.go"
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/queries/qm"

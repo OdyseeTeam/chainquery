@@ -9,10 +9,10 @@ import (
 	"strconv"
 	"time" //
 
-	"github.com/lbryio/chainquery/app/daemon"
-	"github.com/lbryio/chainquery/app/db"
-	"github.com/lbryio/chainquery/app/env"
-	"github.com/lbryio/chainquery/app/lbrycrd"
+	"github.com/lbryio/chainquery/daemon"
+	"github.com/lbryio/chainquery/db"
+	"github.com/lbryio/chainquery/env"
+	"github.com/lbryio/chainquery/lbrycrd"
 	log "github.com/sirupsen/logrus"
 )
 

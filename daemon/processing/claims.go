@@ -3,8 +3,8 @@ package processing
 import (
 	"encoding/hex"
 	"fmt"
-	"github.com/lbryio/chainquery/app/lbrycrd"
-	"github.com/lbryio/chainquery/app/model"
+	"github.com/lbryio/chainquery/lbrycrd"
+	"github.com/lbryio/chainquery/model"
 	"github.com/lbryio/errors.go"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ripemd160"

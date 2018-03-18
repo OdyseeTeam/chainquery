@@ -5,9 +5,9 @@ import (
 
 	"encoding/hex"
 	"encoding/json"
-	"github.com/lbryio/chainquery/app/lbrycrd/schemas/schema_version_01"
-	"github.com/lbryio/chainquery/app/lbrycrd/schemas/schema_version_02"
-	"github.com/lbryio/chainquery/app/lbrycrd/schemas/schema_version_03"
+	"github.com/lbryio/chainquery/lbrycrd/schemas/schema_version_01"
+	"github.com/lbryio/chainquery/lbrycrd/schemas/schema_version_02"
+	"github.com/lbryio/chainquery/lbrycrd/schemas/schema_version_03"
 	"github.com/lbryio/errors.go"
 	"github.com/lbryio/lbryschema.go/claim"
 )
