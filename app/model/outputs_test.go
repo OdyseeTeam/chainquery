@@ -963,7 +963,7 @@ func testOutputsSelect(t *testing.T) {
 }
 
 var (
-	outputDBTypes = map[string]string{`AddressList`: `text`, `Created`: `datetime`, `Hash160`: `varchar`, `ID`: `bigint`, `IsSpent`: `tinyint`, `Modified`: `datetime`, `RequiredSignatures`: `int`, `ScriptPubKeyAsm`: `text`, `ScriptPubKeyHex`: `text`, `SpentByInputID`: `bigint`, `TransactionID`: `bigint`, `Type`: `varchar`, `Value`: `decimal`, `Vout`: `int`}
+	outputDBTypes = map[string]string{`AddressList`: `text`, `Created`: `datetime`, `Hash160`: `varchar`, `ID`: `bigint`, `IsSpent`: `tinyint`, `Modified`: `datetime`, `RequiredSignatures`: `int`, `ScriptPubKeyAsm`: `text`, `ScriptPubKeyHex`: `text`, `SpentByInputID`: `bigint`, `TransactionHash`: `varchar`, `TransactionID`: `bigint`, `Type`: `varchar`, `Value`: `decimal`, `Vout`: `int`}
 	_             = bytes.MinRead
 )
 

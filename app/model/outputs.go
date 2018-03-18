@@ -24,8 +24,9 @@ import (
 type Output struct {
 	ID                 uint64      `boil:"id" json:"id" toml:"id" yaml:"id"`
 	TransactionID      uint64      `boil:"transaction_id" json:"transaction_id" toml:"transaction_id" yaml:"transaction_id"`
+	TransactionHash    string      `boil:"transaction_hash" json:"transaction_hash" toml:"transaction_hash" yaml:"transaction_hash"`
 	Value              null.String `boil:"value" json:"value,omitempty" toml:"value" yaml:"value,omitempty"`
-	Vout               null.Uint   `boil:"vout" json:"vout,omitempty" toml:"vout" yaml:"vout,omitempty"`
+	Vout               uint        `boil:"vout" json:"vout" toml:"vout" yaml:"vout"`
 	Type               null.String `boil:"type" json:"type,omitempty" toml:"type" yaml:"type,omitempty"`
 	ScriptPubKeyAsm    null.String `boil:"script_pub_key_asm" json:"script_pub_key_asm,omitempty" toml:"script_pub_key_asm" yaml:"script_pub_key_asm,omitempty"`
 	ScriptPubKeyHex    null.String `boil:"script_pub_key_hex" json:"script_pub_key_hex,omitempty" toml:"script_pub_key_hex" yaml:"script_pub_key_hex,omitempty"`
@@ -44,6 +45,7 @@ type Output struct {
 var OutputColumns = struct {
 	ID                 string
 	TransactionID      string
+	TransactionHash    string
 	Value              string
 	Vout               string
 	Type               string
@@ -59,6 +61,7 @@ var OutputColumns = struct {
 }{
 	ID:                 "id",
 	TransactionID:      "transaction_id",
+	TransactionHash:    "transaction_hash",
 	Value:              "value",
 	Vout:               "vout",
 	Type:               "type",
@@ -84,8 +87,8 @@ type outputR struct {
 type outputL struct{}
 
 var (
-	outputColumns               = []string{"id", "transaction_id", "value", "vout", "type", "script_pub_key_asm", "script_pub_key_hex", "required_signatures", "hash160", "address_list", "is_spent", "spent_by_input_id", "created", "modified"}
-	outputColumnsWithoutDefault = []string{"transaction_id", "value", "vout", "type", "script_pub_key_asm", "script_pub_key_hex", "required_signatures", "hash160", "address_list", "spent_by_input_id"}
+	outputColumns               = []string{"id", "transaction_id", "transaction_hash", "value", "vout", "type", "script_pub_key_asm", "script_pub_key_hex", "required_signatures", "hash160", "address_list", "is_spent", "spent_by_input_id", "created", "modified"}
+	outputColumnsWithoutDefault = []string{"transaction_id", "transaction_hash", "value", "vout", "type", "script_pub_key_asm", "script_pub_key_hex", "required_signatures", "hash160", "address_list", "spent_by_input_id"}
 	outputColumnsWithDefault    = []string{"id", "is_spent", "created", "modified"}
 	outputPrimaryKeyColumns     = []string{"id"}
 )

@@ -16,12 +16,13 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var DebugMode = false
+var DebugMode bool
 
 func main() {
 	rand.Seed(time.Now().UnixNano())
 	log.SetFormatter(&log.TextFormatter{FullTimestamp: true})
 	http.DefaultClient.Timeout = 20 * time.Second
+	daemon.ProcessingMode = daemon.BEASTMODE // TODO: Should be configurable
 
 	if len(os.Args) < 2 {
 		log.Errorf("Usage: %s COMMAND", os.Args[0])

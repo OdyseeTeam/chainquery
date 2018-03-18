@@ -28,7 +28,7 @@ type Address struct {
 	TotalReceived string      `boil:"total_received" json:"total_received" toml:"total_received" yaml:"total_received"`
 	TotalSent     string      `boil:"total_sent" json:"total_sent" toml:"total_sent" yaml:"total_sent"`
 	Balance       null.String `boil:"balance" json:"balance,omitempty" toml:"balance" yaml:"balance,omitempty"`
-	Tag           string      `boil:"tag" json:"tag" toml:"tag" yaml:"tag"`
+	Tag           null.String `boil:"tag" json:"tag,omitempty" toml:"tag" yaml:"tag,omitempty"`
 	TagURL        null.String `boil:"tag_url" json:"tag_url,omitempty" toml:"tag_url" yaml:"tag_url,omitempty"`
 	Created       time.Time   `boil:"created" json:"created" toml:"created" yaml:"created"`
 	Modified      time.Time   `boil:"modified" json:"modified" toml:"modified" yaml:"modified"`
@@ -510,7 +510,7 @@ func (addressL) LoadOutputs(e boil.Executor, singular bool, maybeAddress interfa
 		one := new(Output)
 		var localJoinCol uint64
 
-		err = results.Scan(&one.ID, &one.TransactionID, &one.Value, &one.Vout, &one.Type, &one.ScriptPubKeyAsm, &one.ScriptPubKeyHex, &one.RequiredSignatures, &one.Hash160, &one.AddressList, &one.IsSpent, &one.SpentByInputID, &one.Created, &one.Modified, &localJoinCol)
+		err = results.Scan(&one.ID, &one.TransactionID, &one.TransactionHash, &one.Value, &one.Vout, &one.Type, &one.ScriptPubKeyAsm, &one.ScriptPubKeyHex, &one.RequiredSignatures, &one.Hash160, &one.AddressList, &one.IsSpent, &one.SpentByInputID, &one.Created, &one.Modified, &localJoinCol)
 		if err = results.Err(); err != nil {
 			return errors.Wrap(err, "failed to plebian-bind eager loaded slice outputs")
 		}

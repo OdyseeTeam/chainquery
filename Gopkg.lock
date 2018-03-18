@@ -4,8 +4,23 @@
 [[projects]]
   branch = "master"
   name = "github.com/btcsuite/btcd"
-  packages = ["btcec"]
+  packages = [
+    "btcec",
+    "chaincfg",
+    "chaincfg/chainhash",
+    "wire"
+  ]
   revision = "2be2f12b358dc57d70b8f501b00be450192efbc3"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/btcsuite/btcutil"
+  packages = [
+    ".",
+    "base58",
+    "bech32"
+  ]
+  revision = "501929d3d046174c3d39f0ea54ece471aa17238c"
 
 [[projects]]
   name = "github.com/caarlos0/env"
@@ -292,6 +307,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "ff4e4b6c83b7cb6c9fabb0ad505d230b9eef198684784076cd49119f0930a1a3"
+  inputs-digest = "641befb0bfe42febbc6ed9a35655a58089838824a7389fc13dcacf6641f3c5d1"
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -59,7 +59,7 @@ CREATE TABLE IF NOT EXISTS `transactions`
     `modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     `created_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY `PK_Transaction` (`id`),
-    FOREIGN KEY `FK_TransactionBlockHash` (`block_by_hash_id`) REFERENCES `blocks` (`hash`),
+    FOREIGN KEY `FK_TransactionBlockHash` (`block_by_hash_id`) REFERENCES `blocks` (`hash`) ON DELETE SET NULL ON UPDATE NO ACTION ,
     UNIQUE KEY `Idx_TransactionHash` (`hash`),
     INDEX `Idx_TransactionTime` (`transaction_time`),
     INDEX `Idx_TransactionCreatedTime` (`created_time`),
@@ -77,7 +77,7 @@ CREATE TABLE IF NOT EXISTS `addresses`
     `total_received` DECIMAL(18,8) DEFAULT 0 NOT NULL,
     `total_sent` DECIMAL(18,8) DEFAULT 0 NOT NULL,
     `balance` DECIMAL(18,8) AS (`total_received` - `total_sent`),
-    `tag` VARCHAR(30) NOT NULL,
+    `tag` VARCHAR(30),
     `tag_url` VARCHAR(200),
     `created` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -104,7 +104,7 @@ CREATE TABLE IF NOT EXISTS `inputs`
     `prevout_hash` VARCHAR(70) CHARACTER SET latin1 COLLATE latin1_general_ci,
     `prevout_n` INTEGER UNSIGNED,
     `prevout_spend_updated` TINYINT(1) DEFAULT 0 NOT NULL,
-    `sequence` INTEGER UNSIGNED,
+    `sequence` INTEGER UNSIGNED NOT NULL,
     `value` DECIMAL(18,8),
     `script_sig_asm` TEXT CHARACTER SET latin1 COLLATE latin1_general_ci,
     `script_sig_hex` TEXT CHARACTER SET latin1 COLLATE latin1_general_ci,
@@ -112,8 +112,9 @@ CREATE TABLE IF NOT EXISTS `inputs`
     `created` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY `PK_Input` (`id`),
-    FOREIGN KEY `FK_InputAddress` (`input_address_id`) REFERENCES `addresses` (`id`),
-    FOREIGN KEY `FK_InputTransaction` (`transaction_id`) REFERENCES `transactions` (`id`),
+    UNIQUE KEY `UK_Input` (`transaction_hash`,`sequence`),
+    FOREIGN KEY `FK_InputAddress` (`input_address_id`) REFERENCES `addresses` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+    FOREIGN KEY `FK_InputTransaction` (`transaction_id`) REFERENCES `transactions` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION,
     INDEX `Idx_InputValue` (`value`),
     INDEX `Idx_PrevoutHash` (`prevout_hash`),
     INDEX `Idx_InputCreated` (`created`),
@@ -127,8 +128,8 @@ CREATE TABLE IF NOT EXISTS `input_addresses`
     `input_id` BIGINT UNSIGNED NOT NULL,
     `address_id` BIGINT UNSIGNED NOT NULL,
     PRIMARY KEY `PK_InputAddress` (`input_id`, `address_id`),
-    FOREIGN KEY `Idx_InputsAddressesInput` (`input_id`) REFERENCES `inputs` (`id`),
-    FOREIGN KEY `Idx_InputsAddressesAddress` (`address_id`) REFERENCES `addresses` (`id`)
+    FOREIGN KEY `Idx_InputsAddressesInput` (`input_id`) REFERENCES `inputs` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+    FOREIGN KEY `Idx_InputsAddressesAddress` (`address_id`) REFERENCES `addresses` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4;
 -- +migrate StatementEnd
 
@@ -137,8 +138,9 @@ CREATE TABLE IF NOT EXISTS `outputs`
 (
     `id` SERIAL,
     `transaction_id` BIGINT UNSIGNED NOT NULL,
+    `transaction_hash` VARCHAR(70) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
     `value` DECIMAL(18,8),
-    `vout` INTEGER UNSIGNED,
+    `vout` INTEGER UNSIGNED NOT NULL,
     `type` VARCHAR(20) CHARACTER SET latin1 COLLATE latin1_general_ci,
     `script_pub_key_asm` TEXT CHARACTER SET latin1 COLLATE latin1_general_ci,
     `script_pub_key_hex` TEXT CHARACTER SET latin1 COLLATE latin1_general_ci,
@@ -150,8 +152,9 @@ CREATE TABLE IF NOT EXISTS `outputs`
     `created` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY `PK_Output` (`id`),
-    FOREIGN KEY `FK_OutputTransaction` (`transaction_id`) REFERENCES `transactions` (`id`),
-    FOREIGN KEY `FK_OutputSpentByInput` (`spent_by_input_id`) REFERENCES `inputs` (`id`),
+    UNIQUE KEY `UK_Output` (`transaction_hash`,`vout`),
+    FOREIGN KEY `FK_OutputTransaction` (`transaction_id`) REFERENCES `transactions` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+    FOREIGN KEY `FK_OutputSpentByInput` (`spent_by_input_id`) REFERENCES `inputs` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION,
     CONSTRAINT `Cnt_AddressesValidJson` CHECK(`address_list` IS NULL OR JSON_VALID(`address_list`)),
     INDEX `Idx_OutputValue` (`value`),
     INDEX `Idx_OuptutCreated` (`created`),
@@ -165,8 +168,8 @@ CREATE TABLE IF NOT EXISTS `output_addresses`
     `output_id` BIGINT UNSIGNED NOT NULL,
     `address_id` BIGINT UNSIGNED NOT NULL,
     PRIMARY KEY `PK_OutputAddress` (`output_id`, `address_id`),
-    FOREIGN KEY `Idx_OutputsAddressesOutput` (`output_id`) REFERENCES `outputs` (`id`),
-    FOREIGN KEY `Idx_OutputsAddressesAddress` (`address_id`) REFERENCES `addresses` (`id`)
+    FOREIGN KEY `Idx_OutputsAddressesOutput` (`output_id`) REFERENCES `outputs` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+    FOREIGN KEY `Idx_OutputsAddressesAddress` (`address_id`) REFERENCES `addresses` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4;
 -- +migrate StatementEnd
 
@@ -179,8 +182,8 @@ CREATE TABLE IF NOT EXISTS `transaction_addresses`
     `credit_amount` DECIMAL(18,8) DEFAULT 0 NOT NULL COMMENT 'Sum of the outputs to this address for the tx',
     `latest_transaction_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY `PK_TransactionAddress` (`transaction_id`, `address_id`),
-    FOREIGN KEY `Idx_TransactionsAddressesTransaction` (`transaction_id`) REFERENCES `transactions` (`id`),
-    FOREIGN KEY `Idx_TransactionsAddressesAddress` (`address_id`) REFERENCES `addresses` (`id`),
+    FOREIGN KEY `Idx_TransactionsAddressesTransaction` (`transaction_id`) REFERENCES `transactions` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+    FOREIGN KEY `Idx_TransactionsAddressesAddress` (`address_id`) REFERENCES `addresses` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION,
     INDEX `Idx_TransactionsAddressesLatestTransactionTime` (`latest_transaction_time`),
     INDEX `Idx_TransactionsAddressesDebit` (`debit_amount`),
     INDEX `Idx_TransactionsAddressesCredit` (`credit_amount`)
@@ -217,8 +220,8 @@ CREATE TABLE IF NOT EXISTS `claims`
     `created` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY `PK_Claim` (`id`),
-    FOREIGN KEY `FK_ClaimTransaction` (`transaction_by_hash_id`) REFERENCES `transactions` (`hash`),
-    FOREIGN KEY `FK_ClaimPublisher` (`publisher_id`) REFERENCES `claims` (`claim_id`),
+    FOREIGN KEY `FK_ClaimTransaction` (`transaction_by_hash_id`) REFERENCES `transactions` (`hash`) ON DELETE CASCADE ON UPDATE NO ACTION,
+    FOREIGN KEY `FK_ClaimPublisher` (`publisher_id`) REFERENCES `claims` (`claim_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
     UNIQUE KEY `Idx_ClaimUnique` (`transaction_by_hash_id`, `vout`, `claim_id`),
     CONSTRAINT `Cnt_ClaimCertificate` CHECK(`certificate` IS NULL OR JSON_VALID(`certificate`)), -- certificate type
     INDEX `Idx_Claim` (`claim_id`),
@@ -239,6 +242,6 @@ CREATE TABLE IF NOT EXISTS `claim_streams`
     `claim_id` BIGINT UNSIGNED NOT NULL,
     `stream` MEDIUMTEXT NOT NULL,
     PRIMARY KEY `PK_ClaimStream` (`claim_id`),
-    FOREIGN KEY `PK_ClaimStreamClaim` (`claim_id`) REFERENCES `claims` (`id`)
+    FOREIGN KEY `PK_ClaimStreamClaim` (`claim_id`) REFERENCES `claims` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4;
 -- +migrate StatementEnd

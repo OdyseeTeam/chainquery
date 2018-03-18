@@ -90,7 +90,7 @@ type Vin struct {
 	Txid      string     `json:"txid"`
 	Vout      uint64     `json:"vout"`
 	ScriptSig *ScriptSig `json:"scriptSig"`
-	Sequence  uint64     `json:"sequence"`
+	Sequence  uint32     `json:"sequence"`
 	Witness   []string   `json:"txinwitness"`
 }
 

@@ -31,7 +31,7 @@ type Input struct {
 	PrevoutHash         null.String `boil:"prevout_hash" json:"prevout_hash,omitempty" toml:"prevout_hash" yaml:"prevout_hash,omitempty"`
 	PrevoutN            null.Uint   `boil:"prevout_n" json:"prevout_n,omitempty" toml:"prevout_n" yaml:"prevout_n,omitempty"`
 	PrevoutSpendUpdated bool        `boil:"prevout_spend_updated" json:"prevout_spend_updated" toml:"prevout_spend_updated" yaml:"prevout_spend_updated"`
-	Sequence            null.Uint   `boil:"sequence" json:"sequence,omitempty" toml:"sequence" yaml:"sequence,omitempty"`
+	Sequence            uint        `boil:"sequence" json:"sequence" toml:"sequence" yaml:"sequence"`
 	Value               null.String `boil:"value" json:"value,omitempty" toml:"value" yaml:"value,omitempty"`
 	ScriptSigAsm        null.String `boil:"script_sig_asm" json:"script_sig_asm,omitempty" toml:"script_sig_asm" yaml:"script_sig_asm,omitempty"`
 	ScriptSigHex        null.String `boil:"script_sig_hex" json:"script_sig_hex,omitempty" toml:"script_sig_hex" yaml:"script_sig_hex,omitempty"`
