@@ -47,13 +47,15 @@ func PutOutput(output *model.Output) error {
 }
 
 //Inputs
-func GetInput(txHash string, sequence uint) *model.Input {
+func GetInput(txHash string, isCoinBase bool, prevHash string, prevN uint) *model.Input {
 	//Unique
 	txHashMatch := qm.Where(model.InputColumns.TransactionHash+"=?", txHash)
-	sequenceMatch := qm.And(model.InputColumns.Sequence+"=?", sequence)
+	txCoinBaseMatch := qm.Where(model.InputColumns.IsCoinbase+"=?", isCoinBase)
+	prevHashMatch := qm.Where(model.InputColumns.PrevoutHash+"=?", prevHash)
+	prevNMatch := qm.And(model.InputColumns.PrevoutN+"=?", prevN)
 
-	if model.InputsG(txHashMatch, sequenceMatch).ExistsP() {
-		input, err := model.InputsG(txHashMatch, sequenceMatch).One()
+	if model.InputsG(txHashMatch, txCoinBaseMatch, prevHashMatch, prevNMatch).ExistsP() {
+		input, err := model.InputsG(txHashMatch, txCoinBaseMatch, prevHashMatch, prevNMatch).One()
 		if err != nil {
 			logrus.Error("Datastore(GETINPUT): ", err)
 		}
@@ -67,11 +69,13 @@ func PutInput(input *model.Input) error {
 
 	if input != nil {
 		//Unique
-		onTxHashMatch := qm.Where(model.InputColumns.TransactionHash+"=?", input.TransactionHash)
-		sequenceMatch := qm.And(model.InputColumns.Sequence+"=?", input.Sequence)
+		txHashMatch := qm.Where(model.InputColumns.TransactionHash+"=?", input.TransactionHash)
+		txCoinBaseMatch := qm.Where(model.InputColumns.IsCoinbase+"=?", input.IsCoinbase)
+		prevHashMatch := qm.Where(model.InputColumns.PrevoutHash+"=?", input.PrevoutHash)
+		prevNMatch := qm.And(model.InputColumns.PrevoutN+"=?", input.PrevoutN)
 
 		var err error
-		if model.InputsG(onTxHashMatch, sequenceMatch).ExistsP() {
+		if model.InputsG(txHashMatch, txCoinBaseMatch, prevHashMatch, prevNMatch).ExistsP() {
 			err = input.UpdateG()
 		} else {
 			err = input.InsertG()

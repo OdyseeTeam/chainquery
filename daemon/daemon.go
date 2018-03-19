@@ -29,7 +29,7 @@ const (
 )
 
 var workers int = runtime.NumCPU() / 2 //Split cores between processors and lbycrd
-var lastHeightProcess uint64 = 3200    // Around 165,000 is when protobuf takes affect.
+var lastHeightProcess uint64 = 0       // Around 165,000 is when protobuf takes affect.
 var blockHeight uint64 = 0
 var running bool = false
 var ProcessingMode int            //Set in main on init

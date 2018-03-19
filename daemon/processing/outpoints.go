@@ -16,7 +16,7 @@ import (
 
 func ProcessVin(jsonVin *lbrycrd.Vin, txId *uint64, txHash string, dbcrMap map[string]AddrDebitCredits) error {
 	vin := &m.Input{}
-	foundVin := ds.GetInput(txHash, uint(jsonVin.Sequence))
+	foundVin := ds.GetInput(txHash, len(jsonVin.Coinbase) > 0, jsonVin.Txid, uint(jsonVin.Vout))
 	if foundVin != nil {
 		vin = foundVin
 	}
@@ -24,7 +24,7 @@ func ProcessVin(jsonVin *lbrycrd.Vin, txId *uint64, txHash string, dbcrMap map[s
 	vin.TransactionHash = txHash
 	vin.Sequence = uint(jsonVin.Sequence)
 
-	if jsonVin.Coinbase != "" {
+	if jsonVin.Coinbase != "" { //
 		// No Source Output - Generation of Coin
 		err := processCoinBaseVin(jsonVin, vin)
 		return err
@@ -78,7 +78,11 @@ func ProcessVin(jsonVin *lbrycrd.Vin, txId *uint64, txHash string, dbcrMap map[s
 					logrus.Error("Failure inserting InputAddress: Vin ", vin.ID, "Address(", address.ID, ") ", address.Address)
 					panic(err)
 				}
-
+				err = vin.SetAddressesG(false, address)
+				if err != nil {
+					logrus.Error("Failure adding addresses: Vin ", vin.ID, ", Tx ", *txId, ", Vout ", src_output.ID, ", Address(", address.ID, ") ", address.Address)
+					panic(err)
+				}
 			} else {
 				logrus.Error("No Address created for Vin: ", vin.ID, " of tx ", *txId, " vout: ", src_output.ID, " Address: ", addresses[0])
 				panic(nil)
@@ -101,7 +105,6 @@ func ProcessVin(jsonVin *lbrycrd.Vin, txId *uint64, txHash string, dbcrMap map[s
 			}
 		}
 	}
-
 	return nil
 }
 
@@ -152,7 +155,7 @@ func ProcessVout(jsonVout *lbrycrd.Vout, txId *uint64, txHash string, dbcrMap ma
 		logrus.Error("Could not marshall address list of Vout")
 		err = nil //reset error/
 	} else if address != nil {
-		vout.AddAddressesG(false, address)
+		vout.SetAddressesG(false, address)
 	} else {
 		//All addresses for transaction are created and inserted into the DB ahead of time
 		logrus.Error("No address in db for \"", jsonAddresses[0], "\" txId: ", *txId)

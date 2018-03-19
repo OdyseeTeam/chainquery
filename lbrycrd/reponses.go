@@ -90,8 +90,7 @@ type Vin struct {
 	Txid      string     `json:"txid"`
 	Vout      uint64     `json:"vout"`
 	ScriptSig *ScriptSig `json:"scriptSig"`
-	Sequence  uint32     `json:"sequence"`
-	Witness   []string   `json:"txinwitness"`
+	Sequence  uint64     `json:"sequence"`
 }
 
 // ScriptPubKeyResult models the scriptPubKey data of a tx script.  It is

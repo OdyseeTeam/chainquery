@@ -112,7 +112,6 @@ CREATE TABLE IF NOT EXISTS `inputs`
     `created` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY `PK_Input` (`id`),
-    UNIQUE KEY `UK_Input` (`transaction_hash`,`sequence`),
     FOREIGN KEY `FK_InputAddress` (`input_address_id`) REFERENCES `addresses` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION,
     FOREIGN KEY `FK_InputTransaction` (`transaction_id`) REFERENCES `transactions` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION,
     INDEX `Idx_InputValue` (`value`),
