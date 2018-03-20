@@ -144,6 +144,17 @@ func PutAddress(address *model.Address) error {
 
 }
 
+func GetTxAddress(txId uint64, addrId uint64) *model.TransactionAddress {
+	if model.TransactionAddressExistsGP(txId, addrId) {
+		txAddress, err := model.FindTransactionAddressG(txId, addrId)
+		if err != nil {
+			logrus.Error("Datastore(GETTXADDRESS): ", err)
+		}
+		return txAddress
+	}
+	return nil
+}
+
 func PutTxAddress(txAddress *model.TransactionAddress) error {
 
 	if txAddress != nil {

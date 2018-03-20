@@ -14,7 +14,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func ProcessVin(jsonVin *lbrycrd.Vin, txId *uint64, txHash string, dbcrMap map[string]AddrDebitCredits) error {
+func ProcessVin(jsonVin *lbrycrd.Vin, txId *uint64, txHash string, txDC txDebitCredits) error {
 	vin := &m.Input{}
 	foundVin := ds.GetInput(txHash, len(jsonVin.Coinbase) > 0, jsonVin.Txid, uint(jsonVin.Vout))
 	if foundVin != nil {
@@ -64,6 +64,8 @@ func ProcessVin(jsonVin *lbrycrd.Vin, txId *uint64, txHash string, dbcrMap map[s
 				}
 			}
 			if address != nil {
+				value, _ := strconv.ParseFloat(src_output.Value.String, 64)
+				txDC.subtract(address.Address, value)
 				vin.InputAddressID.Uint64 = address.ID
 				vin.InputAddressID.Valid = true
 
@@ -120,7 +122,7 @@ func processCoinBaseVin(jsonVin *lbrycrd.Vin, vin *m.Input) error {
 	return nil
 }
 
-func ProcessVout(jsonVout *lbrycrd.Vout, txId *uint64, txHash string, dbcrMap map[string]AddrDebitCredits) error {
+func ProcessVout(jsonVout *lbrycrd.Vout, txId *uint64, txHash string, txDC txDebitCredits) error {
 	vout := &m.Output{}
 	foundVout := ds.GetOutput(txHash, uint(jsonVout.N))
 	if foundVout != nil {
@@ -130,7 +132,8 @@ func ProcessVout(jsonVout *lbrycrd.Vout, txId *uint64, txHash string, dbcrMap ma
 	vout.TransactionID = *txId
 	vout.TransactionHash = txHash
 	vout.Vout = uint(jsonVout.N)
-	vout.Value.String = strconv.Itoa(int(jsonVout.Value))
+	value := strconv.FormatFloat(jsonVout.Value, 'f', -1, 64)
+	vout.Value.String = value
 	vout.Value.Valid = true
 	vout.ScriptPubKeyAsm.String = jsonVout.ScriptPubKey.Asm
 	vout.ScriptPubKeyAsm.Valid = true
@@ -155,6 +158,7 @@ func ProcessVout(jsonVout *lbrycrd.Vout, txId *uint64, txHash string, dbcrMap ma
 		logrus.Error("Could not marshall address list of Vout")
 		err = nil //reset error/
 	} else if address != nil {
+		txDC.add(address.Address, jsonVout.Value)
 		vout.SetAddressesG(false, address)
 	} else {
 		//All addresses for transaction are created and inserted into the DB ahead of time
@@ -167,6 +171,13 @@ func ProcessVout(jsonVout *lbrycrd.Vout, txId *uint64, txHash string, dbcrMap ma
 	if err != nil {
 		return err
 	}
+	//Make sure there is a transaction address
+	txAddress := createTransactionAddress(*txId, address.ID)
+	err = ds.PutTxAddress(&txAddress)
+	if err != nil {
+		return err
+	}
+
 	// Process script for potential claims
 	err = processScript(*vout)
 	if err != nil {

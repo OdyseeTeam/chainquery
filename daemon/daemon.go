@@ -8,8 +8,10 @@ import (
 	"time"
 
 	p "github.com/lbryio/chainquery/daemon/processing"
+	"github.com/lbryio/chainquery/datastore"
 	"github.com/lbryio/chainquery/lbrycrd"
 	"github.com/lbryio/chainquery/model"
+	"github.com/lbryio/chainquery/util"
 	"github.com/lbryio/errors.go"
 
 	log "github.com/sirupsen/logrus"
@@ -237,7 +239,7 @@ func processTx(jsonTx *lbrycrd.TxRawResult, blockTime uint64) error {
 		return err
 	}
 
-	txDbCrAddrMap := map[string]p.AddrDebitCredits{}
+	txDbCrAddrMap := p.NewTxDebitCredits()
 
 	if foundTx != nil {
 		transaction.Update(boil.GetDB())
@@ -262,6 +264,26 @@ func processTx(jsonTx *lbrycrd.TxRawResult, blockTime uint64) error {
 			log.Error("Vout Error->", err, " - ", transaction.Hash)
 			panic(err)
 		}
+	}
+	//log.Debug("Tx ", transaction.ID)
+	for addr, DC := range txDbCrAddrMap.AddrDCMap {
+
+		address := datastore.GetAddress(addr)
+
+		address.TotalReceived = util.Plus(address.TotalReceived, DC.Credits())
+		address.TotalSent = util.Plus(address.TotalSent, DC.Debits())
+
+		datastore.PutAddress(address)
+
+		txAddr := datastore.GetTxAddress(transaction.ID, address.ID)
+
+		txAddr.CreditAmount = util.Plus("0.0", DC.Credits())
+		txAddr.DebitAmount = util.Plus("0.0", DC.Debits())
+
+		datastore.PutTxAddress(txAddr)
+
+		//log.Debug("Address ", addr, " Debits ", DC.Debits(), " Credits ", DC.Credits())
+
 	}
 
 	return err
