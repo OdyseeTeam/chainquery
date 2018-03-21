@@ -83,7 +83,7 @@ func migration000_init_schemaSql() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "migration/000_init_schema.sql", size: 12791, mode: os.FileMode(420), modTime: time.Unix(1521427708, 0)}
+	info := bindataFileInfo{name: "migration/000_init_schema.sql", size: 12791, mode: os.FileMode(420), modTime: time.Unix(1521605514, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }

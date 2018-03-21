@@ -244,3 +244,17 @@ CREATE TABLE IF NOT EXISTS `claim_streams`
     FOREIGN KEY `PK_ClaimStreamClaim` (`claim_id`) REFERENCES `claims` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4;
 -- +migrate StatementEnd
+
+-- +migrate StatementBegin
+CREATE PROCEDURE `address_summary`(IN address VARCHAR(40) CHARACTER SET latin1  )
+    BEGIN
+        SELECT  addresses.address,
+            SUM(ta.credit_amount) AS total_received,
+            SUM(ta.debit_amount) AS total_sent,
+            (total_received - total_sent) AS balance
+        FROM addresses LEFT JOIN transaction_addresses as ta ON ta.address_id = addresses.id
+        WHERE addresses.address=address COLLATE latin1_general_ci
+        GROUP BY addresses.address
+        ORDER BY balance DESC;
+    END
+-- +migrate StatementEnd

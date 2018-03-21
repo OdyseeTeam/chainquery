@@ -1,7 +1,6 @@
 package daemon
 
 import (
-	"encoding/json"
 	"runtime"
 	"strconv"
 	"strings"
@@ -14,6 +13,7 @@ import (
 	"github.com/lbryio/chainquery/util"
 	"github.com/lbryio/errors.go"
 
+	"github.com/lbryio/chainquery/db"
 	log "github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -40,7 +40,7 @@ var iteration int64 = 0
 
 func InitDaemon() {
 	applySettings()
-	//testFunction()
+	testFunction()
 	initBlockQueue()
 	runDaemon()
 }
@@ -50,39 +50,55 @@ func initBlockQueue() {
 }
 
 func testFunction(params ...interface{}) {
-	names, err := lbrycrd.DefaultClient().GetClaimsInTrie()
-	goodones := 0
+
+	addresses, err := model.AddressesG(qm.Limit(1000)).All()
 	if err != nil {
 		log.Error(err)
-	} else {
-		for i := range names {
-			if goodones < 10 {
-				name := names[i]
-				for i := range name.Claims {
-					claim := name.Claims[i]
+	}
 
-					decodedValue := []byte(claim.Value)
-					if err != nil {
-						//log.Error(err)
-						continue
+	for i := range addresses {
+		address := addresses[i]
+		summary, err := db.GetAddressSummary(address.Address)
+		if err != nil {
+			log.Error(err)
+		}
+		log.Info("Id ", address.ID, " Rec ", summary.TotalReceived, " Spent ", summary.TotalSent, " Bal ", summary.Balance)
+
+	}
+	/*
+		names, err := lbrycrd.DefaultClient().GetClaimsInTrie()
+		goodones := 0
+		if err != nil {
+			log.Error(err)
+		} else {
+			for i := range names {
+				if goodones < 10 {
+					name := names[i]
+					for i := range name.Claims {
+						claim := name.Claims[i]
+
+						decodedValue := []byte(claim.Value)
+						if err != nil {
+							//log.Error(err)
+							continue
+						}
+						decodedClaim, err := lbrycrd.DecodeClaimValue(name.Name, decodedValue)
+						if err != nil {
+							//log.Error(err)
+							continue
+						}
+						println(name.Name, " - ", decodedClaim.GetStream().GetMetadata().GetTitle())
+						jsonBytes, err := json.Marshal(*decodedClaim)
+						if err != nil {
+							//log.Error(err)
+							continue
+						}
+						println(string(jsonBytes))
+						goodones++
 					}
-					decodedClaim, err := lbrycrd.DecodeClaimValue(name.Name, decodedValue)
-					if err != nil {
-						//log.Error(err)
-						continue
-					}
-					println(name.Name, " - ", decodedClaim.GetStream().GetMetadata().GetTitle())
-					jsonBytes, err := json.Marshal(*decodedClaim)
-					if err != nil {
-						//log.Error(err)
-						continue
-					}
-					println(string(jsonBytes))
-					goodones++
 				}
 			}
-		}
-	}
+		}*/
 	//panic(errors.Base("only run test method"))
 }
 
