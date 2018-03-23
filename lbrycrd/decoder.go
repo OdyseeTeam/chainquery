@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/lbryio/errors.go"
 	lbryschema "github.com/lbryio/lbryschema.go/pb"
 
+	"github.com/go-errors/errors"
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
 )
@@ -50,7 +50,7 @@ func decodeNumber(data interface{}) (decimal.Decimal, error) {
 		number = "0"
 	default:
 		fmt.Printf("I don't know about type %T!\n", d)
-		return decimal.Decimal{}, errors.Base("unexpected number type ")
+		return decimal.Decimal{}, errors.New("unexpected number type ")
 	}
 
 	dec, err := decimal.NewFromString(number)
@@ -69,7 +69,7 @@ func FixDecodeProto(src, dest reflect.Type, data interface{}) (interface{}, erro
 			if err != nil {
 				return nil, errors.Wrap(err, 0)
 			} else if val < 0 {
-				return nil, errors.Base("must be unsigned int")
+				return nil, errors.New("must be unsigned int")
 			}
 			return uint64(val), nil
 		}
@@ -144,11 +144,11 @@ func FixDecodeProto(src, dest reflect.Type, data interface{}) (interface{}, erro
 func GetEnumVal(enum map[string]int32, data interface{}) (int32, error) {
 	s, ok := data.(string)
 	if !ok {
-		return 0, errors.Base("expected a string")
+		return 0, errors.New("expected a string")
 	}
 	val, ok := enum[s]
 	if !ok {
-		return 0, errors.Base("invalid enum key")
+		return 0, errors.New("invalid enum key")
 	}
 	return val, nil
 }
