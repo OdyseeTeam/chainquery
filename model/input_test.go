@@ -351,11 +351,11 @@ func testInputToManyAddresses(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = tx.Exec("insert into `input_addresses` (`input_id`, `address_id`) values (?, ?)", a.ID, b.ID)
+	_, err = tx.Exec("insert into `input_address` (`input_id`, `address_id`) values (?, ?)", a.ID, b.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = tx.Exec("insert into `input_addresses` (`input_id`, `address_id`) values (?, ?)", a.ID, c.ID)
+	_, err = tx.Exec("insert into `input_address` (`input_id`, `address_id`) values (?, ?)", a.ID, c.ID)
 	if err != nil {
 		t.Fatal(err)
 	}

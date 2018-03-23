@@ -169,7 +169,7 @@ func (q claimQuery) One() (*Claim, error) {
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "model: failed to execute a one query for claims")
+		return nil, errors.Wrap(err, "model: failed to execute a one query for claim")
 	}
 
 	return o, nil
@@ -216,7 +216,7 @@ func (q claimQuery) Count() (int64, error) {
 
 	err := q.Query.QueryRow().Scan(&count)
 	if err != nil {
-		return 0, errors.Wrap(err, "model: failed to count claims rows")
+		return 0, errors.Wrap(err, "model: failed to count claim rows")
 	}
 
 	return count, nil
@@ -241,7 +241,7 @@ func (q claimQuery) Exists() (bool, error) {
 
 	err := q.Query.QueryRow().Scan(&count)
 	if err != nil {
-		return false, errors.Wrap(err, "model: failed to check if claims exists")
+		return false, errors.Wrap(err, "model: failed to check if claim exists")
 	}
 
 	return count > 0, nil
@@ -261,7 +261,7 @@ func (o *Claim) TransactionByHash(exec boil.Executor, mods ...qm.QueryMod) trans
 	queryMods = append(queryMods, mods...)
 
 	query := Transactions(exec, queryMods...)
-	queries.SetFrom(query.Query, "`transactions`")
+	queries.SetFrom(query.Query, "`transaction`")
 
 	return query
 }
@@ -280,7 +280,7 @@ func (o *Claim) Publisher(exec boil.Executor, mods ...qm.QueryMod) claimQuery {
 	queryMods = append(queryMods, mods...)
 
 	query := Claims(exec, queryMods...)
-	queries.SetFrom(query.Query, "`claims`")
+	queries.SetFrom(query.Query, "`claim`")
 
 	return query
 }
@@ -299,17 +299,17 @@ func (o *Claim) ClaimStream(exec boil.Executor, mods ...qm.QueryMod) claimStream
 	queryMods = append(queryMods, mods...)
 
 	query := ClaimStreams(exec, queryMods...)
-	queries.SetFrom(query.Query, "`claim_streams`")
+	queries.SetFrom(query.Query, "`claim_stream`")
 
 	return query
 }
 
-// PublisherClaimsG retrieves all the claim's claims via publisher_id column.
+// PublisherClaimsG retrieves all the claim's claim via publisher_id column.
 func (o *Claim) PublisherClaimsG(mods ...qm.QueryMod) claimQuery {
 	return o.PublisherClaims(boil.GetDB(), mods...)
 }
 
-// PublisherClaims retrieves all the claim's claims with an executor via publisher_id column.
+// PublisherClaims retrieves all the claim's claim with an executor via publisher_id column.
 func (o *Claim) PublisherClaims(exec boil.Executor, mods ...qm.QueryMod) claimQuery {
 	var queryMods []qm.QueryMod
 	if len(mods) != 0 {
@@ -317,14 +317,14 @@ func (o *Claim) PublisherClaims(exec boil.Executor, mods ...qm.QueryMod) claimQu
 	}
 
 	queryMods = append(queryMods,
-		qm.Where("`claims`.`publisher_id`=?", o.ClaimID),
+		qm.Where("`claim`.`publisher_id`=?", o.ClaimID),
 	)
 
 	query := Claims(exec, queryMods...)
-	queries.SetFrom(query.Query, "`claims`")
+	queries.SetFrom(query.Query, "`claim`")
 
 	if len(queries.GetSelect(query.Query)) == 0 {
-		queries.SetSelect(query.Query, []string{"`claims`.*"})
+		queries.SetSelect(query.Query, []string{"`claim`.*"})
 	}
 
 	return query
@@ -360,7 +360,7 @@ func (claimL) LoadTransactionByHash(e boil.Executor, singular bool, maybeClaim i
 	}
 
 	query := fmt.Sprintf(
-		"select * from `transactions` where `hash` in (%s)",
+		"select * from `transaction` where `hash` in (%s)",
 		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
 	)
 
@@ -430,7 +430,7 @@ func (claimL) LoadPublisher(e boil.Executor, singular bool, maybeClaim interface
 	}
 
 	query := fmt.Sprintf(
-		"select * from `claims` where `claim_id` in (%s)",
+		"select * from `claim` where `claim_id` in (%s)",
 		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
 	)
 
@@ -500,7 +500,7 @@ func (claimL) LoadClaimStream(e boil.Executor, singular bool, maybeClaim interfa
 	}
 
 	query := fmt.Sprintf(
-		"select * from `claim_streams` where `claim_id` in (%s)",
+		"select * from `claim_stream` where `claim_id` in (%s)",
 		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
 	)
 
@@ -570,7 +570,7 @@ func (claimL) LoadPublisherClaims(e boil.Executor, singular bool, maybeClaim int
 	}
 
 	query := fmt.Sprintf(
-		"select * from `claims` where `publisher_id` in (%s)",
+		"select * from `claim` where `publisher_id` in (%s)",
 		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
 	)
 	if boil.DebugMode {
@@ -579,13 +579,13 @@ func (claimL) LoadPublisherClaims(e boil.Executor, singular bool, maybeClaim int
 
 	results, err := e.Query(query, args...)
 	if err != nil {
-		return errors.Wrap(err, "failed to eager load claims")
+		return errors.Wrap(err, "failed to eager load claim")
 	}
 	defer results.Close()
 
 	var resultSlice []*Claim
 	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice claims")
+		return errors.Wrap(err, "failed to bind eager loaded slice claim")
 	}
 
 	if singular {
@@ -645,7 +645,7 @@ func (o *Claim) SetTransactionByHash(exec boil.Executor, insert bool, related *T
 	}
 
 	updateQuery := fmt.Sprintf(
-		"UPDATE `claims` SET %s WHERE %s",
+		"UPDATE `claim` SET %s WHERE %s",
 		strmangle.SetParamNames("`", "`", 0, []string{"transaction_by_hash_id"}),
 		strmangle.WhereClause("`", "`", 0, claimPrimaryKeyColumns),
 	)
@@ -782,7 +782,7 @@ func (o *Claim) SetPublisher(exec boil.Executor, insert bool, related *Claim) er
 	}
 
 	updateQuery := fmt.Sprintf(
-		"UPDATE `claims` SET %s WHERE %s",
+		"UPDATE `claim` SET %s WHERE %s",
 		strmangle.SetParamNames("`", "`", 0, []string{"publisher_id"}),
 		strmangle.WhereClause("`", "`", 0, claimPrimaryKeyColumns),
 	)
@@ -921,7 +921,7 @@ func (o *Claim) SetClaimStream(exec boil.Executor, insert bool, related *ClaimSt
 		}
 	} else {
 		updateQuery := fmt.Sprintf(
-			"UPDATE `claim_streams` SET %s WHERE %s",
+			"UPDATE `claim_stream` SET %s WHERE %s",
 			strmangle.SetParamNames("`", "`", 0, []string{"claim_id"}),
 			strmangle.WhereClause("`", "`", 0, claimStreamPrimaryKeyColumns),
 		)
@@ -1004,7 +1004,7 @@ func (o *Claim) AddPublisherClaims(exec boil.Executor, insert bool, related ...*
 			}
 		} else {
 			updateQuery := fmt.Sprintf(
-				"UPDATE `claims` SET %s WHERE %s",
+				"UPDATE `claim` SET %s WHERE %s",
 				strmangle.SetParamNames("`", "`", 0, []string{"publisher_id"}),
 				strmangle.WhereClause("`", "`", 0, claimPrimaryKeyColumns),
 			)
@@ -1088,7 +1088,7 @@ func (o *Claim) SetPublisherClaimsGP(insert bool, related ...*Claim) {
 // Replaces o.R.PublisherClaims with related.
 // Sets related.R.Publisher's PublisherClaims accordingly.
 func (o *Claim) SetPublisherClaims(exec boil.Executor, insert bool, related ...*Claim) error {
-	query := "update `claims` set `publisher_id` = null where `publisher_id` = ?"
+	query := "update `claim` set `publisher_id` = null where `publisher_id` = ?"
 	values := []interface{}{o.ClaimID}
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, query)
@@ -1186,7 +1186,7 @@ func ClaimsG(mods ...qm.QueryMod) claimQuery {
 
 // Claims retrieves all the records using an executor.
 func Claims(exec boil.Executor, mods ...qm.QueryMod) claimQuery {
-	mods = append(mods, qm.From("`claims`"))
+	mods = append(mods, qm.From("`claim`"))
 	return claimQuery{NewQuery(exec, mods...)}
 }
 
@@ -1215,7 +1215,7 @@ func FindClaim(exec boil.Executor, id uint64, selectCols ...string) (*Claim, err
 		sel = strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, selectCols), ",")
 	}
 	query := fmt.Sprintf(
-		"select %s from `claims` where `id`=?", sel,
+		"select %s from `claim` where `id`=?", sel,
 	)
 
 	q := queries.Raw(exec, query, id)
@@ -1225,7 +1225,7 @@ func FindClaim(exec boil.Executor, id uint64, selectCols ...string) (*Claim, err
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "model: unable to select from claims")
+		return nil, errors.Wrap(err, "model: unable to select from claim")
 	}
 
 	return claimObj, nil
@@ -1269,7 +1269,7 @@ func (o *Claim) InsertP(exec boil.Executor, whitelist ...string) {
 // - All columns with a default, but non-zero are included (i.e. health = 75)
 func (o *Claim) Insert(exec boil.Executor, whitelist ...string) error {
 	if o == nil {
-		return errors.New("model: no claims provided for insertion")
+		return errors.New("model: no claim provided for insertion")
 	}
 
 	var err error
@@ -1299,15 +1299,15 @@ func (o *Claim) Insert(exec boil.Executor, whitelist ...string) error {
 			return err
 		}
 		if len(wl) != 0 {
-			cache.query = fmt.Sprintf("INSERT INTO `claims` (`%s`) %%sVALUES (%s)%%s", strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.IndexPlaceholders, len(wl), 1, 1))
+			cache.query = fmt.Sprintf("INSERT INTO `claim` (`%s`) %%sVALUES (%s)%%s", strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.IndexPlaceholders, len(wl), 1, 1))
 		} else {
-			cache.query = "INSERT INTO `claims` () VALUES ()"
+			cache.query = "INSERT INTO `claim` () VALUES ()"
 		}
 
 		var queryOutput, queryReturning string
 
 		if len(cache.retMapping) != 0 {
-			cache.retQuery = fmt.Sprintf("SELECT `%s` FROM `claims` WHERE %s", strings.Join(returnColumns, "`,`"), strmangle.WhereClause("`", "`", 0, claimPrimaryKeyColumns))
+			cache.retQuery = fmt.Sprintf("SELECT `%s` FROM `claim` WHERE %s", strings.Join(returnColumns, "`,`"), strmangle.WhereClause("`", "`", 0, claimPrimaryKeyColumns))
 		}
 
 		if len(wl) != 0 {
@@ -1326,7 +1326,7 @@ func (o *Claim) Insert(exec boil.Executor, whitelist ...string) error {
 	result, err := exec.Exec(cache.query, vals...)
 
 	if err != nil {
-		return errors.Wrap(err, "model: unable to insert into claims")
+		return errors.Wrap(err, "model: unable to insert into claim")
 	}
 
 	var lastID int64
@@ -1357,7 +1357,7 @@ func (o *Claim) Insert(exec boil.Executor, whitelist ...string) error {
 
 	err = exec.QueryRow(cache.retQuery, identifierCols...).Scan(queries.PtrsFromMapping(value, cache.retMapping)...)
 	if err != nil {
-		return errors.Wrap(err, "model: unable to populate default values for claims")
+		return errors.Wrap(err, "model: unable to populate default values for claim")
 	}
 
 CacheNoHooks:
@@ -1416,10 +1416,10 @@ func (o *Claim) Update(exec boil.Executor, whitelist ...string) error {
 		)
 
 		if len(wl) == 0 {
-			return errors.New("model: unable to update claims, could not build whitelist")
+			return errors.New("model: unable to update claim, could not build whitelist")
 		}
 
-		cache.query = fmt.Sprintf("UPDATE `claims` SET %s WHERE %s",
+		cache.query = fmt.Sprintf("UPDATE `claim` SET %s WHERE %s",
 			strmangle.SetParamNames("`", "`", 0, wl),
 			strmangle.WhereClause("`", "`", 0, claimPrimaryKeyColumns),
 		)
@@ -1438,7 +1438,7 @@ func (o *Claim) Update(exec boil.Executor, whitelist ...string) error {
 
 	_, err = exec.Exec(cache.query, values...)
 	if err != nil {
-		return errors.Wrap(err, "model: unable to update claims row")
+		return errors.Wrap(err, "model: unable to update claim row")
 	}
 
 	if !cached {
@@ -1463,7 +1463,7 @@ func (q claimQuery) UpdateAll(cols M) error {
 
 	_, err := q.Query.Exec()
 	if err != nil {
-		return errors.Wrap(err, "model: unable to update all for claims")
+		return errors.Wrap(err, "model: unable to update all for claim")
 	}
 
 	return nil
@@ -1515,7 +1515,7 @@ func (o ClaimSlice) UpdateAll(exec boil.Executor, cols M) error {
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := fmt.Sprintf("UPDATE `claims` SET %s WHERE %s",
+	sql := fmt.Sprintf("UPDATE `claim` SET %s WHERE %s",
 		strmangle.SetParamNames("`", "`", 0, colNames),
 		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, claimPrimaryKeyColumns, len(o)))
 
@@ -1555,7 +1555,7 @@ func (o *Claim) UpsertP(exec boil.Executor, updateColumns []string, whitelist ..
 // Upsert attempts an insert using an executor, and does an update or ignore on conflict.
 func (o *Claim) Upsert(exec boil.Executor, updateColumns []string, whitelist ...string) error {
 	if o == nil {
-		return errors.New("model: no claims provided for upsert")
+		return errors.New("model: no claim provided for upsert")
 	}
 
 	nzDefaults := queries.NonZeroDefaultSet(claimColumnsWithDefault, o)
@@ -1597,12 +1597,12 @@ func (o *Claim) Upsert(exec boil.Executor, updateColumns []string, whitelist ...
 			updateColumns,
 		)
 		if len(update) == 0 {
-			return errors.New("model: unable to upsert claims, could not build update column list")
+			return errors.New("model: unable to upsert claim, could not build update column list")
 		}
 
-		cache.query = queries.BuildUpsertQueryMySQL(dialect, "claims", update, insert)
+		cache.query = queries.BuildUpsertQueryMySQL(dialect, "claim", update, insert)
 		cache.retQuery = fmt.Sprintf(
-			"SELECT %s FROM `claims` WHERE `id`=?",
+			"SELECT %s FROM `claim` WHERE `id`=?",
 			strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, ret), ","),
 		)
 
@@ -1633,7 +1633,7 @@ func (o *Claim) Upsert(exec boil.Executor, updateColumns []string, whitelist ...
 	result, err := exec.Exec(cache.query, vals...)
 
 	if err != nil {
-		return errors.Wrap(err, "model: unable to upsert for claims")
+		return errors.Wrap(err, "model: unable to upsert for claim")
 	}
 
 	var lastID int64
@@ -1664,7 +1664,7 @@ func (o *Claim) Upsert(exec boil.Executor, updateColumns []string, whitelist ...
 
 	err = exec.QueryRow(cache.retQuery, identifierCols...).Scan(returns...)
 	if err != nil {
-		return errors.Wrap(err, "model: unable to populate default values for claims")
+		return errors.Wrap(err, "model: unable to populate default values for claim")
 	}
 
 CacheNoHooks:
@@ -1713,7 +1713,7 @@ func (o *Claim) Delete(exec boil.Executor) error {
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), claimPrimaryKeyMapping)
-	sql := "DELETE FROM `claims` WHERE `id`=?"
+	sql := "DELETE FROM `claim` WHERE `id`=?"
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, sql)
@@ -1722,7 +1722,7 @@ func (o *Claim) Delete(exec boil.Executor) error {
 
 	_, err := exec.Exec(sql, args...)
 	if err != nil {
-		return errors.Wrap(err, "model: unable to delete from claims")
+		return errors.Wrap(err, "model: unable to delete from claim")
 	}
 
 	return nil
@@ -1745,7 +1745,7 @@ func (q claimQuery) DeleteAll() error {
 
 	_, err := q.Query.Exec()
 	if err != nil {
-		return errors.Wrap(err, "model: unable to delete all from claims")
+		return errors.Wrap(err, "model: unable to delete all from claim")
 	}
 
 	return nil
@@ -1789,7 +1789,7 @@ func (o ClaimSlice) DeleteAll(exec boil.Executor) error {
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := "DELETE FROM `claims` WHERE " +
+	sql := "DELETE FROM `claim` WHERE " +
 		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, claimPrimaryKeyColumns, len(o))
 
 	if boil.DebugMode {
@@ -1882,7 +1882,7 @@ func (o *ClaimSlice) ReloadAll(exec boil.Executor) error {
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := "SELECT `claims`.* FROM `claims` WHERE " +
+	sql := "SELECT `claim`.* FROM `claim` WHERE " +
 		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, claimPrimaryKeyColumns, len(*o))
 
 	q := queries.Raw(exec, sql, args...)
@@ -1900,7 +1900,7 @@ func (o *ClaimSlice) ReloadAll(exec boil.Executor) error {
 // ClaimExists checks if the Claim row exists.
 func ClaimExists(exec boil.Executor, id uint64) (bool, error) {
 	var exists bool
-	sql := "select exists(select 1 from `claims` where `id`=? limit 1)"
+	sql := "select exists(select 1 from `claim` where `id`=? limit 1)"
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, sql)
@@ -1911,7 +1911,7 @@ func ClaimExists(exec boil.Executor, id uint64) (bool, error) {
 
 	err := row.Scan(&exists)
 	if err != nil {
-		return false, errors.Wrap(err, "model: unable to check if claims exists")
+		return false, errors.Wrap(err, "model: unable to check if claim exists")
 	}
 
 	return exists, nil

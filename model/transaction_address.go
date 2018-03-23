@@ -112,7 +112,7 @@ func (q transactionAddressQuery) One() (*TransactionAddress, error) {
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "model: failed to execute a one query for transaction_addresses")
+		return nil, errors.Wrap(err, "model: failed to execute a one query for transaction_address")
 	}
 
 	return o, nil
@@ -159,7 +159,7 @@ func (q transactionAddressQuery) Count() (int64, error) {
 
 	err := q.Query.QueryRow().Scan(&count)
 	if err != nil {
-		return 0, errors.Wrap(err, "model: failed to count transaction_addresses rows")
+		return 0, errors.Wrap(err, "model: failed to count transaction_address rows")
 	}
 
 	return count, nil
@@ -184,7 +184,7 @@ func (q transactionAddressQuery) Exists() (bool, error) {
 
 	err := q.Query.QueryRow().Scan(&count)
 	if err != nil {
-		return false, errors.Wrap(err, "model: failed to check if transaction_addresses exists")
+		return false, errors.Wrap(err, "model: failed to check if transaction_address exists")
 	}
 
 	return count > 0, nil
@@ -204,7 +204,7 @@ func (o *TransactionAddress) Transaction(exec boil.Executor, mods ...qm.QueryMod
 	queryMods = append(queryMods, mods...)
 
 	query := Transactions(exec, queryMods...)
-	queries.SetFrom(query.Query, "`transactions`")
+	queries.SetFrom(query.Query, "`transaction`")
 
 	return query
 }
@@ -223,7 +223,7 @@ func (o *TransactionAddress) Address(exec boil.Executor, mods ...qm.QueryMod) ad
 	queryMods = append(queryMods, mods...)
 
 	query := Addresses(exec, queryMods...)
-	queries.SetFrom(query.Query, "`addresses`")
+	queries.SetFrom(query.Query, "`address`")
 
 	return query
 } // LoadTransaction allows an eager lookup of values, cached into the
@@ -256,7 +256,7 @@ func (transactionAddressL) LoadTransaction(e boil.Executor, singular bool, maybe
 	}
 
 	query := fmt.Sprintf(
-		"select * from `transactions` where `id` in (%s)",
+		"select * from `transaction` where `id` in (%s)",
 		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
 	)
 
@@ -326,7 +326,7 @@ func (transactionAddressL) LoadAddress(e boil.Executor, singular bool, maybeTran
 	}
 
 	query := fmt.Sprintf(
-		"select * from `addresses` where `id` in (%s)",
+		"select * from `address` where `id` in (%s)",
 		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
 	)
 
@@ -406,7 +406,7 @@ func (o *TransactionAddress) SetTransaction(exec boil.Executor, insert bool, rel
 	}
 
 	updateQuery := fmt.Sprintf(
-		"UPDATE `transaction_addresses` SET %s WHERE %s",
+		"UPDATE `transaction_address` SET %s WHERE %s",
 		strmangle.SetParamNames("`", "`", 0, []string{"transaction_id"}),
 		strmangle.WhereClause("`", "`", 0, transactionAddressPrimaryKeyColumns),
 	)
@@ -482,7 +482,7 @@ func (o *TransactionAddress) SetAddress(exec boil.Executor, insert bool, related
 	}
 
 	updateQuery := fmt.Sprintf(
-		"UPDATE `transaction_addresses` SET %s WHERE %s",
+		"UPDATE `transaction_address` SET %s WHERE %s",
 		strmangle.SetParamNames("`", "`", 0, []string{"address_id"}),
 		strmangle.WhereClause("`", "`", 0, transactionAddressPrimaryKeyColumns),
 	)
@@ -525,7 +525,7 @@ func TransactionAddressesG(mods ...qm.QueryMod) transactionAddressQuery {
 
 // TransactionAddresses retrieves all the records using an executor.
 func TransactionAddresses(exec boil.Executor, mods ...qm.QueryMod) transactionAddressQuery {
-	mods = append(mods, qm.From("`transaction_addresses`"))
+	mods = append(mods, qm.From("`transaction_address`"))
 	return transactionAddressQuery{NewQuery(exec, mods...)}
 }
 
@@ -554,7 +554,7 @@ func FindTransactionAddress(exec boil.Executor, transactionID uint64, addressID 
 		sel = strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, selectCols), ",")
 	}
 	query := fmt.Sprintf(
-		"select %s from `transaction_addresses` where `transaction_id`=? AND `address_id`=?", sel,
+		"select %s from `transaction_address` where `transaction_id`=? AND `address_id`=?", sel,
 	)
 
 	q := queries.Raw(exec, query, transactionID, addressID)
@@ -564,7 +564,7 @@ func FindTransactionAddress(exec boil.Executor, transactionID uint64, addressID 
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "model: unable to select from transaction_addresses")
+		return nil, errors.Wrap(err, "model: unable to select from transaction_address")
 	}
 
 	return transactionAddressObj, nil
@@ -608,7 +608,7 @@ func (o *TransactionAddress) InsertP(exec boil.Executor, whitelist ...string) {
 // - All columns with a default, but non-zero are included (i.e. health = 75)
 func (o *TransactionAddress) Insert(exec boil.Executor, whitelist ...string) error {
 	if o == nil {
-		return errors.New("model: no transaction_addresses provided for insertion")
+		return errors.New("model: no transaction_address provided for insertion")
 	}
 
 	var err error
@@ -638,15 +638,15 @@ func (o *TransactionAddress) Insert(exec boil.Executor, whitelist ...string) err
 			return err
 		}
 		if len(wl) != 0 {
-			cache.query = fmt.Sprintf("INSERT INTO `transaction_addresses` (`%s`) %%sVALUES (%s)%%s", strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.IndexPlaceholders, len(wl), 1, 1))
+			cache.query = fmt.Sprintf("INSERT INTO `transaction_address` (`%s`) %%sVALUES (%s)%%s", strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.IndexPlaceholders, len(wl), 1, 1))
 		} else {
-			cache.query = "INSERT INTO `transaction_addresses` () VALUES ()"
+			cache.query = "INSERT INTO `transaction_address` () VALUES ()"
 		}
 
 		var queryOutput, queryReturning string
 
 		if len(cache.retMapping) != 0 {
-			cache.retQuery = fmt.Sprintf("SELECT `%s` FROM `transaction_addresses` WHERE %s", strings.Join(returnColumns, "`,`"), strmangle.WhereClause("`", "`", 0, transactionAddressPrimaryKeyColumns))
+			cache.retQuery = fmt.Sprintf("SELECT `%s` FROM `transaction_address` WHERE %s", strings.Join(returnColumns, "`,`"), strmangle.WhereClause("`", "`", 0, transactionAddressPrimaryKeyColumns))
 		}
 
 		if len(wl) != 0 {
@@ -664,7 +664,7 @@ func (o *TransactionAddress) Insert(exec boil.Executor, whitelist ...string) err
 
 	_, err = exec.Exec(cache.query, vals...)
 	if err != nil {
-		return errors.Wrap(err, "model: unable to insert into transaction_addresses")
+		return errors.Wrap(err, "model: unable to insert into transaction_address")
 	}
 
 	var identifierCols []interface{}
@@ -685,7 +685,7 @@ func (o *TransactionAddress) Insert(exec boil.Executor, whitelist ...string) err
 
 	err = exec.QueryRow(cache.retQuery, identifierCols...).Scan(queries.PtrsFromMapping(value, cache.retMapping)...)
 	if err != nil {
-		return errors.Wrap(err, "model: unable to populate default values for transaction_addresses")
+		return errors.Wrap(err, "model: unable to populate default values for transaction_address")
 	}
 
 CacheNoHooks:
@@ -744,10 +744,10 @@ func (o *TransactionAddress) Update(exec boil.Executor, whitelist ...string) err
 		)
 
 		if len(wl) == 0 {
-			return errors.New("model: unable to update transaction_addresses, could not build whitelist")
+			return errors.New("model: unable to update transaction_address, could not build whitelist")
 		}
 
-		cache.query = fmt.Sprintf("UPDATE `transaction_addresses` SET %s WHERE %s",
+		cache.query = fmt.Sprintf("UPDATE `transaction_address` SET %s WHERE %s",
 			strmangle.SetParamNames("`", "`", 0, wl),
 			strmangle.WhereClause("`", "`", 0, transactionAddressPrimaryKeyColumns),
 		)
@@ -766,7 +766,7 @@ func (o *TransactionAddress) Update(exec boil.Executor, whitelist ...string) err
 
 	_, err = exec.Exec(cache.query, values...)
 	if err != nil {
-		return errors.Wrap(err, "model: unable to update transaction_addresses row")
+		return errors.Wrap(err, "model: unable to update transaction_address row")
 	}
 
 	if !cached {
@@ -791,7 +791,7 @@ func (q transactionAddressQuery) UpdateAll(cols M) error {
 
 	_, err := q.Query.Exec()
 	if err != nil {
-		return errors.Wrap(err, "model: unable to update all for transaction_addresses")
+		return errors.Wrap(err, "model: unable to update all for transaction_address")
 	}
 
 	return nil
@@ -843,7 +843,7 @@ func (o TransactionAddressSlice) UpdateAll(exec boil.Executor, cols M) error {
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := fmt.Sprintf("UPDATE `transaction_addresses` SET %s WHERE %s",
+	sql := fmt.Sprintf("UPDATE `transaction_address` SET %s WHERE %s",
 		strmangle.SetParamNames("`", "`", 0, colNames),
 		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, transactionAddressPrimaryKeyColumns, len(o)))
 
@@ -883,7 +883,7 @@ func (o *TransactionAddress) UpsertP(exec boil.Executor, updateColumns []string,
 // Upsert attempts an insert using an executor, and does an update or ignore on conflict.
 func (o *TransactionAddress) Upsert(exec boil.Executor, updateColumns []string, whitelist ...string) error {
 	if o == nil {
-		return errors.New("model: no transaction_addresses provided for upsert")
+		return errors.New("model: no transaction_address provided for upsert")
 	}
 
 	nzDefaults := queries.NonZeroDefaultSet(transactionAddressColumnsWithDefault, o)
@@ -925,12 +925,12 @@ func (o *TransactionAddress) Upsert(exec boil.Executor, updateColumns []string, 
 			updateColumns,
 		)
 		if len(update) == 0 {
-			return errors.New("model: unable to upsert transaction_addresses, could not build update column list")
+			return errors.New("model: unable to upsert transaction_address, could not build update column list")
 		}
 
-		cache.query = queries.BuildUpsertQueryMySQL(dialect, "transaction_addresses", update, insert)
+		cache.query = queries.BuildUpsertQueryMySQL(dialect, "transaction_address", update, insert)
 		cache.retQuery = fmt.Sprintf(
-			"SELECT %s FROM `transaction_addresses` WHERE `transaction_id`=? AND `address_id`=?",
+			"SELECT %s FROM `transaction_address` WHERE `transaction_id`=? AND `address_id`=?",
 			strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, ret), ","),
 		)
 
@@ -960,7 +960,7 @@ func (o *TransactionAddress) Upsert(exec boil.Executor, updateColumns []string, 
 
 	_, err = exec.Exec(cache.query, vals...)
 	if err != nil {
-		return errors.Wrap(err, "model: unable to upsert for transaction_addresses")
+		return errors.Wrap(err, "model: unable to upsert for transaction_address")
 	}
 
 	var identifierCols []interface{}
@@ -981,7 +981,7 @@ func (o *TransactionAddress) Upsert(exec boil.Executor, updateColumns []string, 
 
 	err = exec.QueryRow(cache.retQuery, identifierCols...).Scan(returns...)
 	if err != nil {
-		return errors.Wrap(err, "model: unable to populate default values for transaction_addresses")
+		return errors.Wrap(err, "model: unable to populate default values for transaction_address")
 	}
 
 CacheNoHooks:
@@ -1030,7 +1030,7 @@ func (o *TransactionAddress) Delete(exec boil.Executor) error {
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), transactionAddressPrimaryKeyMapping)
-	sql := "DELETE FROM `transaction_addresses` WHERE `transaction_id`=? AND `address_id`=?"
+	sql := "DELETE FROM `transaction_address` WHERE `transaction_id`=? AND `address_id`=?"
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, sql)
@@ -1039,7 +1039,7 @@ func (o *TransactionAddress) Delete(exec boil.Executor) error {
 
 	_, err := exec.Exec(sql, args...)
 	if err != nil {
-		return errors.Wrap(err, "model: unable to delete from transaction_addresses")
+		return errors.Wrap(err, "model: unable to delete from transaction_address")
 	}
 
 	return nil
@@ -1062,7 +1062,7 @@ func (q transactionAddressQuery) DeleteAll() error {
 
 	_, err := q.Query.Exec()
 	if err != nil {
-		return errors.Wrap(err, "model: unable to delete all from transaction_addresses")
+		return errors.Wrap(err, "model: unable to delete all from transaction_address")
 	}
 
 	return nil
@@ -1106,7 +1106,7 @@ func (o TransactionAddressSlice) DeleteAll(exec boil.Executor) error {
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := "DELETE FROM `transaction_addresses` WHERE " +
+	sql := "DELETE FROM `transaction_address` WHERE " +
 		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, transactionAddressPrimaryKeyColumns, len(o))
 
 	if boil.DebugMode {
@@ -1199,7 +1199,7 @@ func (o *TransactionAddressSlice) ReloadAll(exec boil.Executor) error {
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := "SELECT `transaction_addresses`.* FROM `transaction_addresses` WHERE " +
+	sql := "SELECT `transaction_address`.* FROM `transaction_address` WHERE " +
 		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, transactionAddressPrimaryKeyColumns, len(*o))
 
 	q := queries.Raw(exec, sql, args...)
@@ -1217,7 +1217,7 @@ func (o *TransactionAddressSlice) ReloadAll(exec boil.Executor) error {
 // TransactionAddressExists checks if the TransactionAddress row exists.
 func TransactionAddressExists(exec boil.Executor, transactionID uint64, addressID uint64) (bool, error) {
 	var exists bool
-	sql := "select exists(select 1 from `transaction_addresses` where `transaction_id`=? AND `address_id`=? limit 1)"
+	sql := "select exists(select 1 from `transaction_address` where `transaction_id`=? AND `address_id`=? limit 1)"
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, sql)
@@ -1228,7 +1228,7 @@ func TransactionAddressExists(exec boil.Executor, transactionID uint64, addressI
 
 	err := row.Scan(&exists)
 	if err != nil {
-		return false, errors.Wrap(err, "model: unable to check if transaction_addresses exists")
+		return false, errors.Wrap(err, "model: unable to check if transaction_address exists")
 	}
 
 	return exists, nil

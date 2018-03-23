@@ -4,25 +4,25 @@
 package model
 
 var TableNames = struct {
-	Addresses            string
-	Blocks               string
-	ClaimStreams         string
-	Claims               string
-	InputAddresses       string
-	Inputs               string
-	OutputAddresses      string
-	Outputs              string
-	TransactionAddresses string
-	Transactions         string
+	Address            string
+	Block              string
+	Claim              string
+	ClaimStream        string
+	Input              string
+	InputAddress       string
+	Output             string
+	OutputAddress      string
+	Transaction        string
+	TransactionAddress string
 }{
-	Addresses:            "addresses",
-	Blocks:               "blocks",
-	ClaimStreams:         "claim_streams",
-	Claims:               "claims",
-	InputAddresses:       "input_addresses",
-	Inputs:               "inputs",
-	OutputAddresses:      "output_addresses",
-	Outputs:              "outputs",
-	TransactionAddresses: "transaction_addresses",
-	Transactions:         "transactions",
+	Address:            "address",
+	Block:              "block",
+	Claim:              "claim",
+	ClaimStream:        "claim_stream",
+	Input:              "input",
+	InputAddress:       "input_address",
+	Output:             "output",
+	OutputAddress:      "output_address",
+	Transaction:        "transaction",
+	TransactionAddress: "transaction_address",
 }

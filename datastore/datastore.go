@@ -113,25 +113,9 @@ func PutAddress(address *model.Address) error {
 
 		var err error
 		if model.AddressExistsGP(address.ID) {
-			err = address.UpdateG(
-				// Needed to avoid saving Balance Column which is calculated
-				model.AddressColumns.Address,
-				model.AddressColumns.FirstSeen,
-				model.AddressColumns.TagURL,
-				model.AddressColumns.Tag,
-				model.AddressColumns.TotalReceived,
-				model.AddressColumns.TotalSent,
-			)
+			err = address.UpdateG()
 		} else {
-			err = address.InsertG(
-				// Needed to avoid saving Balance Column which is calculated
-				model.AddressColumns.Address,
-				model.AddressColumns.FirstSeen,
-				model.AddressColumns.TagURL,
-				model.AddressColumns.Tag,
-				model.AddressColumns.TotalReceived,
-				model.AddressColumns.TotalSent,
-			)
+			err = address.InsertG()
 
 		}
 		if err != nil {

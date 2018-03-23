@@ -40,8 +40,6 @@ func CreateUpdateAddresses(outputs []lbrycrd.Vout, blockSeconds uint64) (map[str
 				newAddress.Address = address
 				newAddress.FirstSeen.Time = time.Unix(int64(blockSeconds), 0)
 				newAddress.FirstSeen.Valid = true
-				newAddress.TotalSent = "0.0"
-				newAddress.TotalReceived = "0.0"
 				err := datastore.PutAddress(&newAddress)
 				if err != nil {
 					return nil, err

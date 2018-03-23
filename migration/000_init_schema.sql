@@ -1,7 +1,7 @@
 -- +migrate Up
 
 -- +migrate StatementBegin
-CREATE TABLE IF NOT EXISTS `blocks`
+CREATE TABLE IF NOT EXISTS `block`
 (
     `id` SERIAL,
 
@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS `blocks`
 -- +migrate StatementEnd
 
 -- +migrate StatementBegin
-CREATE TABLE IF NOT EXISTS `transactions`
+CREATE TABLE IF NOT EXISTS `transaction`
 (
     `id` SERIAL,
     `block_by_hash_id` VARCHAR(70) CHARACTER SET latin1 COLLATE latin1_general_ci,
@@ -59,7 +59,7 @@ CREATE TABLE IF NOT EXISTS `transactions`
     `modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     `created_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY `PK_Transaction` (`id`),
-    FOREIGN KEY `FK_TransactionBlockHash` (`block_by_hash_id`) REFERENCES `blocks` (`hash`) ON DELETE SET NULL ON UPDATE NO ACTION ,
+    FOREIGN KEY `FK_TransactionBlockHash` (`block_by_hash_id`) REFERENCES `block` (`hash`) ON DELETE CASCADE ON UPDATE NO ACTION ,
     UNIQUE KEY `Idx_TransactionHash` (`hash`),
     INDEX `Idx_TransactionTime` (`transaction_time`),
     INDEX `Idx_TransactionCreatedTime` (`created_time`),
@@ -69,14 +69,11 @@ CREATE TABLE IF NOT EXISTS `transactions`
 -- +migrate StatementEnd
 
 -- +migrate StatementBegin
-CREATE TABLE IF NOT EXISTS `addresses`
+CREATE TABLE IF NOT EXISTS `address`
 (
     `id` SERIAL,
     `address` VARCHAR(40) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
     `first_seen` DATETIME,
-    `total_received` DECIMAL(18,8) DEFAULT 0 NOT NULL,
-    `total_sent` DECIMAL(18,8) DEFAULT 0 NOT NULL,
-    `balance` DECIMAL(18,8) AS (`total_received` - `total_sent`),
     `tag` VARCHAR(30),
     `tag_url` VARCHAR(200),
     `created` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -84,16 +81,13 @@ CREATE TABLE IF NOT EXISTS `addresses`
     PRIMARY KEY `PK_Address` (`id`),
     UNIQUE KEY `Idx_AddressAddress` (`address`),
     UNIQUE KEY `Idx_AddressTag` (`tag`),
-    INDEX `Idx_AddressTotalReceived` (`total_received`),
-    INDEX `Idx_AddressTotalSent` (`total_sent`),
-    INDEX `Idx_AddressBalance` (`balance`),
     INDEX `Idx_AddressCreated` (`created`),
     INDEX `Idx_AddressModified` (`modified`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4;
 -- +migrate StatementEnd
 
 -- +migrate StatementBegin
-CREATE TABLE IF NOT EXISTS `inputs`
+CREATE TABLE IF NOT EXISTS `input`
 (
     `id` SERIAL,
     `transaction_id` BIGINT UNSIGNED NOT NULL,
@@ -112,8 +106,8 @@ CREATE TABLE IF NOT EXISTS `inputs`
     `created` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY `PK_Input` (`id`),
-    FOREIGN KEY `FK_InputAddress` (`input_address_id`) REFERENCES `addresses` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-    FOREIGN KEY `FK_InputTransaction` (`transaction_id`) REFERENCES `transactions` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+    FOREIGN KEY `FK_InputAddress` (`input_address_id`) REFERENCES `address` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+    FOREIGN KEY `FK_InputTransaction` (`transaction_id`) REFERENCES `transaction` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION,
     INDEX `Idx_InputValue` (`value`),
     INDEX `Idx_PrevoutHash` (`prevout_hash`),
     INDEX `Idx_InputCreated` (`created`),
@@ -122,18 +116,18 @@ CREATE TABLE IF NOT EXISTS `inputs`
 -- +migrate StatementEnd
 
 -- +migrate StatementBegin
-CREATE TABLE IF NOT EXISTS `input_addresses`
+CREATE TABLE IF NOT EXISTS `input_address`
 (
     `input_id` BIGINT UNSIGNED NOT NULL,
     `address_id` BIGINT UNSIGNED NOT NULL,
     PRIMARY KEY `PK_InputAddress` (`input_id`, `address_id`),
-    FOREIGN KEY `Idx_InputsAddressesInput` (`input_id`) REFERENCES `inputs` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-    FOREIGN KEY `Idx_InputsAddressesAddress` (`address_id`) REFERENCES `addresses` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION
+    FOREIGN KEY `Idx_InputsAddressesInput` (`input_id`) REFERENCES `input` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+    FOREIGN KEY `Idx_InputsAddressesAddress` (`address_id`) REFERENCES `address` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4;
 -- +migrate StatementEnd
 
 -- +migrate StatementBegin
-CREATE TABLE IF NOT EXISTS `outputs`
+CREATE TABLE IF NOT EXISTS `output`
 (
     `id` SERIAL,
     `transaction_id` BIGINT UNSIGNED NOT NULL,
@@ -152,8 +146,8 @@ CREATE TABLE IF NOT EXISTS `outputs`
     `modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY `PK_Output` (`id`),
     UNIQUE KEY `UK_Output` (`transaction_hash`,`vout`),
-    FOREIGN KEY `FK_OutputTransaction` (`transaction_id`) REFERENCES `transactions` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-    FOREIGN KEY `FK_OutputSpentByInput` (`spent_by_input_id`) REFERENCES `inputs` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+    FOREIGN KEY `FK_OutputTransaction` (`transaction_id`) REFERENCES `transaction` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+    FOREIGN KEY `FK_OutputSpentByInput` (`spent_by_input_id`) REFERENCES `input` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION,
     CONSTRAINT `Cnt_AddressesValidJson` CHECK(`address_list` IS NULL OR JSON_VALID(`address_list`)),
     INDEX `Idx_OutputValue` (`value`),
     INDEX `Idx_OuptutCreated` (`created`),
@@ -162,18 +156,18 @@ CREATE TABLE IF NOT EXISTS `outputs`
 -- +migrate StatementEnd
 
 -- +migrate StatementBegin
-CREATE TABLE IF NOT EXISTS `output_addresses`
+CREATE TABLE IF NOT EXISTS `output_address`
 (
     `output_id` BIGINT UNSIGNED NOT NULL,
     `address_id` BIGINT UNSIGNED NOT NULL,
     PRIMARY KEY `PK_OutputAddress` (`output_id`, `address_id`),
-    FOREIGN KEY `Idx_OutputsAddressesOutput` (`output_id`) REFERENCES `outputs` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-    FOREIGN KEY `Idx_OutputsAddressesAddress` (`address_id`) REFERENCES `addresses` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION
+    FOREIGN KEY `Idx_OutputsAddressesOutput` (`output_id`) REFERENCES `output` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+    FOREIGN KEY `Idx_OutputsAddressesAddress` (`address_id`) REFERENCES `address` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4;
 -- +migrate StatementEnd
 
 -- +migrate StatementBegin
-CREATE TABLE IF NOT EXISTS `transaction_addresses`
+CREATE TABLE IF NOT EXISTS `transaction_address`
 (
     `transaction_id` BIGINT UNSIGNED NOT NULL,
     `address_id` BIGINT UNSIGNED NOT NULL,
@@ -181,8 +175,8 @@ CREATE TABLE IF NOT EXISTS `transaction_addresses`
     `credit_amount` DECIMAL(18,8) DEFAULT 0 NOT NULL COMMENT 'Sum of the outputs to this address for the tx',
     `latest_transaction_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY `PK_TransactionAddress` (`transaction_id`, `address_id`),
-    FOREIGN KEY `Idx_TransactionsAddressesTransaction` (`transaction_id`) REFERENCES `transactions` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-    FOREIGN KEY `Idx_TransactionsAddressesAddress` (`address_id`) REFERENCES `addresses` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+    FOREIGN KEY `Idx_TransactionsAddressesTransaction` (`transaction_id`) REFERENCES `transaction` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+    FOREIGN KEY `Idx_TransactionsAddressesAddress` (`address_id`) REFERENCES `address` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION,
     INDEX `Idx_TransactionsAddressesLatestTransactionTime` (`latest_transaction_time`),
     INDEX `Idx_TransactionsAddressesDebit` (`debit_amount`),
     INDEX `Idx_TransactionsAddressesCredit` (`credit_amount`)
@@ -190,7 +184,7 @@ CREATE TABLE IF NOT EXISTS `transaction_addresses`
 -- +migrate StatementEnd
 
 -- +migrate StatementBegin
-CREATE TABLE IF NOT EXISTS `claims`
+CREATE TABLE IF NOT EXISTS `claim`
 (
     `id` SERIAL,
     `transaction_by_hash_id` VARCHAR(70) CHARACTER SET latin1 COLLATE latin1_general_ci,
@@ -219,8 +213,8 @@ CREATE TABLE IF NOT EXISTS `claims`
     `created` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY `PK_Claim` (`id`),
-    FOREIGN KEY `FK_ClaimTransaction` (`transaction_by_hash_id`) REFERENCES `transactions` (`hash`) ON DELETE CASCADE ON UPDATE NO ACTION,
-    FOREIGN KEY `FK_ClaimPublisher` (`publisher_id`) REFERENCES `claims` (`claim_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+    FOREIGN KEY `FK_ClaimTransaction` (`transaction_by_hash_id`) REFERENCES `transaction` (`hash`) ON DELETE CASCADE ON UPDATE NO ACTION,
+    FOREIGN KEY `FK_ClaimPublisher` (`publisher_id`) REFERENCES `claim` (`claim_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
     UNIQUE KEY `Idx_ClaimUnique` (`transaction_by_hash_id`, `vout`, `claim_id`),
     CONSTRAINT `Cnt_ClaimCertificate` CHECK(`certificate` IS NULL OR JSON_VALID(`certificate`)), -- certificate type
     INDEX `Idx_Claim` (`claim_id`),
@@ -236,25 +230,11 @@ CREATE TABLE IF NOT EXISTS `claims`
 -- +migrate StatementEnd
 
 -- +migrate StatementBegin
-CREATE TABLE IF NOT EXISTS `claim_streams`
+CREATE TABLE IF NOT EXISTS `claim_stream`
 (
     `claim_id` BIGINT UNSIGNED NOT NULL,
     `stream` MEDIUMTEXT NOT NULL,
     PRIMARY KEY `PK_ClaimStream` (`claim_id`),
-    FOREIGN KEY `PK_ClaimStreamClaim` (`claim_id`) REFERENCES `claims` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION
+    FOREIGN KEY `PK_ClaimStreamClaim` (`claim_id`) REFERENCES `claim` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4;
--- +migrate StatementEnd
-
--- +migrate StatementBegin
-CREATE PROCEDURE `address_summary`(IN address VARCHAR(40) CHARACTER SET latin1  )
-    BEGIN
-        SELECT  addresses.address,
-            SUM(ta.credit_amount) AS total_received,
-            SUM(ta.debit_amount) AS total_sent,
-            (total_received - total_sent) AS balance
-        FROM addresses LEFT JOIN transaction_addresses as ta ON ta.address_id = addresses.id
-        WHERE addresses.address=address COLLATE latin1_general_ci
-        GROUP BY addresses.address
-        ORDER BY balance DESC;
-    END
 -- +migrate StatementEnd

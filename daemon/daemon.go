@@ -64,7 +64,7 @@ func testFunction(params ...interface{}) {
 		}
 		log.Info("Id ", address.ID, " Rec ", summary.TotalReceived, " Spent ", summary.TotalSent, " Bal ", summary.Balance)
 
-	}
+	} //
 	/*
 		names, err := lbrycrd.DefaultClient().GetClaimsInTrie()
 		goodones := 0
@@ -286,19 +286,12 @@ func processTx(jsonTx *lbrycrd.TxRawResult, blockTime uint64) error {
 
 		address := datastore.GetAddress(addr)
 
-		address.TotalReceived = util.Plus(address.TotalReceived, DC.Credits())
-		address.TotalSent = util.Plus(address.TotalSent, DC.Debits())
-
-		datastore.PutAddress(address)
-
 		txAddr := datastore.GetTxAddress(transaction.ID, address.ID)
 
 		txAddr.CreditAmount = util.Plus("0.0", DC.Credits())
 		txAddr.DebitAmount = util.Plus("0.0", DC.Debits())
 
 		datastore.PutTxAddress(txAddr)
-
-		//log.Debug("Address ", addr, " Debits ", DC.Debits(), " Credits ", DC.Credits())
 
 	}
 

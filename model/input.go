@@ -145,7 +145,7 @@ func (q inputQuery) One() (*Input, error) {
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "model: failed to execute a one query for inputs")
+		return nil, errors.Wrap(err, "model: failed to execute a one query for input")
 	}
 
 	return o, nil
@@ -192,7 +192,7 @@ func (q inputQuery) Count() (int64, error) {
 
 	err := q.Query.QueryRow().Scan(&count)
 	if err != nil {
-		return 0, errors.Wrap(err, "model: failed to count inputs rows")
+		return 0, errors.Wrap(err, "model: failed to count input rows")
 	}
 
 	return count, nil
@@ -217,7 +217,7 @@ func (q inputQuery) Exists() (bool, error) {
 
 	err := q.Query.QueryRow().Scan(&count)
 	if err != nil {
-		return false, errors.Wrap(err, "model: failed to check if inputs exists")
+		return false, errors.Wrap(err, "model: failed to check if input exists")
 	}
 
 	return count > 0, nil
@@ -237,7 +237,7 @@ func (o *Input) InputAddress(exec boil.Executor, mods ...qm.QueryMod) addressQue
 	queryMods = append(queryMods, mods...)
 
 	query := Addresses(exec, queryMods...)
-	queries.SetFrom(query.Query, "`addresses`")
+	queries.SetFrom(query.Query, "`address`")
 
 	return query
 }
@@ -256,17 +256,17 @@ func (o *Input) Transaction(exec boil.Executor, mods ...qm.QueryMod) transaction
 	queryMods = append(queryMods, mods...)
 
 	query := Transactions(exec, queryMods...)
-	queries.SetFrom(query.Query, "`transactions`")
+	queries.SetFrom(query.Query, "`transaction`")
 
 	return query
 }
 
-// AddressesG retrieves all the address's addresses.
+// AddressesG retrieves all the address's address.
 func (o *Input) AddressesG(mods ...qm.QueryMod) addressQuery {
 	return o.Addresses(boil.GetDB(), mods...)
 }
 
-// Addresses retrieves all the address's addresses with an executor.
+// Addresses retrieves all the address's address with an executor.
 func (o *Input) Addresses(exec boil.Executor, mods ...qm.QueryMod) addressQuery {
 	var queryMods []qm.QueryMod
 	if len(mods) != 0 {
@@ -274,26 +274,26 @@ func (o *Input) Addresses(exec boil.Executor, mods ...qm.QueryMod) addressQuery 
 	}
 
 	queryMods = append(queryMods,
-		qm.InnerJoin("`input_addresses` on `addresses`.`id` = `input_addresses`.`address_id`"),
-		qm.Where("`input_addresses`.`input_id`=?", o.ID),
+		qm.InnerJoin("`input_address` on `address`.`id` = `input_address`.`address_id`"),
+		qm.Where("`input_address`.`input_id`=?", o.ID),
 	)
 
 	query := Addresses(exec, queryMods...)
-	queries.SetFrom(query.Query, "`addresses`")
+	queries.SetFrom(query.Query, "`address`")
 
 	if len(queries.GetSelect(query.Query)) == 0 {
-		queries.SetSelect(query.Query, []string{"`addresses`.*"})
+		queries.SetSelect(query.Query, []string{"`address`.*"})
 	}
 
 	return query
 }
 
-// SpentByInputOutputsG retrieves all the output's outputs via spent_by_input_id column.
+// SpentByInputOutputsG retrieves all the output's output via spent_by_input_id column.
 func (o *Input) SpentByInputOutputsG(mods ...qm.QueryMod) outputQuery {
 	return o.SpentByInputOutputs(boil.GetDB(), mods...)
 }
 
-// SpentByInputOutputs retrieves all the output's outputs with an executor via spent_by_input_id column.
+// SpentByInputOutputs retrieves all the output's output with an executor via spent_by_input_id column.
 func (o *Input) SpentByInputOutputs(exec boil.Executor, mods ...qm.QueryMod) outputQuery {
 	var queryMods []qm.QueryMod
 	if len(mods) != 0 {
@@ -301,14 +301,14 @@ func (o *Input) SpentByInputOutputs(exec boil.Executor, mods ...qm.QueryMod) out
 	}
 
 	queryMods = append(queryMods,
-		qm.Where("`outputs`.`spent_by_input_id`=?", o.ID),
+		qm.Where("`output`.`spent_by_input_id`=?", o.ID),
 	)
 
 	query := Outputs(exec, queryMods...)
-	queries.SetFrom(query.Query, "`outputs`")
+	queries.SetFrom(query.Query, "`output`")
 
 	if len(queries.GetSelect(query.Query)) == 0 {
-		queries.SetSelect(query.Query, []string{"`outputs`.*"})
+		queries.SetSelect(query.Query, []string{"`output`.*"})
 	}
 
 	return query
@@ -344,7 +344,7 @@ func (inputL) LoadInputAddress(e boil.Executor, singular bool, maybeInput interf
 	}
 
 	query := fmt.Sprintf(
-		"select * from `addresses` where `id` in (%s)",
+		"select * from `address` where `id` in (%s)",
 		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
 	)
 
@@ -414,7 +414,7 @@ func (inputL) LoadTransaction(e boil.Executor, singular bool, maybeInput interfa
 	}
 
 	query := fmt.Sprintf(
-		"select * from `transactions` where `id` in (%s)",
+		"select * from `transaction` where `id` in (%s)",
 		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
 	)
 
@@ -484,7 +484,7 @@ func (inputL) LoadAddresses(e boil.Executor, singular bool, maybeInput interface
 	}
 
 	query := fmt.Sprintf(
-		"select `a`.*, `b`.`input_id` from `addresses` as `a` inner join `input_addresses` as `b` on `a`.`id` = `b`.`address_id` where `b`.`input_id` in (%s)",
+		"select `a`.*, `b`.`input_id` from `address` as `a` inner join `input_address` as `b` on `a`.`id` = `b`.`address_id` where `b`.`input_id` in (%s)",
 		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
 	)
 	if boil.DebugMode {
@@ -493,7 +493,7 @@ func (inputL) LoadAddresses(e boil.Executor, singular bool, maybeInput interface
 
 	results, err := e.Query(query, args...)
 	if err != nil {
-		return errors.Wrap(err, "failed to eager load addresses")
+		return errors.Wrap(err, "failed to eager load address")
 	}
 	defer results.Close()
 
@@ -504,9 +504,9 @@ func (inputL) LoadAddresses(e boil.Executor, singular bool, maybeInput interface
 		one := new(Address)
 		var localJoinCol uint64
 
-		err = results.Scan(&one.ID, &one.Address, &one.FirstSeen, &one.TotalReceived, &one.TotalSent, &one.Balance, &one.Tag, &one.TagURL, &one.Created, &one.Modified, &localJoinCol)
+		err = results.Scan(&one.ID, &one.Address, &one.FirstSeen, &one.Tag, &one.TagURL, &one.Created, &one.Modified, &localJoinCol)
 		if err = results.Err(); err != nil {
-			return errors.Wrap(err, "failed to plebian-bind eager loaded slice addresses")
+			return errors.Wrap(err, "failed to plebian-bind eager loaded slice address")
 		}
 
 		resultSlice = append(resultSlice, one)
@@ -514,7 +514,7 @@ func (inputL) LoadAddresses(e boil.Executor, singular bool, maybeInput interface
 	}
 
 	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "failed to plebian-bind eager loaded slice addresses")
+		return errors.Wrap(err, "failed to plebian-bind eager loaded slice address")
 	}
 
 	if singular {
@@ -565,7 +565,7 @@ func (inputL) LoadSpentByInputOutputs(e boil.Executor, singular bool, maybeInput
 	}
 
 	query := fmt.Sprintf(
-		"select * from `outputs` where `spent_by_input_id` in (%s)",
+		"select * from `output` where `spent_by_input_id` in (%s)",
 		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
 	)
 	if boil.DebugMode {
@@ -574,13 +574,13 @@ func (inputL) LoadSpentByInputOutputs(e boil.Executor, singular bool, maybeInput
 
 	results, err := e.Query(query, args...)
 	if err != nil {
-		return errors.Wrap(err, "failed to eager load outputs")
+		return errors.Wrap(err, "failed to eager load output")
 	}
 	defer results.Close()
 
 	var resultSlice []*Output
 	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice outputs")
+		return errors.Wrap(err, "failed to bind eager loaded slice output")
 	}
 
 	if singular {
@@ -640,7 +640,7 @@ func (o *Input) SetInputAddress(exec boil.Executor, insert bool, related *Addres
 	}
 
 	updateQuery := fmt.Sprintf(
-		"UPDATE `inputs` SET %s WHERE %s",
+		"UPDATE `input` SET %s WHERE %s",
 		strmangle.SetParamNames("`", "`", 0, []string{"input_address_id"}),
 		strmangle.WhereClause("`", "`", 0, inputPrimaryKeyColumns),
 	)
@@ -777,7 +777,7 @@ func (o *Input) SetTransaction(exec boil.Executor, insert bool, related *Transac
 	}
 
 	updateQuery := fmt.Sprintf(
-		"UPDATE `inputs` SET %s WHERE %s",
+		"UPDATE `input` SET %s WHERE %s",
 		strmangle.SetParamNames("`", "`", 0, []string{"transaction_id"}),
 		strmangle.WhereClause("`", "`", 0, inputPrimaryKeyColumns),
 	)
@@ -859,7 +859,7 @@ func (o *Input) AddAddresses(exec boil.Executor, insert bool, related ...*Addres
 	}
 
 	for _, rel := range related {
-		query := "insert into `input_addresses` (`input_id`, `address_id`) values (?, ?)"
+		query := "insert into `input_address` (`input_id`, `address_id`) values (?, ?)"
 		values := []interface{}{o.ID, rel.ID}
 
 		if boil.DebugMode {
@@ -936,7 +936,7 @@ func (o *Input) SetAddressesGP(insert bool, related ...*Address) {
 // Replaces o.R.Addresses with related.
 // Sets related.R.Inputs's Addresses accordingly.
 func (o *Input) SetAddresses(exec boil.Executor, insert bool, related ...*Address) error {
-	query := "delete from `input_addresses` where `input_id` = ?"
+	query := "delete from `input_address` where `input_id` = ?"
 	values := []interface{}{o.ID}
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, query)
@@ -989,7 +989,7 @@ func (o *Input) RemoveAddressesGP(related ...*Address) {
 func (o *Input) RemoveAddresses(exec boil.Executor, related ...*Address) error {
 	var err error
 	query := fmt.Sprintf(
-		"delete from `input_addresses` where `input_id` = ? and `address_id` in (%s)",
+		"delete from `input_address` where `input_id` = ? and `address_id` in (%s)",
 		strmangle.Placeholders(dialect.IndexPlaceholders, len(related), 2, 1),
 	)
 	values := []interface{}{o.ID}
@@ -1095,7 +1095,7 @@ func (o *Input) AddSpentByInputOutputs(exec boil.Executor, insert bool, related 
 			}
 		} else {
 			updateQuery := fmt.Sprintf(
-				"UPDATE `outputs` SET %s WHERE %s",
+				"UPDATE `output` SET %s WHERE %s",
 				strmangle.SetParamNames("`", "`", 0, []string{"spent_by_input_id"}),
 				strmangle.WhereClause("`", "`", 0, outputPrimaryKeyColumns),
 			)
@@ -1179,7 +1179,7 @@ func (o *Input) SetSpentByInputOutputsGP(insert bool, related ...*Output) {
 // Replaces o.R.SpentByInputOutputs with related.
 // Sets related.R.SpentByInput's SpentByInputOutputs accordingly.
 func (o *Input) SetSpentByInputOutputs(exec boil.Executor, insert bool, related ...*Output) error {
-	query := "update `outputs` set `spent_by_input_id` = null where `spent_by_input_id` = ?"
+	query := "update `output` set `spent_by_input_id` = null where `spent_by_input_id` = ?"
 	values := []interface{}{o.ID}
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, query)
@@ -1277,7 +1277,7 @@ func InputsG(mods ...qm.QueryMod) inputQuery {
 
 // Inputs retrieves all the records using an executor.
 func Inputs(exec boil.Executor, mods ...qm.QueryMod) inputQuery {
-	mods = append(mods, qm.From("`inputs`"))
+	mods = append(mods, qm.From("`input`"))
 	return inputQuery{NewQuery(exec, mods...)}
 }
 
@@ -1306,7 +1306,7 @@ func FindInput(exec boil.Executor, id uint64, selectCols ...string) (*Input, err
 		sel = strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, selectCols), ",")
 	}
 	query := fmt.Sprintf(
-		"select %s from `inputs` where `id`=?", sel,
+		"select %s from `input` where `id`=?", sel,
 	)
 
 	q := queries.Raw(exec, query, id)
@@ -1316,7 +1316,7 @@ func FindInput(exec boil.Executor, id uint64, selectCols ...string) (*Input, err
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "model: unable to select from inputs")
+		return nil, errors.Wrap(err, "model: unable to select from input")
 	}
 
 	return inputObj, nil
@@ -1360,7 +1360,7 @@ func (o *Input) InsertP(exec boil.Executor, whitelist ...string) {
 // - All columns with a default, but non-zero are included (i.e. health = 75)
 func (o *Input) Insert(exec boil.Executor, whitelist ...string) error {
 	if o == nil {
-		return errors.New("model: no inputs provided for insertion")
+		return errors.New("model: no input provided for insertion")
 	}
 
 	var err error
@@ -1390,15 +1390,15 @@ func (o *Input) Insert(exec boil.Executor, whitelist ...string) error {
 			return err
 		}
 		if len(wl) != 0 {
-			cache.query = fmt.Sprintf("INSERT INTO `inputs` (`%s`) %%sVALUES (%s)%%s", strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.IndexPlaceholders, len(wl), 1, 1))
+			cache.query = fmt.Sprintf("INSERT INTO `input` (`%s`) %%sVALUES (%s)%%s", strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.IndexPlaceholders, len(wl), 1, 1))
 		} else {
-			cache.query = "INSERT INTO `inputs` () VALUES ()"
+			cache.query = "INSERT INTO `input` () VALUES ()"
 		}
 
 		var queryOutput, queryReturning string
 
 		if len(cache.retMapping) != 0 {
-			cache.retQuery = fmt.Sprintf("SELECT `%s` FROM `inputs` WHERE %s", strings.Join(returnColumns, "`,`"), strmangle.WhereClause("`", "`", 0, inputPrimaryKeyColumns))
+			cache.retQuery = fmt.Sprintf("SELECT `%s` FROM `input` WHERE %s", strings.Join(returnColumns, "`,`"), strmangle.WhereClause("`", "`", 0, inputPrimaryKeyColumns))
 		}
 
 		if len(wl) != 0 {
@@ -1417,7 +1417,7 @@ func (o *Input) Insert(exec boil.Executor, whitelist ...string) error {
 	result, err := exec.Exec(cache.query, vals...)
 
 	if err != nil {
-		return errors.Wrap(err, "model: unable to insert into inputs")
+		return errors.Wrap(err, "model: unable to insert into input")
 	}
 
 	var lastID int64
@@ -1448,7 +1448,7 @@ func (o *Input) Insert(exec boil.Executor, whitelist ...string) error {
 
 	err = exec.QueryRow(cache.retQuery, identifierCols...).Scan(queries.PtrsFromMapping(value, cache.retMapping)...)
 	if err != nil {
-		return errors.Wrap(err, "model: unable to populate default values for inputs")
+		return errors.Wrap(err, "model: unable to populate default values for input")
 	}
 
 CacheNoHooks:
@@ -1507,10 +1507,10 @@ func (o *Input) Update(exec boil.Executor, whitelist ...string) error {
 		)
 
 		if len(wl) == 0 {
-			return errors.New("model: unable to update inputs, could not build whitelist")
+			return errors.New("model: unable to update input, could not build whitelist")
 		}
 
-		cache.query = fmt.Sprintf("UPDATE `inputs` SET %s WHERE %s",
+		cache.query = fmt.Sprintf("UPDATE `input` SET %s WHERE %s",
 			strmangle.SetParamNames("`", "`", 0, wl),
 			strmangle.WhereClause("`", "`", 0, inputPrimaryKeyColumns),
 		)
@@ -1529,7 +1529,7 @@ func (o *Input) Update(exec boil.Executor, whitelist ...string) error {
 
 	_, err = exec.Exec(cache.query, values...)
 	if err != nil {
-		return errors.Wrap(err, "model: unable to update inputs row")
+		return errors.Wrap(err, "model: unable to update input row")
 	}
 
 	if !cached {
@@ -1554,7 +1554,7 @@ func (q inputQuery) UpdateAll(cols M) error {
 
 	_, err := q.Query.Exec()
 	if err != nil {
-		return errors.Wrap(err, "model: unable to update all for inputs")
+		return errors.Wrap(err, "model: unable to update all for input")
 	}
 
 	return nil
@@ -1606,7 +1606,7 @@ func (o InputSlice) UpdateAll(exec boil.Executor, cols M) error {
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := fmt.Sprintf("UPDATE `inputs` SET %s WHERE %s",
+	sql := fmt.Sprintf("UPDATE `input` SET %s WHERE %s",
 		strmangle.SetParamNames("`", "`", 0, colNames),
 		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, inputPrimaryKeyColumns, len(o)))
 
@@ -1646,7 +1646,7 @@ func (o *Input) UpsertP(exec boil.Executor, updateColumns []string, whitelist ..
 // Upsert attempts an insert using an executor, and does an update or ignore on conflict.
 func (o *Input) Upsert(exec boil.Executor, updateColumns []string, whitelist ...string) error {
 	if o == nil {
-		return errors.New("model: no inputs provided for upsert")
+		return errors.New("model: no input provided for upsert")
 	}
 
 	nzDefaults := queries.NonZeroDefaultSet(inputColumnsWithDefault, o)
@@ -1688,12 +1688,12 @@ func (o *Input) Upsert(exec boil.Executor, updateColumns []string, whitelist ...
 			updateColumns,
 		)
 		if len(update) == 0 {
-			return errors.New("model: unable to upsert inputs, could not build update column list")
+			return errors.New("model: unable to upsert input, could not build update column list")
 		}
 
-		cache.query = queries.BuildUpsertQueryMySQL(dialect, "inputs", update, insert)
+		cache.query = queries.BuildUpsertQueryMySQL(dialect, "input", update, insert)
 		cache.retQuery = fmt.Sprintf(
-			"SELECT %s FROM `inputs` WHERE `id`=?",
+			"SELECT %s FROM `input` WHERE `id`=?",
 			strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, ret), ","),
 		)
 
@@ -1724,7 +1724,7 @@ func (o *Input) Upsert(exec boil.Executor, updateColumns []string, whitelist ...
 	result, err := exec.Exec(cache.query, vals...)
 
 	if err != nil {
-		return errors.Wrap(err, "model: unable to upsert for inputs")
+		return errors.Wrap(err, "model: unable to upsert for input")
 	}
 
 	var lastID int64
@@ -1755,7 +1755,7 @@ func (o *Input) Upsert(exec boil.Executor, updateColumns []string, whitelist ...
 
 	err = exec.QueryRow(cache.retQuery, identifierCols...).Scan(returns...)
 	if err != nil {
-		return errors.Wrap(err, "model: unable to populate default values for inputs")
+		return errors.Wrap(err, "model: unable to populate default values for input")
 	}
 
 CacheNoHooks:
@@ -1804,7 +1804,7 @@ func (o *Input) Delete(exec boil.Executor) error {
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), inputPrimaryKeyMapping)
-	sql := "DELETE FROM `inputs` WHERE `id`=?"
+	sql := "DELETE FROM `input` WHERE `id`=?"
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, sql)
@@ -1813,7 +1813,7 @@ func (o *Input) Delete(exec boil.Executor) error {
 
 	_, err := exec.Exec(sql, args...)
 	if err != nil {
-		return errors.Wrap(err, "model: unable to delete from inputs")
+		return errors.Wrap(err, "model: unable to delete from input")
 	}
 
 	return nil
@@ -1836,7 +1836,7 @@ func (q inputQuery) DeleteAll() error {
 
 	_, err := q.Query.Exec()
 	if err != nil {
-		return errors.Wrap(err, "model: unable to delete all from inputs")
+		return errors.Wrap(err, "model: unable to delete all from input")
 	}
 
 	return nil
@@ -1880,7 +1880,7 @@ func (o InputSlice) DeleteAll(exec boil.Executor) error {
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := "DELETE FROM `inputs` WHERE " +
+	sql := "DELETE FROM `input` WHERE " +
 		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, inputPrimaryKeyColumns, len(o))
 
 	if boil.DebugMode {
@@ -1973,7 +1973,7 @@ func (o *InputSlice) ReloadAll(exec boil.Executor) error {
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := "SELECT `inputs`.* FROM `inputs` WHERE " +
+	sql := "SELECT `input`.* FROM `input` WHERE " +
 		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, inputPrimaryKeyColumns, len(*o))
 
 	q := queries.Raw(exec, sql, args...)
@@ -1991,7 +1991,7 @@ func (o *InputSlice) ReloadAll(exec boil.Executor) error {
 // InputExists checks if the Input row exists.
 func InputExists(exec boil.Executor, id uint64) (bool, error) {
 	var exists bool
-	sql := "select exists(select 1 from `inputs` where `id`=? limit 1)"
+	sql := "select exists(select 1 from `input` where `id`=? limit 1)"
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, sql)
@@ -2002,7 +2002,7 @@ func InputExists(exec boil.Executor, id uint64) (bool, error) {
 
 	err := row.Scan(&exists)
 	if err != nil {
-		return false, errors.Wrap(err, "model: unable to check if inputs exists")
+		return false, errors.Wrap(err, "model: unable to check if input exists")
 	}
 
 	return exists, nil

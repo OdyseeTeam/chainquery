@@ -22,49 +22,40 @@ import (
 
 // Address is an object representing the database table.
 type Address struct {
-	ID            uint64      `boil:"id" json:"id" toml:"id" yaml:"id"`
-	Address       string      `boil:"address" json:"address" toml:"address" yaml:"address"`
-	FirstSeen     null.Time   `boil:"first_seen" json:"first_seen,omitempty" toml:"first_seen" yaml:"first_seen,omitempty"`
-	TotalReceived string      `boil:"total_received" json:"total_received" toml:"total_received" yaml:"total_received"`
-	TotalSent     string      `boil:"total_sent" json:"total_sent" toml:"total_sent" yaml:"total_sent"`
-	Balance       null.String `boil:"balance" json:"balance,omitempty" toml:"balance" yaml:"balance,omitempty"`
-	Tag           null.String `boil:"tag" json:"tag,omitempty" toml:"tag" yaml:"tag,omitempty"`
-	TagURL        null.String `boil:"tag_url" json:"tag_url,omitempty" toml:"tag_url" yaml:"tag_url,omitempty"`
-	Created       time.Time   `boil:"created" json:"created" toml:"created" yaml:"created"`
-	Modified      time.Time   `boil:"modified" json:"modified" toml:"modified" yaml:"modified"`
+	ID        uint64      `boil:"id" json:"id" toml:"id" yaml:"id"`
+	Address   string      `boil:"address" json:"address" toml:"address" yaml:"address"`
+	FirstSeen null.Time   `boil:"first_seen" json:"first_seen,omitempty" toml:"first_seen" yaml:"first_seen,omitempty"`
+	Tag       null.String `boil:"tag" json:"tag,omitempty" toml:"tag" yaml:"tag,omitempty"`
+	TagURL    null.String `boil:"tag_url" json:"tag_url,omitempty" toml:"tag_url" yaml:"tag_url,omitempty"`
+	Created   time.Time   `boil:"created" json:"created" toml:"created" yaml:"created"`
+	Modified  time.Time   `boil:"modified" json:"modified" toml:"modified" yaml:"modified"`
 
 	R *addressR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L addressL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var AddressColumns = struct {
-	ID            string
-	Address       string
-	FirstSeen     string
-	TotalReceived string
-	TotalSent     string
-	Balance       string
-	Tag           string
-	TagURL        string
-	Created       string
-	Modified      string
+	ID        string
+	Address   string
+	FirstSeen string
+	Tag       string
+	TagURL    string
+	Created   string
+	Modified  string
 }{
-	ID:            "id",
-	Address:       "address",
-	FirstSeen:     "first_seen",
-	TotalReceived: "total_received",
-	TotalSent:     "total_sent",
-	Balance:       "balance",
-	Tag:           "tag",
-	TagURL:        "tag_url",
-	Created:       "created",
-	Modified:      "modified",
+	ID:        "id",
+	Address:   "address",
+	FirstSeen: "first_seen",
+	Tag:       "tag",
+	TagURL:    "tag_url",
+	Created:   "created",
+	Modified:  "modified",
 }
 
 // addressR is where relationships are stored.
 type addressR struct {
-	Inputs               InputSlice
 	InputAddressInputs   InputSlice
+	Inputs               InputSlice
 	Outputs              OutputSlice
 	TransactionAddresses TransactionAddressSlice
 }
@@ -73,9 +64,9 @@ type addressR struct {
 type addressL struct{}
 
 var (
-	addressColumns               = []string{"id", "address", "first_seen", "total_received", "total_sent", "balance", "tag", "tag_url", "created", "modified"}
-	addressColumnsWithoutDefault = []string{"address", "first_seen", "balance", "tag", "tag_url"}
-	addressColumnsWithDefault    = []string{"id", "total_received", "total_sent", "created", "modified"}
+	addressColumns               = []string{"id", "address", "first_seen", "tag", "tag_url", "created", "modified"}
+	addressColumnsWithoutDefault = []string{"address", "first_seen", "tag", "tag_url"}
+	addressColumnsWithDefault    = []string{"id", "created", "modified"}
 	addressPrimaryKeyColumns     = []string{"id"}
 )
 
@@ -130,7 +121,7 @@ func (q addressQuery) One() (*Address, error) {
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "model: failed to execute a one query for addresses")
+		return nil, errors.Wrap(err, "model: failed to execute a one query for address")
 	}
 
 	return o, nil
@@ -177,7 +168,7 @@ func (q addressQuery) Count() (int64, error) {
 
 	err := q.Query.QueryRow().Scan(&count)
 	if err != nil {
-		return 0, errors.Wrap(err, "model: failed to count addresses rows")
+		return 0, errors.Wrap(err, "model: failed to count address rows")
 	}
 
 	return count, nil
@@ -202,45 +193,18 @@ func (q addressQuery) Exists() (bool, error) {
 
 	err := q.Query.QueryRow().Scan(&count)
 	if err != nil {
-		return false, errors.Wrap(err, "model: failed to check if addresses exists")
+		return false, errors.Wrap(err, "model: failed to check if address exists")
 	}
 
 	return count > 0, nil
 }
 
-// InputsG retrieves all the input's inputs.
-func (o *Address) InputsG(mods ...qm.QueryMod) inputQuery {
-	return o.Inputs(boil.GetDB(), mods...)
-}
-
-// Inputs retrieves all the input's inputs with an executor.
-func (o *Address) Inputs(exec boil.Executor, mods ...qm.QueryMod) inputQuery {
-	var queryMods []qm.QueryMod
-	if len(mods) != 0 {
-		queryMods = append(queryMods, mods...)
-	}
-
-	queryMods = append(queryMods,
-		qm.InnerJoin("`input_addresses` on `inputs`.`id` = `input_addresses`.`input_id`"),
-		qm.Where("`input_addresses`.`address_id`=?", o.ID),
-	)
-
-	query := Inputs(exec, queryMods...)
-	queries.SetFrom(query.Query, "`inputs`")
-
-	if len(queries.GetSelect(query.Query)) == 0 {
-		queries.SetSelect(query.Query, []string{"`inputs`.*"})
-	}
-
-	return query
-}
-
-// InputAddressInputsG retrieves all the input's inputs via input_address_id column.
+// InputAddressInputsG retrieves all the input's input via input_address_id column.
 func (o *Address) InputAddressInputsG(mods ...qm.QueryMod) inputQuery {
 	return o.InputAddressInputs(boil.GetDB(), mods...)
 }
 
-// InputAddressInputs retrieves all the input's inputs with an executor via input_address_id column.
+// InputAddressInputs retrieves all the input's input with an executor via input_address_id column.
 func (o *Address) InputAddressInputs(exec boil.Executor, mods ...qm.QueryMod) inputQuery {
 	var queryMods []qm.QueryMod
 	if len(mods) != 0 {
@@ -248,25 +212,52 @@ func (o *Address) InputAddressInputs(exec boil.Executor, mods ...qm.QueryMod) in
 	}
 
 	queryMods = append(queryMods,
-		qm.Where("`inputs`.`input_address_id`=?", o.ID),
+		qm.Where("`input`.`input_address_id`=?", o.ID),
 	)
 
 	query := Inputs(exec, queryMods...)
-	queries.SetFrom(query.Query, "`inputs`")
+	queries.SetFrom(query.Query, "`input`")
 
 	if len(queries.GetSelect(query.Query)) == 0 {
-		queries.SetSelect(query.Query, []string{"`inputs`.*"})
+		queries.SetSelect(query.Query, []string{"`input`.*"})
 	}
 
 	return query
 }
 
-// OutputsG retrieves all the output's outputs.
+// InputsG retrieves all the input's input.
+func (o *Address) InputsG(mods ...qm.QueryMod) inputQuery {
+	return o.Inputs(boil.GetDB(), mods...)
+}
+
+// Inputs retrieves all the input's input with an executor.
+func (o *Address) Inputs(exec boil.Executor, mods ...qm.QueryMod) inputQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.InnerJoin("`input_address` on `input`.`id` = `input_address`.`input_id`"),
+		qm.Where("`input_address`.`address_id`=?", o.ID),
+	)
+
+	query := Inputs(exec, queryMods...)
+	queries.SetFrom(query.Query, "`input`")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"`input`.*"})
+	}
+
+	return query
+}
+
+// OutputsG retrieves all the output's output.
 func (o *Address) OutputsG(mods ...qm.QueryMod) outputQuery {
 	return o.Outputs(boil.GetDB(), mods...)
 }
 
-// Outputs retrieves all the output's outputs with an executor.
+// Outputs retrieves all the output's output with an executor.
 func (o *Address) Outputs(exec boil.Executor, mods ...qm.QueryMod) outputQuery {
 	var queryMods []qm.QueryMod
 	if len(mods) != 0 {
@@ -274,26 +265,26 @@ func (o *Address) Outputs(exec boil.Executor, mods ...qm.QueryMod) outputQuery {
 	}
 
 	queryMods = append(queryMods,
-		qm.InnerJoin("`output_addresses` on `outputs`.`id` = `output_addresses`.`output_id`"),
-		qm.Where("`output_addresses`.`address_id`=?", o.ID),
+		qm.InnerJoin("`output_address` on `output`.`id` = `output_address`.`output_id`"),
+		qm.Where("`output_address`.`address_id`=?", o.ID),
 	)
 
 	query := Outputs(exec, queryMods...)
-	queries.SetFrom(query.Query, "`outputs`")
+	queries.SetFrom(query.Query, "`output`")
 
 	if len(queries.GetSelect(query.Query)) == 0 {
-		queries.SetSelect(query.Query, []string{"`outputs`.*"})
+		queries.SetSelect(query.Query, []string{"`output`.*"})
 	}
 
 	return query
 }
 
-// TransactionAddressesG retrieves all the transaction_address's transaction addresses.
+// TransactionAddressesG retrieves all the transaction_address's transaction address.
 func (o *Address) TransactionAddressesG(mods ...qm.QueryMod) transactionAddressQuery {
 	return o.TransactionAddresses(boil.GetDB(), mods...)
 }
 
-// TransactionAddresses retrieves all the transaction_address's transaction addresses with an executor.
+// TransactionAddresses retrieves all the transaction_address's transaction address with an executor.
 func (o *Address) TransactionAddresses(exec boil.Executor, mods ...qm.QueryMod) transactionAddressQuery {
 	var queryMods []qm.QueryMod
 	if len(mods) != 0 {
@@ -301,98 +292,17 @@ func (o *Address) TransactionAddresses(exec boil.Executor, mods ...qm.QueryMod) 
 	}
 
 	queryMods = append(queryMods,
-		qm.Where("`transaction_addresses`.`address_id`=?", o.ID),
+		qm.Where("`transaction_address`.`address_id`=?", o.ID),
 	)
 
 	query := TransactionAddresses(exec, queryMods...)
-	queries.SetFrom(query.Query, "`transaction_addresses`")
+	queries.SetFrom(query.Query, "`transaction_address`")
 
 	if len(queries.GetSelect(query.Query)) == 0 {
-		queries.SetSelect(query.Query, []string{"`transaction_addresses`.*"})
+		queries.SetSelect(query.Query, []string{"`transaction_address`.*"})
 	}
 
 	return query
-}
-
-// LoadInputs allows an eager lookup of values, cached into the
-// loaded structs of the objects.
-func (addressL) LoadInputs(e boil.Executor, singular bool, maybeAddress interface{}) error {
-	var slice []*Address
-	var object *Address
-
-	count := 1
-	if singular {
-		object = maybeAddress.(*Address)
-	} else {
-		slice = *maybeAddress.(*[]*Address)
-		count = len(slice)
-	}
-
-	args := make([]interface{}, count)
-	if singular {
-		if object.R == nil {
-			object.R = &addressR{}
-		}
-		args[0] = object.ID
-	} else {
-		for i, obj := range slice {
-			if obj.R == nil {
-				obj.R = &addressR{}
-			}
-			args[i] = obj.ID
-		}
-	}
-
-	query := fmt.Sprintf(
-		"select `a`.*, `b`.`address_id` from `inputs` as `a` inner join `input_addresses` as `b` on `a`.`id` = `b`.`input_id` where `b`.`address_id` in (%s)",
-		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
-	)
-	if boil.DebugMode {
-		fmt.Fprintf(boil.DebugWriter, "%s\n%v\n", query, args)
-	}
-
-	results, err := e.Query(query, args...)
-	if err != nil {
-		return errors.Wrap(err, "failed to eager load inputs")
-	}
-	defer results.Close()
-
-	var resultSlice []*Input
-
-	var localJoinCols []uint64
-	for results.Next() {
-		one := new(Input)
-		var localJoinCol uint64
-
-		err = results.Scan(&one.ID, &one.TransactionID, &one.TransactionHash, &one.InputAddressID, &one.IsCoinbase, &one.Coinbase, &one.PrevoutHash, &one.PrevoutN, &one.PrevoutSpendUpdated, &one.Sequence, &one.Value, &one.ScriptSigAsm, &one.ScriptSigHex, &one.Created, &one.Modified, &localJoinCol)
-		if err = results.Err(); err != nil {
-			return errors.Wrap(err, "failed to plebian-bind eager loaded slice inputs")
-		}
-
-		resultSlice = append(resultSlice, one)
-		localJoinCols = append(localJoinCols, localJoinCol)
-	}
-
-	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "failed to plebian-bind eager loaded slice inputs")
-	}
-
-	if singular {
-		object.R.Inputs = resultSlice
-		return nil
-	}
-
-	for i, foreign := range resultSlice {
-		localJoinCol := localJoinCols[i]
-		for _, local := range slice {
-			if local.ID == localJoinCol {
-				local.R.Inputs = append(local.R.Inputs, foreign)
-				break
-			}
-		}
-	}
-
-	return nil
 }
 
 // LoadInputAddressInputs allows an eager lookup of values, cached into the
@@ -425,7 +335,7 @@ func (addressL) LoadInputAddressInputs(e boil.Executor, singular bool, maybeAddr
 	}
 
 	query := fmt.Sprintf(
-		"select * from `inputs` where `input_address_id` in (%s)",
+		"select * from `input` where `input_address_id` in (%s)",
 		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
 	)
 	if boil.DebugMode {
@@ -434,13 +344,13 @@ func (addressL) LoadInputAddressInputs(e boil.Executor, singular bool, maybeAddr
 
 	results, err := e.Query(query, args...)
 	if err != nil {
-		return errors.Wrap(err, "failed to eager load inputs")
+		return errors.Wrap(err, "failed to eager load input")
 	}
 	defer results.Close()
 
 	var resultSlice []*Input
 	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice inputs")
+		return errors.Wrap(err, "failed to bind eager loaded slice input")
 	}
 
 	if singular {
@@ -452,6 +362,87 @@ func (addressL) LoadInputAddressInputs(e boil.Executor, singular bool, maybeAddr
 		for _, local := range slice {
 			if local.ID == foreign.InputAddressID.Uint64 {
 				local.R.InputAddressInputs = append(local.R.InputAddressInputs, foreign)
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadInputs allows an eager lookup of values, cached into the
+// loaded structs of the objects.
+func (addressL) LoadInputs(e boil.Executor, singular bool, maybeAddress interface{}) error {
+	var slice []*Address
+	var object *Address
+
+	count := 1
+	if singular {
+		object = maybeAddress.(*Address)
+	} else {
+		slice = *maybeAddress.(*[]*Address)
+		count = len(slice)
+	}
+
+	args := make([]interface{}, count)
+	if singular {
+		if object.R == nil {
+			object.R = &addressR{}
+		}
+		args[0] = object.ID
+	} else {
+		for i, obj := range slice {
+			if obj.R == nil {
+				obj.R = &addressR{}
+			}
+			args[i] = obj.ID
+		}
+	}
+
+	query := fmt.Sprintf(
+		"select `a`.*, `b`.`address_id` from `input` as `a` inner join `input_address` as `b` on `a`.`id` = `b`.`input_id` where `b`.`address_id` in (%s)",
+		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
+	)
+	if boil.DebugMode {
+		fmt.Fprintf(boil.DebugWriter, "%s\n%v\n", query, args)
+	}
+
+	results, err := e.Query(query, args...)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load input")
+	}
+	defer results.Close()
+
+	var resultSlice []*Input
+
+	var localJoinCols []uint64
+	for results.Next() {
+		one := new(Input)
+		var localJoinCol uint64
+
+		err = results.Scan(&one.ID, &one.TransactionID, &one.TransactionHash, &one.InputAddressID, &one.IsCoinbase, &one.Coinbase, &one.PrevoutHash, &one.PrevoutN, &one.PrevoutSpendUpdated, &one.Sequence, &one.Value, &one.ScriptSigAsm, &one.ScriptSigHex, &one.Created, &one.Modified, &localJoinCol)
+		if err = results.Err(); err != nil {
+			return errors.Wrap(err, "failed to plebian-bind eager loaded slice input")
+		}
+
+		resultSlice = append(resultSlice, one)
+		localJoinCols = append(localJoinCols, localJoinCol)
+	}
+
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "failed to plebian-bind eager loaded slice input")
+	}
+
+	if singular {
+		object.R.Inputs = resultSlice
+		return nil
+	}
+
+	for i, foreign := range resultSlice {
+		localJoinCol := localJoinCols[i]
+		for _, local := range slice {
+			if local.ID == localJoinCol {
+				local.R.Inputs = append(local.R.Inputs, foreign)
 				break
 			}
 		}
@@ -490,7 +481,7 @@ func (addressL) LoadOutputs(e boil.Executor, singular bool, maybeAddress interfa
 	}
 
 	query := fmt.Sprintf(
-		"select `a`.*, `b`.`address_id` from `outputs` as `a` inner join `output_addresses` as `b` on `a`.`id` = `b`.`output_id` where `b`.`address_id` in (%s)",
+		"select `a`.*, `b`.`address_id` from `output` as `a` inner join `output_address` as `b` on `a`.`id` = `b`.`output_id` where `b`.`address_id` in (%s)",
 		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
 	)
 	if boil.DebugMode {
@@ -499,7 +490,7 @@ func (addressL) LoadOutputs(e boil.Executor, singular bool, maybeAddress interfa
 
 	results, err := e.Query(query, args...)
 	if err != nil {
-		return errors.Wrap(err, "failed to eager load outputs")
+		return errors.Wrap(err, "failed to eager load output")
 	}
 	defer results.Close()
 
@@ -512,7 +503,7 @@ func (addressL) LoadOutputs(e boil.Executor, singular bool, maybeAddress interfa
 
 		err = results.Scan(&one.ID, &one.TransactionID, &one.TransactionHash, &one.Value, &one.Vout, &one.Type, &one.ScriptPubKeyAsm, &one.ScriptPubKeyHex, &one.RequiredSignatures, &one.Hash160, &one.AddressList, &one.IsSpent, &one.SpentByInputID, &one.Created, &one.Modified, &localJoinCol)
 		if err = results.Err(); err != nil {
-			return errors.Wrap(err, "failed to plebian-bind eager loaded slice outputs")
+			return errors.Wrap(err, "failed to plebian-bind eager loaded slice output")
 		}
 
 		resultSlice = append(resultSlice, one)
@@ -520,7 +511,7 @@ func (addressL) LoadOutputs(e boil.Executor, singular bool, maybeAddress interfa
 	}
 
 	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "failed to plebian-bind eager loaded slice outputs")
+		return errors.Wrap(err, "failed to plebian-bind eager loaded slice output")
 	}
 
 	if singular {
@@ -571,7 +562,7 @@ func (addressL) LoadTransactionAddresses(e boil.Executor, singular bool, maybeAd
 	}
 
 	query := fmt.Sprintf(
-		"select * from `transaction_addresses` where `address_id` in (%s)",
+		"select * from `transaction_address` where `address_id` in (%s)",
 		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
 	)
 	if boil.DebugMode {
@@ -580,13 +571,13 @@ func (addressL) LoadTransactionAddresses(e boil.Executor, singular bool, maybeAd
 
 	results, err := e.Query(query, args...)
 	if err != nil {
-		return errors.Wrap(err, "failed to eager load transaction_addresses")
+		return errors.Wrap(err, "failed to eager load transaction_address")
 	}
 	defer results.Close()
 
 	var resultSlice []*TransactionAddress
 	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice transaction_addresses")
+		return errors.Wrap(err, "failed to bind eager loaded slice transaction_address")
 	}
 
 	if singular {
@@ -604,242 +595,6 @@ func (addressL) LoadTransactionAddresses(e boil.Executor, singular bool, maybeAd
 	}
 
 	return nil
-}
-
-// AddInputsG adds the given related objects to the existing relationships
-// of the address, optionally inserting them as new records.
-// Appends related to o.R.Inputs.
-// Sets related.R.Addresses appropriately.
-// Uses the global database handle.
-func (o *Address) AddInputsG(insert bool, related ...*Input) error {
-	return o.AddInputs(boil.GetDB(), insert, related...)
-}
-
-// AddInputsP adds the given related objects to the existing relationships
-// of the address, optionally inserting them as new records.
-// Appends related to o.R.Inputs.
-// Sets related.R.Addresses appropriately.
-// Panics on error.
-func (o *Address) AddInputsP(exec boil.Executor, insert bool, related ...*Input) {
-	if err := o.AddInputs(exec, insert, related...); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
-// AddInputsGP adds the given related objects to the existing relationships
-// of the address, optionally inserting them as new records.
-// Appends related to o.R.Inputs.
-// Sets related.R.Addresses appropriately.
-// Uses the global database handle and panics on error.
-func (o *Address) AddInputsGP(insert bool, related ...*Input) {
-	if err := o.AddInputs(boil.GetDB(), insert, related...); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
-// AddInputs adds the given related objects to the existing relationships
-// of the address, optionally inserting them as new records.
-// Appends related to o.R.Inputs.
-// Sets related.R.Addresses appropriately.
-func (o *Address) AddInputs(exec boil.Executor, insert bool, related ...*Input) error {
-	var err error
-	for _, rel := range related {
-		if insert {
-			if err = rel.Insert(exec); err != nil {
-				return errors.Wrap(err, "failed to insert into foreign table")
-			}
-		}
-	}
-
-	for _, rel := range related {
-		query := "insert into `input_addresses` (`address_id`, `input_id`) values (?, ?)"
-		values := []interface{}{o.ID, rel.ID}
-
-		if boil.DebugMode {
-			fmt.Fprintln(boil.DebugWriter, query)
-			fmt.Fprintln(boil.DebugWriter, values)
-		}
-
-		_, err = exec.Exec(query, values...)
-		if err != nil {
-			return errors.Wrap(err, "failed to insert into join table")
-		}
-	}
-	if o.R == nil {
-		o.R = &addressR{
-			Inputs: related,
-		}
-	} else {
-		o.R.Inputs = append(o.R.Inputs, related...)
-	}
-
-	for _, rel := range related {
-		if rel.R == nil {
-			rel.R = &inputR{
-				Addresses: AddressSlice{o},
-			}
-		} else {
-			rel.R.Addresses = append(rel.R.Addresses, o)
-		}
-	}
-	return nil
-}
-
-// SetInputsG removes all previously related items of the
-// address replacing them completely with the passed
-// in related items, optionally inserting them as new records.
-// Sets o.R.Addresses's Inputs accordingly.
-// Replaces o.R.Inputs with related.
-// Sets related.R.Addresses's Inputs accordingly.
-// Uses the global database handle.
-func (o *Address) SetInputsG(insert bool, related ...*Input) error {
-	return o.SetInputs(boil.GetDB(), insert, related...)
-}
-
-// SetInputsP removes all previously related items of the
-// address replacing them completely with the passed
-// in related items, optionally inserting them as new records.
-// Sets o.R.Addresses's Inputs accordingly.
-// Replaces o.R.Inputs with related.
-// Sets related.R.Addresses's Inputs accordingly.
-// Panics on error.
-func (o *Address) SetInputsP(exec boil.Executor, insert bool, related ...*Input) {
-	if err := o.SetInputs(exec, insert, related...); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
-// SetInputsGP removes all previously related items of the
-// address replacing them completely with the passed
-// in related items, optionally inserting them as new records.
-// Sets o.R.Addresses's Inputs accordingly.
-// Replaces o.R.Inputs with related.
-// Sets related.R.Addresses's Inputs accordingly.
-// Uses the global database handle and panics on error.
-func (o *Address) SetInputsGP(insert bool, related ...*Input) {
-	if err := o.SetInputs(boil.GetDB(), insert, related...); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
-// SetInputs removes all previously related items of the
-// address replacing them completely with the passed
-// in related items, optionally inserting them as new records.
-// Sets o.R.Addresses's Inputs accordingly.
-// Replaces o.R.Inputs with related.
-// Sets related.R.Addresses's Inputs accordingly.
-func (o *Address) SetInputs(exec boil.Executor, insert bool, related ...*Input) error {
-	query := "delete from `input_addresses` where `address_id` = ?"
-	values := []interface{}{o.ID}
-	if boil.DebugMode {
-		fmt.Fprintln(boil.DebugWriter, query)
-		fmt.Fprintln(boil.DebugWriter, values)
-	}
-
-	_, err := exec.Exec(query, values...)
-	if err != nil {
-		return errors.Wrap(err, "failed to remove relationships before set")
-	}
-
-	removeInputsFromAddressesSlice(o, related)
-	if o.R != nil {
-		o.R.Inputs = nil
-	}
-	return o.AddInputs(exec, insert, related...)
-}
-
-// RemoveInputsG relationships from objects passed in.
-// Removes related items from R.Inputs (uses pointer comparison, removal does not keep order)
-// Sets related.R.Addresses.
-// Uses the global database handle.
-func (o *Address) RemoveInputsG(related ...*Input) error {
-	return o.RemoveInputs(boil.GetDB(), related...)
-}
-
-// RemoveInputsP relationships from objects passed in.
-// Removes related items from R.Inputs (uses pointer comparison, removal does not keep order)
-// Sets related.R.Addresses.
-// Panics on error.
-func (o *Address) RemoveInputsP(exec boil.Executor, related ...*Input) {
-	if err := o.RemoveInputs(exec, related...); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
-// RemoveInputsGP relationships from objects passed in.
-// Removes related items from R.Inputs (uses pointer comparison, removal does not keep order)
-// Sets related.R.Addresses.
-// Uses the global database handle and panics on error.
-func (o *Address) RemoveInputsGP(related ...*Input) {
-	if err := o.RemoveInputs(boil.GetDB(), related...); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
-// RemoveInputs relationships from objects passed in.
-// Removes related items from R.Inputs (uses pointer comparison, removal does not keep order)
-// Sets related.R.Addresses.
-func (o *Address) RemoveInputs(exec boil.Executor, related ...*Input) error {
-	var err error
-	query := fmt.Sprintf(
-		"delete from `input_addresses` where `address_id` = ? and `input_id` in (%s)",
-		strmangle.Placeholders(dialect.IndexPlaceholders, len(related), 2, 1),
-	)
-	values := []interface{}{o.ID}
-	for _, rel := range related {
-		values = append(values, rel.ID)
-	}
-
-	if boil.DebugMode {
-		fmt.Fprintln(boil.DebugWriter, query)
-		fmt.Fprintln(boil.DebugWriter, values)
-	}
-
-	_, err = exec.Exec(query, values...)
-	if err != nil {
-		return errors.Wrap(err, "failed to remove relationships before set")
-	}
-	removeInputsFromAddressesSlice(o, related)
-	if o.R == nil {
-		return nil
-	}
-
-	for _, rel := range related {
-		for i, ri := range o.R.Inputs {
-			if rel != ri {
-				continue
-			}
-
-			ln := len(o.R.Inputs)
-			if ln > 1 && i < ln-1 {
-				o.R.Inputs[i] = o.R.Inputs[ln-1]
-			}
-			o.R.Inputs = o.R.Inputs[:ln-1]
-			break
-		}
-	}
-
-	return nil
-}
-
-func removeInputsFromAddressesSlice(o *Address, related []*Input) {
-	for _, rel := range related {
-		if rel.R == nil {
-			continue
-		}
-		for i, ri := range rel.R.Addresses {
-			if o.ID != ri.ID {
-				continue
-			}
-
-			ln := len(rel.R.Addresses)
-			if ln > 1 && i < ln-1 {
-				rel.R.Addresses[i] = rel.R.Addresses[ln-1]
-			}
-			rel.R.Addresses = rel.R.Addresses[:ln-1]
-			break
-		}
-	}
 }
 
 // AddInputAddressInputsG adds the given related objects to the existing relationships
@@ -888,7 +643,7 @@ func (o *Address) AddInputAddressInputs(exec boil.Executor, insert bool, related
 			}
 		} else {
 			updateQuery := fmt.Sprintf(
-				"UPDATE `inputs` SET %s WHERE %s",
+				"UPDATE `input` SET %s WHERE %s",
 				strmangle.SetParamNames("`", "`", 0, []string{"input_address_id"}),
 				strmangle.WhereClause("`", "`", 0, inputPrimaryKeyColumns),
 			)
@@ -972,7 +727,7 @@ func (o *Address) SetInputAddressInputsGP(insert bool, related ...*Input) {
 // Replaces o.R.InputAddressInputs with related.
 // Sets related.R.InputAddress's InputAddressInputs accordingly.
 func (o *Address) SetInputAddressInputs(exec boil.Executor, insert bool, related ...*Input) error {
-	query := "update `inputs` set `input_address_id` = null where `input_address_id` = ?"
+	query := "update `input` set `input_address_id` = null where `input_address_id` = ?"
 	values := []interface{}{o.ID}
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, query)
@@ -1063,6 +818,242 @@ func (o *Address) RemoveInputAddressInputs(exec boil.Executor, related ...*Input
 	return nil
 }
 
+// AddInputsG adds the given related objects to the existing relationships
+// of the address, optionally inserting them as new records.
+// Appends related to o.R.Inputs.
+// Sets related.R.Addresses appropriately.
+// Uses the global database handle.
+func (o *Address) AddInputsG(insert bool, related ...*Input) error {
+	return o.AddInputs(boil.GetDB(), insert, related...)
+}
+
+// AddInputsP adds the given related objects to the existing relationships
+// of the address, optionally inserting them as new records.
+// Appends related to o.R.Inputs.
+// Sets related.R.Addresses appropriately.
+// Panics on error.
+func (o *Address) AddInputsP(exec boil.Executor, insert bool, related ...*Input) {
+	if err := o.AddInputs(exec, insert, related...); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// AddInputsGP adds the given related objects to the existing relationships
+// of the address, optionally inserting them as new records.
+// Appends related to o.R.Inputs.
+// Sets related.R.Addresses appropriately.
+// Uses the global database handle and panics on error.
+func (o *Address) AddInputsGP(insert bool, related ...*Input) {
+	if err := o.AddInputs(boil.GetDB(), insert, related...); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// AddInputs adds the given related objects to the existing relationships
+// of the address, optionally inserting them as new records.
+// Appends related to o.R.Inputs.
+// Sets related.R.Addresses appropriately.
+func (o *Address) AddInputs(exec boil.Executor, insert bool, related ...*Input) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			if err = rel.Insert(exec); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		}
+	}
+
+	for _, rel := range related {
+		query := "insert into `input_address` (`address_id`, `input_id`) values (?, ?)"
+		values := []interface{}{o.ID, rel.ID}
+
+		if boil.DebugMode {
+			fmt.Fprintln(boil.DebugWriter, query)
+			fmt.Fprintln(boil.DebugWriter, values)
+		}
+
+		_, err = exec.Exec(query, values...)
+		if err != nil {
+			return errors.Wrap(err, "failed to insert into join table")
+		}
+	}
+	if o.R == nil {
+		o.R = &addressR{
+			Inputs: related,
+		}
+	} else {
+		o.R.Inputs = append(o.R.Inputs, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &inputR{
+				Addresses: AddressSlice{o},
+			}
+		} else {
+			rel.R.Addresses = append(rel.R.Addresses, o)
+		}
+	}
+	return nil
+}
+
+// SetInputsG removes all previously related items of the
+// address replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.Addresses's Inputs accordingly.
+// Replaces o.R.Inputs with related.
+// Sets related.R.Addresses's Inputs accordingly.
+// Uses the global database handle.
+func (o *Address) SetInputsG(insert bool, related ...*Input) error {
+	return o.SetInputs(boil.GetDB(), insert, related...)
+}
+
+// SetInputsP removes all previously related items of the
+// address replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.Addresses's Inputs accordingly.
+// Replaces o.R.Inputs with related.
+// Sets related.R.Addresses's Inputs accordingly.
+// Panics on error.
+func (o *Address) SetInputsP(exec boil.Executor, insert bool, related ...*Input) {
+	if err := o.SetInputs(exec, insert, related...); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// SetInputsGP removes all previously related items of the
+// address replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.Addresses's Inputs accordingly.
+// Replaces o.R.Inputs with related.
+// Sets related.R.Addresses's Inputs accordingly.
+// Uses the global database handle and panics on error.
+func (o *Address) SetInputsGP(insert bool, related ...*Input) {
+	if err := o.SetInputs(boil.GetDB(), insert, related...); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// SetInputs removes all previously related items of the
+// address replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.Addresses's Inputs accordingly.
+// Replaces o.R.Inputs with related.
+// Sets related.R.Addresses's Inputs accordingly.
+func (o *Address) SetInputs(exec boil.Executor, insert bool, related ...*Input) error {
+	query := "delete from `input_address` where `address_id` = ?"
+	values := []interface{}{o.ID}
+	if boil.DebugMode {
+		fmt.Fprintln(boil.DebugWriter, query)
+		fmt.Fprintln(boil.DebugWriter, values)
+	}
+
+	_, err := exec.Exec(query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	removeInputsFromAddressesSlice(o, related)
+	if o.R != nil {
+		o.R.Inputs = nil
+	}
+	return o.AddInputs(exec, insert, related...)
+}
+
+// RemoveInputsG relationships from objects passed in.
+// Removes related items from R.Inputs (uses pointer comparison, removal does not keep order)
+// Sets related.R.Addresses.
+// Uses the global database handle.
+func (o *Address) RemoveInputsG(related ...*Input) error {
+	return o.RemoveInputs(boil.GetDB(), related...)
+}
+
+// RemoveInputsP relationships from objects passed in.
+// Removes related items from R.Inputs (uses pointer comparison, removal does not keep order)
+// Sets related.R.Addresses.
+// Panics on error.
+func (o *Address) RemoveInputsP(exec boil.Executor, related ...*Input) {
+	if err := o.RemoveInputs(exec, related...); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// RemoveInputsGP relationships from objects passed in.
+// Removes related items from R.Inputs (uses pointer comparison, removal does not keep order)
+// Sets related.R.Addresses.
+// Uses the global database handle and panics on error.
+func (o *Address) RemoveInputsGP(related ...*Input) {
+	if err := o.RemoveInputs(boil.GetDB(), related...); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// RemoveInputs relationships from objects passed in.
+// Removes related items from R.Inputs (uses pointer comparison, removal does not keep order)
+// Sets related.R.Addresses.
+func (o *Address) RemoveInputs(exec boil.Executor, related ...*Input) error {
+	var err error
+	query := fmt.Sprintf(
+		"delete from `input_address` where `address_id` = ? and `input_id` in (%s)",
+		strmangle.Placeholders(dialect.IndexPlaceholders, len(related), 2, 1),
+	)
+	values := []interface{}{o.ID}
+	for _, rel := range related {
+		values = append(values, rel.ID)
+	}
+
+	if boil.DebugMode {
+		fmt.Fprintln(boil.DebugWriter, query)
+		fmt.Fprintln(boil.DebugWriter, values)
+	}
+
+	_, err = exec.Exec(query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+	removeInputsFromAddressesSlice(o, related)
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.Inputs {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.Inputs)
+			if ln > 1 && i < ln-1 {
+				o.R.Inputs[i] = o.R.Inputs[ln-1]
+			}
+			o.R.Inputs = o.R.Inputs[:ln-1]
+			break
+		}
+	}
+
+	return nil
+}
+
+func removeInputsFromAddressesSlice(o *Address, related []*Input) {
+	for _, rel := range related {
+		if rel.R == nil {
+			continue
+		}
+		for i, ri := range rel.R.Addresses {
+			if o.ID != ri.ID {
+				continue
+			}
+
+			ln := len(rel.R.Addresses)
+			if ln > 1 && i < ln-1 {
+				rel.R.Addresses[i] = rel.R.Addresses[ln-1]
+			}
+			rel.R.Addresses = rel.R.Addresses[:ln-1]
+			break
+		}
+	}
+}
+
 // AddOutputsG adds the given related objects to the existing relationships
 // of the address, optionally inserting them as new records.
 // Appends related to o.R.Outputs.
@@ -1109,7 +1100,7 @@ func (o *Address) AddOutputs(exec boil.Executor, insert bool, related ...*Output
 	}
 
 	for _, rel := range related {
-		query := "insert into `output_addresses` (`address_id`, `output_id`) values (?, ?)"
+		query := "insert into `output_address` (`address_id`, `output_id`) values (?, ?)"
 		values := []interface{}{o.ID, rel.ID}
 
 		if boil.DebugMode {
@@ -1186,7 +1177,7 @@ func (o *Address) SetOutputsGP(insert bool, related ...*Output) {
 // Replaces o.R.Outputs with related.
 // Sets related.R.Addresses's Outputs accordingly.
 func (o *Address) SetOutputs(exec boil.Executor, insert bool, related ...*Output) error {
-	query := "delete from `output_addresses` where `address_id` = ?"
+	query := "delete from `output_address` where `address_id` = ?"
 	values := []interface{}{o.ID}
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, query)
@@ -1239,7 +1230,7 @@ func (o *Address) RemoveOutputsGP(related ...*Output) {
 func (o *Address) RemoveOutputs(exec boil.Executor, related ...*Output) error {
 	var err error
 	query := fmt.Sprintf(
-		"delete from `output_addresses` where `address_id` = ? and `output_id` in (%s)",
+		"delete from `output_address` where `address_id` = ? and `output_id` in (%s)",
 		strmangle.Placeholders(dialect.IndexPlaceholders, len(related), 2, 1),
 	)
 	values := []interface{}{o.ID}
@@ -1344,7 +1335,7 @@ func (o *Address) AddTransactionAddresses(exec boil.Executor, insert bool, relat
 			}
 		} else {
 			updateQuery := fmt.Sprintf(
-				"UPDATE `transaction_addresses` SET %s WHERE %s",
+				"UPDATE `transaction_address` SET %s WHERE %s",
 				strmangle.SetParamNames("`", "`", 0, []string{"address_id"}),
 				strmangle.WhereClause("`", "`", 0, transactionAddressPrimaryKeyColumns),
 			)
@@ -1390,7 +1381,7 @@ func AddressesG(mods ...qm.QueryMod) addressQuery {
 
 // Addresses retrieves all the records using an executor.
 func Addresses(exec boil.Executor, mods ...qm.QueryMod) addressQuery {
-	mods = append(mods, qm.From("`addresses`"))
+	mods = append(mods, qm.From("`address`"))
 	return addressQuery{NewQuery(exec, mods...)}
 }
 
@@ -1419,7 +1410,7 @@ func FindAddress(exec boil.Executor, id uint64, selectCols ...string) (*Address,
 		sel = strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, selectCols), ",")
 	}
 	query := fmt.Sprintf(
-		"select %s from `addresses` where `id`=?", sel,
+		"select %s from `address` where `id`=?", sel,
 	)
 
 	q := queries.Raw(exec, query, id)
@@ -1429,7 +1420,7 @@ func FindAddress(exec boil.Executor, id uint64, selectCols ...string) (*Address,
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "model: unable to select from addresses")
+		return nil, errors.Wrap(err, "model: unable to select from address")
 	}
 
 	return addressObj, nil
@@ -1473,7 +1464,7 @@ func (o *Address) InsertP(exec boil.Executor, whitelist ...string) {
 // - All columns with a default, but non-zero are included (i.e. health = 75)
 func (o *Address) Insert(exec boil.Executor, whitelist ...string) error {
 	if o == nil {
-		return errors.New("model: no addresses provided for insertion")
+		return errors.New("model: no address provided for insertion")
 	}
 
 	var err error
@@ -1503,15 +1494,15 @@ func (o *Address) Insert(exec boil.Executor, whitelist ...string) error {
 			return err
 		}
 		if len(wl) != 0 {
-			cache.query = fmt.Sprintf("INSERT INTO `addresses` (`%s`) %%sVALUES (%s)%%s", strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.IndexPlaceholders, len(wl), 1, 1))
+			cache.query = fmt.Sprintf("INSERT INTO `address` (`%s`) %%sVALUES (%s)%%s", strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.IndexPlaceholders, len(wl), 1, 1))
 		} else {
-			cache.query = "INSERT INTO `addresses` () VALUES ()"
+			cache.query = "INSERT INTO `address` () VALUES ()"
 		}
 
 		var queryOutput, queryReturning string
 
 		if len(cache.retMapping) != 0 {
-			cache.retQuery = fmt.Sprintf("SELECT `%s` FROM `addresses` WHERE %s", strings.Join(returnColumns, "`,`"), strmangle.WhereClause("`", "`", 0, addressPrimaryKeyColumns))
+			cache.retQuery = fmt.Sprintf("SELECT `%s` FROM `address` WHERE %s", strings.Join(returnColumns, "`,`"), strmangle.WhereClause("`", "`", 0, addressPrimaryKeyColumns))
 		}
 
 		if len(wl) != 0 {
@@ -1530,7 +1521,7 @@ func (o *Address) Insert(exec boil.Executor, whitelist ...string) error {
 	result, err := exec.Exec(cache.query, vals...)
 
 	if err != nil {
-		return errors.Wrap(err, "model: unable to insert into addresses")
+		return errors.Wrap(err, "model: unable to insert into address")
 	}
 
 	var lastID int64
@@ -1561,7 +1552,7 @@ func (o *Address) Insert(exec boil.Executor, whitelist ...string) error {
 
 	err = exec.QueryRow(cache.retQuery, identifierCols...).Scan(queries.PtrsFromMapping(value, cache.retMapping)...)
 	if err != nil {
-		return errors.Wrap(err, "model: unable to populate default values for addresses")
+		return errors.Wrap(err, "model: unable to populate default values for address")
 	}
 
 CacheNoHooks:
@@ -1620,10 +1611,10 @@ func (o *Address) Update(exec boil.Executor, whitelist ...string) error {
 		)
 
 		if len(wl) == 0 {
-			return errors.New("model: unable to update addresses, could not build whitelist")
+			return errors.New("model: unable to update address, could not build whitelist")
 		}
 
-		cache.query = fmt.Sprintf("UPDATE `addresses` SET %s WHERE %s",
+		cache.query = fmt.Sprintf("UPDATE `address` SET %s WHERE %s",
 			strmangle.SetParamNames("`", "`", 0, wl),
 			strmangle.WhereClause("`", "`", 0, addressPrimaryKeyColumns),
 		)
@@ -1642,7 +1633,7 @@ func (o *Address) Update(exec boil.Executor, whitelist ...string) error {
 
 	_, err = exec.Exec(cache.query, values...)
 	if err != nil {
-		return errors.Wrap(err, "model: unable to update addresses row")
+		return errors.Wrap(err, "model: unable to update address row")
 	}
 
 	if !cached {
@@ -1667,7 +1658,7 @@ func (q addressQuery) UpdateAll(cols M) error {
 
 	_, err := q.Query.Exec()
 	if err != nil {
-		return errors.Wrap(err, "model: unable to update all for addresses")
+		return errors.Wrap(err, "model: unable to update all for address")
 	}
 
 	return nil
@@ -1719,7 +1710,7 @@ func (o AddressSlice) UpdateAll(exec boil.Executor, cols M) error {
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := fmt.Sprintf("UPDATE `addresses` SET %s WHERE %s",
+	sql := fmt.Sprintf("UPDATE `address` SET %s WHERE %s",
 		strmangle.SetParamNames("`", "`", 0, colNames),
 		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, addressPrimaryKeyColumns, len(o)))
 
@@ -1759,7 +1750,7 @@ func (o *Address) UpsertP(exec boil.Executor, updateColumns []string, whitelist 
 // Upsert attempts an insert using an executor, and does an update or ignore on conflict.
 func (o *Address) Upsert(exec boil.Executor, updateColumns []string, whitelist ...string) error {
 	if o == nil {
-		return errors.New("model: no addresses provided for upsert")
+		return errors.New("model: no address provided for upsert")
 	}
 
 	nzDefaults := queries.NonZeroDefaultSet(addressColumnsWithDefault, o)
@@ -1801,12 +1792,12 @@ func (o *Address) Upsert(exec boil.Executor, updateColumns []string, whitelist .
 			updateColumns,
 		)
 		if len(update) == 0 {
-			return errors.New("model: unable to upsert addresses, could not build update column list")
+			return errors.New("model: unable to upsert address, could not build update column list")
 		}
 
-		cache.query = queries.BuildUpsertQueryMySQL(dialect, "addresses", update, insert)
+		cache.query = queries.BuildUpsertQueryMySQL(dialect, "address", update, insert)
 		cache.retQuery = fmt.Sprintf(
-			"SELECT %s FROM `addresses` WHERE `id`=?",
+			"SELECT %s FROM `address` WHERE `id`=?",
 			strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, ret), ","),
 		)
 
@@ -1837,7 +1828,7 @@ func (o *Address) Upsert(exec boil.Executor, updateColumns []string, whitelist .
 	result, err := exec.Exec(cache.query, vals...)
 
 	if err != nil {
-		return errors.Wrap(err, "model: unable to upsert for addresses")
+		return errors.Wrap(err, "model: unable to upsert for address")
 	}
 
 	var lastID int64
@@ -1868,7 +1859,7 @@ func (o *Address) Upsert(exec boil.Executor, updateColumns []string, whitelist .
 
 	err = exec.QueryRow(cache.retQuery, identifierCols...).Scan(returns...)
 	if err != nil {
-		return errors.Wrap(err, "model: unable to populate default values for addresses")
+		return errors.Wrap(err, "model: unable to populate default values for address")
 	}
 
 CacheNoHooks:
@@ -1917,7 +1908,7 @@ func (o *Address) Delete(exec boil.Executor) error {
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), addressPrimaryKeyMapping)
-	sql := "DELETE FROM `addresses` WHERE `id`=?"
+	sql := "DELETE FROM `address` WHERE `id`=?"
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, sql)
@@ -1926,7 +1917,7 @@ func (o *Address) Delete(exec boil.Executor) error {
 
 	_, err := exec.Exec(sql, args...)
 	if err != nil {
-		return errors.Wrap(err, "model: unable to delete from addresses")
+		return errors.Wrap(err, "model: unable to delete from address")
 	}
 
 	return nil
@@ -1949,7 +1940,7 @@ func (q addressQuery) DeleteAll() error {
 
 	_, err := q.Query.Exec()
 	if err != nil {
-		return errors.Wrap(err, "model: unable to delete all from addresses")
+		return errors.Wrap(err, "model: unable to delete all from address")
 	}
 
 	return nil
@@ -1993,7 +1984,7 @@ func (o AddressSlice) DeleteAll(exec boil.Executor) error {
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := "DELETE FROM `addresses` WHERE " +
+	sql := "DELETE FROM `address` WHERE " +
 		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, addressPrimaryKeyColumns, len(o))
 
 	if boil.DebugMode {
@@ -2086,7 +2077,7 @@ func (o *AddressSlice) ReloadAll(exec boil.Executor) error {
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := "SELECT `addresses`.* FROM `addresses` WHERE " +
+	sql := "SELECT `address`.* FROM `address` WHERE " +
 		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, addressPrimaryKeyColumns, len(*o))
 
 	q := queries.Raw(exec, sql, args...)
@@ -2104,7 +2095,7 @@ func (o *AddressSlice) ReloadAll(exec boil.Executor) error {
 // AddressExists checks if the Address row exists.
 func AddressExists(exec boil.Executor, id uint64) (bool, error) {
 	var exists bool
-	sql := "select exists(select 1 from `addresses` where `id`=? limit 1)"
+	sql := "select exists(select 1 from `address` where `id`=? limit 1)"
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, sql)
@@ -2115,7 +2106,7 @@ func AddressExists(exec boil.Executor, id uint64) (bool, error) {
 
 	err := row.Scan(&exists)
 	if err != nil {
-		return false, errors.Wrap(err, "model: unable to check if addresses exists")
+		return false, errors.Wrap(err, "model: unable to check if address exists")
 	}
 
 	return exists, nil

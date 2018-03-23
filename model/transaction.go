@@ -146,7 +146,7 @@ func (q transactionQuery) One() (*Transaction, error) {
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "model: failed to execute a one query for transactions")
+		return nil, errors.Wrap(err, "model: failed to execute a one query for transaction")
 	}
 
 	return o, nil
@@ -193,7 +193,7 @@ func (q transactionQuery) Count() (int64, error) {
 
 	err := q.Query.QueryRow().Scan(&count)
 	if err != nil {
-		return 0, errors.Wrap(err, "model: failed to count transactions rows")
+		return 0, errors.Wrap(err, "model: failed to count transaction rows")
 	}
 
 	return count, nil
@@ -218,7 +218,7 @@ func (q transactionQuery) Exists() (bool, error) {
 
 	err := q.Query.QueryRow().Scan(&count)
 	if err != nil {
-		return false, errors.Wrap(err, "model: failed to check if transactions exists")
+		return false, errors.Wrap(err, "model: failed to check if transaction exists")
 	}
 
 	return count > 0, nil
@@ -238,17 +238,17 @@ func (o *Transaction) BlockByHash(exec boil.Executor, mods ...qm.QueryMod) block
 	queryMods = append(queryMods, mods...)
 
 	query := Blocks(exec, queryMods...)
-	queries.SetFrom(query.Query, "`blocks`")
+	queries.SetFrom(query.Query, "`block`")
 
 	return query
 }
 
-// TransactionByHashClaimsG retrieves all the claim's claims via transaction_by_hash_id column.
+// TransactionByHashClaimsG retrieves all the claim's claim via transaction_by_hash_id column.
 func (o *Transaction) TransactionByHashClaimsG(mods ...qm.QueryMod) claimQuery {
 	return o.TransactionByHashClaims(boil.GetDB(), mods...)
 }
 
-// TransactionByHashClaims retrieves all the claim's claims with an executor via transaction_by_hash_id column.
+// TransactionByHashClaims retrieves all the claim's claim with an executor via transaction_by_hash_id column.
 func (o *Transaction) TransactionByHashClaims(exec boil.Executor, mods ...qm.QueryMod) claimQuery {
 	var queryMods []qm.QueryMod
 	if len(mods) != 0 {
@@ -256,25 +256,25 @@ func (o *Transaction) TransactionByHashClaims(exec boil.Executor, mods ...qm.Que
 	}
 
 	queryMods = append(queryMods,
-		qm.Where("`claims`.`transaction_by_hash_id`=?", o.Hash),
+		qm.Where("`claim`.`transaction_by_hash_id`=?", o.Hash),
 	)
 
 	query := Claims(exec, queryMods...)
-	queries.SetFrom(query.Query, "`claims`")
+	queries.SetFrom(query.Query, "`claim`")
 
 	if len(queries.GetSelect(query.Query)) == 0 {
-		queries.SetSelect(query.Query, []string{"`claims`.*"})
+		queries.SetSelect(query.Query, []string{"`claim`.*"})
 	}
 
 	return query
 }
 
-// InputsG retrieves all the input's inputs.
+// InputsG retrieves all the input's input.
 func (o *Transaction) InputsG(mods ...qm.QueryMod) inputQuery {
 	return o.Inputs(boil.GetDB(), mods...)
 }
 
-// Inputs retrieves all the input's inputs with an executor.
+// Inputs retrieves all the input's input with an executor.
 func (o *Transaction) Inputs(exec boil.Executor, mods ...qm.QueryMod) inputQuery {
 	var queryMods []qm.QueryMod
 	if len(mods) != 0 {
@@ -282,25 +282,25 @@ func (o *Transaction) Inputs(exec boil.Executor, mods ...qm.QueryMod) inputQuery
 	}
 
 	queryMods = append(queryMods,
-		qm.Where("`inputs`.`transaction_id`=?", o.ID),
+		qm.Where("`input`.`transaction_id`=?", o.ID),
 	)
 
 	query := Inputs(exec, queryMods...)
-	queries.SetFrom(query.Query, "`inputs`")
+	queries.SetFrom(query.Query, "`input`")
 
 	if len(queries.GetSelect(query.Query)) == 0 {
-		queries.SetSelect(query.Query, []string{"`inputs`.*"})
+		queries.SetSelect(query.Query, []string{"`input`.*"})
 	}
 
 	return query
 }
 
-// OutputsG retrieves all the output's outputs.
+// OutputsG retrieves all the output's output.
 func (o *Transaction) OutputsG(mods ...qm.QueryMod) outputQuery {
 	return o.Outputs(boil.GetDB(), mods...)
 }
 
-// Outputs retrieves all the output's outputs with an executor.
+// Outputs retrieves all the output's output with an executor.
 func (o *Transaction) Outputs(exec boil.Executor, mods ...qm.QueryMod) outputQuery {
 	var queryMods []qm.QueryMod
 	if len(mods) != 0 {
@@ -308,25 +308,25 @@ func (o *Transaction) Outputs(exec boil.Executor, mods ...qm.QueryMod) outputQue
 	}
 
 	queryMods = append(queryMods,
-		qm.Where("`outputs`.`transaction_id`=?", o.ID),
+		qm.Where("`output`.`transaction_id`=?", o.ID),
 	)
 
 	query := Outputs(exec, queryMods...)
-	queries.SetFrom(query.Query, "`outputs`")
+	queries.SetFrom(query.Query, "`output`")
 
 	if len(queries.GetSelect(query.Query)) == 0 {
-		queries.SetSelect(query.Query, []string{"`outputs`.*"})
+		queries.SetSelect(query.Query, []string{"`output`.*"})
 	}
 
 	return query
 }
 
-// TransactionAddressesG retrieves all the transaction_address's transaction addresses.
+// TransactionAddressesG retrieves all the transaction_address's transaction address.
 func (o *Transaction) TransactionAddressesG(mods ...qm.QueryMod) transactionAddressQuery {
 	return o.TransactionAddresses(boil.GetDB(), mods...)
 }
 
-// TransactionAddresses retrieves all the transaction_address's transaction addresses with an executor.
+// TransactionAddresses retrieves all the transaction_address's transaction address with an executor.
 func (o *Transaction) TransactionAddresses(exec boil.Executor, mods ...qm.QueryMod) transactionAddressQuery {
 	var queryMods []qm.QueryMod
 	if len(mods) != 0 {
@@ -334,14 +334,14 @@ func (o *Transaction) TransactionAddresses(exec boil.Executor, mods ...qm.QueryM
 	}
 
 	queryMods = append(queryMods,
-		qm.Where("`transaction_addresses`.`transaction_id`=?", o.ID),
+		qm.Where("`transaction_address`.`transaction_id`=?", o.ID),
 	)
 
 	query := TransactionAddresses(exec, queryMods...)
-	queries.SetFrom(query.Query, "`transaction_addresses`")
+	queries.SetFrom(query.Query, "`transaction_address`")
 
 	if len(queries.GetSelect(query.Query)) == 0 {
-		queries.SetSelect(query.Query, []string{"`transaction_addresses`.*"})
+		queries.SetSelect(query.Query, []string{"`transaction_address`.*"})
 	}
 
 	return query
@@ -377,7 +377,7 @@ func (transactionL) LoadBlockByHash(e boil.Executor, singular bool, maybeTransac
 	}
 
 	query := fmt.Sprintf(
-		"select * from `blocks` where `hash` in (%s)",
+		"select * from `block` where `hash` in (%s)",
 		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
 	)
 
@@ -447,7 +447,7 @@ func (transactionL) LoadTransactionByHashClaims(e boil.Executor, singular bool, 
 	}
 
 	query := fmt.Sprintf(
-		"select * from `claims` where `transaction_by_hash_id` in (%s)",
+		"select * from `claim` where `transaction_by_hash_id` in (%s)",
 		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
 	)
 	if boil.DebugMode {
@@ -456,13 +456,13 @@ func (transactionL) LoadTransactionByHashClaims(e boil.Executor, singular bool, 
 
 	results, err := e.Query(query, args...)
 	if err != nil {
-		return errors.Wrap(err, "failed to eager load claims")
+		return errors.Wrap(err, "failed to eager load claim")
 	}
 	defer results.Close()
 
 	var resultSlice []*Claim
 	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice claims")
+		return errors.Wrap(err, "failed to bind eager loaded slice claim")
 	}
 
 	if singular {
@@ -512,7 +512,7 @@ func (transactionL) LoadInputs(e boil.Executor, singular bool, maybeTransaction 
 	}
 
 	query := fmt.Sprintf(
-		"select * from `inputs` where `transaction_id` in (%s)",
+		"select * from `input` where `transaction_id` in (%s)",
 		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
 	)
 	if boil.DebugMode {
@@ -521,13 +521,13 @@ func (transactionL) LoadInputs(e boil.Executor, singular bool, maybeTransaction 
 
 	results, err := e.Query(query, args...)
 	if err != nil {
-		return errors.Wrap(err, "failed to eager load inputs")
+		return errors.Wrap(err, "failed to eager load input")
 	}
 	defer results.Close()
 
 	var resultSlice []*Input
 	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice inputs")
+		return errors.Wrap(err, "failed to bind eager loaded slice input")
 	}
 
 	if singular {
@@ -577,7 +577,7 @@ func (transactionL) LoadOutputs(e boil.Executor, singular bool, maybeTransaction
 	}
 
 	query := fmt.Sprintf(
-		"select * from `outputs` where `transaction_id` in (%s)",
+		"select * from `output` where `transaction_id` in (%s)",
 		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
 	)
 	if boil.DebugMode {
@@ -586,13 +586,13 @@ func (transactionL) LoadOutputs(e boil.Executor, singular bool, maybeTransaction
 
 	results, err := e.Query(query, args...)
 	if err != nil {
-		return errors.Wrap(err, "failed to eager load outputs")
+		return errors.Wrap(err, "failed to eager load output")
 	}
 	defer results.Close()
 
 	var resultSlice []*Output
 	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice outputs")
+		return errors.Wrap(err, "failed to bind eager loaded slice output")
 	}
 
 	if singular {
@@ -642,7 +642,7 @@ func (transactionL) LoadTransactionAddresses(e boil.Executor, singular bool, may
 	}
 
 	query := fmt.Sprintf(
-		"select * from `transaction_addresses` where `transaction_id` in (%s)",
+		"select * from `transaction_address` where `transaction_id` in (%s)",
 		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
 	)
 	if boil.DebugMode {
@@ -651,13 +651,13 @@ func (transactionL) LoadTransactionAddresses(e boil.Executor, singular bool, may
 
 	results, err := e.Query(query, args...)
 	if err != nil {
-		return errors.Wrap(err, "failed to eager load transaction_addresses")
+		return errors.Wrap(err, "failed to eager load transaction_address")
 	}
 	defer results.Close()
 
 	var resultSlice []*TransactionAddress
 	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice transaction_addresses")
+		return errors.Wrap(err, "failed to bind eager loaded slice transaction_address")
 	}
 
 	if singular {
@@ -717,7 +717,7 @@ func (o *Transaction) SetBlockByHash(exec boil.Executor, insert bool, related *B
 	}
 
 	updateQuery := fmt.Sprintf(
-		"UPDATE `transactions` SET %s WHERE %s",
+		"UPDATE `transaction` SET %s WHERE %s",
 		strmangle.SetParamNames("`", "`", 0, []string{"block_by_hash_id"}),
 		strmangle.WhereClause("`", "`", 0, transactionPrimaryKeyColumns),
 	)
@@ -860,7 +860,7 @@ func (o *Transaction) AddTransactionByHashClaims(exec boil.Executor, insert bool
 			}
 		} else {
 			updateQuery := fmt.Sprintf(
-				"UPDATE `claims` SET %s WHERE %s",
+				"UPDATE `claim` SET %s WHERE %s",
 				strmangle.SetParamNames("`", "`", 0, []string{"transaction_by_hash_id"}),
 				strmangle.WhereClause("`", "`", 0, claimPrimaryKeyColumns),
 			)
@@ -944,7 +944,7 @@ func (o *Transaction) SetTransactionByHashClaimsGP(insert bool, related ...*Clai
 // Replaces o.R.TransactionByHashClaims with related.
 // Sets related.R.TransactionByHash's TransactionByHashClaims accordingly.
 func (o *Transaction) SetTransactionByHashClaims(exec boil.Executor, insert bool, related ...*Claim) error {
-	query := "update `claims` set `transaction_by_hash_id` = null where `transaction_by_hash_id` = ?"
+	query := "update `claim` set `transaction_by_hash_id` = null where `transaction_by_hash_id` = ?"
 	values := []interface{}{o.Hash}
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, query)
@@ -1080,7 +1080,7 @@ func (o *Transaction) AddInputs(exec boil.Executor, insert bool, related ...*Inp
 			}
 		} else {
 			updateQuery := fmt.Sprintf(
-				"UPDATE `inputs` SET %s WHERE %s",
+				"UPDATE `input` SET %s WHERE %s",
 				strmangle.SetParamNames("`", "`", 0, []string{"transaction_id"}),
 				strmangle.WhereClause("`", "`", 0, inputPrimaryKeyColumns),
 			)
@@ -1164,7 +1164,7 @@ func (o *Transaction) AddOutputs(exec boil.Executor, insert bool, related ...*Ou
 			}
 		} else {
 			updateQuery := fmt.Sprintf(
-				"UPDATE `outputs` SET %s WHERE %s",
+				"UPDATE `output` SET %s WHERE %s",
 				strmangle.SetParamNames("`", "`", 0, []string{"transaction_id"}),
 				strmangle.WhereClause("`", "`", 0, outputPrimaryKeyColumns),
 			)
@@ -1248,7 +1248,7 @@ func (o *Transaction) AddTransactionAddresses(exec boil.Executor, insert bool, r
 			}
 		} else {
 			updateQuery := fmt.Sprintf(
-				"UPDATE `transaction_addresses` SET %s WHERE %s",
+				"UPDATE `transaction_address` SET %s WHERE %s",
 				strmangle.SetParamNames("`", "`", 0, []string{"transaction_id"}),
 				strmangle.WhereClause("`", "`", 0, transactionAddressPrimaryKeyColumns),
 			)
@@ -1294,7 +1294,7 @@ func TransactionsG(mods ...qm.QueryMod) transactionQuery {
 
 // Transactions retrieves all the records using an executor.
 func Transactions(exec boil.Executor, mods ...qm.QueryMod) transactionQuery {
-	mods = append(mods, qm.From("`transactions`"))
+	mods = append(mods, qm.From("`transaction`"))
 	return transactionQuery{NewQuery(exec, mods...)}
 }
 
@@ -1323,7 +1323,7 @@ func FindTransaction(exec boil.Executor, id uint64, selectCols ...string) (*Tran
 		sel = strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, selectCols), ",")
 	}
 	query := fmt.Sprintf(
-		"select %s from `transactions` where `id`=?", sel,
+		"select %s from `transaction` where `id`=?", sel,
 	)
 
 	q := queries.Raw(exec, query, id)
@@ -1333,7 +1333,7 @@ func FindTransaction(exec boil.Executor, id uint64, selectCols ...string) (*Tran
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "model: unable to select from transactions")
+		return nil, errors.Wrap(err, "model: unable to select from transaction")
 	}
 
 	return transactionObj, nil
@@ -1377,7 +1377,7 @@ func (o *Transaction) InsertP(exec boil.Executor, whitelist ...string) {
 // - All columns with a default, but non-zero are included (i.e. health = 75)
 func (o *Transaction) Insert(exec boil.Executor, whitelist ...string) error {
 	if o == nil {
-		return errors.New("model: no transactions provided for insertion")
+		return errors.New("model: no transaction provided for insertion")
 	}
 
 	var err error
@@ -1407,15 +1407,15 @@ func (o *Transaction) Insert(exec boil.Executor, whitelist ...string) error {
 			return err
 		}
 		if len(wl) != 0 {
-			cache.query = fmt.Sprintf("INSERT INTO `transactions` (`%s`) %%sVALUES (%s)%%s", strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.IndexPlaceholders, len(wl), 1, 1))
+			cache.query = fmt.Sprintf("INSERT INTO `transaction` (`%s`) %%sVALUES (%s)%%s", strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.IndexPlaceholders, len(wl), 1, 1))
 		} else {
-			cache.query = "INSERT INTO `transactions` () VALUES ()"
+			cache.query = "INSERT INTO `transaction` () VALUES ()"
 		}
 
 		var queryOutput, queryReturning string
 
 		if len(cache.retMapping) != 0 {
-			cache.retQuery = fmt.Sprintf("SELECT `%s` FROM `transactions` WHERE %s", strings.Join(returnColumns, "`,`"), strmangle.WhereClause("`", "`", 0, transactionPrimaryKeyColumns))
+			cache.retQuery = fmt.Sprintf("SELECT `%s` FROM `transaction` WHERE %s", strings.Join(returnColumns, "`,`"), strmangle.WhereClause("`", "`", 0, transactionPrimaryKeyColumns))
 		}
 
 		if len(wl) != 0 {
@@ -1434,7 +1434,7 @@ func (o *Transaction) Insert(exec boil.Executor, whitelist ...string) error {
 	result, err := exec.Exec(cache.query, vals...)
 
 	if err != nil {
-		return errors.Wrap(err, "model: unable to insert into transactions")
+		return errors.Wrap(err, "model: unable to insert into transaction")
 	}
 
 	var lastID int64
@@ -1465,7 +1465,7 @@ func (o *Transaction) Insert(exec boil.Executor, whitelist ...string) error {
 
 	err = exec.QueryRow(cache.retQuery, identifierCols...).Scan(queries.PtrsFromMapping(value, cache.retMapping)...)
 	if err != nil {
-		return errors.Wrap(err, "model: unable to populate default values for transactions")
+		return errors.Wrap(err, "model: unable to populate default values for transaction")
 	}
 
 CacheNoHooks:
@@ -1524,10 +1524,10 @@ func (o *Transaction) Update(exec boil.Executor, whitelist ...string) error {
 		)
 
 		if len(wl) == 0 {
-			return errors.New("model: unable to update transactions, could not build whitelist")
+			return errors.New("model: unable to update transaction, could not build whitelist")
 		}
 
-		cache.query = fmt.Sprintf("UPDATE `transactions` SET %s WHERE %s",
+		cache.query = fmt.Sprintf("UPDATE `transaction` SET %s WHERE %s",
 			strmangle.SetParamNames("`", "`", 0, wl),
 			strmangle.WhereClause("`", "`", 0, transactionPrimaryKeyColumns),
 		)
@@ -1546,7 +1546,7 @@ func (o *Transaction) Update(exec boil.Executor, whitelist ...string) error {
 
 	_, err = exec.Exec(cache.query, values...)
 	if err != nil {
-		return errors.Wrap(err, "model: unable to update transactions row")
+		return errors.Wrap(err, "model: unable to update transaction row")
 	}
 
 	if !cached {
@@ -1571,7 +1571,7 @@ func (q transactionQuery) UpdateAll(cols M) error {
 
 	_, err := q.Query.Exec()
 	if err != nil {
-		return errors.Wrap(err, "model: unable to update all for transactions")
+		return errors.Wrap(err, "model: unable to update all for transaction")
 	}
 
 	return nil
@@ -1623,7 +1623,7 @@ func (o TransactionSlice) UpdateAll(exec boil.Executor, cols M) error {
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := fmt.Sprintf("UPDATE `transactions` SET %s WHERE %s",
+	sql := fmt.Sprintf("UPDATE `transaction` SET %s WHERE %s",
 		strmangle.SetParamNames("`", "`", 0, colNames),
 		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, transactionPrimaryKeyColumns, len(o)))
 
@@ -1663,7 +1663,7 @@ func (o *Transaction) UpsertP(exec boil.Executor, updateColumns []string, whitel
 // Upsert attempts an insert using an executor, and does an update or ignore on conflict.
 func (o *Transaction) Upsert(exec boil.Executor, updateColumns []string, whitelist ...string) error {
 	if o == nil {
-		return errors.New("model: no transactions provided for upsert")
+		return errors.New("model: no transaction provided for upsert")
 	}
 
 	nzDefaults := queries.NonZeroDefaultSet(transactionColumnsWithDefault, o)
@@ -1705,12 +1705,12 @@ func (o *Transaction) Upsert(exec boil.Executor, updateColumns []string, whiteli
 			updateColumns,
 		)
 		if len(update) == 0 {
-			return errors.New("model: unable to upsert transactions, could not build update column list")
+			return errors.New("model: unable to upsert transaction, could not build update column list")
 		}
 
-		cache.query = queries.BuildUpsertQueryMySQL(dialect, "transactions", update, insert)
+		cache.query = queries.BuildUpsertQueryMySQL(dialect, "transaction", update, insert)
 		cache.retQuery = fmt.Sprintf(
-			"SELECT %s FROM `transactions` WHERE `id`=?",
+			"SELECT %s FROM `transaction` WHERE `id`=?",
 			strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, ret), ","),
 		)
 
@@ -1741,7 +1741,7 @@ func (o *Transaction) Upsert(exec boil.Executor, updateColumns []string, whiteli
 	result, err := exec.Exec(cache.query, vals...)
 
 	if err != nil {
-		return errors.Wrap(err, "model: unable to upsert for transactions")
+		return errors.Wrap(err, "model: unable to upsert for transaction")
 	}
 
 	var lastID int64
@@ -1772,7 +1772,7 @@ func (o *Transaction) Upsert(exec boil.Executor, updateColumns []string, whiteli
 
 	err = exec.QueryRow(cache.retQuery, identifierCols...).Scan(returns...)
 	if err != nil {
-		return errors.Wrap(err, "model: unable to populate default values for transactions")
+		return errors.Wrap(err, "model: unable to populate default values for transaction")
 	}
 
 CacheNoHooks:
@@ -1821,7 +1821,7 @@ func (o *Transaction) Delete(exec boil.Executor) error {
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), transactionPrimaryKeyMapping)
-	sql := "DELETE FROM `transactions` WHERE `id`=?"
+	sql := "DELETE FROM `transaction` WHERE `id`=?"
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, sql)
@@ -1830,7 +1830,7 @@ func (o *Transaction) Delete(exec boil.Executor) error {
 
 	_, err := exec.Exec(sql, args...)
 	if err != nil {
-		return errors.Wrap(err, "model: unable to delete from transactions")
+		return errors.Wrap(err, "model: unable to delete from transaction")
 	}
 
 	return nil
@@ -1853,7 +1853,7 @@ func (q transactionQuery) DeleteAll() error {
 
 	_, err := q.Query.Exec()
 	if err != nil {
-		return errors.Wrap(err, "model: unable to delete all from transactions")
+		return errors.Wrap(err, "model: unable to delete all from transaction")
 	}
 
 	return nil
@@ -1897,7 +1897,7 @@ func (o TransactionSlice) DeleteAll(exec boil.Executor) error {
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := "DELETE FROM `transactions` WHERE " +
+	sql := "DELETE FROM `transaction` WHERE " +
 		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, transactionPrimaryKeyColumns, len(o))
 
 	if boil.DebugMode {
@@ -1990,7 +1990,7 @@ func (o *TransactionSlice) ReloadAll(exec boil.Executor) error {
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := "SELECT `transactions`.* FROM `transactions` WHERE " +
+	sql := "SELECT `transaction`.* FROM `transaction` WHERE " +
 		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, transactionPrimaryKeyColumns, len(*o))
 
 	q := queries.Raw(exec, sql, args...)
@@ -2008,7 +2008,7 @@ func (o *TransactionSlice) ReloadAll(exec boil.Executor) error {
 // TransactionExists checks if the Transaction row exists.
 func TransactionExists(exec boil.Executor, id uint64) (bool, error) {
 	var exists bool
-	sql := "select exists(select 1 from `transactions` where `id`=? limit 1)"
+	sql := "select exists(select 1 from `transaction` where `id`=? limit 1)"
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, sql)
@@ -2019,7 +2019,7 @@ func TransactionExists(exec boil.Executor, id uint64) (bool, error) {
 
 	err := row.Scan(&exists)
 	if err != nil {
-		return false, errors.Wrap(err, "model: unable to check if transactions exists")
+		return false, errors.Wrap(err, "model: unable to check if transaction exists")
 	}
 
 	return exists, nil

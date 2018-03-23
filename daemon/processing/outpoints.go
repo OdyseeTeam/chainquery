@@ -68,8 +68,6 @@ func ProcessVin(jsonVin *lbrycrd.Vin, txId *uint64, txHash string, txDC txDebitC
 				txDC.subtract(address.Address, value)
 				vin.InputAddressID.Uint64 = address.ID
 				vin.InputAddressID.Valid = true
-
-				updateTotalSent(*address, *vin)
 				// Store input - Needed to store input address below
 				err := ds.PutInput(vin)
 				if err != nil {
@@ -210,26 +208,6 @@ func createTransactionAddress(txID uint64, addressID uint64) m.TransactionAddres
 	txAddress.LatestTransactionTime = time.Now()
 
 	return txAddress
-}
-
-func updateTotalSent(address m.Address, vin m.Input) error {
-	//Update Address TotalSent
-	totalSent, err := strconv.ParseFloat(address.TotalSent, 64)
-	if err != nil {
-		return err
-	}
-
-	outValue, err := strconv.ParseFloat(vin.Value.String, 64)
-	if err != nil {
-		return err
-	}
-	address.TotalSent = strconv.FormatFloat((totalSent + outValue), 'f', -1, 64)
-	err = address.UpdateG()
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func processScript(vout m.Output) error {

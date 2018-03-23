@@ -163,7 +163,7 @@ func (q blockQuery) One() (*Block, error) {
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "model: failed to execute a one query for blocks")
+		return nil, errors.Wrap(err, "model: failed to execute a one query for block")
 	}
 
 	return o, nil
@@ -210,7 +210,7 @@ func (q blockQuery) Count() (int64, error) {
 
 	err := q.Query.QueryRow().Scan(&count)
 	if err != nil {
-		return 0, errors.Wrap(err, "model: failed to count blocks rows")
+		return 0, errors.Wrap(err, "model: failed to count block rows")
 	}
 
 	return count, nil
@@ -235,18 +235,18 @@ func (q blockQuery) Exists() (bool, error) {
 
 	err := q.Query.QueryRow().Scan(&count)
 	if err != nil {
-		return false, errors.Wrap(err, "model: failed to check if blocks exists")
+		return false, errors.Wrap(err, "model: failed to check if block exists")
 	}
 
 	return count > 0, nil
 }
 
-// BlockByHashTransactionsG retrieves all the transaction's transactions via block_by_hash_id column.
+// BlockByHashTransactionsG retrieves all the transaction's transaction via block_by_hash_id column.
 func (o *Block) BlockByHashTransactionsG(mods ...qm.QueryMod) transactionQuery {
 	return o.BlockByHashTransactions(boil.GetDB(), mods...)
 }
 
-// BlockByHashTransactions retrieves all the transaction's transactions with an executor via block_by_hash_id column.
+// BlockByHashTransactions retrieves all the transaction's transaction with an executor via block_by_hash_id column.
 func (o *Block) BlockByHashTransactions(exec boil.Executor, mods ...qm.QueryMod) transactionQuery {
 	var queryMods []qm.QueryMod
 	if len(mods) != 0 {
@@ -254,14 +254,14 @@ func (o *Block) BlockByHashTransactions(exec boil.Executor, mods ...qm.QueryMod)
 	}
 
 	queryMods = append(queryMods,
-		qm.Where("`transactions`.`block_by_hash_id`=?", o.Hash),
+		qm.Where("`transaction`.`block_by_hash_id`=?", o.Hash),
 	)
 
 	query := Transactions(exec, queryMods...)
-	queries.SetFrom(query.Query, "`transactions`")
+	queries.SetFrom(query.Query, "`transaction`")
 
 	if len(queries.GetSelect(query.Query)) == 0 {
-		queries.SetSelect(query.Query, []string{"`transactions`.*"})
+		queries.SetSelect(query.Query, []string{"`transaction`.*"})
 	}
 
 	return query
@@ -297,7 +297,7 @@ func (blockL) LoadBlockByHashTransactions(e boil.Executor, singular bool, maybeB
 	}
 
 	query := fmt.Sprintf(
-		"select * from `transactions` where `block_by_hash_id` in (%s)",
+		"select * from `transaction` where `block_by_hash_id` in (%s)",
 		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
 	)
 	if boil.DebugMode {
@@ -306,13 +306,13 @@ func (blockL) LoadBlockByHashTransactions(e boil.Executor, singular bool, maybeB
 
 	results, err := e.Query(query, args...)
 	if err != nil {
-		return errors.Wrap(err, "failed to eager load transactions")
+		return errors.Wrap(err, "failed to eager load transaction")
 	}
 	defer results.Close()
 
 	var resultSlice []*Transaction
 	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice transactions")
+		return errors.Wrap(err, "failed to bind eager loaded slice transaction")
 	}
 
 	if singular {
@@ -378,7 +378,7 @@ func (o *Block) AddBlockByHashTransactions(exec boil.Executor, insert bool, rela
 			}
 		} else {
 			updateQuery := fmt.Sprintf(
-				"UPDATE `transactions` SET %s WHERE %s",
+				"UPDATE `transaction` SET %s WHERE %s",
 				strmangle.SetParamNames("`", "`", 0, []string{"block_by_hash_id"}),
 				strmangle.WhereClause("`", "`", 0, transactionPrimaryKeyColumns),
 			)
@@ -462,7 +462,7 @@ func (o *Block) SetBlockByHashTransactionsGP(insert bool, related ...*Transactio
 // Replaces o.R.BlockByHashTransactions with related.
 // Sets related.R.BlockByHash's BlockByHashTransactions accordingly.
 func (o *Block) SetBlockByHashTransactions(exec boil.Executor, insert bool, related ...*Transaction) error {
-	query := "update `transactions` set `block_by_hash_id` = null where `block_by_hash_id` = ?"
+	query := "update `transaction` set `block_by_hash_id` = null where `block_by_hash_id` = ?"
 	values := []interface{}{o.Hash}
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, query)
@@ -560,7 +560,7 @@ func BlocksG(mods ...qm.QueryMod) blockQuery {
 
 // Blocks retrieves all the records using an executor.
 func Blocks(exec boil.Executor, mods ...qm.QueryMod) blockQuery {
-	mods = append(mods, qm.From("`blocks`"))
+	mods = append(mods, qm.From("`block`"))
 	return blockQuery{NewQuery(exec, mods...)}
 }
 
@@ -589,7 +589,7 @@ func FindBlock(exec boil.Executor, id uint64, selectCols ...string) (*Block, err
 		sel = strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, selectCols), ",")
 	}
 	query := fmt.Sprintf(
-		"select %s from `blocks` where `id`=?", sel,
+		"select %s from `block` where `id`=?", sel,
 	)
 
 	q := queries.Raw(exec, query, id)
@@ -599,7 +599,7 @@ func FindBlock(exec boil.Executor, id uint64, selectCols ...string) (*Block, err
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "model: unable to select from blocks")
+		return nil, errors.Wrap(err, "model: unable to select from block")
 	}
 
 	return blockObj, nil
@@ -643,7 +643,7 @@ func (o *Block) InsertP(exec boil.Executor, whitelist ...string) {
 // - All columns with a default, but non-zero are included (i.e. health = 75)
 func (o *Block) Insert(exec boil.Executor, whitelist ...string) error {
 	if o == nil {
-		return errors.New("model: no blocks provided for insertion")
+		return errors.New("model: no block provided for insertion")
 	}
 
 	var err error
@@ -673,15 +673,15 @@ func (o *Block) Insert(exec boil.Executor, whitelist ...string) error {
 			return err
 		}
 		if len(wl) != 0 {
-			cache.query = fmt.Sprintf("INSERT INTO `blocks` (`%s`) %%sVALUES (%s)%%s", strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.IndexPlaceholders, len(wl), 1, 1))
+			cache.query = fmt.Sprintf("INSERT INTO `block` (`%s`) %%sVALUES (%s)%%s", strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.IndexPlaceholders, len(wl), 1, 1))
 		} else {
-			cache.query = "INSERT INTO `blocks` () VALUES ()"
+			cache.query = "INSERT INTO `block` () VALUES ()"
 		}
 
 		var queryOutput, queryReturning string
 
 		if len(cache.retMapping) != 0 {
-			cache.retQuery = fmt.Sprintf("SELECT `%s` FROM `blocks` WHERE %s", strings.Join(returnColumns, "`,`"), strmangle.WhereClause("`", "`", 0, blockPrimaryKeyColumns))
+			cache.retQuery = fmt.Sprintf("SELECT `%s` FROM `block` WHERE %s", strings.Join(returnColumns, "`,`"), strmangle.WhereClause("`", "`", 0, blockPrimaryKeyColumns))
 		}
 
 		if len(wl) != 0 {
@@ -700,7 +700,7 @@ func (o *Block) Insert(exec boil.Executor, whitelist ...string) error {
 	result, err := exec.Exec(cache.query, vals...)
 
 	if err != nil {
-		return errors.Wrap(err, "model: unable to insert into blocks")
+		return errors.Wrap(err, "model: unable to insert into block")
 	}
 
 	var lastID int64
@@ -731,7 +731,7 @@ func (o *Block) Insert(exec boil.Executor, whitelist ...string) error {
 
 	err = exec.QueryRow(cache.retQuery, identifierCols...).Scan(queries.PtrsFromMapping(value, cache.retMapping)...)
 	if err != nil {
-		return errors.Wrap(err, "model: unable to populate default values for blocks")
+		return errors.Wrap(err, "model: unable to populate default values for block")
 	}
 
 CacheNoHooks:
@@ -790,10 +790,10 @@ func (o *Block) Update(exec boil.Executor, whitelist ...string) error {
 		)
 
 		if len(wl) == 0 {
-			return errors.New("model: unable to update blocks, could not build whitelist")
+			return errors.New("model: unable to update block, could not build whitelist")
 		}
 
-		cache.query = fmt.Sprintf("UPDATE `blocks` SET %s WHERE %s",
+		cache.query = fmt.Sprintf("UPDATE `block` SET %s WHERE %s",
 			strmangle.SetParamNames("`", "`", 0, wl),
 			strmangle.WhereClause("`", "`", 0, blockPrimaryKeyColumns),
 		)
@@ -812,7 +812,7 @@ func (o *Block) Update(exec boil.Executor, whitelist ...string) error {
 
 	_, err = exec.Exec(cache.query, values...)
 	if err != nil {
-		return errors.Wrap(err, "model: unable to update blocks row")
+		return errors.Wrap(err, "model: unable to update block row")
 	}
 
 	if !cached {
@@ -837,7 +837,7 @@ func (q blockQuery) UpdateAll(cols M) error {
 
 	_, err := q.Query.Exec()
 	if err != nil {
-		return errors.Wrap(err, "model: unable to update all for blocks")
+		return errors.Wrap(err, "model: unable to update all for block")
 	}
 
 	return nil
@@ -889,7 +889,7 @@ func (o BlockSlice) UpdateAll(exec boil.Executor, cols M) error {
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := fmt.Sprintf("UPDATE `blocks` SET %s WHERE %s",
+	sql := fmt.Sprintf("UPDATE `block` SET %s WHERE %s",
 		strmangle.SetParamNames("`", "`", 0, colNames),
 		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, blockPrimaryKeyColumns, len(o)))
 
@@ -929,7 +929,7 @@ func (o *Block) UpsertP(exec boil.Executor, updateColumns []string, whitelist ..
 // Upsert attempts an insert using an executor, and does an update or ignore on conflict.
 func (o *Block) Upsert(exec boil.Executor, updateColumns []string, whitelist ...string) error {
 	if o == nil {
-		return errors.New("model: no blocks provided for upsert")
+		return errors.New("model: no block provided for upsert")
 	}
 
 	nzDefaults := queries.NonZeroDefaultSet(blockColumnsWithDefault, o)
@@ -971,12 +971,12 @@ func (o *Block) Upsert(exec boil.Executor, updateColumns []string, whitelist ...
 			updateColumns,
 		)
 		if len(update) == 0 {
-			return errors.New("model: unable to upsert blocks, could not build update column list")
+			return errors.New("model: unable to upsert block, could not build update column list")
 		}
 
-		cache.query = queries.BuildUpsertQueryMySQL(dialect, "blocks", update, insert)
+		cache.query = queries.BuildUpsertQueryMySQL(dialect, "block", update, insert)
 		cache.retQuery = fmt.Sprintf(
-			"SELECT %s FROM `blocks` WHERE `id`=?",
+			"SELECT %s FROM `block` WHERE `id`=?",
 			strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, ret), ","),
 		)
 
@@ -1007,7 +1007,7 @@ func (o *Block) Upsert(exec boil.Executor, updateColumns []string, whitelist ...
 	result, err := exec.Exec(cache.query, vals...)
 
 	if err != nil {
-		return errors.Wrap(err, "model: unable to upsert for blocks")
+		return errors.Wrap(err, "model: unable to upsert for block")
 	}
 
 	var lastID int64
@@ -1038,7 +1038,7 @@ func (o *Block) Upsert(exec boil.Executor, updateColumns []string, whitelist ...
 
 	err = exec.QueryRow(cache.retQuery, identifierCols...).Scan(returns...)
 	if err != nil {
-		return errors.Wrap(err, "model: unable to populate default values for blocks")
+		return errors.Wrap(err, "model: unable to populate default values for block")
 	}
 
 CacheNoHooks:
@@ -1087,7 +1087,7 @@ func (o *Block) Delete(exec boil.Executor) error {
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), blockPrimaryKeyMapping)
-	sql := "DELETE FROM `blocks` WHERE `id`=?"
+	sql := "DELETE FROM `block` WHERE `id`=?"
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, sql)
@@ -1096,7 +1096,7 @@ func (o *Block) Delete(exec boil.Executor) error {
 
 	_, err := exec.Exec(sql, args...)
 	if err != nil {
-		return errors.Wrap(err, "model: unable to delete from blocks")
+		return errors.Wrap(err, "model: unable to delete from block")
 	}
 
 	return nil
@@ -1119,7 +1119,7 @@ func (q blockQuery) DeleteAll() error {
 
 	_, err := q.Query.Exec()
 	if err != nil {
-		return errors.Wrap(err, "model: unable to delete all from blocks")
+		return errors.Wrap(err, "model: unable to delete all from block")
 	}
 
 	return nil
@@ -1163,7 +1163,7 @@ func (o BlockSlice) DeleteAll(exec boil.Executor) error {
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := "DELETE FROM `blocks` WHERE " +
+	sql := "DELETE FROM `block` WHERE " +
 		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, blockPrimaryKeyColumns, len(o))
 
 	if boil.DebugMode {
@@ -1256,7 +1256,7 @@ func (o *BlockSlice) ReloadAll(exec boil.Executor) error {
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := "SELECT `blocks`.* FROM `blocks` WHERE " +
+	sql := "SELECT `block`.* FROM `block` WHERE " +
 		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, blockPrimaryKeyColumns, len(*o))
 
 	q := queries.Raw(exec, sql, args...)
@@ -1274,7 +1274,7 @@ func (o *BlockSlice) ReloadAll(exec boil.Executor) error {
 // BlockExists checks if the Block row exists.
 func BlockExists(exec boil.Executor, id uint64) (bool, error) {
 	var exists bool
-	sql := "select exists(select 1 from `blocks` where `id`=? limit 1)"
+	sql := "select exists(select 1 from `block` where `id`=? limit 1)"
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, sql)
@@ -1285,7 +1285,7 @@ func BlockExists(exec boil.Executor, id uint64) (bool, error) {
 
 	err := row.Scan(&exists)
 	if err != nil {
-		return false, errors.Wrap(err, "model: unable to check if blocks exists")
+		return false, errors.Wrap(err, "model: unable to check if block exists")
 	}
 
 	return exists, nil
