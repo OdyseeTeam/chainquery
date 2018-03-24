@@ -8,10 +8,8 @@ import (
 	"github.com/lbryio/chainquery/model"
 	"github.com/lbryio/errors.go"
 
-	sha256 "crypto/sha256"
 	"encoding/binary"
 	"github.com/sirupsen/logrus"
-	ripemd160 "golang.org/x/crypto/ripemd160"
 )
 
 func processAsClaim(script []byte, vout model.Output) (address *string, err error) {
@@ -102,25 +100,13 @@ func getClaimIdFromOutput(vout *model.Output) string {
 	if err != nil {
 		logrus.Error("Could not decode hex string -> ", vout.TransactionHash, " ", err)
 	}
-	bs := make([]byte, 4)
+	bs := make([]byte, 4) //uint32 byte array
 	println("txHash: ", hex.EncodeToString(txHashBytes), "vout(uint32): ", uint32(vout.Vout))
 	binary.BigEndian.PutUint32(bs, uint32(vout.Vout))
 
 	claimIdBytes := append(txHashBytes, bs...)
 	println("Concatenated ", hex.EncodeToString(claimIdBytes))
-	sha256Hash := sha256.New()
-	ripemd160Hash := ripemd160.New()
-	//Double sha256
-	sha256Hash.Write(claimIdBytes)
-	sha1 := sha256Hash.Sum(nil)
-	sha256Hash.Reset()
-	sha256Hash.Write(sha1)
-	sha2 := sha256Hash.Sum(nil)
-	//ripemd160
-	ripemd160Hash.Write(sha2)
-	claimIdBytes = ripemd160Hash.Sum(nil)
-
-	//claimIdBytes = lbrycrd.Hash160(claimIdBytes)
+	claimIdBytes = lbrycrd.Hash160(claimIdBytes)
 
 	return hex.EncodeToString(claimIdBytes)
 }
