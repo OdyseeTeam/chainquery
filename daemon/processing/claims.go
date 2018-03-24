@@ -2,16 +2,16 @@ package processing
 
 import (
 	"encoding/hex"
-	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/lbryio/chainquery/lbrycrd"
 	"github.com/lbryio/chainquery/model"
 	"github.com/lbryio/errors.go"
 
+	sha256 "crypto/sha256"
+	"encoding/binary"
 	"github.com/sirupsen/logrus"
-	"golang.org/x/crypto/ripemd160"
+	ripemd160 "golang.org/x/crypto/ripemd160"
 )
 
 func processAsClaim(script []byte, vout model.Output) (address *string, err error) {
@@ -50,15 +50,11 @@ func processClaimNameScript(script *[]byte, vout model.Output) (name string, cla
 		errors.Prefix("Claim name processing error: ", err)
 		return name, claimid, pubkeyscript, err
 	}
-	_, err = lbrycrd.DecodeClaimValue(name, value)
-	if false { //claim != nil {
-		hasher := ripemd160.New()
-		value := strconv.Itoa(int(vout.TransactionID)) + strconv.Itoa(int(vout.Vout))
-		hasher.Write([]byte(value))
-		hashBytes := hasher.Sum(nil)
-		claimId := fmt.Sprintf("%x", hashBytes)
+	claim, err := lbrycrd.DecodeClaimValue(name, value)
+	if claim != nil {
+		claimId := getClaimIdFromOutput(&vout)
 		if claimId != "" {
-			//log.Debug("ClaimName ", name, " ClaimId ", claimId)
+			logrus.Debug("ClaimName ", name, " ClaimId ", claimId)
 		}
 	}
 
@@ -97,4 +93,34 @@ func GetAddressFromClaimASM(asm string) string {
 	}
 
 	return address
+}
+
+func getClaimIdFromOutput(vout *model.Output) string {
+
+	txHashBytes, err := hex.DecodeString(vout.TransactionHash)
+	println("Hash bytes: ", len(txHashBytes))
+	if err != nil {
+		logrus.Error("Could not decode hex string -> ", vout.TransactionHash, " ", err)
+	}
+	bs := make([]byte, 4)
+	println("txHash: ", hex.EncodeToString(txHashBytes), "vout(uint32): ", uint32(vout.Vout))
+	binary.BigEndian.PutUint32(bs, uint32(vout.Vout))
+
+	claimIdBytes := append(txHashBytes, bs...)
+	println("Concatenated ", hex.EncodeToString(claimIdBytes))
+	sha256Hash := sha256.New()
+	ripemd160Hash := ripemd160.New()
+	//Double sha256
+	sha256Hash.Write(claimIdBytes)
+	sha1 := sha256Hash.Sum(nil)
+	sha256Hash.Reset()
+	sha256Hash.Write(sha1)
+	sha2 := sha256Hash.Sum(nil)
+	//ripemd160
+	ripemd160Hash.Write(sha2)
+	claimIdBytes = ripemd160Hash.Sum(nil)
+
+	//claimIdBytes = lbrycrd.Hash160(claimIdBytes)
+
+	return hex.EncodeToString(claimIdBytes)
 }

@@ -12,7 +12,7 @@ import (
 	"github.com/lbryio/lbryschema.go/pb"
 )
 
-//
+// TODO - Needs to be moved to lbryschema.go
 func DecodeClaimValue(name string, value []byte) (*pb.Claim, error) {
 	claim, err := decodeClaimFromValueBytes(value)
 	if err != nil {

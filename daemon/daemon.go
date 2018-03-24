@@ -40,7 +40,7 @@ var iteration int64 = 0
 
 func InitDaemon() {
 	applySettings()
-	testFunction()
+	//testFunction()
 	initBlockQueue()
 	runDaemon()
 }

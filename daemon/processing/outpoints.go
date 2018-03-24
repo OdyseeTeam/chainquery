@@ -151,6 +151,7 @@ func ProcessVout(jsonVout *lbrycrd.Vout, txId *uint64, txHash string, txDC txDeb
 			return err
 		}
 		address = ds.GetAddress(jsonAddress)
+
 	}
 	if err != nil {
 		logrus.Error("Could not marshall address list of Vout")
@@ -211,17 +212,20 @@ func createTransactionAddress(txID uint64, addressID uint64) m.TransactionAddres
 }
 
 func processScript(vout m.Output) error {
-	/*scriptBytes, err := hex.DecodeString(vout.ScriptPubKeyHex.String)
+	scriptBytes, err := hex.DecodeString(vout.ScriptPubKeyHex.String)
 	if err != nil {
 		return err
 	}
 	isNonStandard := vout.Type.String == lbrycrd.NON_STANDARD
-	if isNonStandard {
-		err = processAsClaim(scriptBytes, vout)
+	isClaimScript := lbrycrd.IsClaimScript(scriptBytes)
+	if isNonStandard && isClaimScript {
+		_, err = processAsClaim(scriptBytes, vout)
 		if err != nil {
 			return err
 		}
+	} else if isNonStandard {
+		logrus.Error("Non standard script and not a valid claim!")
 	}
-	*/
+
 	return nil
 }
