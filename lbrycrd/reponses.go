@@ -109,4 +109,30 @@ type ScriptPubKeyResult struct {
 type ScriptSig struct {
 	Asm string `json:"asm"`
 	Hex string `json:"hex"`
-} //
+}
+
+type ClaimsForNameResult struct {
+	LastTakeOverHeight int32     `json:"nLastTakeoverHeight"`
+	Claims             []Claim   `json:"claims"`
+	UnmatchedSupports  []Support `json:"unmatched supports"`
+}
+
+type Claim struct {
+	Name            string    `json:"name,omitempty"`
+	ClaimId         string    `json:"claimId"`
+	TxId            string    `json:"txid"`
+	N               uint32    `json:"n"`
+	Height          uint32    `json:"nHeight"`
+	ValidAtHeight   uint32    `json:"nValidAtHeight"`
+	Amount          float64   `json:"nAmount"`
+	EffectiveAmount float64   `json:"nEffectiveAmount"`
+	Supports        []Support `json:"supports,omitempty"`
+}
+
+type Support struct {
+	TxId          string  `json:"txid"`
+	N             uint32  `json:"n"`
+	Height        uint32  `json:"nHeight"`
+	ValidAtHeight uint32  `json:"nValidAtHeight"`
+	Amount        float64 `json:"nAmount"`
+}

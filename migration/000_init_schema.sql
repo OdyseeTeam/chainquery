@@ -195,7 +195,7 @@ CREATE TABLE IF NOT EXISTS `claim`
     `publisher_id` CHAR(40) CHARACTER SET latin1 COLLATE latin1_general_ci COMMENT 'references a ClaimId with CertificateType',
     `publisher_sig` VARCHAR(200) CHARACTER SET latin1 COLLATE latin1_general_ci,
     `certificate` TEXT,
-    `transaction_time` INTEGER UNSIGNED,
+    `transaction_time` BIGINT UNSIGNED,
     `version` VARCHAR(10) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
 
     -- Additional fields for easy indexing of stream types
@@ -230,11 +230,18 @@ CREATE TABLE IF NOT EXISTS `claim`
 -- +migrate StatementEnd
 
 -- +migrate StatementBegin
-CREATE TABLE IF NOT EXISTS `claim_stream`
+CREATE TABLE IF NOT EXISTS `unknown_claim`
 (
-    `claim_id` BIGINT UNSIGNED NOT NULL,
-    `stream` MEDIUMTEXT NOT NULL,
-    PRIMARY KEY `PK_ClaimStream` (`claim_id`),
-    FOREIGN KEY `PK_ClaimStreamClaim` (`claim_id`) REFERENCES `claim` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION
+    `id` SERIAL,
+    `block_hash` VARCHAR(70) CHARACTER SET latin1 COLLATE latin1_general_ci,
+    `tx_hash` VARCHAR(70) CHARACTER SET latin1 COLLATE latin1_general_ci,
+    `vout` INTEGER UNSIGNED NOT NULL,
+    `value_as_hex` MEDIUMTEXT NOT NULL,
+    `value_as_json` MEDIUMTEXT NOT NULL,
+    PRIMARY KEY `PK_unknownclaim` (`id`),
+    CONSTRAINT `Cnt_ValueValidJson` CHECK(`value_as_json` IS NULL OR JSON_VALID(`value_as_json`)),
+    FOREIGN KEY `FK_unknownclaimblock` (`block_hash`) REFERENCES `block` (`hash`) ON DELETE CASCADE ON UPDATE NO ACTION,
+    FOREIGN KEY `FK_unknownclaimtransaction` (`tx_hash`) REFERENCES `transaction` (`hash`) ON DELETE CASCADE ON UPDATE NO ACTION,
+    FOREIGN KEY `FK_unknownclaimoutput` (`tx_hash`,`vout`) REFERENCES `output` (`transaction_hash`,`vout`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4;
 -- +migrate StatementEnd

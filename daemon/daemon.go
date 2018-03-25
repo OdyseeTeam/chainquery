@@ -102,7 +102,7 @@ func applySettings() {
 func runDaemon() func() {
 	lastBlock, _ := model.Blocks(boil.GetDB(), qm.OrderBy(model.BlockColumns.Height+" DESC"), qm.Limit(1)).One()
 	if lastBlock != nil && lastBlock.Height > 100 {
-		//lastHeightProcess = lastBlock.Height - 100 //Start 100 sooner just in case something happened.
+		lastHeightProcess = lastBlock.Height - 100 //Start 100 sooner just in case something happened.
 	}
 	go daemonIteration()
 	log.Info("Daemon initialized and running")
@@ -252,7 +252,7 @@ func processTx(jsonTx *lbrycrd.TxRawResult, blockTime uint64) error {
 	}
 	vins := jsonTx.Vin
 	for i := range vins {
-		err = p.ProcessVin(&vins[i], &transaction.ID, jsonTx.Txid, txDbCrAddrMap)
+		err = p.ProcessVin(&vins[i], *transaction, txDbCrAddrMap)
 		if err != nil {
 			log.Error("Vin Error->", err)
 			panic(err)
@@ -260,13 +260,12 @@ func processTx(jsonTx *lbrycrd.TxRawResult, blockTime uint64) error {
 	}
 	vouts := jsonTx.Vout
 	for i := range vouts {
-		err := p.ProcessVout(&vouts[i], &transaction.ID, transaction.Hash, txDbCrAddrMap)
+		err := p.ProcessVout(&vouts[i], *transaction, txDbCrAddrMap)
 		if err != nil {
 			log.Error("Vout Error->", err, " - ", transaction.Hash)
 			panic(err)
 		}
 	}
-	//log.Debug("Tx ", transaction.ID)
 	for addr, DC := range txDbCrAddrMap.AddrDCMap {
 
 		address := datastore.GetAddress(addr)

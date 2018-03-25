@@ -3,22 +3,37 @@ package main
 //go:generate go-bindata -o migration/bindata.go -pkg migration -ignore bindata.go migration/
 
 import (
+	"flag"
 	"math/rand"
 	"net/http"
 	"os"
+	"runtime/pprof"
 	"strconv"
-	"time" //
+	"time"
 
 	"github.com/lbryio/chainquery/daemon"
 	"github.com/lbryio/chainquery/db"
 	"github.com/lbryio/chainquery/env"
 	"github.com/lbryio/chainquery/lbrycrd"
+
 	log "github.com/sirupsen/logrus"
 )
 
 var DebugMode bool
+var cpuprofile = flag.String("cpuprofile", "./chainquery.prof", "write cpu profile to file")
 
 func main() {
+	flag.Parse()
+	if *cpuprofile != "" {
+		f, err := os.Create(*cpuprofile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.Info("Starting Profiler")
+		pprof.StartCPUProfile(f)
+		defer pprof.StopCPUProfile()
+	}
+
 	rand.Seed(time.Now().UnixNano())
 	log.SetFormatter(&log.TextFormatter{FullTimestamp: true})
 	http.DefaultClient.Timeout = 20 * time.Second

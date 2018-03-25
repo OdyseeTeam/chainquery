@@ -25,7 +25,7 @@ func DecodeClaimValue(name string, value []byte) (*pb.Claim, error) {
 				v3Claim := new(schema_version_03.Claim)
 				err := json.Unmarshal(value, v3Claim)
 				if err != nil {
-					return nil, errors.Base("Claim value has no matching verion - " + string(value))
+					return nil, errors.Prefix("Claim "+name+" value has no matching verion - "+string(value), err)
 				}
 				claim, err = migrateV3Claim(*v3Claim)
 				if err != nil {

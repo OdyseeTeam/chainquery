@@ -14,14 +14,14 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func ProcessVin(jsonVin *lbrycrd.Vin, txId *uint64, txHash string, txDC txDebitCredits) error {
+func ProcessVin(jsonVin *lbrycrd.Vin, tx m.Transaction, txDC txDebitCredits) error {
 	vin := &m.Input{}
-	foundVin := ds.GetInput(txHash, len(jsonVin.Coinbase) > 0, jsonVin.Txid, uint(jsonVin.Vout))
+	foundVin := ds.GetInput(tx.Hash, len(jsonVin.Coinbase) > 0, jsonVin.Txid, uint(jsonVin.Vout))
 	if foundVin != nil {
 		vin = foundVin
 	}
-	vin.TransactionID = *txId
-	vin.TransactionHash = txHash
+	vin.TransactionID = tx.ID
+	vin.TransactionHash = tx.Hash
 	vin.Sequence = uint(jsonVin.Sequence)
 
 	if jsonVin.Coinbase != "" { //
@@ -39,9 +39,9 @@ func ProcessVin(jsonVin *lbrycrd.Vin, txId *uint64, txHash string, txDC txDebitC
 		vin.ScriptSigAsm.Valid = true
 		src_output := ds.GetOutput(vin.PrevoutHash.String, vin.PrevoutN.Uint)
 		if src_output == nil {
-			id := strconv.Itoa(int(*txId))
+			id := strconv.Itoa(int(tx.ID))
 			sequence := strconv.FormatUint(uint64(vin.Sequence), 10)
-			logrus.Error("Tx ", *txId, ", Vin ", vin.PrevoutN.Uint, " - ", vin.PrevoutHash.String)
+			logrus.Error("Tx ", tx.ID, ", Vin ", vin.PrevoutN.Uint, " - ", vin.PrevoutHash.String)
 			err := errors.Base("No source output for vin in tx: (" + id + ") - (" + sequence + ")")
 			panic(err)
 		}
@@ -80,11 +80,11 @@ func ProcessVin(jsonVin *lbrycrd.Vin, txId *uint64, txHash string, txDC txDebitC
 				}
 				err = vin.SetAddressesG(false, address)
 				if err != nil {
-					logrus.Error("Failure adding addresses: Vin ", vin.ID, ", Tx ", *txId, ", Vout ", src_output.ID, ", Address(", address.ID, ") ", address.Address)
+					logrus.Error("Failure adding addresses: Vin ", vin.ID, ", Tx ", tx.ID, ", Vout ", src_output.ID, ", Address(", address.ID, ") ", address.Address)
 					panic(err)
 				}
 			} else {
-				logrus.Error("No Address created for Vin: ", vin.ID, " of tx ", *txId, " vout: ", src_output.ID, " Address: ", addresses[0])
+				logrus.Error("No Address created for Vin: ", vin.ID, " of tx ", tx.ID, " vout: ", src_output.ID, " Address: ", addresses[0])
 				panic(nil)
 			}
 
@@ -97,7 +97,7 @@ func ProcessVin(jsonVin *lbrycrd.Vin, txId *uint64, txHash string, txDC txDebitC
 			}
 
 			//Make sure there is a transaction address
-			txAddress := createTransactionAddress(*txId, vin.InputAddressID.Uint64)
+			txAddress := createTransactionAddress(tx.ID, vin.InputAddressID.Uint64)
 
 			err = ds.PutTxAddress(&txAddress)
 			if err != nil {
@@ -120,15 +120,15 @@ func processCoinBaseVin(jsonVin *lbrycrd.Vin, vin *m.Input) error {
 	return nil
 }
 
-func ProcessVout(jsonVout *lbrycrd.Vout, txId *uint64, txHash string, txDC txDebitCredits) error {
+func ProcessVout(jsonVout *lbrycrd.Vout, tx m.Transaction, txDC txDebitCredits) error {
 	vout := &m.Output{}
-	foundVout := ds.GetOutput(txHash, uint(jsonVout.N))
+	foundVout := ds.GetOutput(tx.Hash, uint(jsonVout.N))
 	if foundVout != nil {
 		vout = foundVout
 	}
 
-	vout.TransactionID = *txId
-	vout.TransactionHash = txHash
+	vout.TransactionID = tx.ID
+	vout.TransactionHash = tx.Hash
 	vout.Vout = uint(jsonVout.N)
 	value := strconv.FormatFloat(jsonVout.Value, 'f', -1, 64)
 	vout.Value.String = value
@@ -161,7 +161,7 @@ func ProcessVout(jsonVout *lbrycrd.Vout, txId *uint64, txHash string, txDC txDeb
 		vout.SetAddressesG(false, address)
 	} else {
 		//All addresses for transaction are created and inserted into the DB ahead of time
-		logrus.Error("No address in db for \"", jsonAddresses[0], "\" txId: ", *txId)
+		logrus.Error("No address in db for \"", jsonAddresses[0], "\" txId: ", tx.ID)
 		panic(nil)
 	}
 
@@ -171,14 +171,14 @@ func ProcessVout(jsonVout *lbrycrd.Vout, txId *uint64, txHash string, txDC txDeb
 		return err
 	}
 	//Make sure there is a transaction address
-	txAddress := createTransactionAddress(*txId, address.ID)
+	txAddress := createTransactionAddress(tx.ID, address.ID)
 	err = ds.PutTxAddress(&txAddress)
 	if err != nil {
 		return err
 	}
 
 	// Process script for potential claims
-	err = processScript(*vout)
+	err = processScript(*vout, tx)
 	if err != nil {
 		return err
 	}
@@ -211,7 +211,7 @@ func createTransactionAddress(txID uint64, addressID uint64) m.TransactionAddres
 	return txAddress
 }
 
-func processScript(vout m.Output) error {
+func processScript(vout m.Output, tx m.Transaction) error {
 	scriptBytes, err := hex.DecodeString(vout.ScriptPubKeyHex.String)
 	if err != nil {
 		return err
@@ -219,7 +219,7 @@ func processScript(vout m.Output) error {
 	isNonStandard := vout.Type.String == lbrycrd.NON_STANDARD
 	isClaimScript := lbrycrd.IsClaimScript(scriptBytes)
 	if isNonStandard && isClaimScript {
-		_, err = processAsClaim(scriptBytes, vout)
+		_, err = processAsClaim(scriptBytes, vout, tx)
 		if err != nil {
 			return err
 		}
