@@ -403,6 +403,78 @@ func testOutputToManyAddresses(t *testing.T) {
 	}
 }
 
+func testOutputToManyUnknownClaims(t *testing.T) {
+	var err error
+	tx := MustTx(boil.Begin())
+	defer tx.Rollback()
+
+	var a Output
+	var b, c UnknownClaim
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, outputDBTypes, true, outputColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Output struct: %s", err)
+	}
+
+	if err := a.Insert(tx); err != nil {
+		t.Fatal(err)
+	}
+
+	randomize.Struct(seed, &b, unknownClaimDBTypes, false, unknownClaimColumnsWithDefault...)
+	randomize.Struct(seed, &c, unknownClaimDBTypes, false, unknownClaimColumnsWithDefault...)
+
+	b.OutputID = a.ID
+	c.OutputID = a.ID
+	if err = b.Insert(tx); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(tx); err != nil {
+		t.Fatal(err)
+	}
+
+	unknownClaim, err := a.UnknownClaims(tx).All()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range unknownClaim {
+		if v.OutputID == b.OutputID {
+			bFound = true
+		}
+		if v.OutputID == c.OutputID {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := OutputSlice{&a}
+	if err = a.L.LoadUnknownClaims(tx, false, (*[]*Output)(&slice)); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.UnknownClaims); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.UnknownClaims = nil
+	if err = a.L.LoadUnknownClaims(tx, true, &a); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.UnknownClaims); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", unknownClaim)
+	}
+}
+
 func testOutputToManyAddOpAddresses(t *testing.T) {
 	var err error
 
@@ -628,6 +700,80 @@ func testOutputToManyRemoveOpAddresses(t *testing.T) {
 	}
 }
 
+func testOutputToManyAddOpUnknownClaims(t *testing.T) {
+	var err error
+
+	tx := MustTx(boil.Begin())
+	defer tx.Rollback()
+
+	var a Output
+	var b, c, d, e UnknownClaim
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, outputDBTypes, false, strmangle.SetComplement(outputPrimaryKeyColumns, outputColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*UnknownClaim{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, unknownClaimDBTypes, false, strmangle.SetComplement(unknownClaimPrimaryKeyColumns, unknownClaimColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(tx); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(tx); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(tx); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*UnknownClaim{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddUnknownClaims(tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if a.ID != first.OutputID {
+			t.Error("foreign key was wrong value", a.ID, first.OutputID)
+		}
+		if a.ID != second.OutputID {
+			t.Error("foreign key was wrong value", a.ID, second.OutputID)
+		}
+
+		if first.R.Output != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.Output != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.UnknownClaims[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.UnknownClaims[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.UnknownClaims(tx).Count()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
 func testOutputToOneTransactionUsingTransaction(t *testing.T) {
 	tx := MustTx(boil.Begin())
 	defer tx.Rollback()

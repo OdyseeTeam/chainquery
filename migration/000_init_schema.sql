@@ -150,6 +150,7 @@ CREATE TABLE IF NOT EXISTS `output`
     FOREIGN KEY `FK_OutputSpentByInput` (`spent_by_input_id`) REFERENCES `input` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION,
     CONSTRAINT `Cnt_AddressesValidJson` CHECK(`address_list` IS NULL OR JSON_VALID(`address_list`)),
     INDEX `Idx_OutputValue` (`value`),
+    INDEX `Idx_Oupoint` (`vout`,`transaction_hash`) COMMENT 'needed for references in this column order',
     INDEX `Idx_OuptutCreated` (`created`),
     INDEX `Idx_OutputModified` (`modified`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4;
@@ -234,14 +235,16 @@ CREATE TABLE IF NOT EXISTS `unknown_claim`
 (
     `id` SERIAL,
     `block_hash` VARCHAR(70) CHARACTER SET latin1 COLLATE latin1_general_ci,
-    `tx_hash` VARCHAR(70) CHARACTER SET latin1 COLLATE latin1_general_ci,
+    `transaction_hash` VARCHAR(70) CHARACTER SET latin1 COLLATE latin1_general_ci,
     `vout` INTEGER UNSIGNED NOT NULL,
+    `output_id` BIGINT UNSIGNED NOT NULL,
     `value_as_hex` MEDIUMTEXT NOT NULL,
     `value_as_json` MEDIUMTEXT NOT NULL,
     PRIMARY KEY `PK_unknownclaim` (`id`),
     CONSTRAINT `Cnt_ValueValidJson` CHECK(`value_as_json` IS NULL OR JSON_VALID(`value_as_json`)),
-    FOREIGN KEY `FK_unknownclaimblock` (`block_hash`) REFERENCES `block` (`hash`) ON DELETE CASCADE ON UPDATE NO ACTION,
-    FOREIGN KEY `FK_unknownclaimtransaction` (`tx_hash`) REFERENCES `transaction` (`hash`) ON DELETE CASCADE ON UPDATE NO ACTION,
-    FOREIGN KEY `FK_unknownclaimoutput` (`tx_hash`,`vout`) REFERENCES `output` (`transaction_hash`,`vout`) ON DELETE CASCADE ON UPDATE NO ACTION
+    FOREIGN KEY `FK_unknownclaimoutput` (`output_id`) REFERENCES `output` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  INDEX `Idx_UnknowClaimBlockHash` (`block_hash`),
+  INDEX `Idx_UnknowClaimOutput` (`output_id`),
+  INDEX `Idx_UnknowClaimTxHash` (`transaction_hash`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4;
 -- +migrate StatementEnd

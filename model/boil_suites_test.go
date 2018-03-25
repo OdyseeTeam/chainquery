@@ -20,6 +20,7 @@ func TestParent(t *testing.T) {
 	t.Run("Outputs", testOutputs)
 	t.Run("Transactions", testTransactions)
 	t.Run("TransactionAddresses", testTransactionAddresses)
+	t.Run("UnknownClaims", testUnknownClaims)
 }
 
 func TestDelete(t *testing.T) {
@@ -31,6 +32,7 @@ func TestDelete(t *testing.T) {
 	t.Run("Outputs", testOutputsDelete)
 	t.Run("Transactions", testTransactionsDelete)
 	t.Run("TransactionAddresses", testTransactionAddressesDelete)
+	t.Run("UnknownClaims", testUnknownClaimsDelete)
 }
 
 func TestQueryDeleteAll(t *testing.T) {
@@ -42,6 +44,7 @@ func TestQueryDeleteAll(t *testing.T) {
 	t.Run("Outputs", testOutputsQueryDeleteAll)
 	t.Run("Transactions", testTransactionsQueryDeleteAll)
 	t.Run("TransactionAddresses", testTransactionAddressesQueryDeleteAll)
+	t.Run("UnknownClaims", testUnknownClaimsQueryDeleteAll)
 }
 
 func TestSliceDeleteAll(t *testing.T) {
@@ -53,6 +56,7 @@ func TestSliceDeleteAll(t *testing.T) {
 	t.Run("Outputs", testOutputsSliceDeleteAll)
 	t.Run("Transactions", testTransactionsSliceDeleteAll)
 	t.Run("TransactionAddresses", testTransactionAddressesSliceDeleteAll)
+	t.Run("UnknownClaims", testUnknownClaimsSliceDeleteAll)
 }
 
 func TestExists(t *testing.T) {
@@ -64,6 +68,7 @@ func TestExists(t *testing.T) {
 	t.Run("Outputs", testOutputsExists)
 	t.Run("Transactions", testTransactionsExists)
 	t.Run("TransactionAddresses", testTransactionAddressesExists)
+	t.Run("UnknownClaims", testUnknownClaimsExists)
 }
 
 func TestFind(t *testing.T) {
@@ -75,6 +80,7 @@ func TestFind(t *testing.T) {
 	t.Run("Outputs", testOutputsFind)
 	t.Run("Transactions", testTransactionsFind)
 	t.Run("TransactionAddresses", testTransactionAddressesFind)
+	t.Run("UnknownClaims", testUnknownClaimsFind)
 }
 
 func TestBind(t *testing.T) {
@@ -86,6 +92,7 @@ func TestBind(t *testing.T) {
 	t.Run("Outputs", testOutputsBind)
 	t.Run("Transactions", testTransactionsBind)
 	t.Run("TransactionAddresses", testTransactionAddressesBind)
+	t.Run("UnknownClaims", testUnknownClaimsBind)
 }
 
 func TestOne(t *testing.T) {
@@ -97,6 +104,7 @@ func TestOne(t *testing.T) {
 	t.Run("Outputs", testOutputsOne)
 	t.Run("Transactions", testTransactionsOne)
 	t.Run("TransactionAddresses", testTransactionAddressesOne)
+	t.Run("UnknownClaims", testUnknownClaimsOne)
 }
 
 func TestAll(t *testing.T) {
@@ -108,6 +116,7 @@ func TestAll(t *testing.T) {
 	t.Run("Outputs", testOutputsAll)
 	t.Run("Transactions", testTransactionsAll)
 	t.Run("TransactionAddresses", testTransactionAddressesAll)
+	t.Run("UnknownClaims", testUnknownClaimsAll)
 }
 
 func TestCount(t *testing.T) {
@@ -119,6 +128,7 @@ func TestCount(t *testing.T) {
 	t.Run("Outputs", testOutputsCount)
 	t.Run("Transactions", testTransactionsCount)
 	t.Run("TransactionAddresses", testTransactionAddressesCount)
+	t.Run("UnknownClaims", testUnknownClaimsCount)
 }
 
 func TestInsert(t *testing.T) {
@@ -138,6 +148,8 @@ func TestInsert(t *testing.T) {
 	t.Run("Transactions", testTransactionsInsertWhitelist)
 	t.Run("TransactionAddresses", testTransactionAddressesInsert)
 	t.Run("TransactionAddresses", testTransactionAddressesInsertWhitelist)
+	t.Run("UnknownClaims", testUnknownClaimsInsert)
+	t.Run("UnknownClaims", testUnknownClaimsInsertWhitelist)
 }
 
 // TestToOne tests cannot be run in parallel
@@ -153,6 +165,7 @@ func TestToOne(t *testing.T) {
 	t.Run("TransactionToBlockUsingBlockByHash", testTransactionToOneBlockUsingBlockByHash)
 	t.Run("TransactionAddressToTransactionUsingTransaction", testTransactionAddressToOneTransactionUsingTransaction)
 	t.Run("TransactionAddressToAddressUsingAddress", testTransactionAddressToOneAddressUsingAddress)
+	t.Run("UnknownClaimToOutputUsingOutput", testUnknownClaimToOneOutputUsingOutput)
 }
 
 // TestOneToOne tests cannot be run in parallel
@@ -173,6 +186,7 @@ func TestToMany(t *testing.T) {
 	t.Run("InputToAddresses", testInputToManyAddresses)
 	t.Run("InputToSpentByInputOutputs", testInputToManySpentByInputOutputs)
 	t.Run("OutputToAddresses", testOutputToManyAddresses)
+	t.Run("OutputToUnknownClaims", testOutputToManyUnknownClaims)
 	t.Run("TransactionToTransactionByHashClaims", testTransactionToManyTransactionByHashClaims)
 	t.Run("TransactionToInputs", testTransactionToManyInputs)
 	t.Run("TransactionToOutputs", testTransactionToManyOutputs)
@@ -192,6 +206,7 @@ func TestToOneSet(t *testing.T) {
 	t.Run("TransactionToBlockUsingBlockByHash", testTransactionToOneSetOpBlockUsingBlockByHash)
 	t.Run("TransactionAddressToTransactionUsingTransaction", testTransactionAddressToOneSetOpTransactionUsingTransaction)
 	t.Run("TransactionAddressToAddressUsingAddress", testTransactionAddressToOneSetOpAddressUsingAddress)
+	t.Run("UnknownClaimToOutputUsingOutput", testUnknownClaimToOneSetOpOutputUsingOutput)
 }
 
 // TestToOneRemove tests cannot be run in parallel
@@ -226,6 +241,7 @@ func TestToManyAdd(t *testing.T) {
 	t.Run("InputToAddresses", testInputToManyAddOpAddresses)
 	t.Run("InputToSpentByInputOutputs", testInputToManyAddOpSpentByInputOutputs)
 	t.Run("OutputToAddresses", testOutputToManyAddOpAddresses)
+	t.Run("OutputToUnknownClaims", testOutputToManyAddOpUnknownClaims)
 	t.Run("TransactionToTransactionByHashClaims", testTransactionToManyAddOpTransactionByHashClaims)
 	t.Run("TransactionToInputs", testTransactionToManyAddOpInputs)
 	t.Run("TransactionToOutputs", testTransactionToManyAddOpOutputs)
@@ -269,6 +285,7 @@ func TestReload(t *testing.T) {
 	t.Run("Outputs", testOutputsReload)
 	t.Run("Transactions", testTransactionsReload)
 	t.Run("TransactionAddresses", testTransactionAddressesReload)
+	t.Run("UnknownClaims", testUnknownClaimsReload)
 }
 
 func TestReloadAll(t *testing.T) {
@@ -280,6 +297,7 @@ func TestReloadAll(t *testing.T) {
 	t.Run("Outputs", testOutputsReloadAll)
 	t.Run("Transactions", testTransactionsReloadAll)
 	t.Run("TransactionAddresses", testTransactionAddressesReloadAll)
+	t.Run("UnknownClaims", testUnknownClaimsReloadAll)
 }
 
 func TestSelect(t *testing.T) {
@@ -291,6 +309,7 @@ func TestSelect(t *testing.T) {
 	t.Run("Outputs", testOutputsSelect)
 	t.Run("Transactions", testTransactionsSelect)
 	t.Run("TransactionAddresses", testTransactionAddressesSelect)
+	t.Run("UnknownClaims", testUnknownClaimsSelect)
 }
 
 func TestUpdate(t *testing.T) {
@@ -302,6 +321,7 @@ func TestUpdate(t *testing.T) {
 	t.Run("Outputs", testOutputsUpdate)
 	t.Run("Transactions", testTransactionsUpdate)
 	t.Run("TransactionAddresses", testTransactionAddressesUpdate)
+	t.Run("UnknownClaims", testUnknownClaimsUpdate)
 }
 
 func TestSliceUpdateAll(t *testing.T) {
@@ -313,6 +333,7 @@ func TestSliceUpdateAll(t *testing.T) {
 	t.Run("Outputs", testOutputsSliceUpdateAll)
 	t.Run("Transactions", testTransactionsSliceUpdateAll)
 	t.Run("TransactionAddresses", testTransactionAddressesSliceUpdateAll)
+	t.Run("UnknownClaims", testUnknownClaimsSliceUpdateAll)
 }
 
 func TestUpsert(t *testing.T) {
@@ -324,4 +345,5 @@ func TestUpsert(t *testing.T) {
 	t.Run("Outputs", testOutputsUpsert)
 	t.Run("Transactions", testTransactionsUpsert)
 	t.Run("TransactionAddresses", testTransactionAddressesUpsert)
+	t.Run("UnknownClaims", testUnknownClaimsUpsert)
 }
