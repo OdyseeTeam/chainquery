@@ -11,7 +11,7 @@ import (
 	"github.com/lbryio/chainquery/lbrycrd"
 	"github.com/lbryio/chainquery/model"
 	"github.com/lbryio/chainquery/util"
-	"github.com/lbryio/errors.go"
+	"github.com/lbryio/lbry.go/errors"
 
 	"encoding/json"
 	log "github.com/sirupsen/logrus"

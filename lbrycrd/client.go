@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/lbryio/errors.go"
+	"github.com/lbryio/lbry.go/errors"
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/ybbus/jsonrpc"

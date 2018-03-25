@@ -3,7 +3,7 @@ package env
 import (
 	"os"
 
-	"github.com/lbryio/errors.go"
+	"github.com/lbryio/lbry.go/errors"
 
 	e "github.com/caarlos0/env"
 	"github.com/go-ini/ini"

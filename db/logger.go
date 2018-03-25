@@ -4,8 +4,8 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/lbryio/errors.go"
-	qtools "github.com/lbryio/query.go"
+	"github.com/lbryio/lbry.go/errors"
+	"github.com/lbryio/lbry.go/querytools"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/jteeuwen/go-bindata" // so it's detected by `dep ensure`
@@ -25,7 +25,7 @@ type QueryLogger struct {
 
 func (d *QueryLogger) Query(query string, args ...interface{}) (*sql.Rows, error) {
 	if d.Logger != nil {
-		q, err := qtools.InterpolateParams(query, args...)
+		q, err := querytools.InterpolateParams(query, args...)
 		if err != nil {
 			return nil, errors.Err(err)
 		}
@@ -37,7 +37,7 @@ func (d *QueryLogger) Query(query string, args ...interface{}) (*sql.Rows, error
 
 func (d *QueryLogger) Exec(query string, args ...interface{}) (sql.Result, error) {
 	if d.Logger != nil {
-		q, err := qtools.InterpolateParams(query, args...)
+		q, err := querytools.InterpolateParams(query, args...)
 		if err != nil {
 			return nil, errors.Err(err)
 		}
@@ -49,7 +49,7 @@ func (d *QueryLogger) Exec(query string, args ...interface{}) (sql.Result, error
 
 func (d *QueryLogger) QueryRow(query string, args ...interface{}) *sql.Row {
 	if d.Logger != nil {
-		q, err := qtools.InterpolateParams(query, args...)
+		q, err := querytools.InterpolateParams(query, args...)
 		if err != nil {
 			return nil
 		}
@@ -84,7 +84,7 @@ type queryLoggerTx struct {
 
 func (t *queryLoggerTx) Query(query string, args ...interface{}) (*sql.Rows, error) {
 	if t.logger != nil {
-		q, err := qtools.InterpolateParams(query, args...)
+		q, err := querytools.InterpolateParams(query, args...)
 		if err != nil {
 			return nil, errors.Err(err)
 		}
@@ -96,7 +96,7 @@ func (t *queryLoggerTx) Query(query string, args ...interface{}) (*sql.Rows, err
 
 func (t *queryLoggerTx) Exec(query string, args ...interface{}) (sql.Result, error) {
 	if t.logger != nil {
-		q, err := qtools.InterpolateParams(query, args...)
+		q, err := querytools.InterpolateParams(query, args...)
 		if err != nil {
 			return nil, errors.Err(err)
 		}
@@ -108,7 +108,7 @@ func (t *queryLoggerTx) Exec(query string, args ...interface{}) (sql.Result, err
 
 func (t *queryLoggerTx) QueryRow(query string, args ...interface{}) *sql.Row {
 	if t.logger != nil {
-		q, err := qtools.InterpolateParams(query, args...)
+		q, err := querytools.InterpolateParams(query, args...)
 		if err != nil {
 			return nil
 		}
