@@ -324,115 +324,6 @@ func testClaimsInsertWhitelist(t *testing.T) {
 	}
 }
 
-func testClaimOneToOneClaimStreamUsingClaimStream(t *testing.T) {
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-
-	var foreign ClaimStream
-	var local Claim
-
-	seed := randomize.NewSeed()
-	if err := randomize.Struct(seed, &foreign, claimStreamDBTypes, true, claimStreamColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize ClaimStream struct: %s", err)
-	}
-	if err := randomize.Struct(seed, &local, claimDBTypes, true, claimColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Claim struct: %s", err)
-	}
-
-	if err := local.Insert(tx); err != nil {
-		t.Fatal(err)
-	}
-
-	foreign.ClaimID = local.ID
-	if err := foreign.Insert(tx); err != nil {
-		t.Fatal(err)
-	}
-
-	check, err := local.ClaimStream(tx).One()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if check.ClaimID != foreign.ClaimID {
-		t.Errorf("want: %v, got %v", foreign.ClaimID, check.ClaimID)
-	}
-
-	slice := ClaimSlice{&local}
-	if err = local.L.LoadClaimStream(tx, false, (*[]*Claim)(&slice)); err != nil {
-		t.Fatal(err)
-	}
-	if local.R.ClaimStream == nil {
-		t.Error("struct should have been eager loaded")
-	}
-
-	local.R.ClaimStream = nil
-	if err = local.L.LoadClaimStream(tx, true, &local); err != nil {
-		t.Fatal(err)
-	}
-	if local.R.ClaimStream == nil {
-		t.Error("struct should have been eager loaded")
-	}
-}
-
-func testClaimOneToOneSetOpClaimStreamUsingClaimStream(t *testing.T) {
-	var err error
-
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-
-	var a Claim
-	var b, c ClaimStream
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, claimDBTypes, false, strmangle.SetComplement(claimPrimaryKeyColumns, claimColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &b, claimStreamDBTypes, false, strmangle.SetComplement(claimStreamPrimaryKeyColumns, claimStreamColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &c, claimStreamDBTypes, false, strmangle.SetComplement(claimStreamPrimaryKeyColumns, claimStreamColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-
-	if err := a.Insert(tx); err != nil {
-		t.Fatal(err)
-	}
-	if err = b.Insert(tx); err != nil {
-		t.Fatal(err)
-	}
-
-	for i, x := range []*ClaimStream{&b, &c} {
-		err = a.SetClaimStream(tx, i != 0, x)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if a.R.ClaimStream != x {
-			t.Error("relationship struct not set to correct value")
-		}
-		if x.R.Claim != &a {
-			t.Error("failed to append to foreign relationship struct")
-		}
-
-		if a.ID != x.ClaimID {
-			t.Error("foreign key was wrong value", a.ID)
-		}
-
-		if exists, err := ClaimStreamExists(tx, x.ClaimID); err != nil {
-			t.Fatal(err)
-		} else if !exists {
-			t.Error("want 'x' to exist")
-		}
-
-		if a.ID != x.ClaimID {
-			t.Error("foreign key was wrong value", a.ID, x.ClaimID)
-		}
-
-		if err = x.Delete(tx); err != nil {
-			t.Fatal("failed to delete x", err)
-		}
-	}
-}
 func testClaimToManyPublisherClaims(t *testing.T) {
 	var err error
 	tx := MustTx(boil.Begin())
@@ -1143,7 +1034,7 @@ func testClaimsSelect(t *testing.T) {
 }
 
 var (
-	claimDBTypes = map[string]string{`Author`: `varchar`, `Certificate`: `text`, `ClaimID`: `char`, `ClaimType`: `tinyint`, `ContentType`: `varchar`, `Created`: `datetime`, `Description`: `mediumtext`, `Fee`: `decimal`, `FeeCurrency`: `char`, `ID`: `bigint`, `IsFiltered`: `tinyint`, `IsNSFW`: `tinyint`, `Language`: `varchar`, `Modified`: `datetime`, `Name`: `varchar`, `PublisherID`: `char`, `PublisherSig`: `varchar`, `ThumbnailURL`: `text`, `Title`: `text`, `TransactionByHashID`: `varchar`, `TransactionTime`: `int`, `Version`: `varchar`, `Vout`: `int`}
+	claimDBTypes = map[string]string{`Author`: `varchar`, `Certificate`: `text`, `ClaimID`: `char`, `ClaimType`: `tinyint`, `ContentType`: `varchar`, `Created`: `datetime`, `Description`: `mediumtext`, `Fee`: `decimal`, `FeeCurrency`: `char`, `ID`: `bigint`, `IsFiltered`: `tinyint`, `IsNSFW`: `tinyint`, `Language`: `varchar`, `Modified`: `datetime`, `Name`: `varchar`, `PublisherID`: `char`, `PublisherSig`: `varchar`, `ThumbnailURL`: `text`, `Title`: `text`, `TransactionByHashID`: `varchar`, `TransactionTime`: `bigint`, `ValueAsHex`: `mediumtext`, `ValueAsJSON`: `mediumtext`, `Version`: `varchar`, `Vout`: `int`}
 	_            = bytes.MinRead
 )
 

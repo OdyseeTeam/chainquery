@@ -15,7 +15,6 @@ func TestParent(t *testing.T) {
 	t.Run("Addresses", testAddresses)
 	t.Run("Blocks", testBlocks)
 	t.Run("Claims", testClaims)
-	t.Run("ClaimStreams", testClaimStreams)
 	t.Run("Inputs", testInputs)
 	t.Run("Outputs", testOutputs)
 	t.Run("Transactions", testTransactions)
@@ -27,7 +26,6 @@ func TestDelete(t *testing.T) {
 	t.Run("Addresses", testAddressesDelete)
 	t.Run("Blocks", testBlocksDelete)
 	t.Run("Claims", testClaimsDelete)
-	t.Run("ClaimStreams", testClaimStreamsDelete)
 	t.Run("Inputs", testInputsDelete)
 	t.Run("Outputs", testOutputsDelete)
 	t.Run("Transactions", testTransactionsDelete)
@@ -39,7 +37,6 @@ func TestQueryDeleteAll(t *testing.T) {
 	t.Run("Addresses", testAddressesQueryDeleteAll)
 	t.Run("Blocks", testBlocksQueryDeleteAll)
 	t.Run("Claims", testClaimsQueryDeleteAll)
-	t.Run("ClaimStreams", testClaimStreamsQueryDeleteAll)
 	t.Run("Inputs", testInputsQueryDeleteAll)
 	t.Run("Outputs", testOutputsQueryDeleteAll)
 	t.Run("Transactions", testTransactionsQueryDeleteAll)
@@ -51,7 +48,6 @@ func TestSliceDeleteAll(t *testing.T) {
 	t.Run("Addresses", testAddressesSliceDeleteAll)
 	t.Run("Blocks", testBlocksSliceDeleteAll)
 	t.Run("Claims", testClaimsSliceDeleteAll)
-	t.Run("ClaimStreams", testClaimStreamsSliceDeleteAll)
 	t.Run("Inputs", testInputsSliceDeleteAll)
 	t.Run("Outputs", testOutputsSliceDeleteAll)
 	t.Run("Transactions", testTransactionsSliceDeleteAll)
@@ -63,7 +59,6 @@ func TestExists(t *testing.T) {
 	t.Run("Addresses", testAddressesExists)
 	t.Run("Blocks", testBlocksExists)
 	t.Run("Claims", testClaimsExists)
-	t.Run("ClaimStreams", testClaimStreamsExists)
 	t.Run("Inputs", testInputsExists)
 	t.Run("Outputs", testOutputsExists)
 	t.Run("Transactions", testTransactionsExists)
@@ -75,7 +70,6 @@ func TestFind(t *testing.T) {
 	t.Run("Addresses", testAddressesFind)
 	t.Run("Blocks", testBlocksFind)
 	t.Run("Claims", testClaimsFind)
-	t.Run("ClaimStreams", testClaimStreamsFind)
 	t.Run("Inputs", testInputsFind)
 	t.Run("Outputs", testOutputsFind)
 	t.Run("Transactions", testTransactionsFind)
@@ -87,7 +81,6 @@ func TestBind(t *testing.T) {
 	t.Run("Addresses", testAddressesBind)
 	t.Run("Blocks", testBlocksBind)
 	t.Run("Claims", testClaimsBind)
-	t.Run("ClaimStreams", testClaimStreamsBind)
 	t.Run("Inputs", testInputsBind)
 	t.Run("Outputs", testOutputsBind)
 	t.Run("Transactions", testTransactionsBind)
@@ -99,7 +92,6 @@ func TestOne(t *testing.T) {
 	t.Run("Addresses", testAddressesOne)
 	t.Run("Blocks", testBlocksOne)
 	t.Run("Claims", testClaimsOne)
-	t.Run("ClaimStreams", testClaimStreamsOne)
 	t.Run("Inputs", testInputsOne)
 	t.Run("Outputs", testOutputsOne)
 	t.Run("Transactions", testTransactionsOne)
@@ -111,7 +103,6 @@ func TestAll(t *testing.T) {
 	t.Run("Addresses", testAddressesAll)
 	t.Run("Blocks", testBlocksAll)
 	t.Run("Claims", testClaimsAll)
-	t.Run("ClaimStreams", testClaimStreamsAll)
 	t.Run("Inputs", testInputsAll)
 	t.Run("Outputs", testOutputsAll)
 	t.Run("Transactions", testTransactionsAll)
@@ -123,7 +114,6 @@ func TestCount(t *testing.T) {
 	t.Run("Addresses", testAddressesCount)
 	t.Run("Blocks", testBlocksCount)
 	t.Run("Claims", testClaimsCount)
-	t.Run("ClaimStreams", testClaimStreamsCount)
 	t.Run("Inputs", testInputsCount)
 	t.Run("Outputs", testOutputsCount)
 	t.Run("Transactions", testTransactionsCount)
@@ -138,8 +128,6 @@ func TestInsert(t *testing.T) {
 	t.Run("Blocks", testBlocksInsertWhitelist)
 	t.Run("Claims", testClaimsInsert)
 	t.Run("Claims", testClaimsInsertWhitelist)
-	t.Run("ClaimStreams", testClaimStreamsInsert)
-	t.Run("ClaimStreams", testClaimStreamsInsertWhitelist)
 	t.Run("Inputs", testInputsInsert)
 	t.Run("Inputs", testInputsInsertWhitelist)
 	t.Run("Outputs", testOutputsInsert)
@@ -157,7 +145,6 @@ func TestInsert(t *testing.T) {
 func TestToOne(t *testing.T) {
 	t.Run("ClaimToTransactionUsingTransactionByHash", testClaimToOneTransactionUsingTransactionByHash)
 	t.Run("ClaimToClaimUsingPublisher", testClaimToOneClaimUsingPublisher)
-	t.Run("ClaimStreamToClaimUsingClaim", testClaimStreamToOneClaimUsingClaim)
 	t.Run("InputToAddressUsingInputAddress", testInputToOneAddressUsingInputAddress)
 	t.Run("InputToTransactionUsingTransaction", testInputToOneTransactionUsingTransaction)
 	t.Run("OutputToTransactionUsingTransaction", testOutputToOneTransactionUsingTransaction)
@@ -170,9 +157,7 @@ func TestToOne(t *testing.T) {
 
 // TestOneToOne tests cannot be run in parallel
 // or deadlocks can occur.
-func TestOneToOne(t *testing.T) {
-	t.Run("ClaimToClaimStreamUsingClaimStream", testClaimOneToOneClaimStreamUsingClaimStream)
-}
+func TestOneToOne(t *testing.T) {}
 
 // TestToMany tests cannot be run in parallel
 // or deadlocks can occur.
@@ -198,7 +183,6 @@ func TestToMany(t *testing.T) {
 func TestToOneSet(t *testing.T) {
 	t.Run("ClaimToTransactionUsingTransactionByHash", testClaimToOneSetOpTransactionUsingTransactionByHash)
 	t.Run("ClaimToClaimUsingPublisher", testClaimToOneSetOpClaimUsingPublisher)
-	t.Run("ClaimStreamToClaimUsingClaim", testClaimStreamToOneSetOpClaimUsingClaim)
 	t.Run("InputToAddressUsingInputAddress", testInputToOneSetOpAddressUsingInputAddress)
 	t.Run("InputToTransactionUsingTransaction", testInputToOneSetOpTransactionUsingTransaction)
 	t.Run("OutputToTransactionUsingTransaction", testOutputToOneSetOpTransactionUsingTransaction)
@@ -221,9 +205,7 @@ func TestToOneRemove(t *testing.T) {
 
 // TestOneToOneSet tests cannot be run in parallel
 // or deadlocks can occur.
-func TestOneToOneSet(t *testing.T) {
-	t.Run("ClaimToClaimStreamUsingClaimStream", testClaimOneToOneSetOpClaimStreamUsingClaimStream)
-}
+func TestOneToOneSet(t *testing.T) {}
 
 // TestOneToOneRemove tests cannot be run in parallel
 // or deadlocks can occur.
@@ -280,7 +262,6 @@ func TestReload(t *testing.T) {
 	t.Run("Addresses", testAddressesReload)
 	t.Run("Blocks", testBlocksReload)
 	t.Run("Claims", testClaimsReload)
-	t.Run("ClaimStreams", testClaimStreamsReload)
 	t.Run("Inputs", testInputsReload)
 	t.Run("Outputs", testOutputsReload)
 	t.Run("Transactions", testTransactionsReload)
@@ -292,7 +273,6 @@ func TestReloadAll(t *testing.T) {
 	t.Run("Addresses", testAddressesReloadAll)
 	t.Run("Blocks", testBlocksReloadAll)
 	t.Run("Claims", testClaimsReloadAll)
-	t.Run("ClaimStreams", testClaimStreamsReloadAll)
 	t.Run("Inputs", testInputsReloadAll)
 	t.Run("Outputs", testOutputsReloadAll)
 	t.Run("Transactions", testTransactionsReloadAll)
@@ -304,7 +284,6 @@ func TestSelect(t *testing.T) {
 	t.Run("Addresses", testAddressesSelect)
 	t.Run("Blocks", testBlocksSelect)
 	t.Run("Claims", testClaimsSelect)
-	t.Run("ClaimStreams", testClaimStreamsSelect)
 	t.Run("Inputs", testInputsSelect)
 	t.Run("Outputs", testOutputsSelect)
 	t.Run("Transactions", testTransactionsSelect)
@@ -316,7 +295,6 @@ func TestUpdate(t *testing.T) {
 	t.Run("Addresses", testAddressesUpdate)
 	t.Run("Blocks", testBlocksUpdate)
 	t.Run("Claims", testClaimsUpdate)
-	t.Run("ClaimStreams", testClaimStreamsUpdate)
 	t.Run("Inputs", testInputsUpdate)
 	t.Run("Outputs", testOutputsUpdate)
 	t.Run("Transactions", testTransactionsUpdate)
@@ -328,7 +306,6 @@ func TestSliceUpdateAll(t *testing.T) {
 	t.Run("Addresses", testAddressesSliceUpdateAll)
 	t.Run("Blocks", testBlocksSliceUpdateAll)
 	t.Run("Claims", testClaimsSliceUpdateAll)
-	t.Run("ClaimStreams", testClaimStreamsSliceUpdateAll)
 	t.Run("Inputs", testInputsSliceUpdateAll)
 	t.Run("Outputs", testOutputsSliceUpdateAll)
 	t.Run("Transactions", testTransactionsSliceUpdateAll)
@@ -340,7 +317,6 @@ func TestUpsert(t *testing.T) {
 	t.Run("Addresses", testAddressesUpsert)
 	t.Run("Blocks", testBlocksUpsert)
 	t.Run("Claims", testClaimsUpsert)
-	t.Run("ClaimStreams", testClaimStreamsUpsert)
 	t.Run("Inputs", testInputsUpsert)
 	t.Run("Outputs", testOutputsUpsert)
 	t.Run("Transactions", testTransactionsUpsert)

@@ -500,7 +500,7 @@ func testUnknownClaimsSelect(t *testing.T) {
 }
 
 var (
-	unknownClaimDBTypes = map[string]string{`BlockHash`: `varchar`, `ID`: `bigint`, `OutputID`: `bigint`, `TransactionHash`: `varchar`, `ValueAsHex`: `mediumtext`, `ValueAsJSON`: `mediumtext`, `Vout`: `int`}
+	unknownClaimDBTypes = map[string]string{`BlockHash`: `varchar`, `ClaimID`: `varchar`, `ID`: `bigint`, `IsUpdate`: `tinyint`, `Name`: `varchar`, `OutputID`: `bigint`, `TransactionHash`: `varchar`, `ValueAsHex`: `mediumtext`, `ValueAsJSON`: `mediumtext`, `Vout`: `int`}
 	_                   = bytes.MinRead
 )
 

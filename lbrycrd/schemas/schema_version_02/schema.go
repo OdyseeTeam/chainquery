@@ -1,8 +1,12 @@
 package schema_version_02
 
 import (
+	"encoding/json"
 	v1 "github.com/lbryio/chainquery/lbrycrd/schemas/schema_version_01"
+	"github.com/lbryio/lbry.go/errors"
 )
+
+var version = "0.0.2"
 
 type Claim struct {
 	Version     string     `json:"ver"`          //Required
@@ -20,4 +24,17 @@ type Claim struct {
 	LicenseURL  *string    `json:"license_url,omitempty"`
 	NSFW        bool       `json:"nsfw"` //Required
 
+}
+
+func (c *Claim) Unmarshal(value []byte) error {
+	err := json.Unmarshal(value, c)
+	if err != nil {
+		return err
+	}
+	if c.Version != version {
+		err = errors.Base("Incorrect version, expected " + version + " found " + c.Version)
+		return err
+	}
+
+	return nil
 }

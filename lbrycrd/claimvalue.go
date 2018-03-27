@@ -2,7 +2,6 @@ package lbrycrd
 
 import (
 	"encoding/hex"
-	"encoding/json"
 
 	"github.com/lbryio/chainquery/lbrycrd/schemas/schema_version_01"
 	"github.com/lbryio/chainquery/lbrycrd/schemas/schema_version_02"
@@ -17,13 +16,13 @@ func DecodeClaimValue(name string, value []byte) (*pb.Claim, error) {
 	claim, err := decodeClaimFromValueBytes(value)
 	if err != nil {
 		v1Claim := new(schema_version_01.Claim)
-		err := json.Unmarshal(value, v1Claim)
+		err := v1Claim.Unmarshal(value)
 		if err != nil {
 			v2Claim := new(schema_version_02.Claim)
-			err := json.Unmarshal(value, v2Claim)
+			err := v2Claim.Unmarshal(value)
 			if err != nil {
 				v3Claim := new(schema_version_03.Claim)
-				err := json.Unmarshal(value, v3Claim)
+				err := v3Claim.Unmarshal(value)
 				if err != nil {
 					return nil, errors.Prefix("Claim "+name+" value has no matching verion - "+string(value), err)
 				}
@@ -91,7 +90,6 @@ func newClaim() *pb.Claim {
 
 func setMetaData(claim pb.Claim, author string, description string, language pb.Metadata_Language, license string,
 	licenseURL *string, title string, thumbnail *string, nsfw bool) {
-
 	claim.GetStream().GetMetadata().Author = &author
 	claim.GetStream().GetMetadata().Description = &description
 	claim.GetStream().GetMetadata().Language = &language
@@ -165,7 +163,6 @@ func migrateV3Claim(vClaim schema_version_03.Claim) (*pb.Claim, error) {
 }
 
 func setFee(fee *schema_version_01.Fee, claim *pb.Claim) {
-
 	if fee != nil {
 		amount := float32(0.0)
 		currency := pb.Fee_LBC

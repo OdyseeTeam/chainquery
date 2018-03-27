@@ -23,12 +23,15 @@ import (
 // UnknownClaim is an object representing the database table.
 type UnknownClaim struct {
 	ID              uint64      `boil:"id" json:"id" toml:"id" yaml:"id"`
+	Name            string      `boil:"name" json:"name" toml:"name" yaml:"name"`
+	ClaimID         string      `boil:"claim_id" json:"claim_id" toml:"claim_id" yaml:"claim_id"`
+	IsUpdate        bool        `boil:"is_update" json:"is_update" toml:"is_update" yaml:"is_update"`
 	BlockHash       null.String `boil:"block_hash" json:"block_hash,omitempty" toml:"block_hash" yaml:"block_hash,omitempty"`
 	TransactionHash null.String `boil:"transaction_hash" json:"transaction_hash,omitempty" toml:"transaction_hash" yaml:"transaction_hash,omitempty"`
 	Vout            uint        `boil:"vout" json:"vout" toml:"vout" yaml:"vout"`
 	OutputID        uint64      `boil:"output_id" json:"output_id" toml:"output_id" yaml:"output_id"`
 	ValueAsHex      string      `boil:"value_as_hex" json:"value_as_hex" toml:"value_as_hex" yaml:"value_as_hex"`
-	ValueAsJSON     string      `boil:"value_as_json" json:"value_as_json" toml:"value_as_json" yaml:"value_as_json"`
+	ValueAsJSON     null.String `boil:"value_as_json" json:"value_as_json,omitempty" toml:"value_as_json" yaml:"value_as_json,omitempty"`
 
 	R *unknownClaimR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L unknownClaimL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -36,6 +39,9 @@ type UnknownClaim struct {
 
 var UnknownClaimColumns = struct {
 	ID              string
+	Name            string
+	ClaimID         string
+	IsUpdate        string
 	BlockHash       string
 	TransactionHash string
 	Vout            string
@@ -44,6 +50,9 @@ var UnknownClaimColumns = struct {
 	ValueAsJSON     string
 }{
 	ID:              "id",
+	Name:            "name",
+	ClaimID:         "claim_id",
+	IsUpdate:        "is_update",
 	BlockHash:       "block_hash",
 	TransactionHash: "transaction_hash",
 	Vout:            "vout",
@@ -61,9 +70,9 @@ type unknownClaimR struct {
 type unknownClaimL struct{}
 
 var (
-	unknownClaimColumns               = []string{"id", "block_hash", "transaction_hash", "vout", "output_id", "value_as_hex", "value_as_json"}
-	unknownClaimColumnsWithoutDefault = []string{"block_hash", "transaction_hash", "vout", "output_id", "value_as_hex", "value_as_json"}
-	unknownClaimColumnsWithDefault    = []string{"id"}
+	unknownClaimColumns               = []string{"id", "name", "claim_id", "is_update", "block_hash", "transaction_hash", "vout", "output_id", "value_as_hex", "value_as_json"}
+	unknownClaimColumnsWithoutDefault = []string{"name", "claim_id", "block_hash", "transaction_hash", "vout", "output_id", "value_as_hex", "value_as_json"}
+	unknownClaimColumnsWithDefault    = []string{"id", "is_update"}
 	unknownClaimPrimaryKeyColumns     = []string{"id"}
 )
 

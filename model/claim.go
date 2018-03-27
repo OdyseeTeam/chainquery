@@ -31,8 +31,10 @@ type Claim struct {
 	PublisherID         null.String `boil:"publisher_id" json:"publisher_id,omitempty" toml:"publisher_id" yaml:"publisher_id,omitempty"`
 	PublisherSig        null.String `boil:"publisher_sig" json:"publisher_sig,omitempty" toml:"publisher_sig" yaml:"publisher_sig,omitempty"`
 	Certificate         null.String `boil:"certificate" json:"certificate,omitempty" toml:"certificate" yaml:"certificate,omitempty"`
-	TransactionTime     null.Uint   `boil:"transaction_time" json:"transaction_time,omitempty" toml:"transaction_time" yaml:"transaction_time,omitempty"`
+	TransactionTime     null.Uint64 `boil:"transaction_time" json:"transaction_time,omitempty" toml:"transaction_time" yaml:"transaction_time,omitempty"`
 	Version             string      `boil:"version" json:"version" toml:"version" yaml:"version"`
+	ValueAsHex          string      `boil:"value_as_hex" json:"value_as_hex" toml:"value_as_hex" yaml:"value_as_hex"`
+	ValueAsJSON         null.String `boil:"value_as_json" json:"value_as_json,omitempty" toml:"value_as_json" yaml:"value_as_json,omitempty"`
 	Author              null.String `boil:"author" json:"author,omitempty" toml:"author" yaml:"author,omitempty"`
 	Description         null.String `boil:"description" json:"description,omitempty" toml:"description" yaml:"description,omitempty"`
 	ContentType         null.String `boil:"content_type" json:"content_type,omitempty" toml:"content_type" yaml:"content_type,omitempty"`
@@ -62,6 +64,8 @@ var ClaimColumns = struct {
 	Certificate         string
 	TransactionTime     string
 	Version             string
+	ValueAsHex          string
+	ValueAsJSON         string
 	Author              string
 	Description         string
 	ContentType         string
@@ -86,6 +90,8 @@ var ClaimColumns = struct {
 	Certificate:         "certificate",
 	TransactionTime:     "transaction_time",
 	Version:             "version",
+	ValueAsHex:          "value_as_hex",
+	ValueAsJSON:         "value_as_json",
 	Author:              "author",
 	Description:         "description",
 	ContentType:         "content_type",
@@ -104,7 +110,6 @@ var ClaimColumns = struct {
 type claimR struct {
 	TransactionByHash *Transaction
 	Publisher         *Claim
-	ClaimStream       *ClaimStream
 	PublisherClaims   ClaimSlice
 }
 
@@ -112,8 +117,8 @@ type claimR struct {
 type claimL struct{}
 
 var (
-	claimColumns               = []string{"id", "transaction_by_hash_id", "vout", "name", "claim_id", "claim_type", "publisher_id", "publisher_sig", "certificate", "transaction_time", "version", "author", "description", "content_type", "is_n_s_f_w", "language", "thumbnail_url", "title", "fee", "fee_currency", "is_filtered", "created", "modified"}
-	claimColumnsWithoutDefault = []string{"transaction_by_hash_id", "vout", "name", "claim_id", "claim_type", "publisher_id", "publisher_sig", "certificate", "transaction_time", "version", "author", "description", "content_type", "language", "thumbnail_url", "title", "fee_currency"}
+	claimColumns               = []string{"id", "transaction_by_hash_id", "vout", "name", "claim_id", "claim_type", "publisher_id", "publisher_sig", "certificate", "transaction_time", "version", "value_as_hex", "value_as_json", "author", "description", "content_type", "is_n_s_f_w", "language", "thumbnail_url", "title", "fee", "fee_currency", "is_filtered", "created", "modified"}
+	claimColumnsWithoutDefault = []string{"transaction_by_hash_id", "vout", "name", "claim_id", "claim_type", "publisher_id", "publisher_sig", "certificate", "transaction_time", "version", "value_as_hex", "value_as_json", "author", "description", "content_type", "language", "thumbnail_url", "title", "fee_currency"}
 	claimColumnsWithDefault    = []string{"id", "is_n_s_f_w", "fee", "is_filtered", "created", "modified"}
 	claimPrimaryKeyColumns     = []string{"id"}
 )
@@ -285,25 +290,6 @@ func (o *Claim) Publisher(exec boil.Executor, mods ...qm.QueryMod) claimQuery {
 	return query
 }
 
-// ClaimStreamG pointed to by the foreign key.
-func (o *Claim) ClaimStreamG(mods ...qm.QueryMod) claimStreamQuery {
-	return o.ClaimStream(boil.GetDB(), mods...)
-}
-
-// ClaimStream pointed to by the foreign key.
-func (o *Claim) ClaimStream(exec boil.Executor, mods ...qm.QueryMod) claimStreamQuery {
-	queryMods := []qm.QueryMod{
-		qm.Where("claim_id=?", o.ID),
-	}
-
-	queryMods = append(queryMods, mods...)
-
-	query := ClaimStreams(exec, queryMods...)
-	queries.SetFrom(query.Query, "`claim_stream`")
-
-	return query
-}
-
 // PublisherClaimsG retrieves all the claim's claim via publisher_id column.
 func (o *Claim) PublisherClaimsG(mods ...qm.QueryMod) claimQuery {
 	return o.PublisherClaims(boil.GetDB(), mods...)
@@ -462,76 +448,6 @@ func (claimL) LoadPublisher(e boil.Executor, singular bool, maybeClaim interface
 		for _, foreign := range resultSlice {
 			if local.PublisherID.String == foreign.ClaimID {
 				local.R.Publisher = foreign
-				break
-			}
-		}
-	}
-
-	return nil
-}
-
-// LoadClaimStream allows an eager lookup of values, cached into the
-// loaded structs of the objects.
-func (claimL) LoadClaimStream(e boil.Executor, singular bool, maybeClaim interface{}) error {
-	var slice []*Claim
-	var object *Claim
-
-	count := 1
-	if singular {
-		object = maybeClaim.(*Claim)
-	} else {
-		slice = *maybeClaim.(*[]*Claim)
-		count = len(slice)
-	}
-
-	args := make([]interface{}, count)
-	if singular {
-		if object.R == nil {
-			object.R = &claimR{}
-		}
-		args[0] = object.ID
-	} else {
-		for i, obj := range slice {
-			if obj.R == nil {
-				obj.R = &claimR{}
-			}
-			args[i] = obj.ID
-		}
-	}
-
-	query := fmt.Sprintf(
-		"select * from `claim_stream` where `claim_id` in (%s)",
-		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
-	)
-
-	if boil.DebugMode {
-		fmt.Fprintf(boil.DebugWriter, "%s\n%v\n", query, args)
-	}
-
-	results, err := e.Query(query, args...)
-	if err != nil {
-		return errors.Wrap(err, "failed to eager load ClaimStream")
-	}
-	defer results.Close()
-
-	var resultSlice []*ClaimStream
-	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice ClaimStream")
-	}
-
-	if len(resultSlice) == 0 {
-		return nil
-	}
-
-	if singular {
-		object.R.ClaimStream = resultSlice[0]
-		return nil
-	}
-
-	for _, local := range slice {
-		for _, foreign := range resultSlice {
-			if local.ID == foreign.ClaimID {
-				local.R.ClaimStream = foreign
 				break
 			}
 		}
@@ -875,85 +791,6 @@ func (o *Claim) RemovePublisher(exec boil.Executor, related *Claim) error {
 		}
 		related.R.PublisherClaims = related.R.PublisherClaims[:ln-1]
 		break
-	}
-	return nil
-}
-
-// SetClaimStreamG of the claim to the related item.
-// Sets o.R.ClaimStream to related.
-// Adds o to related.R.Claim.
-// Uses the global database handle.
-func (o *Claim) SetClaimStreamG(insert bool, related *ClaimStream) error {
-	return o.SetClaimStream(boil.GetDB(), insert, related)
-}
-
-// SetClaimStreamP of the claim to the related item.
-// Sets o.R.ClaimStream to related.
-// Adds o to related.R.Claim.
-// Panics on error.
-func (o *Claim) SetClaimStreamP(exec boil.Executor, insert bool, related *ClaimStream) {
-	if err := o.SetClaimStream(exec, insert, related); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
-// SetClaimStreamGP of the claim to the related item.
-// Sets o.R.ClaimStream to related.
-// Adds o to related.R.Claim.
-// Uses the global database handle and panics on error.
-func (o *Claim) SetClaimStreamGP(insert bool, related *ClaimStream) {
-	if err := o.SetClaimStream(boil.GetDB(), insert, related); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
-// SetClaimStream of the claim to the related item.
-// Sets o.R.ClaimStream to related.
-// Adds o to related.R.Claim.
-func (o *Claim) SetClaimStream(exec boil.Executor, insert bool, related *ClaimStream) error {
-	var err error
-
-	if insert {
-		related.ClaimID = o.ID
-
-		if err = related.Insert(exec); err != nil {
-			return errors.Wrap(err, "failed to insert into foreign table")
-		}
-	} else {
-		updateQuery := fmt.Sprintf(
-			"UPDATE `claim_stream` SET %s WHERE %s",
-			strmangle.SetParamNames("`", "`", 0, []string{"claim_id"}),
-			strmangle.WhereClause("`", "`", 0, claimStreamPrimaryKeyColumns),
-		)
-		values := []interface{}{o.ID, related.ClaimID}
-
-		if boil.DebugMode {
-			fmt.Fprintln(boil.DebugWriter, updateQuery)
-			fmt.Fprintln(boil.DebugWriter, values)
-		}
-
-		if _, err = exec.Exec(updateQuery, values...); err != nil {
-			return errors.Wrap(err, "failed to update foreign table")
-		}
-
-		related.ClaimID = o.ID
-
-	}
-
-	if o.R == nil {
-		o.R = &claimR{
-			ClaimStream: related,
-		}
-	} else {
-		o.R.ClaimStream = related
-	}
-
-	if related.R == nil {
-		related.R = &claimStreamR{
-			Claim: o,
-		}
-	} else {
-		related.R.Claim = o
 	}
 	return nil
 }

@@ -1,5 +1,12 @@
 package schema_version_01
 
+import (
+	"encoding/json"
+	"github.com/lbryio/errors.go"
+)
+
+var version = "0.0.1"
+
 type Claim struct {
 	Version     string  `json:"ver,omitempty"`
 	Title       string  `json:"title"`        //Required
@@ -16,8 +23,8 @@ type Claim struct {
 }
 
 type FeeInfo struct {
-	Amount  int    `json:amount`  //Required
-	Address string `json:address` //Required
+	Amount  float32 `json:amount`  //Required
+	Address string  `json:address` //Required
 }
 
 type Sources struct {
@@ -27,7 +34,22 @@ type Sources struct {
 }
 
 type Fee struct {
-	LBC *FeeInfo `json:"fee_info,omitempty"`
-	BTC *FeeInfo `json:"fee_info,omitempty"`
-	USD *FeeInfo `json:"fee_info,omitempty"`
+	LBC *FeeInfo `json:"LBC,omitempty"`
+	BTC *FeeInfo `json:"BTC,omitempty"`
+	USD *FeeInfo `json:"USD,omitempty"`
+}
+
+func (c *Claim) Unmarshal(value []byte) error {
+	err := json.Unmarshal(value, c)
+	if err != nil {
+		return err
+	} //Version can be blank for version 1
+	println("Version ", "\""+c.Version+"\"")
+	if c.Version != "" && c.Version != version {
+		err = errors.Base("Incorrect version, expected " + version + " found " + c.Version)
+		return err
+	}
+	//ToDo - restrict to required fields?
+
+	return nil
 }

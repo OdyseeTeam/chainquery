@@ -7,7 +7,6 @@ var TableNames = struct {
 	Address            string
 	Block              string
 	Claim              string
-	ClaimStream        string
 	Input              string
 	InputAddress       string
 	Output             string
@@ -19,7 +18,6 @@ var TableNames = struct {
 	Address:            "address",
 	Block:              "block",
 	Claim:              "claim",
-	ClaimStream:        "claim_stream",
 	Input:              "input",
 	InputAddress:       "input_address",
 	Output:             "output",

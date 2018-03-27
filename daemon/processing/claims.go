@@ -2,6 +2,7 @@ package processing
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"strconv"
 
 	"github.com/lbryio/chainquery/lbrycrd"
@@ -44,32 +45,35 @@ func processAsClaim(script []byte, vout model.Output, tx model.Transaction) (add
 }
 
 func processClaimNameScript(script *[]byte, vout model.Output, tx model.Transaction) (name string, claimid string, pkscript []byte, err error) {
-	name, value, pubkeyscript, err := lbrycrd.ParseClaimNameScript(*script)
+	claimid, err = util.ClaimIDFromOutpoint(vout.TransactionHash, int(vout.Vout))
 	if err != nil {
-		errors.Prefix("Claim name processing error: ", err)
-		return name, claimid, pubkeyscript, err
+		return name, "", pkscript, err
+	}
+	name, value, pkscript, err := lbrycrd.ParseClaimNameScript(*script)
+	if err != nil {
+		errors.Prefix("Claim name script parsing error: ", err)
+		return name, claimid, pkscript, err
 	}
 	pbClaim, err := lbrycrd.DecodeClaimValue(name, value)
-	if pbClaim != nil {
-		claimid, err := util.ClaimIDFromOutpoint(vout.TransactionHash, int(vout.Vout))
+	if err != nil {
+		logrus.Warning("saving non-conforming claim - Name: ", name, " ClaimId: ", claimid)
+		saveUnknownClaim(name, claimid, false, value, vout, tx)
+		return name, claimid, pkscript, nil
+	}
+	if pbClaim != nil && err == nil {
+
+		claim, err := processClaim(pbClaim, value, vout, tx)
 		if err != nil {
-			return name, "", pubkeyscript, err
-		}
-		claim, err := processClaim(pbClaim, vout, tx)
-		if err != nil {
-			return name, claimid, pubkeyscript, err
+			return name, claimid, pkscript, err
 		}
 		claim.ClaimID = claimid
-		claim.Name = name //
-		//claim.TransactionTime.Uint = tx.TransactionTime //ToDo uncomment when DB rebuilt
+		claim.Name = name
+		claim.TransactionTime = tx.TransactionTime
+		//ToDo - Needs to use Datastore
 		claim.InsertG()
 	}
-	if err != nil {
-		logrus.Error(err)
-		return name, claimid, pubkeyscript, nil
-	}
 
-	return name, claimid, pubkeyscript, err
+	return name, claimid, pkscript, err
 }
 
 func processClaimSupportScript(script *[]byte, vout model.Output, tx model.Transaction) (name string, claimid string, pubkeyscript []byte, err error) {
@@ -78,7 +82,7 @@ func processClaimSupportScript(script *[]byte, vout model.Output, tx model.Trans
 		errors.Prefix("Claim support processing error: ", err)
 		return name, claimid, pubkeyscript, err
 	}
-	//log.Debug("ClaimSupport ", name, " ClaimId ", claimid)
+	logrus.Debug("ClaimSupport ", name, " ClaimId ", claimid)
 
 	return name, claimid, pubkeyscript, err
 }
@@ -90,35 +94,48 @@ func processClaimUpdateScript(script *[]byte, vout model.Output, tx model.Transa
 		return name, claimId, pubkeyscript, err
 	}
 	claim, err := lbrycrd.DecodeClaimValue(name, value)
+	if err != nil {
+		logrus.Warning("saving non-conforming claim - Update: ", name, " ClaimId: ", claimId)
+		saveUnknownClaim(name, claimId, true, value, vout, tx)
+		return name, claimId, pubkeyscript, nil
+	}
 	if claim != nil {
-		//logrus.Debug("ClaimUpdate ", name, " ClaimId ", claimId)
+		logrus.Debug("ClaimUpdate ", name, " ClaimId ", claimId)
 	}
 	return name, claimId, pubkeyscript, err
 }
 
-func processClaim(pbClaim *pb.Claim, output model.Output, tx model.Transaction) (model.Claim, error) {
+func processClaim(pbClaim *pb.Claim, value []byte, output model.Output, tx model.Transaction) (*model.Claim, error) {
 	claim := model.Claim{}
 	claim.SetTransactionByHashG(false, &tx)
 	claim.Vout = output.Vout
 	claim.Version = pbClaim.GetVersion().String()
-	setSourceInfo(claim, pbClaim)
-	setMetaDataInfo(claim, pbClaim)
-	setCertificateInfo(claim, pbClaim)
+	claim.ValueAsHex = hex.EncodeToString(value)
 
-	return claim, nil
+	var js map[string]interface{} //JSON Map
+	if json.Unmarshal(value, &js) == nil {
+		claim.ValueAsJSON.String = string(value)
+		claim.ValueAsJSON.Valid = true
+	}
+
+	setSourceInfo(&claim, pbClaim)
+	setMetaDataInfo(&claim, pbClaim)
+	setCertificateInfo(&claim, pbClaim)
+
+	return &claim, nil
 }
 
-func setCertificateInfo(claim model.Claim, pbClaim *pb.Claim) {
+func setCertificateInfo(claim *model.Claim, pbClaim *pb.Claim) {
 
 }
 
-func setMetaDataInfo(claim model.Claim, pbClaim *pb.Claim) {
+func setMetaDataInfo(claim *model.Claim, pbClaim *pb.Claim) {
 	stream := pbClaim.GetStream()
 	if stream != nil {
 		metadata := stream.GetMetadata()
 		if metadata != nil {
 			claim.Title.String = metadata.GetTitle()
-			claim.Title.Valid = true
+			claim.Title.Valid = true //
 
 			claim.Description.String = metadata.GetDescription()
 			claim.Description.Valid = true
@@ -143,7 +160,7 @@ func setMetaDataInfo(claim model.Claim, pbClaim *pb.Claim) {
 	}
 }
 
-func setSourceInfo(claim model.Claim, pbClaim *pb.Claim) {
+func setSourceInfo(claim *model.Claim, pbClaim *pb.Claim) {
 	stream := pbClaim.GetStream()
 	if stream != nil {
 		source := stream.GetSource()
@@ -155,4 +172,26 @@ func setSourceInfo(claim model.Claim, pbClaim *pb.Claim) {
 			}
 		}
 	}
+}
+
+func saveUnknownClaim(name string, claimid string, isUpdate bool, value []byte, vout model.Output, tx model.Transaction) {
+	unknownClaim := model.UnknownClaim{}
+	unknownClaim.Vout = vout.Vout
+	unknownClaim.Name = name
+	unknownClaim.ClaimID = claimid
+	unknownClaim.IsUpdate = isUpdate
+	unknownClaim.TransactionHash.String = vout.TransactionHash
+	unknownClaim.TransactionHash.Valid = true
+	unknownClaim.ValueAsHex = hex.EncodeToString(value)
+	unknownClaim.BlockHash = tx.BlockByHashID
+
+	var js map[string]interface{} //JSON Map
+	if json.Unmarshal(value, &js) == nil {
+		unknownClaim.ValueAsJSON.String = string(value)
+		unknownClaim.ValueAsJSON.Valid = true
+	}
+
+	unknownClaim.SetOutputG(false, &vout)
+	unknownClaim.InsertG()
+
 }

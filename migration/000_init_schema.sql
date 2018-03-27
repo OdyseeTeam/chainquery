@@ -198,6 +198,8 @@ CREATE TABLE IF NOT EXISTS `claim`
     `certificate` TEXT,
     `transaction_time` BIGINT UNSIGNED,
     `version` VARCHAR(10) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
+    `value_as_hex` MEDIUMTEXT NOT NULL,
+    `value_as_json` MEDIUMTEXT,
 
     -- Additional fields for easy indexing of stream types
     `author` VARCHAR(512),
@@ -234,12 +236,15 @@ CREATE TABLE IF NOT EXISTS `claim`
 CREATE TABLE IF NOT EXISTS `unknown_claim`
 (
     `id` SERIAL,
+    `name` VARCHAR(1024) NOT NULL,
+    `claim_id` VARCHAR(160) NOT NULL,
+    `is_update` TINYINT(1) DEFAULT 0 NOT NULL,
     `block_hash` VARCHAR(70) CHARACTER SET latin1 COLLATE latin1_general_ci,
     `transaction_hash` VARCHAR(70) CHARACTER SET latin1 COLLATE latin1_general_ci,
     `vout` INTEGER UNSIGNED NOT NULL,
     `output_id` BIGINT UNSIGNED NOT NULL,
     `value_as_hex` MEDIUMTEXT NOT NULL,
-    `value_as_json` MEDIUMTEXT NOT NULL,
+    `value_as_json` MEDIUMTEXT,
     PRIMARY KEY `PK_unknownclaim` (`id`),
     CONSTRAINT `Cnt_ValueValidJson` CHECK(`value_as_json` IS NULL OR JSON_VALID(`value_as_json`)),
     FOREIGN KEY `FK_unknownclaimoutput` (`output_id`) REFERENCES `output` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION,
