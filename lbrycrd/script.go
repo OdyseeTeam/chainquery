@@ -55,28 +55,32 @@ func ParseClaimNameScript(script []byte) (name string, value []byte, pubkeyscrip
 	// Already validated by blockchain so can be assumed
 	// OP_CLAIM_NAME Name Value OP_2DROP OP_DROP pubkeyscript
 	nameBytesToRead := int(script[1])
-	if nameBytesToRead < OP_PUSHDATA1 {
-		nameStart := 2
-		nameEnd := nameStart + nameBytesToRead
-		name = string(script[nameStart:nameEnd])
-		dataPushType := int(script[nameEnd])
-		valueBytesToRead := int(script[nameEnd])
-		valueStart := nameEnd + 1
-		if dataPushType == OP_PUSHDATA1 {
-			valueBytesToRead = int(script[nameEnd+1])
-			valueStart = nameEnd + 2
-		} else if dataPushType == OP_PUSHDATA2 {
-			valueStart = nameEnd + 3
-			valueBytesToRead = int(binary.LittleEndian.Uint16(script[nameEnd+1 : valueStart]))
-		} else if dataPushType == OP_PUSHDATA4 {
-			valueStart = nameEnd + 5
-			valueBytesToRead = int(binary.LittleEndian.Uint32(script[nameEnd+2 : valueStart]))
-		}
-		valueEnd := valueStart + valueBytesToRead
-		value = script[valueStart:valueEnd]
-		pksStart := valueEnd + 2         // +2 to ignore OP_2DROP and OP_DROP
-		pubkeyscript = script[pksStart:] //Remainder is always pubkeyscript
+	nameStart := 2
+	if nameBytesToRead == OP_PUSHDATA1 {
+		nameBytesToRead = int(script[2])
+		nameStart = 3
+	} else {
+		panic(errors.Base("Bytes to read is more than next byte! "))
 	}
+	nameEnd := nameStart + nameBytesToRead
+	name = string(script[nameStart:nameEnd])
+	dataPushType := int(script[nameEnd])
+	valueBytesToRead := int(script[nameEnd])
+	valueStart := nameEnd + 1
+	if dataPushType == OP_PUSHDATA1 {
+		valueBytesToRead = int(script[nameEnd+1])
+		valueStart = nameEnd + 2
+	} else if dataPushType == OP_PUSHDATA2 {
+		valueStart = nameEnd + 3
+		valueBytesToRead = int(binary.LittleEndian.Uint16(script[nameEnd+1 : valueStart]))
+	} else if dataPushType == OP_PUSHDATA4 {
+		valueStart = nameEnd + 5
+		valueBytesToRead = int(binary.LittleEndian.Uint32(script[nameEnd+2 : valueStart]))
+	}
+	valueEnd := valueStart + valueBytesToRead
+	value = script[valueStart:valueEnd]
+	pksStart := valueEnd + 2         // +2 to ignore OP_2DROP and OP_DROP
+	pubkeyscript = script[pksStart:] //Remainder is always pubkeyscript
 
 	return name, value, pubkeyscript, err
 }
@@ -91,15 +95,21 @@ func IsClaimSupportScript(script []byte) bool {
 func ParseClaimSupportScript(script []byte) (name string, claimid string, pubkeyscript []byte, err error) {
 	// Already validated by blockchain so can be assumed
 	// OP_SUPPORT_CLAIM vchName vchClaimId OP_2DROP OP_DROP pubkeyscript
+
+	//Name
 	nameBytesToRead := int(script[1])
 	nameStart := 2
 	nameEnd := nameStart + nameBytesToRead
 	name = string(script[nameStart:nameEnd])
-	valueBytesToRead := int(script[nameEnd])
-	valueStart := nameEnd + 1
-	valueEnd := valueStart + valueBytesToRead
-	claimid = hex.EncodeToString(script[valueStart:valueEnd])
-	pksStart := valueEnd + 2         // +2 to ignore OP_2DROP and OP_DROP
+
+	//ClaimId
+	claimidBytesToRead := int(script[nameEnd])
+	claimidStart := nameEnd + 1
+	claimidEnd := claimidStart + claimidBytesToRead
+	claimid = hex.EncodeToString(script[claimidStart:claimidEnd])
+
+	//PubKeyScript
+	pksStart := claimidEnd + 2       // +2 to ignore OP_2DROP and OP_DROP
 	pubkeyscript = script[pksStart:] //Remainder is always pubkeyscript
 	return
 }
@@ -113,40 +123,45 @@ func IsClaimUpdateScript(script []byte) bool {
 
 func ParseClaimUpdateScript(script []byte) (name string, claimid string, value []byte, pubkeyscript []byte, err error) {
 	// OP_UPDATE_CLAIM Name ClaimId Value OP_2DROP OP_2DROP pubkeyscript
+
+	//Name
 	nameBytesToRead := int(script[1])
-	if nameBytesToRead < OP_PUSHDATA1 {
-		//Name
-		nameStart := 2
-		nameEnd := nameStart + nameBytesToRead
-		name = string(script[nameStart:nameEnd])
-
-		//ClaimId
-		claimidBytesToRead := int(script[nameEnd])
-		claimidStart := nameEnd + 1
-		claimidEnd := claimidStart + claimidBytesToRead
-		claimid = hex.EncodeToString(script[claimidStart:claimidEnd])
-
-		//Value
-		dataPushType := int(script[claimidEnd])
-		valueBytesToRead := int(script[claimidEnd])
-		valueStart := claimidEnd + 1
-		if dataPushType == OP_PUSHDATA1 {
-			valueBytesToRead = int(script[claimidEnd+1])
-			valueStart = claimidEnd + 2
-		} else if dataPushType == OP_PUSHDATA2 {
-			valueStart = claimidEnd + 3
-			valueBytesToRead = int(binary.LittleEndian.Uint16(script[claimidEnd+1 : valueStart]))
-		} else if dataPushType == OP_PUSHDATA4 {
-			valueStart = claimidEnd + 5
-			valueBytesToRead = int(binary.LittleEndian.Uint32(script[claimidEnd+2 : valueStart]))
-		}
-		valueEnd := valueStart + valueBytesToRead
-		value = script[valueStart:valueEnd]
-
-		//PublicKeyScript
-		pksStart := valueEnd + 2         // +2 to ignore OP_2DROP and OP_DROP
-		pubkeyscript = script[pksStart:] //Remainder is always pubkeyscript
+	nameStart := 2
+	if nameBytesToRead == OP_PUSHDATA1 {
+		nameBytesToRead = int(script[2])
+		nameStart = 3
+	} else {
+		panic(errors.Base("Bytes to read is more than next byte! "))
 	}
+	nameEnd := nameStart + nameBytesToRead
+	name = string(script[nameStart:nameEnd])
+
+	//ClaimId
+	claimidBytesToRead := int(script[nameEnd])
+	claimidStart := nameEnd + 1
+	claimidEnd := claimidStart + claimidBytesToRead
+	claimid = hex.EncodeToString(script[claimidStart:claimidEnd])
+
+	//Value
+	dataPushType := int(script[claimidEnd])
+	valueBytesToRead := int(script[claimidEnd])
+	valueStart := claimidEnd + 1
+	if dataPushType == OP_PUSHDATA1 {
+		valueBytesToRead = int(script[claimidEnd+1])
+		valueStart = claimidEnd + 2
+	} else if dataPushType == OP_PUSHDATA2 {
+		valueStart = claimidEnd + 3
+		valueBytesToRead = int(binary.LittleEndian.Uint16(script[claimidEnd+1 : valueStart]))
+	} else if dataPushType == OP_PUSHDATA4 {
+		valueStart = claimidEnd + 5
+		valueBytesToRead = int(binary.LittleEndian.Uint32(script[claimidEnd+2 : valueStart]))
+	}
+	valueEnd := valueStart + valueBytesToRead
+	value = script[valueStart:valueEnd]
+
+	//PublicKeyScript
+	pksStart := valueEnd + 2         // +2 to ignore OP_2DROP and OP_DROP
+	pubkeyscript = script[pksStart:] //Remainder is always pubkeyscript
 
 	return name, claimid, value, pubkeyscript, err
 }
