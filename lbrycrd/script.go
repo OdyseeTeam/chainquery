@@ -59,7 +59,7 @@ func ParseClaimNameScript(script []byte) (name string, value []byte, pubkeyscrip
 	if nameBytesToRead == OP_PUSHDATA1 {
 		nameBytesToRead = int(script[2])
 		nameStart = 3
-	} else {
+	} else if nameBytesToRead > OP_PUSHDATA1 {
 		panic(errors.Base("Bytes to read is more than next byte! "))
 	}
 	nameEnd := nameStart + nameBytesToRead
@@ -99,6 +99,12 @@ func ParseClaimSupportScript(script []byte) (name string, claimid string, pubkey
 	//Name
 	nameBytesToRead := int(script[1])
 	nameStart := 2
+	if nameBytesToRead == OP_PUSHDATA1 {
+		nameBytesToRead = int(script[2])
+		nameStart = 3
+	} else if nameBytesToRead > OP_PUSHDATA1 {
+		panic(errors.Base("Bytes to read is more than next byte! "))
+	}
 	nameEnd := nameStart + nameBytesToRead
 	name = string(script[nameStart:nameEnd])
 
@@ -130,7 +136,7 @@ func ParseClaimUpdateScript(script []byte) (name string, claimid string, value [
 	if nameBytesToRead == OP_PUSHDATA1 {
 		nameBytesToRead = int(script[2])
 		nameStart = 3
-	} else {
+	} else if nameBytesToRead > OP_PUSHDATA1 {
 		panic(errors.Base("Bytes to read is more than next byte! "))
 	}
 	nameEnd := nameStart + nameBytesToRead
