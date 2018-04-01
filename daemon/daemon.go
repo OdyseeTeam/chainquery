@@ -1,8 +1,8 @@
 package daemon
 
 import (
+	"encoding/json"
 	"runtime"
-	"strconv"
 	"strings"
 	"time"
 
@@ -10,10 +10,8 @@ import (
 	"github.com/lbryio/chainquery/datastore"
 	"github.com/lbryio/chainquery/lbrycrd"
 	"github.com/lbryio/chainquery/model"
-	"github.com/lbryio/chainquery/util"
 	"github.com/lbryio/lbry.go/errors"
 
-	"encoding/json"
 	log "github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -25,21 +23,20 @@ const (
 	SLOWSTEADYMODE = 1 // 1 block per 100 ms
 	DELAYMODE      = 2 // 1 block per delay
 	DAEMONMODE     = 3 // 1 block per Daemon iteration
-	// Default Delays
-	PROCDELAY   = 50 * time.Millisecond
-	DAEMONDELAY = 1000 * time.Millisecond
 )
 
 var workers int = runtime.NumCPU() / 2 //Split cores between processors and lbycrd
 var lastHeightProcess uint64 = 0       // Around 165,000 is when protobuf takes affect.
 var blockHeight uint64 = 0
 var running bool = false
+
+//Configuration
 var ProcessingMode int            //Set in main on init
-var processingDelay time.Duration //Set by `applySettings`
+var ProcessingDelay time.Duration //Set by `applySettings`
+var DaemonDelay time.Duration     //Set by `applySettings`
 var iteration int64 = 0
 
 func InitDaemon() {
-	applySettings()
 	//testFunction()
 	initBlockQueue()
 	runDaemon()
@@ -87,15 +84,17 @@ func testFunction(params ...interface{}) {
 	//panic(errors.Base("only run test method"))
 }
 
-func applySettings() {
+func ApplySettings(processingDelay time.Duration, daemonDelay time.Duration) {
+	DaemonDelay = daemonDelay
+	ProcessingDelay = processingDelay
 	if ProcessingMode == BEASTMODE {
-		processingDelay = 0 * time.Millisecond
+		ProcessingDelay = 0 * time.Millisecond
 	} else if ProcessingMode == SLOWSTEADYMODE {
-		processingDelay = 100 * time.Millisecond
+		ProcessingDelay = 100 * time.Millisecond
 	} else if ProcessingMode == DELAYMODE {
-		processingDelay = PROCDELAY
+		ProcessingDelay = processingDelay
 	} else if ProcessingMode == DAEMONMODE {
-		processingDelay = DAEMONDELAY
+		ProcessingDelay = daemonDelay //
 	}
 }
 
@@ -107,9 +106,9 @@ func runDaemon() func() {
 	go daemonIteration()
 	log.Info("Daemon initialized and running")
 	for {
-		time.Sleep(DAEMONDELAY)
+		time.Sleep(DaemonDelay)
 		if !running {
-			log.Debug("Running iteration ", iteration)
+			log.Debug("Running daemon iteration ", iteration)
 			go daemonIteration()
 			iteration++
 		}
@@ -131,8 +130,8 @@ func daemonIteration() error {
 	if blockHeight >= next {
 		go runBlockProcessing(&next)
 	}
-	if next%200 == 0 {
-		log.Info("running iteration at block height ", next)
+	if next%50 == 0 {
+		log.Info("running iteration at block height ", next, runtime.NumGoroutine(), " go routines")
 	}
 
 	return nil
@@ -156,6 +155,7 @@ func getBlockToProcess(height *uint64) (*lbrycrd.GetBlockResponse, error) {
 }
 
 func runBlockProcessing(height *uint64) {
+	//defer util.TimeTrack(time.Now(), "runBlockProcessing")
 	running = true
 	jsonBlock, err := getBlockToProcess(height)
 	if err != nil {
@@ -175,7 +175,7 @@ func runBlockProcessing(height *uint64) {
 	block.Bits = jsonBlock.Bits
 	block.BlockSize = uint64(jsonBlock.Size)
 	block.Chainwork = jsonBlock.ChainWork
-	block.Difficulty = strconv.FormatFloat(jsonBlock.Difficulty, 'f', -1, 64)
+	block.Difficulty = jsonBlock.Difficulty
 	block.MerkleRoot = jsonBlock.MerkleRoot
 	block.NameClaimRoot = jsonBlock.NameClaimRoot
 	block.NextBlockHash.String = jsonBlock.NextHash
@@ -204,17 +204,17 @@ func runBlockProcessing(height *uint64) {
 
 func goToNextBlock(height *uint64) {
 	lastHeightProcess = *height
-	workToDo := lastHeightProcess+uint64(1) < blockHeight &&
-		lastHeightProcess != 0
+	workToDo := lastHeightProcess+uint64(1) < blockHeight && lastHeightProcess != 0
 	if workToDo {
-		time.Sleep(processingDelay)
-		daemonIteration()
+		time.Sleep(ProcessingDelay)
+		go daemonIteration()
 	} else {
 		running = false
 	}
 }
 
 func processTx(jsonTx *lbrycrd.TxRawResult, blockTime uint64) error {
+	//defer util.TimeTrack(time.Now(), "processTx "+jsonTx.Txid+" -- ")
 	transaction := &model.Transaction{}
 	foundTx, err := model.TransactionsG(qm.Where(model.TransactionColumns.Hash+"=?", jsonTx.Txid)).One()
 	if foundTx != nil {
@@ -232,7 +232,7 @@ func processTx(jsonTx *lbrycrd.TxRawResult, blockTime uint64) error {
 	transaction.OutputCount = uint(len(jsonTx.Vout))
 	transaction.Raw.String = jsonTx.Hex
 	transaction.TransactionSize = uint64(jsonTx.Size)
-	transaction.Value = strconv.FormatFloat(0.0, 'f', -1, 64) //strconv.FormatFloat(p.GetTotalValue(jsonTx.Vout), 'f', -1, 64)
+	transaction.Value = 0.0 //p.GetTotalValue(jsonTx.Vout)
 
 	_, err = p.CreateUpdateAddresses(jsonTx.Vout, blockTime)
 	if err != nil {
@@ -272,8 +272,8 @@ func processTx(jsonTx *lbrycrd.TxRawResult, blockTime uint64) error {
 
 		txAddr := datastore.GetTxAddress(transaction.ID, address.ID)
 
-		txAddr.CreditAmount = util.Plus("0.0", DC.Credits())
-		txAddr.DebitAmount = util.Plus("0.0", DC.Debits())
+		txAddr.CreditAmount = DC.Credits()
+		txAddr.DebitAmount = DC.Credits()
 
 		datastore.PutTxAddress(txAddr)
 

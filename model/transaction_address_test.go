@@ -598,7 +598,7 @@ func testTransactionAddressesSelect(t *testing.T) {
 }
 
 var (
-	transactionAddressDBTypes = map[string]string{`AddressID`: `bigint`, `CreditAmount`: `decimal`, `DebitAmount`: `decimal`, `LatestTransactionTime`: `datetime`, `TransactionID`: `bigint`}
+	transactionAddressDBTypes = map[string]string{`AddressID`: `bigint`, `CreditAmount`: `double`, `DebitAmount`: `double`, `LatestTransactionTime`: `datetime`, `TransactionID`: `bigint`}
 	_                         = bytes.MinRead
 )
 

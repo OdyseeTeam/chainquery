@@ -22,21 +22,21 @@ import (
 
 // Input is an object representing the database table.
 type Input struct {
-	ID                  uint64      `boil:"id" json:"id" toml:"id" yaml:"id"`
-	TransactionID       uint64      `boil:"transaction_id" json:"transaction_id" toml:"transaction_id" yaml:"transaction_id"`
-	TransactionHash     string      `boil:"transaction_hash" json:"transaction_hash" toml:"transaction_hash" yaml:"transaction_hash"`
-	InputAddressID      null.Uint64 `boil:"input_address_id" json:"input_address_id,omitempty" toml:"input_address_id" yaml:"input_address_id,omitempty"`
-	IsCoinbase          bool        `boil:"is_coinbase" json:"is_coinbase" toml:"is_coinbase" yaml:"is_coinbase"`
-	Coinbase            null.String `boil:"coinbase" json:"coinbase,omitempty" toml:"coinbase" yaml:"coinbase,omitempty"`
-	PrevoutHash         null.String `boil:"prevout_hash" json:"prevout_hash,omitempty" toml:"prevout_hash" yaml:"prevout_hash,omitempty"`
-	PrevoutN            null.Uint   `boil:"prevout_n" json:"prevout_n,omitempty" toml:"prevout_n" yaml:"prevout_n,omitempty"`
-	PrevoutSpendUpdated bool        `boil:"prevout_spend_updated" json:"prevout_spend_updated" toml:"prevout_spend_updated" yaml:"prevout_spend_updated"`
-	Sequence            uint        `boil:"sequence" json:"sequence" toml:"sequence" yaml:"sequence"`
-	Value               null.String `boil:"value" json:"value,omitempty" toml:"value" yaml:"value,omitempty"`
-	ScriptSigAsm        null.String `boil:"script_sig_asm" json:"script_sig_asm,omitempty" toml:"script_sig_asm" yaml:"script_sig_asm,omitempty"`
-	ScriptSigHex        null.String `boil:"script_sig_hex" json:"script_sig_hex,omitempty" toml:"script_sig_hex" yaml:"script_sig_hex,omitempty"`
-	Created             time.Time   `boil:"created" json:"created" toml:"created" yaml:"created"`
-	Modified            time.Time   `boil:"modified" json:"modified" toml:"modified" yaml:"modified"`
+	ID                  uint64       `boil:"id" json:"id" toml:"id" yaml:"id"`
+	TransactionID       uint64       `boil:"transaction_id" json:"transaction_id" toml:"transaction_id" yaml:"transaction_id"`
+	TransactionHash     string       `boil:"transaction_hash" json:"transaction_hash" toml:"transaction_hash" yaml:"transaction_hash"`
+	InputAddressID      null.Uint64  `boil:"input_address_id" json:"input_address_id,omitempty" toml:"input_address_id" yaml:"input_address_id,omitempty"`
+	IsCoinbase          bool         `boil:"is_coinbase" json:"is_coinbase" toml:"is_coinbase" yaml:"is_coinbase"`
+	Coinbase            null.String  `boil:"coinbase" json:"coinbase,omitempty" toml:"coinbase" yaml:"coinbase,omitempty"`
+	PrevoutHash         null.String  `boil:"prevout_hash" json:"prevout_hash,omitempty" toml:"prevout_hash" yaml:"prevout_hash,omitempty"`
+	PrevoutN            null.Uint    `boil:"prevout_n" json:"prevout_n,omitempty" toml:"prevout_n" yaml:"prevout_n,omitempty"`
+	PrevoutSpendUpdated bool         `boil:"prevout_spend_updated" json:"prevout_spend_updated" toml:"prevout_spend_updated" yaml:"prevout_spend_updated"`
+	Sequence            uint         `boil:"sequence" json:"sequence" toml:"sequence" yaml:"sequence"`
+	Value               null.Float64 `boil:"value" json:"value,omitempty" toml:"value" yaml:"value,omitempty"`
+	ScriptSigAsm        null.String  `boil:"script_sig_asm" json:"script_sig_asm,omitempty" toml:"script_sig_asm" yaml:"script_sig_asm,omitempty"`
+	ScriptSigHex        null.String  `boil:"script_sig_hex" json:"script_sig_hex,omitempty" toml:"script_sig_hex" yaml:"script_sig_hex,omitempty"`
+	Created             time.Time    `boil:"created" json:"created" toml:"created" yaml:"created"`
+	Modified            time.Time    `boil:"modified" json:"modified" toml:"modified" yaml:"modified"`
 
 	R *inputR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L inputL  `boil:"-" json:"-" toml:"-" yaml:"-"`

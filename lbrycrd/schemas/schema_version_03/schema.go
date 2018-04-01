@@ -7,7 +7,7 @@ import (
 	"github.com/lbryio/lbry.go/errors"
 )
 
-var version = "0.0.2"
+var version = "0.0.3"
 
 type Claim struct {
 	Version     string     `json:"ver"`          //Required

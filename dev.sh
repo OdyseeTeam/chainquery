@@ -4,8 +4,6 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 APP_DIR="$DIR"
 
 (
-  export DEBUGGING=1
-  export MYSQL_DSN="lbry:lbry@tcp(localhost:3306)/lbrycrd"
 
   [ -n "$(pgrep lbrycrdd)" ] && export LBRYCRD_CONNECT="from_conf"
 
@@ -23,5 +21,5 @@ APP_DIR="$DIR"
     dep ensure
   fi
 
-  reflex --decoration=none --start-service=true --regex='\.go$' --inverse-regex='migration/bindata\.go' -- sh -c "go generate && go run *.go serve -cpuprofile=chainquery.prof"
+  reflex --decoration=none --start-service=true --regex='\.go$' --inverse-regex='migration/bindata\.go' -- sh -c "go generate && go run *.go serve"
 )

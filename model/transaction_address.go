@@ -23,8 +23,8 @@ import (
 type TransactionAddress struct {
 	TransactionID         uint64    `boil:"transaction_id" json:"transaction_id" toml:"transaction_id" yaml:"transaction_id"`
 	AddressID             uint64    `boil:"address_id" json:"address_id" toml:"address_id" yaml:"address_id"`
-	DebitAmount           string    `boil:"debit_amount" json:"debit_amount" toml:"debit_amount" yaml:"debit_amount"`
-	CreditAmount          string    `boil:"credit_amount" json:"credit_amount" toml:"credit_amount" yaml:"credit_amount"`
+	DebitAmount           float64   `boil:"debit_amount" json:"debit_amount" toml:"debit_amount" yaml:"debit_amount"`
+	CreditAmount          float64   `boil:"credit_amount" json:"credit_amount" toml:"credit_amount" yaml:"credit_amount"`
 	LatestTransactionTime time.Time `boil:"latest_transaction_time" json:"latest_transaction_time" toml:"latest_transaction_time" yaml:"latest_transaction_time"`
 
 	R *transactionAddressR `boil:"-" json:"-" toml:"-" yaml:"-"`

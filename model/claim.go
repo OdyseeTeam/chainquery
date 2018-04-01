@@ -42,9 +42,10 @@ type Claim struct {
 	Language            null.String `boil:"language" json:"language,omitempty" toml:"language" yaml:"language,omitempty"`
 	ThumbnailURL        null.String `boil:"thumbnail_url" json:"thumbnail_url,omitempty" toml:"thumbnail_url" yaml:"thumbnail_url,omitempty"`
 	Title               null.String `boil:"title" json:"title,omitempty" toml:"title" yaml:"title,omitempty"`
-	Fee                 string      `boil:"fee" json:"fee" toml:"fee" yaml:"fee"`
+	Fee                 float64     `boil:"fee" json:"fee" toml:"fee" yaml:"fee"`
 	FeeCurrency         null.String `boil:"fee_currency" json:"fee_currency,omitempty" toml:"fee_currency" yaml:"fee_currency,omitempty"`
 	IsFiltered          bool        `boil:"is_filtered" json:"is_filtered" toml:"is_filtered" yaml:"is_filtered"`
+	IsUpdate            bool        `boil:"is_update" json:"is_update" toml:"is_update" yaml:"is_update"`
 	Created             time.Time   `boil:"created" json:"created" toml:"created" yaml:"created"`
 	Modified            time.Time   `boil:"modified" json:"modified" toml:"modified" yaml:"modified"`
 
@@ -76,6 +77,7 @@ var ClaimColumns = struct {
 	Fee                 string
 	FeeCurrency         string
 	IsFiltered          string
+	IsUpdate            string
 	Created             string
 	Modified            string
 }{
@@ -102,6 +104,7 @@ var ClaimColumns = struct {
 	Fee:                 "fee",
 	FeeCurrency:         "fee_currency",
 	IsFiltered:          "is_filtered",
+	IsUpdate:            "is_update",
 	Created:             "created",
 	Modified:            "modified",
 }
@@ -117,9 +120,9 @@ type claimR struct {
 type claimL struct{}
 
 var (
-	claimColumns               = []string{"id", "transaction_by_hash_id", "vout", "name", "claim_id", "claim_type", "publisher_id", "publisher_sig", "certificate", "transaction_time", "version", "value_as_hex", "value_as_json", "author", "description", "content_type", "is_n_s_f_w", "language", "thumbnail_url", "title", "fee", "fee_currency", "is_filtered", "created", "modified"}
+	claimColumns               = []string{"id", "transaction_by_hash_id", "vout", "name", "claim_id", "claim_type", "publisher_id", "publisher_sig", "certificate", "transaction_time", "version", "value_as_hex", "value_as_json", "author", "description", "content_type", "is_n_s_f_w", "language", "thumbnail_url", "title", "fee", "fee_currency", "is_filtered", "is_update", "created", "modified"}
 	claimColumnsWithoutDefault = []string{"transaction_by_hash_id", "vout", "name", "claim_id", "claim_type", "publisher_id", "publisher_sig", "certificate", "transaction_time", "version", "value_as_hex", "value_as_json", "author", "description", "content_type", "language", "thumbnail_url", "title", "fee_currency"}
-	claimColumnsWithDefault    = []string{"id", "is_n_s_f_w", "fee", "is_filtered", "created", "modified"}
+	claimColumnsWithDefault    = []string{"id", "is_n_s_f_w", "fee", "is_filtered", "is_update", "created", "modified"}
 	claimPrimaryKeyColumns     = []string{"id"}
 )
 

@@ -3,7 +3,6 @@ package processing
 import (
 	"encoding/hex"
 	"encoding/json"
-	"strconv"
 
 	"github.com/lbryio/chainquery/lbrycrd"
 	"github.com/lbryio/chainquery/model"
@@ -11,6 +10,7 @@ import (
 	"github.com/lbryio/lbry.go/util"
 	"github.com/lbryio/lbryschema.go/pb"
 
+	"github.com/lbryio/chainquery/datastore"
 	"github.com/sirupsen/logrus"
 )
 
@@ -61,16 +61,15 @@ func processClaimNameScript(script *[]byte, vout model.Output, tx model.Transact
 		return name, claimid, pkscript, nil
 	}
 	if pbClaim != nil && err == nil {
-
-		claim, err := processClaim(pbClaim, value, vout, tx)
+		claim := datastore.GetClaim(claimid)
+		claim, err := processClaim(pbClaim, claim, value, vout, tx)
 		if err != nil {
 			return name, claimid, pkscript, err
 		}
 		claim.ClaimID = claimid
 		claim.Name = name
 		claim.TransactionTime = tx.TransactionTime
-		//ToDo - Needs to use Datastore
-		claim.InsertG()
+		datastore.PutClaim(claim)
 	}
 
 	return name, claimid, pkscript, err
@@ -105,8 +104,10 @@ func processClaimUpdateScript(script *[]byte, vout model.Output, tx model.Transa
 	return name, claimId, pubkeyscript, err
 }
 
-func processClaim(pbClaim *pb.Claim, value []byte, output model.Output, tx model.Transaction) (*model.Claim, error) {
-	claim := model.Claim{}
+func processClaim(pbClaim *pb.Claim, claim *model.Claim, value []byte, output model.Output, tx model.Transaction) (*model.Claim, error) {
+	if claim == nil {
+		claim = &model.Claim{}
+	}
 	claim.SetTransactionByHashG(false, &tx)
 	claim.Vout = output.Vout
 	claim.Version = pbClaim.GetVersion().String()
@@ -118,11 +119,11 @@ func processClaim(pbClaim *pb.Claim, value []byte, output model.Output, tx model
 		claim.ValueAsJSON.Valid = true
 	}
 
-	setSourceInfo(&claim, pbClaim)
-	setMetaDataInfo(&claim, pbClaim)
-	setCertificateInfo(&claim, pbClaim)
+	setSourceInfo(claim, pbClaim)
+	setMetaDataInfo(claim, pbClaim)
+	setCertificateInfo(claim, pbClaim)
 
-	return &claim, nil
+	return claim, nil
 }
 
 func setCertificateInfo(claim *model.Claim, pbClaim *pb.Claim) {
@@ -154,7 +155,7 @@ func setMetaDataInfo(claim *model.Claim, pbClaim *pb.Claim) {
 				claim.FeeCurrency.String = fee.GetCurrency().String()
 				claim.FeeCurrency.Valid = true
 
-				claim.Fee = strconv.FormatFloat(float64(fee.GetAmount()), 'f', -1, 32)
+				claim.Fee = float64(fee.GetAmount())
 			}
 		}
 	}

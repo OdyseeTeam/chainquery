@@ -26,8 +26,8 @@ type Transaction struct {
 	BlockByHashID   null.String `boil:"block_by_hash_id" json:"block_by_hash_id,omitempty" toml:"block_by_hash_id" yaml:"block_by_hash_id,omitempty"`
 	InputCount      uint        `boil:"input_count" json:"input_count" toml:"input_count" yaml:"input_count"`
 	OutputCount     uint        `boil:"output_count" json:"output_count" toml:"output_count" yaml:"output_count"`
-	Value           string      `boil:"value" json:"value" toml:"value" yaml:"value"`
-	Fee             string      `boil:"fee" json:"fee" toml:"fee" yaml:"fee"`
+	Value           float64     `boil:"value" json:"value" toml:"value" yaml:"value"`
+	Fee             float64     `boil:"fee" json:"fee" toml:"fee" yaml:"fee"`
 	TransactionTime null.Uint64 `boil:"transaction_time" json:"transaction_time,omitempty" toml:"transaction_time" yaml:"transaction_time,omitempty"`
 	TransactionSize uint64      `boil:"transaction_size" json:"transaction_size" toml:"transaction_size" yaml:"transaction_size"`
 	Hash            string      `boil:"hash" json:"hash" toml:"hash" yaml:"hash"`

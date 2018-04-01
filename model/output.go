@@ -22,21 +22,21 @@ import (
 
 // Output is an object representing the database table.
 type Output struct {
-	ID                 uint64      `boil:"id" json:"id" toml:"id" yaml:"id"`
-	TransactionID      uint64      `boil:"transaction_id" json:"transaction_id" toml:"transaction_id" yaml:"transaction_id"`
-	TransactionHash    string      `boil:"transaction_hash" json:"transaction_hash" toml:"transaction_hash" yaml:"transaction_hash"`
-	Value              null.String `boil:"value" json:"value,omitempty" toml:"value" yaml:"value,omitempty"`
-	Vout               uint        `boil:"vout" json:"vout" toml:"vout" yaml:"vout"`
-	Type               null.String `boil:"type" json:"type,omitempty" toml:"type" yaml:"type,omitempty"`
-	ScriptPubKeyAsm    null.String `boil:"script_pub_key_asm" json:"script_pub_key_asm,omitempty" toml:"script_pub_key_asm" yaml:"script_pub_key_asm,omitempty"`
-	ScriptPubKeyHex    null.String `boil:"script_pub_key_hex" json:"script_pub_key_hex,omitempty" toml:"script_pub_key_hex" yaml:"script_pub_key_hex,omitempty"`
-	RequiredSignatures null.Uint   `boil:"required_signatures" json:"required_signatures,omitempty" toml:"required_signatures" yaml:"required_signatures,omitempty"`
-	Hash160            null.String `boil:"hash160" json:"hash160,omitempty" toml:"hash160" yaml:"hash160,omitempty"`
-	AddressList        null.String `boil:"address_list" json:"address_list,omitempty" toml:"address_list" yaml:"address_list,omitempty"`
-	IsSpent            bool        `boil:"is_spent" json:"is_spent" toml:"is_spent" yaml:"is_spent"`
-	SpentByInputID     null.Uint64 `boil:"spent_by_input_id" json:"spent_by_input_id,omitempty" toml:"spent_by_input_id" yaml:"spent_by_input_id,omitempty"`
-	Created            time.Time   `boil:"created" json:"created" toml:"created" yaml:"created"`
-	Modified           time.Time   `boil:"modified" json:"modified" toml:"modified" yaml:"modified"`
+	ID                 uint64       `boil:"id" json:"id" toml:"id" yaml:"id"`
+	TransactionID      uint64       `boil:"transaction_id" json:"transaction_id" toml:"transaction_id" yaml:"transaction_id"`
+	TransactionHash    string       `boil:"transaction_hash" json:"transaction_hash" toml:"transaction_hash" yaml:"transaction_hash"`
+	Value              null.Float64 `boil:"value" json:"value,omitempty" toml:"value" yaml:"value,omitempty"`
+	Vout               uint         `boil:"vout" json:"vout" toml:"vout" yaml:"vout"`
+	Type               null.String  `boil:"type" json:"type,omitempty" toml:"type" yaml:"type,omitempty"`
+	ScriptPubKeyAsm    null.String  `boil:"script_pub_key_asm" json:"script_pub_key_asm,omitempty" toml:"script_pub_key_asm" yaml:"script_pub_key_asm,omitempty"`
+	ScriptPubKeyHex    null.String  `boil:"script_pub_key_hex" json:"script_pub_key_hex,omitempty" toml:"script_pub_key_hex" yaml:"script_pub_key_hex,omitempty"`
+	RequiredSignatures null.Uint    `boil:"required_signatures" json:"required_signatures,omitempty" toml:"required_signatures" yaml:"required_signatures,omitempty"`
+	Hash160            null.String  `boil:"hash160" json:"hash160,omitempty" toml:"hash160" yaml:"hash160,omitempty"`
+	AddressList        null.String  `boil:"address_list" json:"address_list,omitempty" toml:"address_list" yaml:"address_list,omitempty"`
+	IsSpent            bool         `boil:"is_spent" json:"is_spent" toml:"is_spent" yaml:"is_spent"`
+	SpentByInputID     null.Uint64  `boil:"spent_by_input_id" json:"spent_by_input_id,omitempty" toml:"spent_by_input_id" yaml:"spent_by_input_id,omitempty"`
+	Created            time.Time    `boil:"created" json:"created" toml:"created" yaml:"created"`
+	Modified           time.Time    `boil:"modified" json:"modified" toml:"modified" yaml:"modified"`
 
 	R *outputR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L outputL  `boil:"-" json:"-" toml:"-" yaml:"-"`

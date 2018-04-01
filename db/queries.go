@@ -1,6 +1,7 @@
 package db
 
 import (
+	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 )
 
@@ -10,6 +11,43 @@ type AddressSummary struct {
 	TotalReceived float64 `boil:total_received`
 	TotalSent     float64 `boil:total_sent`
 	Balance       float64 `boil:balance`
+}
+
+type TableStats struct {
+	Table string
+	Rows  uint64
+}
+
+type TableStatus struct {
+	Stat []TableStats
+}
+
+func GetTableStatus() (*TableStatus, error) {
+	stats := TableStatus{}
+	rows, err := boil.GetDB().Query(
+		`SELECT TABLE_NAME as "table",` +
+			`SUM(TABLE_ROWS) as "rows" ` +
+			`FROM INFORMATION_SCHEMA.TABLES ` +
+			`WHERE TABLE_SCHEMA = "lbrycrd" ` +
+			`GROUP BY TABLE_NAME;`)
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var statrows = []TableStats{}
+	for rows.Next() {
+		var stat TableStats
+		err = rows.Scan(&stat.Table, &stat.Rows)
+		if err != nil {
+			return nil, err
+		}
+		statrows = append(statrows, stat)
+	}
+
+	stats.Stat = statrows
+
+	return &stats, nil
 }
 
 func GetAddressSummary(address string) (*AddressSummary, error) {

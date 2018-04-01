@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS `block`
     `bits` VARCHAR(20) NOT NULL,
     `chainwork` VARCHAR(70) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
     `confirmations` INTEGER UNSIGNED NOT NULL,
-    `difficulty` DECIMAL(18,8) NOT NULL,
+    `difficulty` DOUBLE(18,8) NOT NULL,
     `hash` VARCHAR(70) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL ,
     `height` BIGINT UNSIGNED NOT NULL,
     `median_time` BIGINT UNSIGNED NOT NULL,
@@ -47,8 +47,8 @@ CREATE TABLE IF NOT EXISTS `transaction`
     `block_by_hash_id` VARCHAR(70) CHARACTER SET latin1 COLLATE latin1_general_ci,
     `input_count` INTEGER UNSIGNED NOT NULL,
     `output_count` INTEGER UNSIGNED NOT NULL,
-    `value` DECIMAL(18,8) NOT NULL,
-    `fee` DECIMAL(18,8) DEFAULT 0 NOT NULL,
+    `value` DOUBLE(18,8) NOT NULL,
+    `fee` DOUBLE(18,8) DEFAULT 0 NOT NULL,
     `transaction_time` BIGINT UNSIGNED,
     `transaction_size` BIGINT UNSIGNED NOT NULL,
     `hash` VARCHAR(70) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
@@ -72,15 +72,15 @@ CREATE TABLE IF NOT EXISTS `transaction`
 CREATE TABLE IF NOT EXISTS `address`
 (
     `id` SERIAL,
-    `address` VARCHAR(40) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
+    `address` VARCHAR(40) CHARACTER SET latin1 COLLATE latin1_general_ci UNIQUE NOT NULL,
     `first_seen` DATETIME,
-    `tag` VARCHAR(30),
+    `tag` VARCHAR(30) UNIQUE,
     `tag_url` VARCHAR(200),
     `created` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY `PK_Address` (`id`),
     UNIQUE KEY `Idx_AddressAddress` (`address`),
-    UNIQUE KEY `Idx_AddressTag` (`tag`),
+    Index `Idx_AddressTag` (`tag`),
     INDEX `Idx_AddressCreated` (`created`),
     INDEX `Idx_AddressModified` (`modified`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4;
@@ -99,7 +99,7 @@ CREATE TABLE IF NOT EXISTS `input`
     `prevout_n` INTEGER UNSIGNED,
     `prevout_spend_updated` TINYINT(1) DEFAULT 0 NOT NULL,
     `sequence` INTEGER UNSIGNED NOT NULL,
-    `value` DECIMAL(18,8),
+    `value` DOUBLE(18,8),
     `script_sig_asm` TEXT CHARACTER SET latin1 COLLATE latin1_general_ci,
     `script_sig_hex` TEXT CHARACTER SET latin1 COLLATE latin1_general_ci,
 
@@ -132,7 +132,7 @@ CREATE TABLE IF NOT EXISTS `output`
     `id` SERIAL,
     `transaction_id` BIGINT UNSIGNED NOT NULL,
     `transaction_hash` VARCHAR(70) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
-    `value` DECIMAL(18,8),
+    `value` DOUBLE(18,8),
     `vout` INTEGER UNSIGNED NOT NULL,
     `type` VARCHAR(20) CHARACTER SET latin1 COLLATE latin1_general_ci,
     `script_pub_key_asm` TEXT CHARACTER SET latin1 COLLATE latin1_general_ci,
@@ -172,8 +172,8 @@ CREATE TABLE IF NOT EXISTS `transaction_address`
 (
     `transaction_id` BIGINT UNSIGNED NOT NULL,
     `address_id` BIGINT UNSIGNED NOT NULL,
-    `debit_amount` DECIMAL(18,8) DEFAULT 0 NOT NULL COMMENT 'Sum of the inputs to this address for the tx',
-    `credit_amount` DECIMAL(18,8) DEFAULT 0 NOT NULL COMMENT 'Sum of the outputs to this address for the tx',
+    `debit_amount` DOUBLE(18,8) DEFAULT 0 NOT NULL COMMENT 'Sum of the inputs to this address for the tx',
+    `credit_amount` DOUBLE(18,8) DEFAULT 0 NOT NULL COMMENT 'Sum of the outputs to this address for the tx',
     `latest_transaction_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY `PK_TransactionAddress` (`transaction_id`, `address_id`),
     FOREIGN KEY `Idx_TransactionsAddressesTransaction` (`transaction_id`) REFERENCES `transaction` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION,
@@ -192,7 +192,7 @@ CREATE TABLE IF NOT EXISTS `claim`
     `vout` INTEGER UNSIGNED NOT NULL,
     `name` VARCHAR(1024) NOT NULL,
     `claim_id` CHAR(40) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
-    `claim_type` TINYINT(1) NOT NULL, -- 1 - CertificateType, 2 - StreamType
+    `claim_type` TINYINT(1) NOT NULL, -- 1 - CertificateType, 2 - StreamType should not be tinyint limits as bool sqlboiler
     `publisher_id` CHAR(40) CHARACTER SET latin1 COLLATE latin1_general_ci COMMENT 'references a ClaimId with CertificateType',
     `publisher_sig` VARCHAR(200) CHARACTER SET latin1 COLLATE latin1_general_ci,
     `certificate` TEXT,
@@ -209,9 +209,10 @@ CREATE TABLE IF NOT EXISTS `claim`
     `language` VARCHAR(20) CHARACTER SET latin1 COLLATE latin1_general_ci,
     `thumbnail_url` TEXT,
     `title` TEXT,
-    `fee` DECIMAL(18,8) DEFAULT 0 NOT NULL,
+    `fee` DOUBLE(18,8) DEFAULT 0 NOT NULL,
     `fee_currency` CHAR(3),
     `is_filtered` TINYINT(1) DEFAULT 0 NOT NULL,
+    `is_update` TINYINT(1) DEFAULT 0 NOT NULL,
 
     `created` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

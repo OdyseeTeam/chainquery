@@ -1285,7 +1285,7 @@ func testInputsSelect(t *testing.T) {
 }
 
 var (
-	inputDBTypes = map[string]string{`Coinbase`: `varchar`, `Created`: `datetime`, `ID`: `bigint`, `InputAddressID`: `bigint`, `IsCoinbase`: `tinyint`, `Modified`: `datetime`, `PrevoutHash`: `varchar`, `PrevoutN`: `int`, `PrevoutSpendUpdated`: `tinyint`, `ScriptSigAsm`: `text`, `ScriptSigHex`: `text`, `Sequence`: `int`, `TransactionHash`: `varchar`, `TransactionID`: `bigint`, `Value`: `decimal`}
+	inputDBTypes = map[string]string{`Coinbase`: `varchar`, `Created`: `datetime`, `ID`: `bigint`, `InputAddressID`: `bigint`, `IsCoinbase`: `tinyint`, `Modified`: `datetime`, `PrevoutHash`: `varchar`, `PrevoutN`: `int`, `PrevoutSpendUpdated`: `tinyint`, `ScriptSigAsm`: `text`, `ScriptSigHex`: `text`, `Sequence`: `int`, `TransactionHash`: `varchar`, `TransactionID`: `bigint`, `Value`: `double`}
 	_            = bytes.MinRead
 )
 

@@ -108,6 +108,17 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/lbryio/lbry.go"
+  packages = [
+    "errors",
+    "null",
+    "querytools",
+    "util"
+  ]
+  revision = "a5d371ca4780841b033afe486a94f8eb80a94259"
+
+[[projects]]
+  branch = "master"
   name = "github.com/lbryio/lbryschema.go"
   packages = [
     "address",
@@ -121,12 +132,6 @@
   name = "github.com/lbryio/null.go"
   packages = ["."]
   revision = "109a79fb20ecd191f58366a452b38f7cf0ae1741"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/lbryio/query.go"
-  packages = ["."]
-  revision = "2838cd8abdeb99507da080df5dc8abe388b28308"
 
 [[projects]]
   branch = "master"
@@ -307,6 +312,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "641befb0bfe42febbc6ed9a35655a58089838824a7389fc13dcacf6641f3c5d1"
+  inputs-digest = "64aed658e205344c810ad7cd95b0f704c408d8f0c0b6f3c4963fb0fbb36f52fb"
   solver-name = "gps-cdcl"
   solver-version = 1

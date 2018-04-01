@@ -10,7 +10,7 @@ import (
 
 //Outputs
 func GetOutput(txHash string, vout uint) *model.Output {
-
+	//defer util.TimeTrack(time.Now(), "GetOutput")
 	txHashMatch := qm.Where(model.OutputColumns.TransactionHash+"=?", txHash)
 	vOutMatch := qm.And(model.OutputColumns.Vout+"=?", vout)
 
@@ -26,7 +26,7 @@ func GetOutput(txHash string, vout uint) *model.Output {
 }
 
 func PutOutput(output *model.Output) error {
-
+	//defer util.TimeTrack(time.Now(), "PutOutput")
 	if output != nil {
 		txHashMatch := qm.Where(model.OutputColumns.TransactionHash+"=?", output.TransactionHash)
 		vOutMatch := qm.And(model.OutputColumns.Vout+"=?", output.Vout)
@@ -48,6 +48,7 @@ func PutOutput(output *model.Output) error {
 
 //Inputs
 func GetInput(txHash string, isCoinBase bool, prevHash string, prevN uint) *model.Input {
+	//defer util.TimeTrack(time.Now(), "GetInput")
 	//Unique
 	txHashMatch := qm.Where(model.InputColumns.TransactionHash+"=?", txHash)
 	txCoinBaseMatch := qm.Where(model.InputColumns.IsCoinbase+"=?", isCoinBase)
@@ -66,7 +67,7 @@ func GetInput(txHash string, isCoinBase bool, prevHash string, prevN uint) *mode
 }
 
 func PutInput(input *model.Input) error {
-
+	//defer util.TimeTrack(time.Now(), "PutOutput")
 	if input != nil {
 		//Unique
 		txHashMatch := qm.Where(model.InputColumns.TransactionHash+"=?", input.TransactionHash)
@@ -93,6 +94,7 @@ func PutInput(input *model.Input) error {
 //Addresses
 
 func GetAddress(addr string) *model.Address {
+	//defer util.TimeTrack(time.Now(), "GetAddress")
 	addrMatch := qm.Where(model.AddressColumns.Address+"=?", addr)
 
 	if model.AddressesG(addrMatch).ExistsP() {
@@ -108,7 +110,7 @@ func GetAddress(addr string) *model.Address {
 }
 
 func PutAddress(address *model.Address) error {
-
+	//defer util.TimeTrack(time.Now(), "PutAddress")
 	if address != nil {
 
 		var err error
@@ -128,7 +130,10 @@ func PutAddress(address *model.Address) error {
 
 }
 
+// Transaction Addresses
+
 func GetTxAddress(txId uint64, addrId uint64) *model.TransactionAddress {
+	//defer util.TimeTrack(time.Now(), "GetTxAddress")
 	if model.TransactionAddressExistsGP(txId, addrId) {
 		txAddress, err := model.FindTransactionAddressG(txId, addrId)
 		if err != nil {
@@ -140,7 +145,7 @@ func GetTxAddress(txId uint64, addrId uint64) *model.TransactionAddress {
 }
 
 func PutTxAddress(txAddress *model.TransactionAddress) error {
-
+	//defer util.TimeTrack(time.Now(), "PutTxAddres")
 	if txAddress != nil {
 
 		var err error
@@ -157,4 +162,42 @@ func PutTxAddress(txAddress *model.TransactionAddress) error {
 	}
 
 	return nil
+}
+
+//Claims
+
+func GetClaim(addr string) *model.Claim {
+	claimIdMatch := qm.Where(model.ClaimColumns.ClaimID+"=?", addr)
+
+	if model.ClaimsG(claimIdMatch).ExistsP() {
+
+		claim, err := model.ClaimsG(claimIdMatch).One()
+		if err != nil {
+			logrus.Error("Datastore(GETCLAIM): ", err)
+		}
+		return claim
+	}
+
+	return nil
+}
+
+func PutClaim(claim *model.Claim) error {
+
+	if claim != nil {
+
+		var err error
+		if model.ClaimExistsGP(claim.ID) {
+			err = claim.UpdateG()
+		} else {
+			err = claim.InsertG()
+
+		}
+		if err != nil {
+			err = errors.Prefix("Datastore(PUTCLAIM): ", err)
+			return err
+		}
+	}
+
+	return nil
+
 }

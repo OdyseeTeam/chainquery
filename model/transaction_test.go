@@ -1313,7 +1313,7 @@ func testTransactionsSelect(t *testing.T) {
 }
 
 var (
-	transactionDBTypes = map[string]string{`BlockByHashID`: `varchar`, `Created`: `datetime`, `CreatedTime`: `datetime`, `Fee`: `decimal`, `Hash`: `varchar`, `ID`: `bigint`, `InputCount`: `int`, `LockTime`: `int`, `Modified`: `datetime`, `OutputCount`: `int`, `Raw`: `text`, `TransactionSize`: `bigint`, `TransactionTime`: `bigint`, `Value`: `decimal`, `Version`: `int`}
+	transactionDBTypes = map[string]string{`BlockByHashID`: `varchar`, `Created`: `datetime`, `CreatedTime`: `datetime`, `Fee`: `double`, `Hash`: `varchar`, `ID`: `bigint`, `InputCount`: `int`, `LockTime`: `int`, `Modified`: `datetime`, `OutputCount`: `int`, `Raw`: `text`, `TransactionSize`: `bigint`, `TransactionTime`: `bigint`, `Value`: `double`, `Version`: `int`}
 	_                  = bytes.MinRead
 )
 

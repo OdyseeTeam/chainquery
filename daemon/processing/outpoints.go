@@ -46,6 +46,7 @@ func ProcessVin(jsonVin *lbrycrd.Vin, tx m.Transaction, txDC txDebitCredits) err
 			panic(err)
 		}
 		if src_output != nil {
+
 			vin.Value = src_output.Value
 			var addresses []string
 			json.Unmarshal([]byte(src_output.AddressList.String), &addresses)
@@ -53,6 +54,7 @@ func ProcessVin(jsonVin *lbrycrd.Vin, tx m.Transaction, txDC txDebitCredits) err
 			if len(addresses) > 0 {
 				address = ds.GetAddress(addresses[0])
 			} else if src_output.Type.String == lbrycrd.NON_STANDARD {
+
 				jsonAddress, err := getAddressFromNonStandardVout(src_output.ScriptPubKeyHex.String)
 				if err != nil {
 					return err
@@ -62,10 +64,10 @@ func ProcessVin(jsonVin *lbrycrd.Vin, tx m.Transaction, txDC txDebitCredits) err
 					logrus.Error("No addresses for vout address list! ", src_output.ID, " -> ", src_output.AddressList.String)
 					panic(nil)
 				}
+
 			}
 			if address != nil {
-				value, _ := strconv.ParseFloat(src_output.Value.String, 64)
-				txDC.subtract(address.Address, value)
+				txDC.subtract(address.Address, src_output.Value.Float64)
 				vin.InputAddressID.Uint64 = address.ID
 				vin.InputAddressID.Valid = true
 				// Store input - Needed to store input address below
@@ -87,7 +89,6 @@ func ProcessVin(jsonVin *lbrycrd.Vin, tx m.Transaction, txDC txDebitCredits) err
 				logrus.Error("No Address created for Vin: ", vin.ID, " of tx ", tx.ID, " vout: ", src_output.ID, " Address: ", addresses[0])
 				panic(nil)
 			}
-
 			// Update the src_output spent if successful
 			src_output.IsSpent = true
 			src_output.SpentByInputID.Uint64 = vin.ID
@@ -103,6 +104,7 @@ func ProcessVin(jsonVin *lbrycrd.Vin, tx m.Transaction, txDC txDebitCredits) err
 			if err != nil {
 				return err
 			}
+
 		}
 	}
 	return nil
@@ -130,8 +132,7 @@ func ProcessVout(jsonVout *lbrycrd.Vout, tx m.Transaction, txDC txDebitCredits) 
 	vout.TransactionID = tx.ID
 	vout.TransactionHash = tx.Hash
 	vout.Vout = uint(jsonVout.N)
-	value := strconv.FormatFloat(jsonVout.Value, 'f', -1, 64)
-	vout.Value.String = value
+	vout.Value.Float64 = jsonVout.Value
 	vout.Value.Valid = true
 	vout.ScriptPubKeyAsm.String = jsonVout.ScriptPubKey.Asm
 	vout.ScriptPubKeyAsm.Valid = true
@@ -204,8 +205,8 @@ func createTransactionAddress(txID uint64, addressID uint64) m.TransactionAddres
 	txAddress := m.TransactionAddress{}
 	txAddress.TransactionID = txID
 	txAddress.AddressID = addressID
-	txAddress.DebitAmount = "0.0"
-	txAddress.CreditAmount = "0.0"
+	txAddress.DebitAmount = 0.0
+	txAddress.CreditAmount = 0.0
 	txAddress.LatestTransactionTime = time.Now()
 
 	return txAddress

@@ -716,7 +716,7 @@ func testBlocksSelect(t *testing.T) {
 }
 
 var (
-	blockDBTypes = map[string]string{`Bits`: `varchar`, `BlockSize`: `bigint`, `BlockTime`: `bigint`, `Chainwork`: `varchar`, `Confirmations`: `int`, `Created`: `datetime`, `Difficulty`: `decimal`, `Hash`: `varchar`, `Height`: `bigint`, `ID`: `bigint`, `MedianTime`: `bigint`, `MerkleRoot`: `varchar`, `Modified`: `datetime`, `NameClaimRoot`: `varchar`, `NextBlockHash`: `varchar`, `Nonce`: `bigint`, `PreviousBlockHash`: `varchar`, `Target`: `varchar`, `TransactionHashes`: `text`, `TransactionsProcessed`: `tinyint`, `Version`: `bigint`, `VersionHex`: `varchar`}
+	blockDBTypes = map[string]string{`Bits`: `varchar`, `BlockSize`: `bigint`, `BlockTime`: `bigint`, `Chainwork`: `varchar`, `Confirmations`: `int`, `Created`: `datetime`, `Difficulty`: `double`, `Hash`: `varchar`, `Height`: `bigint`, `ID`: `bigint`, `MedianTime`: `bigint`, `MerkleRoot`: `varchar`, `Modified`: `datetime`, `NameClaimRoot`: `varchar`, `NextBlockHash`: `varchar`, `Nonce`: `bigint`, `PreviousBlockHash`: `varchar`, `Target`: `varchar`, `TransactionHashes`: `text`, `TransactionsProcessed`: `tinyint`, `Version`: `bigint`, `VersionHex`: `varchar`}
 	_            = bytes.MinRead
 )
 

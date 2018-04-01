@@ -44,7 +44,6 @@ func (c *Claim) Unmarshal(value []byte) error {
 	if err != nil {
 		return err
 	} //Version can be blank for version 1
-	println("Version ", "\""+c.Version+"\"")
 	if c.Version != "" && c.Version != version {
 		err = errors.Base("Incorrect version, expected " + version + " found " + c.Version)
 		return err

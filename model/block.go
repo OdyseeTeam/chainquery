@@ -26,7 +26,7 @@ type Block struct {
 	Bits                  string      `boil:"bits" json:"bits" toml:"bits" yaml:"bits"`
 	Chainwork             string      `boil:"chainwork" json:"chainwork" toml:"chainwork" yaml:"chainwork"`
 	Confirmations         uint        `boil:"confirmations" json:"confirmations" toml:"confirmations" yaml:"confirmations"`
-	Difficulty            string      `boil:"difficulty" json:"difficulty" toml:"difficulty" yaml:"difficulty"`
+	Difficulty            float64     `boil:"difficulty" json:"difficulty" toml:"difficulty" yaml:"difficulty"`
 	Hash                  string      `boil:"hash" json:"hash" toml:"hash" yaml:"hash"`
 	Height                uint64      `boil:"height" json:"height" toml:"height" yaml:"height"`
 	MedianTime            uint64      `boil:"median_time" json:"median_time" toml:"median_time" yaml:"median_time"`
