@@ -1,0 +1,75 @@
+#https://swagger.io/specification
+swagger: '2.0'
+info:
+  description: 'The internal apis of LBRY Inc.'
+  version: "0.1.0"
+  title: 'Internal APIs'
+host: api.lbry.io
+basePath: /
+tags:
+  - name: user
+    description: Operations for users
+schemes:
+  - http
+paths:
+  /user/new:
+    get:
+      tags:
+        - user
+      summary: Creates new user and returns an authtoken for interaction with the API
+      description: ''
+      operationid: new
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: A user object
+          schema:
+            $ref: '#definitions/User'
+        "500":
+          description: Internal server error
+definitions:
+  User:
+    title:  API user
+    description: A unique user of the API
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+      language:
+        type: string
+        maxlength: 2
+        minlength: 2
+      given_name:
+        type: string
+        maxlength: 191
+      family_name:
+        type: string
+        maxlength: 191
+      created_at:
+        type: string
+        format: date-time
+      updated_at:
+        type: string
+        format: date-time
+      auth_token:
+        type: string
+      is_token_confirmed:
+        type: boolean
+      invited_by_id:
+        type: integer
+        format: int64
+      invited_at:
+        type: string
+        format: date-time
+      invites_remaining:
+        type: integer
+        format: int32
+      invite_reward_claimed:
+        type: boolean
+      is_reward_approved:
+        type: boolean
+url: 'http://lbry.io'

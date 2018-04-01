@@ -1,0 +1,17 @@
+{{>partial_header}}
+package main
+
+import (
+	"log"
+	"net/http"
+
+	sw "github.com/lbryio/chainquery/swagger/apiserver/{{apiPath}}"
+)
+
+func main() {
+	log.Printf("Server started")
+
+	router := sw.NewRouter()
+
+	log.Fatal(http.ListenAndServe(":{{serverPort}}", router))
+}

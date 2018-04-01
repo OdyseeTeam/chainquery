@@ -11,6 +11,9 @@ Make sure you have Go 1.9+
 - Ubuntu: https://launchpad.net/~longsleep/+archive/ubuntu/golang-backports or https://github.com/golang/go/wiki/Ubuntu
 - OSX: `brew install go`
 
+### OSX Specifics
+
+- In order to use  `wget` you will need `brew install wget`
 
 ### MySQL
 
