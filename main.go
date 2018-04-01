@@ -15,6 +15,7 @@ import (
 
 	//"github.com/pkg/profile"
 	"github.com/lbryio/chainquery/config"
+	"github.com/lbryio/chainquery/swagger/apiserver"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -49,6 +50,7 @@ func main() {
 	case "serve":
 		teardown := webServerSetup()
 		defer teardown()
+		go swagger.InitApiServer()
 		daemon.InitDaemon()
 
 	default:

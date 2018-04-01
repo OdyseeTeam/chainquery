@@ -13,16 +13,17 @@ type AddressSummary struct {
 	Balance       float64 `boil:balance`
 }
 
-type TableStats struct {
-	Table string
-	Rows  uint64
+type TableSize struct {
+	TableName string
+	NrRows    uint64
 }
 
 type TableStatus struct {
-	Stat []TableStats
+	Status []TableSize
 }
 
 func GetTableStatus() (*TableStatus, error) {
+	println("here2")
 	stats := TableStatus{}
 	rows, err := boil.GetDB().Query(
 		`SELECT TABLE_NAME as "table",` +
@@ -35,17 +36,17 @@ func GetTableStatus() (*TableStatus, error) {
 		return nil, err
 	}
 	defer rows.Close()
-	var statrows = []TableStats{}
+	var statrows = []TableSize{}
 	for rows.Next() {
-		var stat TableStats
-		err = rows.Scan(&stat.Table, &stat.Rows)
+		var stat TableSize
+		err = rows.Scan(&stat.TableName, &stat.NrRows)
 		if err != nil {
 			return nil, err
 		}
 		statrows = append(statrows, stat)
 	}
 
-	stats.Stat = statrows
+	stats.Status = statrows
 
 	return &stats, nil
 }

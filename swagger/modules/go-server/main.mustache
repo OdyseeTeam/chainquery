@@ -1,5 +1,5 @@
 {{>partial_header}}
-package main
+package swagger
 
 import (
 	"log"
@@ -8,8 +8,8 @@ import (
 	sw "github.com/lbryio/chainquery/swagger/apiserver/{{apiPath}}"
 )
 
-func main() {
-	log.Printf("Server started")
+func InitApiServer() {
+	log.Printf("API Server started")
 
 	router := sw.NewRouter()
 

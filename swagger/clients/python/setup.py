@@ -1,9 +1,9 @@
 # coding: utf-8
 
 """
-    Internal APIs
+    Chain Query
 
-    The internal apis of LBRY Inc.
+    The LBRY blockchain is read into SQL where important structured information can be extracted through the Chain Query API.
 
     OpenAPI spec version: 0.1.0
     
@@ -28,14 +28,14 @@ REQUIRES = ["urllib3 >= 1.15", "six >= 1.10", "certifi", "python-dateutil"]
 setup(
     name=NAME,
     version=VERSION,
-    description="Internal APIs",
+    description="Chain Query",
     author_email="",
     url="",
-    keywords=["Swagger", "Internal APIs"],
+    keywords=["Swagger", "Chain Query"],
     install_requires=REQUIRES,
     packages=find_packages(),
     include_package_data=True,
     long_description="""\
-    The internal apis of LBRY Inc.
+    The LBRY blockchain is read into SQL where important structured information can be extracted through the Chain Query API.
     """
 )

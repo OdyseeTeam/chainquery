@@ -1,75 +1,119 @@
 #https://swagger.io/specification
-swagger: '2.0'
-info:
-  description: 'The internal apis of LBRY Inc.'
-  version: "0.1.0"
-  title: 'Internal APIs'
-host: api.lbry.io
-basePath: /
-tags:
-  - name: user
-    description: Operations for users
-schemes:
-  - http
+#https://openapi.design
 paths:
-  /user/new:
+  /Status:
     get:
-      tags:
-        - user
-      summary: Creates new user and returns an authtoken for interaction with the API
-      description: ''
-      operationid: new
+      operationId: status
+      summary: 'Returns important status information about Chain Query'
       consumes:
         - application/json
       produces:
         - application/json
+      schemes:
+        - http
       responses:
-        "200":
-          description: A user object
+        '200':
+          description: 'Chain Query status'
           schema:
-            $ref: '#definitions/User'
-        "500":
-          description: Internal server error
+            x-oad-type: reference
+            $ref: '#/definitions/TableStatus'
+          x-oad-type: response
+    x-oad-type: operation
+  /AddressSummary:
+    get:
+      operationId: AddressSummary
+      summary: 'Returns a summary of Address activity'
+      description: 'It returns sent, recieved, balance, and number of transactions it has been used in.'
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      schemes:
+        - http
+      responses:
+        '200':
+          description: 'It returns sent, recieved, balance, and number of transactions it has been used in.'
+          schema:
+            x-oad-type: reference
+            $ref: '#/definitions/AddressSummary'
+          x-oad-type: response
+      parameters:
+        -
+          name: Address
+          in: query
+          description: 'LBRY Address you would like a summary on.'
+          required: true
+          type: string
+          x-oad-type: parameter
+    x-oad-type: operation
 definitions:
-  User:
-    title:  API user
-    description: A unique user of the API
+  TableSize:
+    x-oad-type: object
     type: object
+    title: 'Table Size '
+    description: 'Contains the name and number of rows for a table.'
     properties:
-      id:
+      TableName:
+        x-oad-type: string
+        type: string
+        title: 'Table Name'
+        description: 'Name of the table being referenced.'
+      NrRows:
+        x-oad-type: integer
         type: integer
+        title: 'Number of Rows'
+        description: 'The number of rows in the referenced table'
         format: int64
-      language:
+  TableStatus:
+    x-oad-type: object
+    type: object
+    title: 'Table status of Chain Query'
+    description: 'Contains an array of tables and their row count.'
+    properties:
+      Status:
+        x-oad-type: array
+        type: array
+        title: 'Array of Tables'
+        items:
+          x-oad-type: reference
+          $ref: '#/definitions/TableSize'
+        uniqueItems: true
+  AddressSummary:
+    x-oad-type: object
+    type: object
+    title: 'Contains information about an address'
+    properties:
+      Address:
+        x-oad-type: string
         type: string
-        maxlength: 2
-        minlength: 2
-      given_name:
-        type: string
-        maxlength: 191
-      family_name:
-        type: string
-        maxlength: 191
-      created_at:
-        type: string
-        format: date-time
-      updated_at:
-        type: string
-        format: date-time
-      auth_token:
-        type: string
-      is_token_confirmed:
-        type: boolean
-      invited_by_id:
-        type: integer
-        format: int64
-      invited_at:
-        type: string
-        format: date-time
-      invites_remaining:
-        type: integer
-        format: int32
-      invite_reward_claimed:
-        type: boolean
-      is_reward_approved:
-        type: boolean
-url: 'http://lbry.io'
+        title: 'LBRY Address'
+      TotalReceived:
+        x-oad-type: number
+        type: number
+        title: ' Total Recieved'
+        description: 'Total amount received by address from all transactions it was a part of.'
+        format: double
+        default: 0
+      TotalSent:
+        x-oad-type: number
+        type: number
+        title: 'Total Sent'
+        description: 'Total amount sent from address for all transactions it was a part of.'
+        format: double
+        default: 0
+      Balance:
+        x-oad-type: number
+        type: number
+        title: Balance
+        description: 'The current balance of an address'
+        format: double
+        default: 0
+info:
+  title: 'Chain Query'
+  version: 0.1.0
+  description: 'The LBRY blockchain is read into SQL where important structured information can be extracted through the Chain Query API.'
+basePath: /api
+schemes:
+  - http
+swagger: '2.0'
+

@@ -42,8 +42,8 @@ func TestQueryGetTableStatus(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	println("Table     NrRows", len(stats.Stat))
-	for _, stat := range stats.Stat {
-		println(stat.Table, ":", stat.Rows)
+	println("TableName     NrRows", len(stats.Status))
+	for _, stat := range stats.Status {
+		println(stat.TableName, ":", stat.NrRows)
 	}
 }

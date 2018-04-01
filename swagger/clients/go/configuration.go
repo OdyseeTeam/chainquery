@@ -1,7 +1,7 @@
 /* 
- * Internal APIs
+ * Chain Query
  *
- * The internal apis of LBRY Inc.
+ * The LBRY blockchain is read into SQL where important structured information can be extracted through the Chain Query API.
  *
  * OpenAPI spec version: 0.1.0
  * 
@@ -38,7 +38,7 @@ type Configuration struct {
 
 func NewConfiguration() *Configuration {
 	cfg := &Configuration{
-		BasePath:      "http://api.lbry.io",
+		BasePath:      "http://localhost/api",
 		DefaultHeader: make(map[string]string),
 		APIKey:        make(map[string]string),
 		APIKeyPrefix:  make(map[string]string),

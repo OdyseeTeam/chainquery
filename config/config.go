@@ -55,7 +55,7 @@ func initFlags() {
 }
 
 func readConfig() {
-	viper.SetConfigName("chainquery")       // name of config file (without extension)
+	viper.SetConfigName("chainqueryconfig") // name of config file (without extension)
 	viper.AddConfigPath("/etc/chainquery/") // check for it in etc folder
 	viper.AddConfigPath("$HOME/")           // check $HOME
 	viper.AddConfigPath(".")                // optionally look for config in the working directory

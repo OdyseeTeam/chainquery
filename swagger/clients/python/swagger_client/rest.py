@@ -1,9 +1,9 @@
 # coding: utf-8
 
 """
-    Internal APIs
+    Chain Query
 
-    The internal apis of LBRY Inc.
+    The LBRY blockchain is read into SQL where important structured information can be extracted through the Chain Query API.
 
     OpenAPI spec version: 0.1.0
     
