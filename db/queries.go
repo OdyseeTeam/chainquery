@@ -1,6 +1,7 @@
 package db
 
 import (
+	g "github.com/lbryio/chainquery/swagger/clients/goclient"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 )
@@ -13,18 +14,9 @@ type AddressSummary struct {
 	Balance       float64 `boil:balance`
 }
 
-type TableSize struct {
-	TableName string
-	NrRows    uint64
-}
-
-type TableStatus struct {
-	Status []TableSize
-}
-
-func GetTableStatus() (*TableStatus, error) {
+func GetTableStatus() (*g.TableStatus, error) {
 	println("here2")
-	stats := TableStatus{}
+	stats := g.TableStatus{}
 	rows, err := boil.GetDB().Query(
 		`SELECT TABLE_NAME as "table",` +
 			`SUM(TABLE_ROWS) as "rows" ` +
@@ -36,9 +28,9 @@ func GetTableStatus() (*TableStatus, error) {
 		return nil, err
 	}
 	defer rows.Close()
-	var statrows = []TableSize{}
+	var statrows = []g.TableSize{}
 	for rows.Next() {
-		var stat TableSize
+		var stat g.TableSize
 		err = rows.Scan(&stat.TableName, &stat.NrRows)
 		if err != nil {
 			return nil, err

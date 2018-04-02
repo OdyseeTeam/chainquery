@@ -1,4 +1,4 @@
-# Go API Server for chainqueryapis
+# Go API Server for swagger
 
 The LBRY blockchain is read into SQL where important structured information can be extracted through the Chain Query API.
 
@@ -13,7 +13,7 @@ To see how to make this your own, look here:
 [README](https://github.com/swagger-api/swagger-codegen/blob/master/README.md)
 
 - API version: 0.1.0
-- Build date: 2018-04-01T09:40:57.798-04:00
+- Build date: 2018-04-01T22:55:44.429-04:00
 
 
 ### Running the server

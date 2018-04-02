@@ -1,5 +1,7 @@
-#https://swagger.io/specification
-#https://openapi.design
+tags:
+  -
+    name: stat
+    description: 'Operations that describe the status of ChainQuery'
 paths:
   /Status:
     get:
@@ -11,6 +13,8 @@ paths:
         - application/json
       schemes:
         - http
+      tags:
+        - stat
       responses:
         '200':
           description: 'Chain Query status'
@@ -30,6 +34,8 @@ paths:
         - application/json
       schemes:
         - http
+      tags:
+        - stat
       responses:
         '200':
           description: 'It returns sent, recieved, balance, and number of transactions it has been used in.'
@@ -39,13 +45,17 @@ paths:
           x-oad-type: response
       parameters:
         -
-          name: Address
-          in: query
-          description: 'LBRY Address you would like a summary on.'
-          required: true
-          type: string
-          x-oad-type: parameter
+          $ref: '#/parameters/address'
+          x-oad-type: reference
     x-oad-type: operation
+parameters:
+  address:
+    name: LbryAddress
+    in: query
+    description: 'A LbryAddress'
+    required: true
+    type: string
+    x-oad-type: parameter
 definitions:
   TableSize:
     x-oad-type: object
@@ -115,5 +125,8 @@ info:
 basePath: /api
 schemes:
   - http
+consumes:
+  - application/json
+produces:
+  - application/json
 swagger: '2.0'
-
