@@ -29,7 +29,7 @@
  go generate -v
  VERSION="${TRAVIS_COMMIT:-"$(git describe --always --dirty --long)"}"
  COMMIT_MSG="$(echo ${TRAVIS_COMMIT_MESSAGE:-"$(git show -s --format=%s)"} | tr -d '"' | head -n 1)"
- CGO_ENABLED=0 go build -v -o "$DIR/bin/latest" -asmflags -trimpath="$DIR" -ldflags "-X ${importpath}/meta.version=${VERSION} -X \"${importpath}/meta.commitMsg=${COMMIT_MSG}\""
+ GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -v -o "$DIR/bin/latest" -asmflags -trimpath="$DIR" -ldflags "-X ${importpath}/meta.version=${VERSION} -X \"${importpath}/meta.commitMsg=${COMMIT_MSG}\""
 
- echo "== Done building version $("$DIR/bin/latest" version) =="
+ echo "== Done building linux version $("$DIR/bin/latest" version) =="
  exit 0
