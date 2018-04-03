@@ -273,7 +273,7 @@ func processTx(jsonTx *lbrycrd.TxRawResult, blockTime uint64) error {
 		txAddr := datastore.GetTxAddress(transaction.ID, address.ID)
 
 		txAddr.CreditAmount = DC.Credits()
-		txAddr.DebitAmount = DC.Credits()
+		txAddr.DebitAmount = DC.Debits()
 
 		datastore.PutTxAddress(txAddr)
 
