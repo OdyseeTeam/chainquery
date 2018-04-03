@@ -81,7 +81,9 @@ func processClaimSupportScript(script *[]byte, vout model.Output, tx model.Trans
 		errors.Prefix("Claim support processing error: ", err)
 		return name, claimid, pubkeyscript, err
 	}
-	logrus.Debug("ClaimSupport ", name, " ClaimId ", claimid)
+	support := datastore.GetSupport(tx.Hash, vout.Vout)
+	support = processSupport(claimid, support, vout, tx)
+	datastore.PutSupport(support)
 
 	return name, claimid, pubkeyscript, err
 }
@@ -92,14 +94,20 @@ func processClaimUpdateScript(script *[]byte, vout model.Output, tx model.Transa
 		errors.Prefix("Claim update processing error: ", err)
 		return name, claimId, pubkeyscript, err
 	}
-	claim, err := lbrycrd.DecodeClaimValue(name, value)
+	pbClaim, err := lbrycrd.DecodeClaimValue(name, value)
 	if err != nil {
 		logrus.Warning("saving non-conforming claim - Update: ", name, " ClaimId: ", claimId)
 		saveUnknownClaim(name, claimId, true, value, vout, tx)
 		return name, claimId, pubkeyscript, nil
 	}
-	if claim != nil {
-		logrus.Debug("ClaimUpdate ", name, " ClaimId ", claimId)
+	if pbClaim != nil && err == nil {
+		claim := datastore.GetClaim(claimId)
+		claim, err := processUpdateClaim(pbClaim, claim, value)
+		if err != nil {
+			return name, claimId, pubkeyscript, err
+		}
+		claim.Name = name //In case name changes
+		datastore.PutClaim(claim)
 	}
 	return name, claimId, pubkeyscript, err
 }
@@ -126,8 +134,63 @@ func processClaim(pbClaim *pb.Claim, claim *model.Claim, value []byte, output mo
 	return claim, nil
 }
 
+func processSupport(claimID string, support *model.Support, output model.Output, tx model.Transaction) *model.Support {
+	if support == nil {
+		support = &model.Support{}
+	}
+
+	support.TransactionHash.String = tx.Hash
+	support.TransactionHash.Valid = true
+	support.Vout = output.Vout
+	support.SupportAmount = output.Value.Float64
+	support.SupportedClaimID = claimID
+
+	return support
+
+}
+
+func processUpdateClaim(pbClaim *pb.Claim, claim *model.Claim, value []byte) (*model.Claim, error) {
+	if claim == nil {
+		panic(errors.Base("ClaimUpdate for non-existent claim!"))
+	}
+	claim.Version = pbClaim.GetVersion().String()
+	claim.ValueAsHex = hex.EncodeToString(value)
+
+	var js map[string]interface{} //JSON Map
+	if json.Unmarshal(value, &js) == nil {
+		claim.ValueAsJSON.String = string(value)
+		claim.ValueAsJSON.Valid = true
+	}
+
+	setSourceInfo(claim, pbClaim)
+	setMetaDataInfo(claim, pbClaim)
+	setPublisherInfo(claim, pbClaim)
+	setCertificateInfo(claim, pbClaim)
+
+	return claim, nil
+}
+
+func setPublisherInfo(claim *model.Claim, pbClaim *pb.Claim) {
+	if pbClaim.GetPublisherSignature() != nil {
+		publisherClaimId := hex.EncodeToString(pbClaim.GetPublisherSignature().GetCertificateId())
+		claim.PublisherID.String = publisherClaimId
+		claim.PublisherID.Valid = true
+		claim.PublisherSig.String = hex.EncodeToString(pbClaim.GetPublisherSignature().GetSignature())
+		claim.PublisherSig.Valid = true
+	}
+}
+
 func setCertificateInfo(claim *model.Claim, pbClaim *pb.Claim) {
 
+	if pbClaim.GetClaimType() == pb.Claim_certificateType {
+		certificate := pbClaim.GetCertificate()
+		certBytes, err := json.Marshal(certificate)
+		if err != nil {
+			logrus.Error("Could not form json from certificate")
+		}
+		claim.Certificate.String = string(certBytes)
+		claim.Certificate.Valid = true
+	}
 }
 
 func setMetaDataInfo(claim *model.Claim, pbClaim *pb.Claim) {
@@ -170,6 +233,10 @@ func setSourceInfo(claim *model.Claim, pbClaim *pb.Claim) {
 			if contentType != "" {
 				claim.ContentType.String = contentType
 				claim.ContentType.Valid = true
+				if source.GetSourceType() == pb.Source_lbry_sd_hash {
+					claim.SDHash.String = hex.EncodeToString(source.GetSource())
+					claim.SDHash.Valid = true
+				}
 			}
 		}
 	}

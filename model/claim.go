@@ -45,9 +45,10 @@ type Claim struct {
 	Fee                 float64     `boil:"fee" json:"fee" toml:"fee" yaml:"fee"`
 	FeeCurrency         null.String `boil:"fee_currency" json:"fee_currency,omitempty" toml:"fee_currency" yaml:"fee_currency,omitempty"`
 	IsFiltered          bool        `boil:"is_filtered" json:"is_filtered" toml:"is_filtered" yaml:"is_filtered"`
-	IsUpdate            bool        `boil:"is_update" json:"is_update" toml:"is_update" yaml:"is_update"`
 	Created             time.Time   `boil:"created" json:"created" toml:"created" yaml:"created"`
 	Modified            time.Time   `boil:"modified" json:"modified" toml:"modified" yaml:"modified"`
+	SDHash              null.String `boil:"sd_hash" json:"sd_hash,omitempty" toml:"sd_hash" yaml:"sd_hash,omitempty"`
+	BidState            string      `boil:"bid_state" json:"bid_state" toml:"bid_state" yaml:"bid_state"`
 
 	R *claimR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L claimL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -77,9 +78,10 @@ var ClaimColumns = struct {
 	Fee                 string
 	FeeCurrency         string
 	IsFiltered          string
-	IsUpdate            string
 	Created             string
 	Modified            string
+	SDHash              string
+	BidState            string
 }{
 	ID:                  "id",
 	TransactionByHashID: "transaction_by_hash_id",
@@ -104,25 +106,27 @@ var ClaimColumns = struct {
 	Fee:                 "fee",
 	FeeCurrency:         "fee_currency",
 	IsFiltered:          "is_filtered",
-	IsUpdate:            "is_update",
 	Created:             "created",
 	Modified:            "modified",
+	SDHash:              "sd_hash",
+	BidState:            "bid_state",
 }
 
 // claimR is where relationships are stored.
 type claimR struct {
-	TransactionByHash *Transaction
-	Publisher         *Claim
-	PublisherClaims   ClaimSlice
+	TransactionByHash      *Transaction
+	Publisher              *Claim
+	PublisherClaims        ClaimSlice
+	SupportedClaimSupports SupportSlice
 }
 
 // claimL is where Load methods for each relationship are stored.
 type claimL struct{}
 
 var (
-	claimColumns               = []string{"id", "transaction_by_hash_id", "vout", "name", "claim_id", "claim_type", "publisher_id", "publisher_sig", "certificate", "transaction_time", "version", "value_as_hex", "value_as_json", "author", "description", "content_type", "is_n_s_f_w", "language", "thumbnail_url", "title", "fee", "fee_currency", "is_filtered", "is_update", "created", "modified"}
-	claimColumnsWithoutDefault = []string{"transaction_by_hash_id", "vout", "name", "claim_id", "claim_type", "publisher_id", "publisher_sig", "certificate", "transaction_time", "version", "value_as_hex", "value_as_json", "author", "description", "content_type", "language", "thumbnail_url", "title", "fee_currency"}
-	claimColumnsWithDefault    = []string{"id", "is_n_s_f_w", "fee", "is_filtered", "is_update", "created", "modified"}
+	claimColumns               = []string{"id", "transaction_by_hash_id", "vout", "name", "claim_id", "claim_type", "publisher_id", "publisher_sig", "certificate", "transaction_time", "version", "value_as_hex", "value_as_json", "author", "description", "content_type", "is_n_s_f_w", "language", "thumbnail_url", "title", "fee", "fee_currency", "is_filtered", "created", "modified", "sd_hash", "bid_state"}
+	claimColumnsWithoutDefault = []string{"transaction_by_hash_id", "vout", "name", "claim_id", "claim_type", "publisher_id", "publisher_sig", "certificate", "transaction_time", "version", "value_as_hex", "value_as_json", "author", "description", "content_type", "language", "thumbnail_url", "title", "fee_currency", "sd_hash"}
+	claimColumnsWithDefault    = []string{"id", "is_n_s_f_w", "fee", "is_filtered", "created", "modified", "bid_state"}
 	claimPrimaryKeyColumns     = []string{"id"}
 )
 
@@ -314,6 +318,32 @@ func (o *Claim) PublisherClaims(exec boil.Executor, mods ...qm.QueryMod) claimQu
 
 	if len(queries.GetSelect(query.Query)) == 0 {
 		queries.SetSelect(query.Query, []string{"`claim`.*"})
+	}
+
+	return query
+}
+
+// SupportedClaimSupportsG retrieves all the support's support via supported_claim_id column.
+func (o *Claim) SupportedClaimSupportsG(mods ...qm.QueryMod) supportQuery {
+	return o.SupportedClaimSupports(boil.GetDB(), mods...)
+}
+
+// SupportedClaimSupports retrieves all the support's support with an executor via supported_claim_id column.
+func (o *Claim) SupportedClaimSupports(exec boil.Executor, mods ...qm.QueryMod) supportQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("`support`.`supported_claim_id`=?", o.ClaimID),
+	)
+
+	query := Supports(exec, queryMods...)
+	queries.SetFrom(query.Query, "`support`")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"`support`.*"})
 	}
 
 	return query
@@ -516,6 +546,71 @@ func (claimL) LoadPublisherClaims(e boil.Executor, singular bool, maybeClaim int
 		for _, local := range slice {
 			if local.ClaimID == foreign.PublisherID.String {
 				local.R.PublisherClaims = append(local.R.PublisherClaims, foreign)
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadSupportedClaimSupports allows an eager lookup of values, cached into the
+// loaded structs of the objects.
+func (claimL) LoadSupportedClaimSupports(e boil.Executor, singular bool, maybeClaim interface{}) error {
+	var slice []*Claim
+	var object *Claim
+
+	count := 1
+	if singular {
+		object = maybeClaim.(*Claim)
+	} else {
+		slice = *maybeClaim.(*[]*Claim)
+		count = len(slice)
+	}
+
+	args := make([]interface{}, count)
+	if singular {
+		if object.R == nil {
+			object.R = &claimR{}
+		}
+		args[0] = object.ClaimID
+	} else {
+		for i, obj := range slice {
+			if obj.R == nil {
+				obj.R = &claimR{}
+			}
+			args[i] = obj.ClaimID
+		}
+	}
+
+	query := fmt.Sprintf(
+		"select * from `support` where `supported_claim_id` in (%s)",
+		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
+	)
+	if boil.DebugMode {
+		fmt.Fprintf(boil.DebugWriter, "%s\n%v\n", query, args)
+	}
+
+	results, err := e.Query(query, args...)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load support")
+	}
+	defer results.Close()
+
+	var resultSlice []*Support
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice support")
+	}
+
+	if singular {
+		object.R.SupportedClaimSupports = resultSlice
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ClaimID == foreign.SupportedClaimID {
+				local.R.SupportedClaimSupports = append(local.R.SupportedClaimSupports, foreign)
 				break
 			}
 		}
@@ -1016,6 +1111,90 @@ func (o *Claim) RemovePublisherClaims(exec boil.Executor, related ...*Claim) err
 		}
 	}
 
+	return nil
+}
+
+// AddSupportedClaimSupportsG adds the given related objects to the existing relationships
+// of the claim, optionally inserting them as new records.
+// Appends related to o.R.SupportedClaimSupports.
+// Sets related.R.SupportedClaim appropriately.
+// Uses the global database handle.
+func (o *Claim) AddSupportedClaimSupportsG(insert bool, related ...*Support) error {
+	return o.AddSupportedClaimSupports(boil.GetDB(), insert, related...)
+}
+
+// AddSupportedClaimSupportsP adds the given related objects to the existing relationships
+// of the claim, optionally inserting them as new records.
+// Appends related to o.R.SupportedClaimSupports.
+// Sets related.R.SupportedClaim appropriately.
+// Panics on error.
+func (o *Claim) AddSupportedClaimSupportsP(exec boil.Executor, insert bool, related ...*Support) {
+	if err := o.AddSupportedClaimSupports(exec, insert, related...); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// AddSupportedClaimSupportsGP adds the given related objects to the existing relationships
+// of the claim, optionally inserting them as new records.
+// Appends related to o.R.SupportedClaimSupports.
+// Sets related.R.SupportedClaim appropriately.
+// Uses the global database handle and panics on error.
+func (o *Claim) AddSupportedClaimSupportsGP(insert bool, related ...*Support) {
+	if err := o.AddSupportedClaimSupports(boil.GetDB(), insert, related...); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// AddSupportedClaimSupports adds the given related objects to the existing relationships
+// of the claim, optionally inserting them as new records.
+// Appends related to o.R.SupportedClaimSupports.
+// Sets related.R.SupportedClaim appropriately.
+func (o *Claim) AddSupportedClaimSupports(exec boil.Executor, insert bool, related ...*Support) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.SupportedClaimID = o.ClaimID
+			if err = rel.Insert(exec); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE `support` SET %s WHERE %s",
+				strmangle.SetParamNames("`", "`", 0, []string{"supported_claim_id"}),
+				strmangle.WhereClause("`", "`", 0, supportPrimaryKeyColumns),
+			)
+			values := []interface{}{o.ClaimID, rel.ID}
+
+			if boil.DebugMode {
+				fmt.Fprintln(boil.DebugWriter, updateQuery)
+				fmt.Fprintln(boil.DebugWriter, values)
+			}
+
+			if _, err = exec.Exec(updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.SupportedClaimID = o.ClaimID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &claimR{
+			SupportedClaimSupports: related,
+		}
+	} else {
+		o.R.SupportedClaimSupports = append(o.R.SupportedClaimSupports, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &supportR{
+				SupportedClaim: o,
+			}
+		} else {
+			rel.R.SupportedClaim = o
+		}
+	}
 	return nil
 }
 

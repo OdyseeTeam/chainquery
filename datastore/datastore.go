@@ -190,14 +190,46 @@ func PutClaim(claim *model.Claim) error {
 			err = claim.UpdateG()
 		} else {
 			err = claim.InsertG()
-
 		}
 		if err != nil {
 			err = errors.Prefix("Datastore(PUTCLAIM): ", err)
 			return err
 		}
 	}
-
 	return nil
+}
 
+//Supports
+
+func GetSupport(txHash string, vout uint) *model.Support {
+	txHashMatch := qm.Where(model.SupportColumns.TransactionHash+"=?", txHash)
+	voutMatch := qm.Where(model.SupportColumns.Vout+"=?", vout)
+
+	if model.SupportsG(txHashMatch, voutMatch).ExistsP() {
+
+		support, err := model.SupportsG(txHashMatch, voutMatch).One()
+		if err != nil {
+			logrus.Error("Datastore(GETSUPPORT): ", err)
+		}
+		return support
+	}
+	return nil
+}
+
+func PutSupport(support *model.Support) error {
+
+	if support != nil {
+
+		var err error
+		if model.ClaimExistsGP(support.ID) {
+			err = support.UpdateG()
+		} else {
+			err = support.InsertG()
+		}
+		if err != nil {
+			err = errors.Prefix("Datastore(PUTSUPPORT): ", err)
+			return err
+		}
+	}
+	return nil
 }

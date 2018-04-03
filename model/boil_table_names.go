@@ -11,6 +11,7 @@ var TableNames = struct {
 	InputAddress       string
 	Output             string
 	OutputAddress      string
+	Support            string
 	Transaction        string
 	TransactionAddress string
 	UnknownClaim       string
@@ -22,6 +23,7 @@ var TableNames = struct {
 	InputAddress:       "input_address",
 	Output:             "output",
 	OutputAddress:      "output_address",
+	Support:            "support",
 	Transaction:        "transaction",
 	TransactionAddress: "transaction_address",
 	UnknownClaim:       "unknown_claim",

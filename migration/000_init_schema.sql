@@ -196,6 +196,7 @@ CREATE TABLE IF NOT EXISTS `claim`
     `publisher_id` CHAR(40) CHARACTER SET latin1 COLLATE latin1_general_ci COMMENT 'references a ClaimId with CertificateType',
     `publisher_sig` VARCHAR(200) CHARACTER SET latin1 COLLATE latin1_general_ci,
     `certificate` TEXT,
+    `sd_hash` VARCHAR(70) CHARACTER SET latin1 COLLATE latin1_general_ci,
     `transaction_time` BIGINT UNSIGNED,
     `version` VARCHAR(10) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
     `value_as_hex` MEDIUMTEXT NOT NULL,
@@ -212,7 +213,7 @@ CREATE TABLE IF NOT EXISTS `claim`
     `fee` DOUBLE(18,8) DEFAULT 0 NOT NULL,
     `fee_currency` CHAR(3),
     `is_filtered` TINYINT(1) DEFAULT 0 NOT NULL,
-    `is_update` TINYINT(1) DEFAULT 0 NOT NULL,
+    `bid_state` VARCHAR(20) DEFAULT "Accepted" NOT NULL,
 
     `created` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -230,6 +231,26 @@ CREATE TABLE IF NOT EXISTS `claim`
     INDEX `Idx_ClaimContentType` (`content_type`),
     INDEX `Idx_ClaimLanguage` (`language`),
     INDEX `Idx_ClaimTitle` (`title`(191))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4;
+-- +migrate StatementEnd
+
+-- +migrate StatementBegin
+CREATE TABLE IF NOT EXISTS `support`
+(
+    `id` SERIAL,
+    `supported_claim_id` CHAR(40) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
+    `support_amount` DOUBLE(18,8) DEFAULT 0 NOT NULL,
+    `bid_state` VARCHAR(20) DEFAULT "Accepted" NOT NULL,
+    `transaction_hash` VARCHAR(70) CHARACTER SET latin1 COLLATE latin1_general_ci,
+    `vout` INTEGER UNSIGNED NOT NULL,
+
+    PRIMARY KEY `PK_support` (`id`),
+    FOREIGN KEY `fk_supportedclaim` (`supported_claim_id`) REFERENCES `claim` (`claim_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+    INDEX `Idx_state` (`bid_state`),
+    INDEX `Idx_supportedclaimid` (`supported_claim_id`),
+    INDEX `Idx_transaction` (`transaction_hash`),
+    INDEX `Idx_vout` (`vout`),
+    INDEX `Idx_outpoint` (`transaction_hash`,`vout`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4;
 -- +migrate StatementEnd
 

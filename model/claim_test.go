@@ -398,6 +398,78 @@ func testClaimToManyPublisherClaims(t *testing.T) {
 	}
 }
 
+func testClaimToManySupportedClaimSupports(t *testing.T) {
+	var err error
+	tx := MustTx(boil.Begin())
+	defer tx.Rollback()
+
+	var a Claim
+	var b, c Support
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, claimDBTypes, true, claimColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Claim struct: %s", err)
+	}
+
+	if err := a.Insert(tx); err != nil {
+		t.Fatal(err)
+	}
+
+	randomize.Struct(seed, &b, supportDBTypes, false, supportColumnsWithDefault...)
+	randomize.Struct(seed, &c, supportDBTypes, false, supportColumnsWithDefault...)
+
+	b.SupportedClaimID = a.ClaimID
+	c.SupportedClaimID = a.ClaimID
+	if err = b.Insert(tx); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(tx); err != nil {
+		t.Fatal(err)
+	}
+
+	support, err := a.SupportedClaimSupports(tx).All()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range support {
+		if v.SupportedClaimID == b.SupportedClaimID {
+			bFound = true
+		}
+		if v.SupportedClaimID == c.SupportedClaimID {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := ClaimSlice{&a}
+	if err = a.L.LoadSupportedClaimSupports(tx, false, (*[]*Claim)(&slice)); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.SupportedClaimSupports); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.SupportedClaimSupports = nil
+	if err = a.L.LoadSupportedClaimSupports(tx, true, &a); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.SupportedClaimSupports); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", support)
+	}
+}
+
 func testClaimToManyAddOpPublisherClaims(t *testing.T) {
 	var err error
 
@@ -646,6 +718,80 @@ func testClaimToManyRemoveOpPublisherClaims(t *testing.T) {
 	}
 }
 
+func testClaimToManyAddOpSupportedClaimSupports(t *testing.T) {
+	var err error
+
+	tx := MustTx(boil.Begin())
+	defer tx.Rollback()
+
+	var a Claim
+	var b, c, d, e Support
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, claimDBTypes, false, strmangle.SetComplement(claimPrimaryKeyColumns, claimColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Support{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, supportDBTypes, false, strmangle.SetComplement(supportPrimaryKeyColumns, supportColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(tx); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(tx); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(tx); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*Support{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddSupportedClaimSupports(tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if a.ClaimID != first.SupportedClaimID {
+			t.Error("foreign key was wrong value", a.ClaimID, first.SupportedClaimID)
+		}
+		if a.ClaimID != second.SupportedClaimID {
+			t.Error("foreign key was wrong value", a.ClaimID, second.SupportedClaimID)
+		}
+
+		if first.R.SupportedClaim != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.SupportedClaim != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.SupportedClaimSupports[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.SupportedClaimSupports[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.SupportedClaimSupports(tx).Count()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
 func testClaimToOneTransactionUsingTransactionByHash(t *testing.T) {
 	tx := MustTx(boil.Begin())
 	defer tx.Rollback()
@@ -1034,7 +1180,7 @@ func testClaimsSelect(t *testing.T) {
 }
 
 var (
-	claimDBTypes = map[string]string{`Author`: `varchar`, `Certificate`: `text`, `ClaimID`: `char`, `ClaimType`: `tinyint`, `ContentType`: `varchar`, `Created`: `datetime`, `Description`: `mediumtext`, `Fee`: `double`, `FeeCurrency`: `char`, `ID`: `bigint`, `IsFiltered`: `tinyint`, `IsNSFW`: `tinyint`, `IsUpdate`: `tinyint`, `Language`: `varchar`, `Modified`: `datetime`, `Name`: `varchar`, `PublisherID`: `char`, `PublisherSig`: `varchar`, `ThumbnailURL`: `text`, `Title`: `text`, `TransactionByHashID`: `varchar`, `TransactionTime`: `bigint`, `ValueAsHex`: `mediumtext`, `ValueAsJSON`: `mediumtext`, `Version`: `varchar`, `Vout`: `int`}
+	claimDBTypes = map[string]string{`Author`: `varchar`, `BidState`: `varchar`, `Certificate`: `text`, `ClaimID`: `char`, `ClaimType`: `tinyint`, `ContentType`: `varchar`, `Created`: `datetime`, `Description`: `mediumtext`, `Fee`: `double`, `FeeCurrency`: `char`, `ID`: `bigint`, `IsFiltered`: `tinyint`, `IsNSFW`: `tinyint`, `Language`: `varchar`, `Modified`: `datetime`, `Name`: `varchar`, `PublisherID`: `char`, `PublisherSig`: `varchar`, `SDHash`: `varchar`, `ThumbnailURL`: `text`, `Title`: `text`, `TransactionByHashID`: `varchar`, `TransactionTime`: `bigint`, `ValueAsHex`: `mediumtext`, `ValueAsJSON`: `mediumtext`, `Version`: `varchar`, `Vout`: `int`}
 	_            = bytes.MinRead
 )
 
