@@ -1,3 +1,4 @@
 /vendor
 /.idea
 swagger-codegen-cli.jar
+chainqueryconfig.toml
