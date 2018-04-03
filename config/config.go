@@ -48,17 +48,17 @@ func InitializeConfiguration() {
 func initFlags() {
 	// using standard library "flag" package
 	flag.Int(CONFIGPATHFLAG, 1234, "Specify non-default location of the configuration of chainquery.")
-
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
 	pflag.Parse()
 	viper.BindPFlags(pflag.CommandLine)
 }
 
 func readConfig() {
-	viper.SetConfigName("chainqueryconfig") // name of config file (without extension)
-	viper.AddConfigPath("/etc/chainquery/") // check for it in etc folder
-	viper.AddConfigPath("$HOME/")           // check $HOME
-	viper.AddConfigPath(".")                // optionally look for config in the working directory
+	viper.SetConfigName("chainqueryconfig")  // name of config file (without extension)
+	viper.AddConfigPath("/etc/chainquery/")  // check for it in etc folder
+	viper.AddConfigPath("$HOME/")            // check $HOME
+	viper.AddConfigPath(".")                 // optionally look for config in the working directory
+	viper.AddConfigPath("./config/default/") // use default that comes with the branch
 	viper.AddConfigPath(viper.GetString(CONFIGPATHFLAG))
 
 	err := viper.ReadInConfig() // Find and read the config file
