@@ -106,7 +106,10 @@ func processClaimUpdateScript(script *[]byte, vout model.Output, tx model.Transa
 		if err != nil {
 			return name, claimId, pubkeyscript, err
 		}
-		claim.Name = name //In case name changes
+		if claim == nil {
+			logrus.Warning("ClaimUpdate for non-existent claim! ", claimId)
+			return name, claimId, pubkeyscript, err
+		}
 		datastore.PutClaim(claim)
 	}
 	return name, claimId, pubkeyscript, err
@@ -151,7 +154,7 @@ func processSupport(claimID string, support *model.Support, output model.Output,
 
 func processUpdateClaim(pbClaim *pb.Claim, claim *model.Claim, value []byte) (*model.Claim, error) {
 	if claim == nil {
-		panic(errors.Base("ClaimUpdate for non-existent claim!"))
+		return nil, nil
 	}
 	claim.Version = pbClaim.GetVersion().String()
 	claim.ValueAsHex = hex.EncodeToString(value)

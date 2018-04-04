@@ -29,6 +29,7 @@ var workers int = runtime.NumCPU() / 2 //Split cores between processors and lbyc
 var lastHeightProcess uint64 = 0       // Around 165,000 is when protobuf takes affect.
 var blockHeight uint64 = 0
 var running bool = false
+var Reindex bool = false
 
 //Configuration
 var ProcessingMode int            //Set in main on init
@@ -100,7 +101,7 @@ func ApplySettings(processingDelay time.Duration, daemonDelay time.Duration) {
 
 func runDaemon() func() {
 	lastBlock, _ := model.Blocks(boil.GetDB(), qm.OrderBy(model.BlockColumns.Height+" DESC"), qm.Limit(1)).One()
-	if lastBlock != nil && lastBlock.Height > 100 {
+	if lastBlock != nil && lastBlock.Height > 100 && !Reindex {
 		lastHeightProcess = lastBlock.Height - 100 //Start 100 sooner just in case something happened.
 	}
 	go daemonIteration()

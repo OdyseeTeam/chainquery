@@ -28,7 +28,9 @@ const ( // config setting keys
 )
 
 const ( //Flags
-	CONFIGPATHFLAG = "configpath"
+	CONFIGPATHFLAG  = "configpath"
+	REINDEXFLAG     = "reindex"
+	REINDEXWIPEFLAG = "reindexwipe"
 )
 
 func InitializeConfiguration() {
@@ -47,19 +49,20 @@ func InitializeConfiguration() {
 
 func initFlags() {
 	// using standard library "flag" package
-	flag.Int(CONFIGPATHFLAG, 1234, "Specify non-default location of the configuration of chainquery.")
+	pflag.BoolP(REINDEXFLAG, "r", false, "Rebuilds the database from the 1st block. Does not wipe the database")
+	pflag.BoolP(REINDEXWIPEFLAG, "w", false, "Drops all tables and rebuilds the database from the 1st block.")
+	pflag.StringP(CONFIGPATHFLAG, "c", "", "Specify non-default location of the configuration of chainquery.")
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
 	pflag.Parse()
 	viper.BindPFlags(pflag.CommandLine)
 }
 
 func readConfig() {
-	viper.SetConfigName("chainqueryconfig")  // name of config file (without extension)
-	viper.AddConfigPath("/etc/chainquery/")  // check for it in etc folder
-	viper.AddConfigPath("$HOME/")            // check $HOME
-	viper.AddConfigPath(".")                 // optionally look for config in the working directory
-	viper.AddConfigPath("./config/default/") // use default that comes with the branch
-	viper.AddConfigPath(viper.GetString(CONFIGPATHFLAG))
+	viper.SetConfigName("chainqueryconfig")              // name of config file (without extension)
+	viper.AddConfigPath(viper.GetString(CONFIGPATHFLAG)) // 1 - commandline config path
+	viper.AddConfigPath("$HOME/")                        // 2 - check $HOME
+	viper.AddConfigPath(".")                             // 3 - optionally look for config in the working directory
+	viper.AddConfigPath("./config/default/")             // 4 - use default that comes with the branch
 
 	err := viper.ReadInConfig() // Find and read the config file
 	if err != nil {             // Handle errors reading the config file
@@ -88,6 +91,7 @@ func processConfiguration() {
 	daemon.ProcessingMode = GetDaemonMode()
 	logrus.Info("Daemon mode = ", GetDaemonMode())
 	daemon.ApplySettings(GetProcessingDelay(), GetDaemonDelay())
+	daemon.Reindex = viper.GetBool(REINDEXFLAG)
 }
 
 func getLbrycrdURLFromConfFile() (string, error) {
