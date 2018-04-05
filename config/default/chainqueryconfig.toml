@@ -25,3 +25,8 @@
 
 #Daemon delay is the frequency at which chainquery checks for work to do.
 #DEFAULT-daemondelay=1 #Measured in seconds
+
+#Profiling options - will output the time take for certain opertions related to the below category
+#DEFAULT-daemonprofile=false
+#DEFAULT-lbrycrdprofile=false
+#DEFAULT-mysqlprofile=false

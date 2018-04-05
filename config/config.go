@@ -25,6 +25,9 @@ const ( // config setting keys
 	PROCESSINGDELAY      = "processingdelay"
 	DAEMONDELAY          = "daemondelay"
 	DEFAULTCLIENTTIMEOUT = "defaultclienttimeout"
+	DAEMONPROFILE        = "daemonprofile"
+	LBRYCRDPROFILE       = "lbrycrdprofile"
+	MYSQLPROFILE         = "mysqlprofile"
 )
 
 const ( //Flags
@@ -79,7 +82,9 @@ func initDefaults() {
 	viper.SetDefault(DEFAULTCLIENTTIMEOUT, 20*time.Second)
 	viper.SetDefault(DAEMONDELAY, 1)       //Seconds
 	viper.SetDefault(PROCESSINGDELAY, 100) //Milliseconds
-
+	viper.SetDefault(DAEMONPROFILE, false)
+	viper.SetDefault(LBRYCRDPROFILE, false)
+	viper.SetDefault(MYSQLPROFILE, false)
 }
 
 func processConfiguration() {

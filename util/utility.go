@@ -1,6 +1,7 @@
 package util
 
 import (
+	"github.com/spf13/viper"
 	"log"
 	"strconv"
 	"time"
@@ -14,7 +15,18 @@ func Plus(decimal string, value float64) string {
 	return deciString
 }
 
-func TimeTrack(start time.Time, name string) {
-	elapsed := time.Since(start)
-	log.Printf("%s took %s", name, elapsed)
+func TimeTrack(start time.Time, name string, profile string) {
+	if profile == "daemonprofile" && viper.GetBool("daemonprofile") {
+		elapsed := time.Since(start)
+		log.Printf("%s %s took %s", name, profile, elapsed)
+	}
+	if profile == "lbrycrdprofile" && viper.GetBool("lbrycrdprofile") {
+		elapsed := time.Since(start)
+		log.Printf("%s %s took %s", name, profile, elapsed)
+	}
+	if profile == "mysqlprofile" && viper.GetBool("mysqlprofile") {
+		elapsed := time.Since(start)
+		log.Printf("%s %s took %s", name, profile, elapsed)
+	}
+
 }

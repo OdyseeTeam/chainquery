@@ -12,6 +12,7 @@ import (
 	"github.com/lbryio/chainquery/model"
 	"github.com/lbryio/lbry.go/errors"
 
+	"github.com/lbryio/chainquery/util"
 	log "github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -156,7 +157,7 @@ func getBlockToProcess(height *uint64) (*lbrycrd.GetBlockResponse, error) {
 }
 
 func runBlockProcessing(height *uint64) {
-	//defer util.TimeTrack(time.Now(), "runBlockProcessing")
+	defer util.TimeTrack(time.Now(), "runBlockProcessing", "daemonprofile")
 	running = true
 	jsonBlock, err := getBlockToProcess(height)
 	if err != nil {
@@ -204,6 +205,7 @@ func runBlockProcessing(height *uint64) {
 }
 
 func goToNextBlock(height *uint64) {
+	defer util.TimeTrack(time.Now(), "gotonextblock", "daemonprofile")
 	lastHeightProcess = *height
 	workToDo := lastHeightProcess+uint64(1) < blockHeight && lastHeightProcess != 0
 	if workToDo {
@@ -215,7 +217,7 @@ func goToNextBlock(height *uint64) {
 }
 
 func processTx(jsonTx *lbrycrd.TxRawResult, blockTime uint64) error {
-	//defer util.TimeTrack(time.Now(), "processTx "+jsonTx.Txid+" -- ")
+	defer util.TimeTrack(time.Now(), "processTx "+jsonTx.Txid+" -- ", "daemonprofile")
 	transaction := &model.Transaction{}
 	foundTx, err := model.TransactionsG(qm.Where(model.TransactionColumns.Hash+"=?", jsonTx.Txid)).One()
 	if foundTx != nil {

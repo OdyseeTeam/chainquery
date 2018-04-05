@@ -4,13 +4,15 @@ import (
 	"github.com/lbryio/chainquery/model"
 	"github.com/lbryio/lbry.go/errors"
 
+	"github.com/lbryio/chainquery/util"
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/queries/qm"
+	"time"
 )
 
 //Outputs
 func GetOutput(txHash string, vout uint) *model.Output {
-	//defer util.TimeTrack(time.Now(), "GetOutput")
+	defer util.TimeTrack(time.Now(), "GetOutput", "mysqlprofile")
 	txHashMatch := qm.Where(model.OutputColumns.TransactionHash+"=?", txHash)
 	vOutMatch := qm.And(model.OutputColumns.Vout+"=?", vout)
 
@@ -26,7 +28,7 @@ func GetOutput(txHash string, vout uint) *model.Output {
 }
 
 func PutOutput(output *model.Output) error {
-	//defer util.TimeTrack(time.Now(), "PutOutput")
+	defer util.TimeTrack(time.Now(), "PutOutput", "mysqlprofile")
 	if output != nil {
 		txHashMatch := qm.Where(model.OutputColumns.TransactionHash+"=?", output.TransactionHash)
 		vOutMatch := qm.And(model.OutputColumns.Vout+"=?", output.Vout)
@@ -48,7 +50,7 @@ func PutOutput(output *model.Output) error {
 
 //Inputs
 func GetInput(txHash string, isCoinBase bool, prevHash string, prevN uint) *model.Input {
-	//defer util.TimeTrack(time.Now(), "GetInput")
+	defer util.TimeTrack(time.Now(), "GetInput", "mysqlprofile")
 	//Unique
 	txHashMatch := qm.Where(model.InputColumns.TransactionHash+"=?", txHash)
 	txCoinBaseMatch := qm.Where(model.InputColumns.IsCoinbase+"=?", isCoinBase)
@@ -67,7 +69,7 @@ func GetInput(txHash string, isCoinBase bool, prevHash string, prevN uint) *mode
 }
 
 func PutInput(input *model.Input) error {
-	//defer util.TimeTrack(time.Now(), "PutOutput")
+	defer util.TimeTrack(time.Now(), "PutInput", "mysqlprofile")
 	if input != nil {
 		//Unique
 		txHashMatch := qm.Where(model.InputColumns.TransactionHash+"=?", input.TransactionHash)
@@ -94,7 +96,7 @@ func PutInput(input *model.Input) error {
 //Addresses
 
 func GetAddress(addr string) *model.Address {
-	//defer util.TimeTrack(time.Now(), "GetAddress")
+	defer util.TimeTrack(time.Now(), "GetAddress", "mysqlprofile")
 	addrMatch := qm.Where(model.AddressColumns.Address+"=?", addr)
 
 	if model.AddressesG(addrMatch).ExistsP() {
@@ -110,7 +112,7 @@ func GetAddress(addr string) *model.Address {
 }
 
 func PutAddress(address *model.Address) error {
-	//defer util.TimeTrack(time.Now(), "PutAddress")
+	defer util.TimeTrack(time.Now(), "PutAddress", "mysqlprofile")
 	if address != nil {
 
 		var err error
@@ -133,7 +135,7 @@ func PutAddress(address *model.Address) error {
 // Transaction Addresses
 
 func GetTxAddress(txId uint64, addrId uint64) *model.TransactionAddress {
-	//defer util.TimeTrack(time.Now(), "GetTxAddress")
+	defer util.TimeTrack(time.Now(), "GetTxAddress", "mysqlprofile")
 	if model.TransactionAddressExistsGP(txId, addrId) {
 		txAddress, err := model.FindTransactionAddressG(txId, addrId)
 		if err != nil {
@@ -145,7 +147,7 @@ func GetTxAddress(txId uint64, addrId uint64) *model.TransactionAddress {
 }
 
 func PutTxAddress(txAddress *model.TransactionAddress) error {
-	//defer util.TimeTrack(time.Now(), "PutTxAddres")
+	defer util.TimeTrack(time.Now(), "PutTxAddres", "mysqlprofile")
 	if txAddress != nil {
 
 		var err error
@@ -167,6 +169,7 @@ func PutTxAddress(txAddress *model.TransactionAddress) error {
 //Claims
 
 func GetClaim(addr string) *model.Claim {
+	defer util.TimeTrack(time.Now(), "GetClaim", "mysqlprofile")
 	claimIdMatch := qm.Where(model.ClaimColumns.ClaimID+"=?", addr)
 
 	if model.ClaimsG(claimIdMatch).ExistsP() {
@@ -182,7 +185,7 @@ func GetClaim(addr string) *model.Claim {
 }
 
 func PutClaim(claim *model.Claim) error {
-
+	defer util.TimeTrack(time.Now(), "PutClaim", "mysqlprofile")
 	if claim != nil {
 
 		var err error
@@ -202,6 +205,7 @@ func PutClaim(claim *model.Claim) error {
 //Supports
 
 func GetSupport(txHash string, vout uint) *model.Support {
+	defer util.TimeTrack(time.Now(), "GetSupport", "mysqlprofile")
 	txHashMatch := qm.Where(model.SupportColumns.TransactionHash+"=?", txHash)
 	voutMatch := qm.Where(model.SupportColumns.Vout+"=?", vout)
 
@@ -217,7 +221,7 @@ func GetSupport(txHash string, vout uint) *model.Support {
 }
 
 func PutSupport(support *model.Support) error {
-
+	defer util.TimeTrack(time.Now(), "PutSupport", "mysqlprofile")
 	if support != nil {
 
 		var err error
