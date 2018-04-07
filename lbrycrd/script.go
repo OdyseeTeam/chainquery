@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 
+	"github.com/lbryio/chainquery/util"
 	"github.com/lbryio/lbry.go/errors"
 
 	"github.com/btcsuite/btcd/chaincfg"
@@ -29,12 +30,19 @@ const (
 	P2PK         = "pubkey"      // Pay to Public Key
 	P2PKH        = "pubkeyhash"  // Pay to Public Key Hash
 	NON_STANDARD = "nonstandard" // Non Standard - Used for Claims in LBRY
+
 )
 
 var MainNetParams = chaincfg.Params{
 	PubKeyHashAddrID: 0x55,
 	ScriptHashAddrID: 0x7a,
 	PrivateKeyID:     0x1c,
+}
+
+func IsClaimScript(script []byte) bool {
+	return script[0] == OP_SUPPORT_CLAIM ||
+		script[0] == OP_CLAIM_NAME ||
+		script[0] == OP_UPDATE_CLAIM
 }
 
 func IsClaimNameScript(script []byte) bool {
@@ -45,10 +53,18 @@ func IsClaimNameScript(script []byte) bool {
 	return false
 }
 
-func IsClaimScript(script []byte) bool {
-	return script[0] == OP_SUPPORT_CLAIM ||
-		script[0] == OP_CLAIM_NAME ||
-		script[0] == OP_UPDATE_CLAIM
+func IsClaimSupportScript(script []byte) bool {
+	if script != nil && len(script) > 0 {
+		return script[0] == OP_SUPPORT_CLAIM
+	}
+	return false
+}
+
+func IsClaimUpdateScript(script []byte) bool {
+	if script != nil && len(script) > 0 {
+		return script[0] == OP_UPDATE_CLAIM
+	}
+	return false
 }
 
 func ParseClaimNameScript(script []byte) (name string, value []byte, pubkeyscript []byte, err error) {
@@ -85,13 +101,6 @@ func ParseClaimNameScript(script []byte) (name string, value []byte, pubkeyscrip
 	return name, value, pubkeyscript, err
 }
 
-func IsClaimSupportScript(script []byte) bool {
-	if script != nil && len(script) > 0 {
-		return script[0] == OP_SUPPORT_CLAIM
-	}
-	return false
-}
-
 func ParseClaimSupportScript(script []byte) (name string, claimid string, pubkeyscript []byte, err error) {
 	// Already validated by blockchain so can be assumed
 	// OP_SUPPORT_CLAIM vchName vchClaimId OP_2DROP OP_DROP pubkeyscript
@@ -112,19 +121,13 @@ func ParseClaimSupportScript(script []byte) (name string, claimid string, pubkey
 	claimidBytesToRead := int(script[nameEnd])
 	claimidStart := nameEnd + 1
 	claimidEnd := claimidStart + claimidBytesToRead
-	claimid = hex.EncodeToString(script[claimidStart:claimidEnd])
+	bytes := util.ReverseBytes(script[claimidStart:claimidEnd])
+	claimid = hex.EncodeToString(bytes)
 
 	//PubKeyScript
 	pksStart := claimidEnd + 2       // +2 to ignore OP_2DROP and OP_DROP
 	pubkeyscript = script[pksStart:] //Remainder is always pubkeyscript
 	return
-}
-
-func IsClaimUpdateScript(script []byte) bool {
-	if script != nil && len(script) > 0 {
-		return script[0] == OP_UPDATE_CLAIM
-	}
-	return false
 }
 
 func ParseClaimUpdateScript(script []byte) (name string, claimid string, value []byte, pubkeyscript []byte, err error) {
@@ -146,7 +149,8 @@ func ParseClaimUpdateScript(script []byte) (name string, claimid string, value [
 	claimidBytesToRead := int(script[nameEnd])
 	claimidStart := nameEnd + 1
 	claimidEnd := claimidStart + claimidBytesToRead
-	claimid = hex.EncodeToString(script[claimidStart:claimidEnd])
+	bytes := util.ReverseBytes(script[claimidStart:claimidEnd])
+	claimid = hex.EncodeToString(bytes)
 
 	//Value
 	dataPushType := int(script[claimidEnd])

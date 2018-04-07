@@ -60,17 +60,19 @@ func processClaimNameScript(script *[]byte, vout model.Output, tx model.Transact
 		saveUnknownClaim(name, claimid, false, value, vout, tx)
 		return name, claimid, pkscript, nil
 	}
-	if pbClaim != nil && err == nil {
-		claim := datastore.GetClaim(claimid)
-		claim, err := processClaim(pbClaim, claim, value, vout, tx)
-		if err != nil {
-			return name, claimid, pkscript, err
-		}
-		claim.ClaimID = claimid
-		claim.Name = name
-		claim.TransactionTime = tx.TransactionTime
-		datastore.PutClaim(claim)
+	if pbClaim == nil {
+		err := errors.Base("Produced null pbClaim-> " + name + " " + claimid)
+		return name, claimid, pkscript, err
 	}
+	claim := datastore.GetClaim(claimid)
+	claim, err = processClaim(pbClaim, claim, value, vout, tx)
+	if err != nil {
+		return name, claimid, pkscript, err
+	}
+	claim.ClaimID = claimid
+	claim.Name = name
+	claim.TransactionTime = tx.TransactionTime
+	err = datastore.PutClaim(claim)
 
 	return name, claimid, pkscript, err
 }
@@ -107,10 +109,10 @@ func processClaimUpdateScript(script *[]byte, vout model.Output, tx model.Transa
 			return name, claimId, pubkeyscript, err
 		}
 		if claim == nil {
-			logrus.Warning("ClaimUpdate for non-existent claim! ", claimId)
+			logrus.Warning("ClaimUpdate for non-existent claim! ", claimId, " ", tx.Hash, " ", vout.Vout)
 			return name, claimId, pubkeyscript, err
 		}
-		datastore.PutClaim(claim)
+		err = datastore.PutClaim(claim)
 	}
 	return name, claimId, pubkeyscript, err
 }
