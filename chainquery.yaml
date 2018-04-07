@@ -122,6 +122,7 @@ info:
   title: 'Chain Query'
   version: 0.1.0
   description: 'The LBRY blockchain is read into SQL where important structured information can be extracted through the Chain Query API.'
+host: ':6300'
 basePath: /api
 schemes:
   - http

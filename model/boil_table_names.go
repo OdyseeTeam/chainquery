@@ -5,6 +5,7 @@ package model
 
 var TableNames = struct {
 	Address            string
+	ApplicationStatus  string
 	Block              string
 	Claim              string
 	Input              string
@@ -17,6 +18,7 @@ var TableNames = struct {
 	UnknownClaim       string
 }{
 	Address:            "address",
+	ApplicationStatus:  "application_status",
 	Block:              "block",
 	Claim:              "claim",
 	Input:              "input",

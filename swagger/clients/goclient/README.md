@@ -17,7 +17,7 @@ Put the package under your project folder and add the following in import:
 
 ## Documentation for API Endpoints
 
-All URIs are relative to *http://localhost/api*
+All URIs are relative to *http://:6300/api*
 
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------

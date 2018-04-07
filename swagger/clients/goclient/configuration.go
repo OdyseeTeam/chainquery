@@ -60,7 +60,7 @@ type Configuration struct {
 
 func NewConfiguration() *Configuration {
 	cfg := &Configuration{
-		BasePath:      "http://localhost/api",
+		BasePath:      "http://:6300/api",
 		DefaultHeader: make(map[string]string),
 		UserAgent:     "Swagger-Codegen/1.0.0/go",
 	}

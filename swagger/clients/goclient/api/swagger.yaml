@@ -5,6 +5,7 @@ info:
     \ can be extracted through the Chain Query API."
   version: "0.1.0"
   title: "Chain Query"
+host: ":6300"
 basePath: "/api"
 tags:
 - name: "stat"

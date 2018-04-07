@@ -13,6 +13,7 @@ import "testing"
 // Separating the tests thusly grants avoidance of Postgres deadlocks.
 func TestParent(t *testing.T) {
 	t.Run("Addresses", testAddresses)
+	t.Run("ApplicationStatuses", testApplicationStatuses)
 	t.Run("Blocks", testBlocks)
 	t.Run("Claims", testClaims)
 	t.Run("Inputs", testInputs)
@@ -25,6 +26,7 @@ func TestParent(t *testing.T) {
 
 func TestDelete(t *testing.T) {
 	t.Run("Addresses", testAddressesDelete)
+	t.Run("ApplicationStatuses", testApplicationStatusesDelete)
 	t.Run("Blocks", testBlocksDelete)
 	t.Run("Claims", testClaimsDelete)
 	t.Run("Inputs", testInputsDelete)
@@ -37,6 +39,7 @@ func TestDelete(t *testing.T) {
 
 func TestQueryDeleteAll(t *testing.T) {
 	t.Run("Addresses", testAddressesQueryDeleteAll)
+	t.Run("ApplicationStatuses", testApplicationStatusesQueryDeleteAll)
 	t.Run("Blocks", testBlocksQueryDeleteAll)
 	t.Run("Claims", testClaimsQueryDeleteAll)
 	t.Run("Inputs", testInputsQueryDeleteAll)
@@ -49,6 +52,7 @@ func TestQueryDeleteAll(t *testing.T) {
 
 func TestSliceDeleteAll(t *testing.T) {
 	t.Run("Addresses", testAddressesSliceDeleteAll)
+	t.Run("ApplicationStatuses", testApplicationStatusesSliceDeleteAll)
 	t.Run("Blocks", testBlocksSliceDeleteAll)
 	t.Run("Claims", testClaimsSliceDeleteAll)
 	t.Run("Inputs", testInputsSliceDeleteAll)
@@ -61,6 +65,7 @@ func TestSliceDeleteAll(t *testing.T) {
 
 func TestExists(t *testing.T) {
 	t.Run("Addresses", testAddressesExists)
+	t.Run("ApplicationStatuses", testApplicationStatusesExists)
 	t.Run("Blocks", testBlocksExists)
 	t.Run("Claims", testClaimsExists)
 	t.Run("Inputs", testInputsExists)
@@ -73,6 +78,7 @@ func TestExists(t *testing.T) {
 
 func TestFind(t *testing.T) {
 	t.Run("Addresses", testAddressesFind)
+	t.Run("ApplicationStatuses", testApplicationStatusesFind)
 	t.Run("Blocks", testBlocksFind)
 	t.Run("Claims", testClaimsFind)
 	t.Run("Inputs", testInputsFind)
@@ -85,6 +91,7 @@ func TestFind(t *testing.T) {
 
 func TestBind(t *testing.T) {
 	t.Run("Addresses", testAddressesBind)
+	t.Run("ApplicationStatuses", testApplicationStatusesBind)
 	t.Run("Blocks", testBlocksBind)
 	t.Run("Claims", testClaimsBind)
 	t.Run("Inputs", testInputsBind)
@@ -97,6 +104,7 @@ func TestBind(t *testing.T) {
 
 func TestOne(t *testing.T) {
 	t.Run("Addresses", testAddressesOne)
+	t.Run("ApplicationStatuses", testApplicationStatusesOne)
 	t.Run("Blocks", testBlocksOne)
 	t.Run("Claims", testClaimsOne)
 	t.Run("Inputs", testInputsOne)
@@ -109,6 +117,7 @@ func TestOne(t *testing.T) {
 
 func TestAll(t *testing.T) {
 	t.Run("Addresses", testAddressesAll)
+	t.Run("ApplicationStatuses", testApplicationStatusesAll)
 	t.Run("Blocks", testBlocksAll)
 	t.Run("Claims", testClaimsAll)
 	t.Run("Inputs", testInputsAll)
@@ -121,6 +130,7 @@ func TestAll(t *testing.T) {
 
 func TestCount(t *testing.T) {
 	t.Run("Addresses", testAddressesCount)
+	t.Run("ApplicationStatuses", testApplicationStatusesCount)
 	t.Run("Blocks", testBlocksCount)
 	t.Run("Claims", testClaimsCount)
 	t.Run("Inputs", testInputsCount)
@@ -134,6 +144,8 @@ func TestCount(t *testing.T) {
 func TestInsert(t *testing.T) {
 	t.Run("Addresses", testAddressesInsert)
 	t.Run("Addresses", testAddressesInsertWhitelist)
+	t.Run("ApplicationStatuses", testApplicationStatusesInsert)
+	t.Run("ApplicationStatuses", testApplicationStatusesInsertWhitelist)
 	t.Run("Blocks", testBlocksInsert)
 	t.Run("Blocks", testBlocksInsertWhitelist)
 	t.Run("Claims", testClaimsInsert)
@@ -276,6 +288,7 @@ func TestToManyRemove(t *testing.T) {
 
 func TestReload(t *testing.T) {
 	t.Run("Addresses", testAddressesReload)
+	t.Run("ApplicationStatuses", testApplicationStatusesReload)
 	t.Run("Blocks", testBlocksReload)
 	t.Run("Claims", testClaimsReload)
 	t.Run("Inputs", testInputsReload)
@@ -288,6 +301,7 @@ func TestReload(t *testing.T) {
 
 func TestReloadAll(t *testing.T) {
 	t.Run("Addresses", testAddressesReloadAll)
+	t.Run("ApplicationStatuses", testApplicationStatusesReloadAll)
 	t.Run("Blocks", testBlocksReloadAll)
 	t.Run("Claims", testClaimsReloadAll)
 	t.Run("Inputs", testInputsReloadAll)
@@ -300,6 +314,7 @@ func TestReloadAll(t *testing.T) {
 
 func TestSelect(t *testing.T) {
 	t.Run("Addresses", testAddressesSelect)
+	t.Run("ApplicationStatuses", testApplicationStatusesSelect)
 	t.Run("Blocks", testBlocksSelect)
 	t.Run("Claims", testClaimsSelect)
 	t.Run("Inputs", testInputsSelect)
@@ -312,6 +327,7 @@ func TestSelect(t *testing.T) {
 
 func TestUpdate(t *testing.T) {
 	t.Run("Addresses", testAddressesUpdate)
+	t.Run("ApplicationStatuses", testApplicationStatusesUpdate)
 	t.Run("Blocks", testBlocksUpdate)
 	t.Run("Claims", testClaimsUpdate)
 	t.Run("Inputs", testInputsUpdate)
@@ -324,6 +340,7 @@ func TestUpdate(t *testing.T) {
 
 func TestSliceUpdateAll(t *testing.T) {
 	t.Run("Addresses", testAddressesSliceUpdateAll)
+	t.Run("ApplicationStatuses", testApplicationStatusesSliceUpdateAll)
 	t.Run("Blocks", testBlocksSliceUpdateAll)
 	t.Run("Claims", testClaimsSliceUpdateAll)
 	t.Run("Inputs", testInputsSliceUpdateAll)
@@ -336,6 +353,7 @@ func TestSliceUpdateAll(t *testing.T) {
 
 func TestUpsert(t *testing.T) {
 	t.Run("Addresses", testAddressesUpsert)
+	t.Run("ApplicationStatuses", testApplicationStatusesUpsert)
 	t.Run("Blocks", testBlocksUpsert)
 	t.Run("Claims", testClaimsUpsert)
 	t.Run("Inputs", testInputsUpsert)

@@ -1,6 +1,6 @@
 # \StatApi
 
-All URIs are relative to *http://localhost/api*
+All URIs are relative to *http://:6300/api*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------

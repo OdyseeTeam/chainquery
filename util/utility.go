@@ -29,6 +29,10 @@ func TimeTrack(start time.Time, name string, profile string) {
 		elapsed := time.Since(start)
 		log.Printf("%s %s took %s", name, profile, elapsed)
 	}
+	if profile == "always" {
+		elapsed := time.Since(start)
+		log.Printf("%s %s took %s", name, profile, elapsed)
+	}
 
 }
 

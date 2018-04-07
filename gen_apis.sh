@@ -6,7 +6,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
     #download swagger-codegen-cli if not already there.
     cd "$DIR"
     mkdir -p $DIR/swagger
-    if [ ! -f $DIR/swagger/swagger-codegen-cli.jar ]; then
+    if [ ! -f $DIR/swagger-codegen-cli.jar ]; then
         echo "swagger cli not found, downloading..."
         wget http://central.maven.org/maven2/io/swagger/swagger-codegen-cli/2.3.1/swagger-codegen-cli-2.3.1.jar -O ./swagger-codegen-cli.jar
     fi

@@ -13,5 +13,5 @@ func InitApiServer() {
 
 	router := sw.NewRouter()
 
-	log.Fatal(http.ListenAndServe(":{{serverPort}}", router))
+	log.Fatal(http.ListenAndServe(":6300", router))
 }

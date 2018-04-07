@@ -1,17 +1,16 @@
 package daemon
 
 import (
-	"encoding/json"
 	"runtime"
 	"strings"
 	"time"
 
-	p "github.com/lbryio/chainquery/daemon/processing"
-	"github.com/lbryio/chainquery/datastore"
+	"github.com/lbryio/chainquery/daemon/processing"
 	"github.com/lbryio/chainquery/lbrycrd"
 	"github.com/lbryio/chainquery/model"
 	"github.com/lbryio/lbry.go/errors"
 
+	"github.com/lbryio/chainquery/daemon/upgrademanager"
 	"github.com/lbryio/chainquery/util"
 	log "github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/boil"
@@ -40,6 +39,7 @@ var iteration int64 = 0
 
 func InitDaemon() {
 	//testFunction()
+	upgrademanager.RunUpgradesForVersion()
 	initBlockQueue()
 	runDaemon()
 }
@@ -50,40 +50,6 @@ func initBlockQueue() {
 
 func testFunction(params ...interface{}) {
 
-	names, err := lbrycrd.DefaultClient().GetClaimsInTrie()
-	goodones := 0
-	if err != nil {
-		log.Error(err)
-	} else {
-		for i := range names {
-			if goodones < 10 {
-				name := names[i]
-				for i := range name.Claims {
-					claim := name.Claims[i]
-
-					decodedValue := []byte(claim.Value)
-					if err != nil {
-						//log.Error(err)
-						continue
-					}
-					decodedClaim, err := lbrycrd.DecodeClaimValue(name.Name, decodedValue)
-					if err != nil {
-						//log.Error(err)
-						continue
-					}
-					println(name.Name, " - ", decodedClaim.GetStream().GetMetadata().GetTitle())
-					jsonBytes, err := json.Marshal(*decodedClaim)
-					if err != nil {
-						//log.Error(err)
-						continue
-					}
-					println(string(jsonBytes))
-					goodones++
-				}
-			}
-		}
-	}
-	//panic(errors.Base("only run test method"))
 }
 
 func ApplySettings(processingDelay time.Duration, daemonDelay time.Duration) {
@@ -196,7 +162,7 @@ func runBlockProcessing(height *uint64) {
 	Txs := jsonBlock.Tx
 	for i := range Txs {
 		jsonTx, err := lbrycrd.DefaultClient().GetRawTransactionResponse(Txs[i])
-		err = processTx(jsonTx, block.BlockTime)
+		err = processing.ProcessTx(jsonTx, block.BlockTime)
 		if err != nil {
 			log.Error(err)
 		}
@@ -214,73 +180,4 @@ func goToNextBlock(height *uint64) {
 	} else {
 		running = false
 	}
-}
-
-func processTx(jsonTx *lbrycrd.TxRawResult, blockTime uint64) error {
-	defer util.TimeTrack(time.Now(), "processTx "+jsonTx.Txid+" -- ", "daemonprofile")
-	transaction := &model.Transaction{}
-	foundTx, err := model.TransactionsG(qm.Where(model.TransactionColumns.Hash+"=?", jsonTx.Txid)).One()
-	if foundTx != nil {
-		transaction = foundTx
-	}
-	transaction.Hash = jsonTx.Txid
-	transaction.Version = int(jsonTx.Version)
-	transaction.BlockByHashID.String = jsonTx.BlockHash
-	transaction.BlockByHashID.Valid = true
-	transaction.CreatedTime = time.Unix(0, jsonTx.Blocktime)
-	transaction.TransactionTime.Uint64 = uint64(jsonTx.Blocktime)
-	transaction.TransactionTime.Valid = true
-	transaction.LockTime = uint(jsonTx.LockTime)
-	transaction.InputCount = uint(len(jsonTx.Vin))
-	transaction.OutputCount = uint(len(jsonTx.Vout))
-	transaction.Raw.String = jsonTx.Hex
-	transaction.TransactionSize = uint64(jsonTx.Size)
-	transaction.Value = 0.0 //p.GetTotalValue(jsonTx.Vout)
-
-	_, err = p.CreateUpdateAddresses(jsonTx.Vout, blockTime)
-	if err != nil {
-		err := errors.Prefix("Address Creation Error: ", err)
-		return err
-	}
-
-	txDbCrAddrMap := p.NewTxDebitCredits()
-
-	if foundTx != nil {
-		transaction.Update(boil.GetDB())
-	} else {
-		err = transaction.Insert(boil.GetDB())
-	}
-	if err != nil {
-		return err
-	}
-	vins := jsonTx.Vin
-	for i := range vins {
-		err = p.ProcessVin(&vins[i], *transaction, txDbCrAddrMap)
-		if err != nil {
-			log.Error("Vin Error->", err)
-			panic(err)
-		}
-	}
-	vouts := jsonTx.Vout
-	for i := range vouts {
-		err := p.ProcessVout(&vouts[i], *transaction, txDbCrAddrMap)
-		if err != nil {
-			log.Error("Vout Error->", err, " - ", transaction.Hash)
-			panic(err)
-		}
-	}
-	for addr, DC := range txDbCrAddrMap.AddrDCMap {
-
-		address := datastore.GetAddress(addr)
-
-		txAddr := datastore.GetTxAddress(transaction.ID, address.ID)
-
-		txAddr.CreditAmount = DC.Credits()
-		txAddr.DebitAmount = DC.Debits()
-
-		datastore.PutTxAddress(txAddr)
-
-	}
-
-	return err
 }

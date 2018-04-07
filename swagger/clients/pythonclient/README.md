@@ -65,7 +65,7 @@ except ApiException as e:
 
 ## Documentation for API Endpoints
 
-All URIs are relative to *http://localhost/api*
+All URIs are relative to *http://:6300/api*
 
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
