@@ -196,7 +196,7 @@ CREATE TABLE IF NOT EXISTS `claim`
     `publisher_id` CHAR(40) CHARACTER SET latin1 COLLATE latin1_general_ci COMMENT 'references a ClaimId with CertificateType',
     `publisher_sig` VARCHAR(200) CHARACTER SET latin1 COLLATE latin1_general_ci,
     `certificate` TEXT,
-    `sd_hash` VARCHAR(70) CHARACTER SET latin1 COLLATE latin1_general_ci,
+    `sd_hash` VARCHAR(120) CHARACTER SET latin1 COLLATE latin1_general_ci,
     `transaction_time` BIGINT UNSIGNED,
     `version` VARCHAR(10) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
     `value_as_hex` MEDIUMTEXT NOT NULL,
