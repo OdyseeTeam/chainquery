@@ -211,7 +211,7 @@ CREATE TABLE IF NOT EXISTS `claim`
     `thumbnail_url` TEXT,
     `title` TEXT,
     `fee` DOUBLE(18,8) DEFAULT 0 NOT NULL,
-    `fee_currency` CHAR(3),
+    `fee_currency` CHAR(30),
     `is_filtered` TINYINT(1) DEFAULT 0 NOT NULL,
     `bid_state` VARCHAR(20) DEFAULT "Accepted" NOT NULL,
 
