@@ -14,7 +14,51 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func ProcessVin(jsonVin *lbrycrd.Vin, tx m.Transaction, txDC txDebitCredits) error {
+type VinToProcess struct {
+	jsonVin *lbrycrd.Vin
+	tx      m.Transaction
+	txDC    *txDebitCredits
+}
+
+type VoutToProcess struct {
+	jsonVout *lbrycrd.Vout
+	tx       m.Transaction
+	txDC     *txDebitCredits
+}
+
+var VinInputChannel = make(chan VinToProcess)
+var VinOutputChannel = make(chan error)
+
+func InitVinWorkers(nrWorkers int, jobs <-chan VinToProcess, results chan<- error) {
+	for i := 0; i < nrWorkers; i++ {
+		go VinProcessor(jobs, results)
+	}
+}
+
+func VinProcessor(jobs <-chan VinToProcess, results chan<- error) error {
+	for job := range jobs {
+		results <- ProcessVin(job.jsonVin, job.tx, job.txDC)
+	}
+	return nil
+}
+
+var VoutInputChannel = make(chan VinToProcess)
+var VoutOutputChannel = make(chan error)
+
+func InitVoutWorkers(nrWorkers int, jobs <-chan VoutToProcess, results chan<- error) {
+	for i := 0; i < nrWorkers; i++ {
+		go VoutProcessor(jobs, results)
+	}
+}
+
+func VoutProcessor(jobs <-chan VoutToProcess, results chan<- error) error {
+	for job := range jobs {
+		results <- ProcessVout(job.jsonVout, job.tx, job.txDC)
+	}
+	return nil
+}
+
+func ProcessVin(jsonVin *lbrycrd.Vin, tx m.Transaction, txDC *txDebitCredits) error {
 	vin := &m.Input{}
 	foundVin := ds.GetInput(tx.Hash, len(jsonVin.Coinbase) > 0, jsonVin.Txid, uint(jsonVin.Vout))
 	if foundVin != nil {
@@ -102,7 +146,7 @@ func ProcessVin(jsonVin *lbrycrd.Vin, tx m.Transaction, txDC txDebitCredits) err
 
 			err = ds.PutTxAddress(&txAddress)
 			if err != nil {
-				return err
+				//logrus.Error(err)
 			}
 
 		}
@@ -122,7 +166,7 @@ func processCoinBaseVin(jsonVin *lbrycrd.Vin, vin *m.Input) error {
 	return nil
 }
 
-func ProcessVout(jsonVout *lbrycrd.Vout, tx m.Transaction, txDC txDebitCredits) error {
+func ProcessVout(jsonVout *lbrycrd.Vout, tx m.Transaction, txDC *txDebitCredits) error {
 	vout := &m.Output{}
 	foundVout := ds.GetOutput(tx.Hash, uint(jsonVout.N))
 	if foundVout != nil {
@@ -175,7 +219,7 @@ func ProcessVout(jsonVout *lbrycrd.Vout, tx m.Transaction, txDC txDebitCredits) 
 	txAddress := createTransactionAddress(tx.ID, address.ID)
 	err = ds.PutTxAddress(&txAddress)
 	if err != nil {
-		return err
+		//return err
 	}
 
 	// Process script for potential claims

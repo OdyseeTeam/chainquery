@@ -44,3 +44,10 @@ func ReverseBytes(b []byte) []byte {
 	}
 	return r
 }
+
+func Min(x, y int) int {
+	if x < y {
+		return x
+	}
+	return y
+}

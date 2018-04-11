@@ -12,18 +12,21 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
+	"sync"
 )
 
 type txDebitCredits struct {
 	AddrDCMap map[string]*AddrDebitCredits
+	mutex     *sync.RWMutex
 }
 
-func NewTxDebitCredits() txDebitCredits {
+func NewTxDebitCredits() *txDebitCredits {
 	t := txDebitCredits{}
 	v := make(map[string]*AddrDebitCredits)
 	t.AddrDCMap = v
+	t.mutex = &sync.RWMutex{}
 
-	return t
+	return &t
 
 }
 
@@ -32,29 +35,33 @@ type AddrDebitCredits struct {
 	credits float64
 }
 
-func (addDC AddrDebitCredits) Debits() float64 {
+func (addDC *AddrDebitCredits) Debits() float64 {
 	return addDC.debits
 }
 
-func (addDC AddrDebitCredits) Credits() float64 {
+func (addDC *AddrDebitCredits) Credits() float64 {
 	return addDC.credits
 }
 
-func (txDC txDebitCredits) subtract(address string, value float64) error {
+func (txDC *txDebitCredits) subtract(address string, value float64) error {
+	txDC.mutex.Lock()
 	if txDC.AddrDCMap[address] == nil {
 		addrDC := AddrDebitCredits{}
 		txDC.AddrDCMap[address] = &addrDC
 	}
 	txDC.AddrDCMap[address].debits = txDC.AddrDCMap[address].debits + value
+	txDC.mutex.Unlock()
 	return nil
 }
 
-func (t txDebitCredits) add(address string, value float64) error {
-	if t.AddrDCMap[address] == nil {
+func (txDC *txDebitCredits) add(address string, value float64) error {
+	txDC.mutex.Lock()
+	if txDC.AddrDCMap[address] == nil {
 		addrDC := AddrDebitCredits{}
-		t.AddrDCMap[address] = &addrDC
+		txDC.AddrDCMap[address] = &addrDC
 	}
-	t.AddrDCMap[address].credits = t.AddrDCMap[address].credits + value
+	txDC.AddrDCMap[address].credits = txDC.AddrDCMap[address].credits + value
+	txDC.mutex.Unlock()
 
 	return nil
 }
@@ -97,21 +104,41 @@ func ProcessTx(jsonTx *lbrycrd.TxRawResult, blockTime uint64) error {
 		return err
 	}
 	vins := jsonTx.Vin
+	vinjobs := make(chan VinToProcess, 2000)
+	errors := make(chan error, 2000)
+	workers := util.Min(len(vins), 6)
+	InitVinWorkers(workers, vinjobs, errors)
 	for i := range vins {
-		err = ProcessVin(&vins[i], *transaction, txDbCrAddrMap)
+		index := i
+		vinjobs <- VinToProcess{jsonVin: &vins[index], tx: *transaction, txDC: txDbCrAddrMap}
+	}
+	close(vinjobs)
+	for i := 0; i < len(vins); i++ {
+		err := <-errors
 		if err != nil {
 			logrus.Error("Vin Error->", err)
 			panic(err)
 		}
 	}
+	close(errors)
 	vouts := jsonTx.Vout
+	voutjobs := make(chan VoutToProcess, 2000)
+	errors = make(chan error, 2000)
+	workers = util.Min(len(vouts), 6)
+	InitVoutWorkers(workers, voutjobs, errors)
 	for i := range vouts {
-		err := ProcessVout(&vouts[i], *transaction, txDbCrAddrMap)
+		index := i
+		voutjobs <- VoutToProcess{jsonVout: &vouts[index], tx: *transaction, txDC: txDbCrAddrMap}
+	}
+	close(voutjobs)
+	for i := 0; i < len(vouts); i++ {
+		err := <-errors
 		if err != nil {
-			logrus.Error("Vout Error->", err, " - ", transaction.Hash)
+			logrus.Error("Vout Error->", err)
 			panic(err)
 		}
 	}
+	close(errors)
 	for addr, DC := range txDbCrAddrMap.AddrDCMap {
 
 		address := datastore.GetAddress(addr)
