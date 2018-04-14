@@ -275,15 +275,3 @@ CREATE TABLE IF NOT EXISTS `unknown_claim`
   INDEX `Idx_UnknowClaimTxHash` (`transaction_hash`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4;
 -- +migrate StatementEnd
-
--- +migrate StatementBegin
-CREATE TABLE IF NOT EXISTS `application_status`
-(
-    `id` SERIAL,
-    `app_version` INT NOT NULL,
-    `data_version`INT NOT NULL,
-    `api_version`INT NOT NULL,
-
-    PRIMARY KEY `PK_id` (`id`)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4;
--- +migrate StatementEnd
