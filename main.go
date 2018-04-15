@@ -9,15 +9,14 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/lbryio/chainquery/config"
 	"github.com/lbryio/chainquery/daemon"
+	"github.com/lbryio/chainquery/daemon/jobs"
 	"github.com/lbryio/chainquery/db"
 	"github.com/lbryio/chainquery/lbrycrd"
-
-	//"github.com/pkg/profile"
-	"github.com/jasonlvhit/gocron"
-	"github.com/lbryio/chainquery/config"
-	"github.com/lbryio/chainquery/daemon/jobs"
 	"github.com/lbryio/chainquery/swagger/apiserver"
+
+	"github.com/jasonlvhit/gocron"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -62,7 +61,7 @@ func main() {
 }
 
 func webServerSetup() func() {
-	teardownFuncs := []func(){}
+	var teardownFuncs []func()
 
 	dbInstance, err := db.Init(config.GetMySQLDSN(), DebugMode)
 	if err != nil {
