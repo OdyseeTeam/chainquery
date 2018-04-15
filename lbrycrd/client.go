@@ -11,6 +11,8 @@ import (
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/ybbus/jsonrpc"
+	"net/http"
+	"time"
 )
 
 // Client connects to a lbrycrd instance
@@ -47,6 +49,9 @@ func New(lbrycrdURL string) (*Client, error) {
 	password, _ := u.User.Password()
 	url := "http://" + u.Host
 	client := jsonrpc.NewRPCClient(url)
+	defaultClient := http.DefaultClient
+	defaultClient.Timeout = time.Duration(300 * time.Second)
+	client.SetHTTPClient(defaultClient)
 	client.SetBasicAuth(u.User.Username(), password)
 
 	return &Client{client}, nil

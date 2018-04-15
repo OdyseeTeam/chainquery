@@ -14,7 +14,9 @@ import (
 	"github.com/lbryio/chainquery/lbrycrd"
 
 	//"github.com/pkg/profile"
+	"github.com/jasonlvhit/gocron"
 	"github.com/lbryio/chainquery/config"
+	"github.com/lbryio/chainquery/daemon/jobs"
 	"github.com/lbryio/chainquery/swagger/apiserver"
 	log "github.com/sirupsen/logrus"
 )
@@ -51,6 +53,7 @@ func main() {
 		teardown := webServerSetup()
 		defer teardown()
 		go swagger.InitApiServer()
+		go initJobs()
 		daemon.InitDaemon()
 
 	default:
@@ -63,7 +66,7 @@ func webServerSetup() func() {
 
 	dbInstance, err := db.Init(config.GetMySQLDSN(), DebugMode)
 	if err != nil {
-		panic(err) //
+		panic(err)
 	}
 	teardownFuncs = append(teardownFuncs, func() { dbInstance.Close() })
 	lbrycrdClient, err := lbrycrd.New(config.GetLBRYcrdURL())
@@ -75,7 +78,7 @@ func webServerSetup() func() {
 	lbrycrd.SetDefaultClient(lbrycrdClient)
 
 	_, err = lbrycrdClient.GetBalance("")
-	if err != nil { //
+	if err != nil {
 		log.Panicf("Error connecting to lbrycrd: %+v", err)
 	}
 
@@ -84,4 +87,10 @@ func webServerSetup() func() {
 			f()
 		}
 	}
+}
+
+func initJobs() {
+	jobs.ClaimTrieSync()
+	gocron.Every(5).Minutes().Do(jobs.ClaimTrieSync)
+	<-gocron.Start()
 }

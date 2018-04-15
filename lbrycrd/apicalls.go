@@ -79,5 +79,5 @@ func (c *Client) GetClaimsInTrie() ([]ClaimNameResult, error) {
 func (c *Client) GetClaimsForName(name string) (ClaimsForNameResult, error) {
 	response := new(ClaimsForNameResult)
 
-	return *response, c.call(&response, "getclaimsforname")
+	return *response, c.call(&response, "getclaimsforname", name)
 }

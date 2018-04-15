@@ -49,6 +49,8 @@ type Claim struct {
 	Modified            time.Time   `boil:"modified" json:"modified" toml:"modified" yaml:"modified"`
 	SDHash              null.String `boil:"sd_hash" json:"sd_hash,omitempty" toml:"sd_hash" yaml:"sd_hash,omitempty"`
 	BidState            string      `boil:"bid_state" json:"bid_state" toml:"bid_state" yaml:"bid_state"`
+	ValidAtHeight       uint        `boil:"valid_at_height" json:"valid_at_height" toml:"valid_at_height" yaml:"valid_at_height"`
+	EffectiveAmount     float64     `boil:"effective_amount" json:"effective_amount" toml:"effective_amount" yaml:"effective_amount"`
 
 	R *claimR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L claimL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -82,6 +84,8 @@ var ClaimColumns = struct {
 	Modified            string
 	SDHash              string
 	BidState            string
+	ValidAtHeight       string
+	EffectiveAmount     string
 }{
 	ID:                  "id",
 	TransactionByHashID: "transaction_by_hash_id",
@@ -110,6 +114,8 @@ var ClaimColumns = struct {
 	Modified:            "modified",
 	SDHash:              "sd_hash",
 	BidState:            "bid_state",
+	ValidAtHeight:       "valid_at_height",
+	EffectiveAmount:     "effective_amount",
 }
 
 // claimR is where relationships are stored.
@@ -124,9 +130,9 @@ type claimR struct {
 type claimL struct{}
 
 var (
-	claimColumns               = []string{"id", "transaction_by_hash_id", "vout", "name", "claim_id", "claim_type", "publisher_id", "publisher_sig", "certificate", "transaction_time", "version", "value_as_hex", "value_as_json", "author", "description", "content_type", "is_n_s_f_w", "language", "thumbnail_url", "title", "fee", "fee_currency", "is_filtered", "created", "modified", "sd_hash", "bid_state"}
-	claimColumnsWithoutDefault = []string{"transaction_by_hash_id", "vout", "name", "claim_id", "claim_type", "publisher_id", "publisher_sig", "certificate", "transaction_time", "version", "value_as_hex", "value_as_json", "author", "description", "content_type", "language", "thumbnail_url", "title", "fee_currency", "sd_hash"}
-	claimColumnsWithDefault    = []string{"id", "is_n_s_f_w", "fee", "is_filtered", "created", "modified", "bid_state"}
+	claimColumns               = []string{"id", "transaction_by_hash_id", "vout", "name", "claim_id", "claim_type", "publisher_id", "publisher_sig", "certificate", "transaction_time", "version", "value_as_hex", "value_as_json", "author", "description", "content_type", "is_n_s_f_w", "language", "thumbnail_url", "title", "fee", "fee_currency", "is_filtered", "created", "modified", "sd_hash", "bid_state", "valid_at_height", "effective_amount"}
+	claimColumnsWithoutDefault = []string{"transaction_by_hash_id", "vout", "name", "claim_id", "claim_type", "publisher_id", "publisher_sig", "certificate", "transaction_time", "version", "value_as_hex", "value_as_json", "author", "description", "content_type", "language", "thumbnail_url", "title", "fee_currency", "sd_hash", "valid_at_height"}
+	claimColumnsWithDefault    = []string{"id", "is_n_s_f_w", "fee", "is_filtered", "created", "modified", "bid_state", "effective_amount"}
 	claimPrimaryKeyColumns     = []string{"id"}
 )
 
