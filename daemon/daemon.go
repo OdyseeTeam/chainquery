@@ -30,6 +30,7 @@ var lastHeightProcess uint64 = 0       // Around 165,000 is when protobuf takes 
 var blockHeight uint64 = 0
 var running bool = false
 var Reindex bool = false
+var BlockConfirmationBuffer int64 = 6 //Block is accepted at 6 confirmations
 
 //Configuration
 var ProcessingMode int            //Set in main on init
@@ -71,11 +72,11 @@ func runDaemon() func() {
 	if lastBlock != nil && lastBlock.Height > 100 && !Reindex {
 		lastHeightProcess = lastBlock.Height - 100 //Start 100 sooner just in case something happened.
 	}
-	go daemonIteration()
 	log.Info("Daemon initialized and running")
 	for {
 		time.Sleep(DaemonDelay)
 		if !running {
+			running = true
 			log.Debug("Running daemon iteration ", iteration)
 			go daemonIteration()
 			iteration++
@@ -124,7 +125,6 @@ func getBlockToProcess(height *uint64) (*lbrycrd.GetBlockResponse, error) {
 
 func runBlockProcessing(height *uint64) {
 	defer util.TimeTrack(time.Now(), "runBlockProcessing", "daemonprofile")
-	running = true
 	jsonBlock, err := getBlockToProcess(height)
 	if err != nil {
 		log.Error("Get Block Error: ", err)

@@ -146,7 +146,7 @@ func ProcessVin(jsonVin *lbrycrd.Vin, tx m.Transaction, txDC *txDebitCredits) er
 
 			err = ds.PutTxAddress(&txAddress)
 			if err != nil {
-				//logrus.Error(err)
+				return err
 			}
 
 		}
@@ -155,7 +155,6 @@ func ProcessVin(jsonVin *lbrycrd.Vin, tx m.Transaction, txDC *txDebitCredits) er
 }
 
 func processCoinBaseVin(jsonVin *lbrycrd.Vin, vin *m.Input) error {
-	//log.Debug("Coinbase transaction")//
 	vin.IsCoinbase = true
 	vin.Coinbase.String = jsonVin.Coinbase
 	vin.Coinbase.Valid = true
@@ -219,7 +218,7 @@ func ProcessVout(jsonVout *lbrycrd.Vout, tx m.Transaction, txDC *txDebitCredits)
 	txAddress := createTransactionAddress(tx.ID, address.ID)
 	err = ds.PutTxAddress(&txAddress)
 	if err != nil {
-		//return err
+		return err
 	}
 
 	// Process script for potential claims
