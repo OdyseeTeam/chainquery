@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/lbryio/chainquery/daemon"
-	"github.com/lbryio/errors.go"
+	"github.com/lbryio/lbry.go/errors"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/go-ini/ini"

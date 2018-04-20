@@ -18,13 +18,12 @@ var blocksToExpiration uint = 262974 //Hardcoded! https://lbry.io/faq/claimtrie-
 
 func ClaimTrieSync() {
 	logrus.Info("ClaimTrieSync: started... ")
-	client := lbrycrd.DefaultClient()
-	count, err := client.GetBlockCount()
+	count, err := lbrycrd.GetBlockCount()
 	if err != nil {
 		panic(err)
 	}
 	blockHeight = *count
-	names, err := client.GetClaimsInTrie()
+	names, err := lbrycrd.GetClaimsInTrie()
 	if err != nil {
 		panic(err)
 	}
@@ -34,7 +33,7 @@ func ClaimTrieSync() {
 	processingQueue := make(chan lbrycrd.Claim)
 	initSyncWorkers(runtime.NumCPU()-1, processingQueue, syncwg)
 	for _, claimedName := range names {
-		claims, err := client.GetClaimsForName(claimedName.Name)
+		claims, err := lbrycrd.GetClaimsForName(claimedName.Name)
 		if err != nil {
 			panic(err)
 		}

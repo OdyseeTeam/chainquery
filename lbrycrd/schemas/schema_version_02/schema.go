@@ -2,7 +2,9 @@ package schema_version_02
 
 import (
 	"encoding/json"
+
 	v1 "github.com/lbryio/chainquery/lbrycrd/schemas/schema_version_01"
+
 	"github.com/lbryio/lbry.go/errors"
 )
 

@@ -3,7 +3,7 @@ package config
 import (
 	"time"
 
-	"github.com/lbryio/errors.go"
+	"github.com/lbryio/lbry.go/errors"
 
 	"github.com/spf13/viper"
 )

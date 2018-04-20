@@ -2,7 +2,8 @@ package schema_version_01
 
 import (
 	"encoding/json"
-	"github.com/lbryio/errors.go"
+
+	"github.com/lbryio/lbry.go/errors"
 )
 
 var version = "0.0.1"

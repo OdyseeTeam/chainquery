@@ -1,4 +1,4 @@
-package lbrycrd
+package processing
 
 import (
 	"encoding/hex"
@@ -12,36 +12,40 @@ import (
 )
 
 // TODO - Needs to be moved to lbryschema.go
-func DecodeClaimValue(name string, value []byte) (*pb.Claim, error) {
+func decodeClaimValue(name string, value []byte) (*pb.Claim, error) {
 	claim, err := decodeClaimFromValueBytes(value)
+	if err == nil {
+		return claim, nil
+	}
+
+	v1Claim := new(schema_version_01.Claim)
+	err = v1Claim.Unmarshal(value)
 	if err != nil {
-		v1Claim := new(schema_version_01.Claim)
-		err := v1Claim.Unmarshal(value)
+		v2Claim := new(schema_version_02.Claim)
+		err := v2Claim.Unmarshal(value)
 		if err != nil {
-			v2Claim := new(schema_version_02.Claim)
-			err := v2Claim.Unmarshal(value)
+			v3Claim := new(schema_version_03.Claim)
+			err := v3Claim.Unmarshal(value)
 			if err != nil {
-				v3Claim := new(schema_version_03.Claim)
-				err := v3Claim.Unmarshal(value)
-				if err != nil {
-					return nil, errors.Prefix("Claim "+name+" value has no matching verion - "+string(value), err)
-				}
-				claim, err = migrateV3Claim(*v3Claim)
-				if err != nil {
-					return nil, errors.Prefix("V3 Metadata Migration Error", err)
-				}
+				return nil, errors.Prefix("Claim "+name+" value has no matching verion - "+string(value), err)
 			}
-			claim, err = migrateV2Claim(*v2Claim)
+
+			claim, err = migrateV3Claim(*v3Claim)
 			if err != nil {
-				return nil, errors.Prefix("V2 Metadata Migration Error ", err)
+				return nil, errors.Prefix("V3 Metadata Migration Error", err)
 			}
 		}
-		claim, err = migrateV1Claim(*v1Claim)
+
+		claim, err = migrateV2Claim(*v2Claim)
 		if err != nil {
-			return nil, errors.Prefix("V1 Metadata Migration Error ", err)
+			return nil, errors.Prefix("V2 Metadata Migration Error ", err)
 		}
 	}
 
+	claim, err = migrateV1Claim(*v1Claim)
+	if err != nil {
+		return nil, errors.Prefix("V1 Metadata Migration Error ", err)
+	}
 	return claim, nil
 }
 

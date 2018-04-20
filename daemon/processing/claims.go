@@ -54,7 +54,7 @@ func processClaimNameScript(script *[]byte, vout model.Output, tx model.Transact
 		errors.Prefix("Claim name script parsing error: ", err)
 		return name, claimid, pkscript, err
 	}
-	pbClaim, err := lbrycrd.DecodeClaimValue(name, value)
+	pbClaim, err := decodeClaimValue(name, value)
 	if err != nil {
 		logrus.Warning("saving non-conforming claim - Name: ", name, " ClaimId: ", claimid)
 		saveUnknownClaim(name, claimid, false, value, vout, tx)
@@ -96,7 +96,7 @@ func processClaimUpdateScript(script *[]byte, vout model.Output, tx model.Transa
 		errors.Prefix("Claim update processing error: ", err)
 		return name, claimId, pubkeyscript, err
 	}
-	pbClaim, err := lbrycrd.DecodeClaimValue(name, value)
+	pbClaim, err := decodeClaimValue(name, value)
 	if err != nil {
 		logrus.Warning("saving non-conforming claim - Update: ", name, " ClaimId: ", claimId)
 		saveUnknownClaim(name, claimId, true, value, vout, tx)

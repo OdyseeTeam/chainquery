@@ -36,7 +36,7 @@ required = ["github.com/lbryio/null.go"]
 
 [[constraint]]
   name = "github.com/go-ini/ini"
-  revision = "e7fea39b01aea8d5671f6858f0532f56e8bff3a5"
+  branch = "master"
 
 [[constraint]]
   name = "github.com/go-sql-driver/mysql"
@@ -73,12 +73,3 @@ required = ["github.com/lbryio/null.go"]
 [[constraint]]
   name = "github.com/jteeuwen/go-bindata"
   version = "3.0.7"
-
-[[constraint]]
-  branch = "master"
-  name = "github.com/lbryio/errors.go"
-
-[[constraint]]
-  branch = "master"
-  name = "github.com/lbryio/query.go"
-

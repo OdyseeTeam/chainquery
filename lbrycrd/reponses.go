@@ -14,7 +14,7 @@ type ClaimResult struct {
 	Value    string  `json:"value"`
 }
 
-// GetBlockHeaderVerboseResult models the data from the getblockheader command when
+// GetBlockHeaderResponse models the data from the getblockheader command when
 // the verbose flag is set.  When the verbose flag is not set, getblockheader
 // returns a hex-encoded string.
 type GetBlockHeaderResponse struct {
@@ -36,25 +36,24 @@ type GetBlockHeaderResponse struct {
 // verbose flag is set.  When the verbose flag is not set, getblock returns a
 // hex-encoded string.
 type GetBlockResponse struct {
-	Hash          string        `json:"hash"`
-	Confirmations uint64        `json:"confirmations"`
-	StrippedSize  int32         `json:"strippedsize"`
-	Size          int32         `json:"size"`
-	Weight        int32         `json:"weight"`
-	Height        int64         `json:"height"`
-	Version       int32         `json:"version"`
-	VersionHex    string        `json:"versionHex"`
-	MerkleRoot    string        `json:"merkleroot"`
-	NameClaimRoot string        `json:"nameclaimroot"`
-	Tx            []string      `json:"tx,omitempty"`
-	RawTx         []TxRawResult `json:"rawtx,omitempty"`
-	Time          int64         `json:"time"`
-	Nonce         uint64        `json:"nonce"`
-	Bits          string        `json:"bits"`
-	Difficulty    float64       `json:"difficulty"`
-	PreviousHash  string        `json:"previousblockhash"`
-	NextHash      string        `json:"nextblockhash,omitempty"`
-	ChainWork     string        `json:"chainwork"`
+	Hash          string   `json:"hash"`
+	Confirmations uint64   `json:"confirmations"`
+	StrippedSize  int32    `json:"strippedsize"`
+	Size          int32    `json:"size"`
+	Weight        int32    `json:"weight"`
+	Height        int64    `json:"height"`
+	Version       int32    `json:"version"`
+	VersionHex    string   `json:"versionHex"`
+	MerkleRoot    string   `json:"merkleroot"`
+	NameClaimRoot string   `json:"nameclaimroot"`
+	Tx            []string `json:"tx"`
+	Time          int64    `json:"time"`
+	Nonce         uint64   `json:"nonce"`
+	Bits          string   `json:"bits"`
+	Difficulty    float64  `json:"difficulty"`
+	PreviousHash  string   `json:"previousblockhash"`
+	NextHash      string   `json:"nextblockhash,omitempty"`
+	ChainWork     string   `json:"chainwork"`
 }
 
 // TxRawResult models the data from the getrawtransaction command.
