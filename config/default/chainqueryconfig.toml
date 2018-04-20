@@ -5,7 +5,7 @@
 #DEFAULT-lbrycrdurl="rpc://lbry:lbry@localhost:9245"
 
 #MySQL DSN is required for chainquery to store information.
-#DEFAULT-mysqldsn="lbry:lbry@tcp(localhost:3306)/lbrycrd"
+#DEFAULT-mysqldsn="lbry:lbry@tcp(localhost:3306)/chainquery"
 
 #Profile mode enables and disables the reporting of a profile for chainquery
 #DEFAULT-profilemode=false

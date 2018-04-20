@@ -1,7 +1,17 @@
 # LBRY Chain Query
 
+## Active Development Notice
+ 
+The project is under active development so sql migrations are not being used yet. All changes to the schema are being added to the initial schema since there are so many changes currently. Please be sure to drop all tables before starting the app to ensure that you will have the latest schema if this is not the first time using the application.
 
 ## Prerequisites
+
+### OS Specifics
+
+#### OSX
+
+- In order to use  `wget` you will need `brew install wget` (used in [build.sh](build.sh))
+- Chainquery is built for Linux by default in  [build.sh](build.sh), so you will need to modify the cross compilation for an OSX build.
 
 
 ### Go
@@ -11,19 +21,11 @@ Make sure you have Go 1.9+
 - Ubuntu: https://launchpad.net/~longsleep/+archive/ubuntu/golang-backports or https://github.com/golang/go/wiki/Ubuntu
 - OSX: `brew install go`
 
-### OSX Specifics
-
-- In order to use  `wget` you will need `brew install wget`
-
 ### MySQL
 
 - Install and run mysql.(OSX: `brew install mysql`)
-- Create `lbrycrd` database.
-- Create user `lbry` with password `lbry` and grant it all permissions on `lbrycrd` db.
-
-### Active Development Notice
- 
-The project is under active development so sql migrations are not being used yet. All changes to the schema are being added to the initial schema since there are so many changes currently. Please be sure to drop all tables before starting the app to ensure that you will have the latest schema if this is not the first time using the application.
+- Create `chainquery` database.
+- Create user `lbry` with password `lbry` and grant it all permissions on `chainquery` db.
 
 ### Lbrycrd
 
@@ -40,8 +42,11 @@ The project is under active development so sql migrations are not being used yet
 - Run `./lbrycrdd -server -daemon -txindex -conf=$HOME/.lbrycrd/lbrycrd.conf`. If you get an error about indexing, add the `-reindex` flag for one run. You will only need to
   reindex once.
 
+##Configuration
 
-## Running the project
+Chainquery can be[configured](/config/default/chainqueryconfig.toml)via toml file.
+
+## Running from Source
 
 ```
 go get -u github.com/lbryio/chainquery
@@ -49,6 +54,17 @@ cd "$(go env GOPATH)/src/github.com/lbryio/chainquery"
 ./dev.sh
 ```
 
+## Contributing
+
+Contributions to this project are welcome, encouraged, and compensated. For more details, see [lbry.io/faq/contributing](https://lbry.io/faq/contributing)
+
+The `master` branch is regularly built and tested, but is not guaranteed to be
+completely stable. [Releases](https://github.com/lbryio/chainquery/releases) are created
+regularly to indicate new official, stable release versions.
+
+Developers are strongly encouraged to write unit tests for new code, and to
+submit new unit tests for old code. Unit tests can be compiled and run
+ with: `go test ./...` from the source directory which should be `$GOPATH/github.com/lbryio/chainquery`.
 
 ## Updating the generated models
 
@@ -64,3 +80,16 @@ schema may be out of sync with the migrations. Here's the safe way to ensure tha
 - Run `./gen_models.sh` to update the models.
 
 This process ensures that the generated models will match the updated schema exactly, so there are no surprises when the migrations are applied to the live db.
+
+## License
+
+This project is MIT licensed. For the full license, see [LICENSE](LICENSE).
+
+## Security
+
+We take security seriously. Please contact security@lbry.io regarding any security issues.
+Our PGP key is [here](https://keybase.io/lbry/key.asc) if you need it.
+
+## Contact
+
+The primary contact for this project is [@tiger5226](https://github.com/tiger5226)
