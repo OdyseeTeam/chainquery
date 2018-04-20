@@ -75,7 +75,7 @@ func readConfig() {
 
 func initDefaults() {
 	viper.SetDefault(DEBUGMODE, false)
-	viper.SetDefault(MYSQLDSN, "lbry:lbry@tcp(localhost:3306)/lbrycrd")
+	viper.SetDefault(MYSQLDSN, "lbry:lbry@tcp(localhost:3306)/chainquery")
 	viper.SetDefault(LBRYCRDURL, "rpc://lbry:lbry@localhost:9245")
 	viper.SetDefault(PROFILEMODE, false)
 	viper.SetDefault(DAEMONMODE, daemon.BEASTMODE)
