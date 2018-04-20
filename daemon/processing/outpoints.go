@@ -16,13 +16,13 @@ import (
 
 type VinToProcess struct {
 	jsonVin *lbrycrd.Vin
-	tx      m.Transaction
+	tx      *m.Transaction
 	txDC    *txDebitCredits
 }
 
 type VoutToProcess struct {
 	jsonVout *lbrycrd.Vout
-	tx       m.Transaction
+	tx       *m.Transaction
 	txDC     *txDebitCredits
 }
 
@@ -58,7 +58,7 @@ func VoutProcessor(jobs <-chan VoutToProcess, results chan<- error) error {
 	return nil
 }
 
-func ProcessVin(jsonVin *lbrycrd.Vin, tx m.Transaction, txDC *txDebitCredits) error {
+func ProcessVin(jsonVin *lbrycrd.Vin, tx *m.Transaction, txDC *txDebitCredits) error {
 	vin := &m.Input{}
 	foundVin := ds.GetInput(tx.Hash, len(jsonVin.Coinbase) > 0, jsonVin.Txid, uint(jsonVin.Vout))
 	if foundVin != nil {
@@ -124,11 +124,6 @@ func ProcessVin(jsonVin *lbrycrd.Vin, tx m.Transaction, txDC *txDebitCredits) er
 					logrus.Error("Failure inserting InputAddress: Vin ", vin.ID, "Address(", address.ID, ") ", address.Address)
 					panic(err)
 				}
-				err = vin.SetAddressesG(false, address)
-				if err != nil {
-					logrus.Error("Failure adding addresses: Vin ", vin.ID, ", Tx ", tx.ID, ", Vout ", src_output.ID, ", Address(", address.ID, ") ", address.Address)
-					panic(err)
-				}
 			} else {
 				logrus.Error("No Address created for Vin: ", vin.ID, " of tx ", tx.ID, " vout: ", src_output.ID, " Address: ", addresses[0])
 				panic(nil)
@@ -142,13 +137,10 @@ func ProcessVin(jsonVin *lbrycrd.Vin, tx m.Transaction, txDC *txDebitCredits) er
 			}
 
 			//Make sure there is a transaction address
-			txAddress := createTransactionAddress(tx.ID, vin.InputAddressID.Uint64)
 
-			err = ds.PutTxAddress(&txAddress)
-			if err != nil {
-				return err
+			if ds.GetTxAddress(tx.ID, vin.InputAddressID.Uint64) == nil {
+				return errors.Base("Missing txAddress for Tx" + strconv.Itoa(int(tx.ID)) + "- Addr:" + strconv.Itoa(int(vin.InputAddressID.Uint64)))
 			}
-
 		}
 	}
 	return nil
@@ -165,7 +157,7 @@ func processCoinBaseVin(jsonVin *lbrycrd.Vin, vin *m.Input) error {
 	return nil
 }
 
-func ProcessVout(jsonVout *lbrycrd.Vout, tx m.Transaction, txDC *txDebitCredits) error {
+func ProcessVout(jsonVout *lbrycrd.Vout, tx *m.Transaction, txDC *txDebitCredits) error {
 	vout := &m.Output{}
 	foundVout := ds.GetOutput(tx.Hash, uint(jsonVout.N))
 	if foundVout != nil {
@@ -202,7 +194,6 @@ func ProcessVout(jsonVout *lbrycrd.Vout, tx m.Transaction, txDC *txDebitCredits)
 		err = nil //reset error/
 	} else if address != nil {
 		txDC.add(address.Address, jsonVout.Value)
-		vout.SetAddressesG(false, address)
 	} else {
 		//All addresses for transaction are created and inserted into the DB ahead of time
 		logrus.Error("No address in db for \"", jsonAddresses[0], "\" txId: ", tx.ID)
@@ -214,15 +205,14 @@ func ProcessVout(jsonVout *lbrycrd.Vout, tx m.Transaction, txDC *txDebitCredits)
 	if err != nil {
 		return err
 	}
+
 	//Make sure there is a transaction address
-	txAddress := createTransactionAddress(tx.ID, address.ID)
-	err = ds.PutTxAddress(&txAddress)
-	if err != nil {
-		return err
+	if ds.GetTxAddress(tx.ID, address.ID) == nil {
+		return errors.Base("Missing txAddress for Tx:" + strconv.Itoa(int(tx.ID)) + "- Addr:" + strconv.Itoa(int(address.ID)))
 	}
 
 	// Process script for potential claims
-	err = processScript(*vout, tx)
+	err = processScript(*vout, *tx)
 	if err != nil {
 		return err
 	}

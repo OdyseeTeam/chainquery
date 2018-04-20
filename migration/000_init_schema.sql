@@ -1,6 +1,10 @@
 -- +migrate Up
 
 -- +migrate StatementBegin
+CREATE SCHEMA IF NOT EXISTS `chainquery` DEFAULT CHARACTER SET latin1 COLLATE latin1_general_ci ;
+-- +migrate StatementEnd
+
+-- +migrate StatementBegin
 CREATE TABLE IF NOT EXISTS `block`
 (
     `id` SERIAL,
@@ -111,7 +115,8 @@ CREATE TABLE IF NOT EXISTS `input`
     INDEX `Idx_InputValue` (`value`),
     INDEX `Idx_PrevoutHash` (`prevout_hash`),
     INDEX `Idx_InputCreated` (`created`),
-    INDEX `Idx_InputModified` (`modified`)
+    INDEX `Idx_InputModified` (`modified`),
+    INDEX `Idx_InputTransactionHash` (`transaction_hash`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4;
 -- +migrate StatementEnd
 
@@ -201,6 +206,9 @@ CREATE TABLE IF NOT EXISTS `claim`
     `version` VARCHAR(10) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
     `value_as_hex` MEDIUMTEXT NOT NULL,
     `value_as_json` MEDIUMTEXT,
+    `valid_at_height` INTEGER UNSIGNED NOT NULL,
+    `height` INTEGER UNSIGNED NOT NULL,
+    `effective_amount` DOUBLE(18,8) DEFAULT 0 NOT NULL,
 
     -- Additional fields for easy indexing of stream types
     `author` VARCHAR(512),
@@ -226,6 +234,10 @@ CREATE TABLE IF NOT EXISTS `claim`
     INDEX `Idx_ClaimTransactionTime` (`transaction_time`),
     INDEX `Idx_ClaimCreated` (`created`),
     INDEX `Idx_ClaimModified` (`modified`),
+    INDEX `Idx_ClaimValidAtHeight` (`valid_at_height`),
+    INDEX `Idx_ClaimBidState` (`bid_state`),
+    INDEX `Idx_ClaimName` (`name`(255)),
+
 
     INDEX `Idx_ClaimAuthor` (`author`(191)),
     INDEX `Idx_ClaimContentType` (`content_type`),
@@ -275,3 +287,16 @@ CREATE TABLE IF NOT EXISTS `unknown_claim`
   INDEX `Idx_UnknowClaimTxHash` (`transaction_hash`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4;
 -- +migrate StatementEnd
+
+-- +migrate StatementBegin
+CREATE TABLE IF NOT EXISTS `application_status`
+(
+    `id` SERIAL,
+    `app_version` INT NOT NULL,
+    `data_version`INT NOT NULL,
+    `api_version`INT NOT NULL,
+
+    PRIMARY KEY `PK_id` (`id`)
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4;
+-- +migrate StatementEnd
+

@@ -6,12 +6,12 @@ import (
 	"time"
 
 	"github.com/lbryio/chainquery/daemon/processing"
+	"github.com/lbryio/chainquery/daemon/upgrademanager"
 	"github.com/lbryio/chainquery/lbrycrd"
 	"github.com/lbryio/chainquery/model"
+	"github.com/lbryio/chainquery/util"
 	"github.com/lbryio/lbry.go/errors"
 
-	"github.com/lbryio/chainquery/daemon/upgrademanager"
-	"github.com/lbryio/chainquery/util"
 	log "github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -30,7 +30,7 @@ var lastHeightProcess uint64 = 0       // Around 165,000 is when protobuf takes 
 var blockHeight uint64 = 0
 var running bool = false
 var Reindex bool = false
-var BlockConfirmationBuffer int64 = 6 //Block is accepted at 6 confirmations
+var BlockConfirmationBuffer uint64 = 6 //Block is accepted at 6 confirmations
 
 //Configuration
 var ProcessingMode int            //Set in main on init
@@ -67,7 +67,7 @@ func ApplySettings(processingDelay time.Duration, daemonDelay time.Duration) {
 	}
 }
 
-func runDaemon() func() {
+func runDaemon() {
 	lastBlock, _ := model.Blocks(boil.GetDB(), qm.OrderBy(model.BlockColumns.Height+" DESC"), qm.Limit(1)).One()
 	if lastBlock != nil && lastBlock.Height > 100 && !Reindex {
 		lastHeightProcess = lastBlock.Height - 100 //Start 100 sooner just in case something happened.
@@ -77,12 +77,11 @@ func runDaemon() func() {
 		time.Sleep(DaemonDelay)
 		if !running {
 			running = true
-			log.Debug("Running daemon iteration ", iteration)
+			log.Info("Running daemon iteration ", iteration)
 			go daemonIteration()
 			iteration++
 		}
 	}
-	return func() {}
 }
 
 func daemonIteration() error {
@@ -91,7 +90,7 @@ func daemonIteration() error {
 	if err != nil {
 		return err
 	}
-	blockHeight = *height
+	blockHeight = *height - BlockConfirmationBuffer
 	if lastHeightProcess == uint64(0) {
 		runGenesisBlock()
 	}
@@ -177,7 +176,7 @@ func goToNextBlock(height *uint64) {
 	if workToDo {
 		time.Sleep(ProcessingDelay)
 		go daemonIteration()
-	} else {
+	} else if *height != 0 {
 		running = false
 	}
 }

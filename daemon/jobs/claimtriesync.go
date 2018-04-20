@@ -1,25 +1,38 @@
 package jobs
 
 import (
+	"runtime"
+	"strconv"
+	"sync"
+
 	"github.com/lbryio/chainquery/datastore"
 	"github.com/lbryio/chainquery/lbrycrd"
 	"github.com/lbryio/chainquery/model"
 
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/queries/qm"
-	"runtime"
 )
 
+var blockHeight uint64
+var blocksToExpiration uint = 262974 //Hardcoded! https://lbry.io/faq/claimtrie-implementation
+
 func ClaimTrieSync() {
-	logrus.Info("ClaimTrie sync started... ")
+	logrus.Info("ClaimTrieSync: started... ")
 	client := lbrycrd.DefaultClient()
+	count, err := client.GetBlockCount()
+	if err != nil {
+		panic(err)
+	}
+	blockHeight = *count
 	names, err := client.GetClaimsInTrie()
 	if err != nil {
-		panic(err) //
+		panic(err)
 	}
+	//For syncing the claims
+	logrus.Info("ClaimTrieSync: claim  update started... ")
+	syncwg := sync.WaitGroup{}
 	processingQueue := make(chan lbrycrd.Claim)
-	initWorkers(runtime.NumCPU()-1, processingQueue)
-	println("size: ", len(names))
+	initSyncWorkers(runtime.NumCPU()-1, processingQueue, syncwg)
 	for _, claimedName := range names {
 		claims, err := client.GetClaimsForName(claimedName.Name)
 		if err != nil {
@@ -29,23 +42,69 @@ func ClaimTrieSync() {
 			processingQueue <- claimJSON
 		}
 	}
+	syncwg.Wait()
+	close(processingQueue)
+	logrus.Info("ClaimTrieSync: claim  update complete... ")
+
+	//For Setting Controlling Claims
+	logrus.Info("ClaimTrieSync: controlling claim status update started... ")
+	controlwg := sync.WaitGroup{}
+	setControllingQueue := make(chan string)
+	initControllingWorkers(runtime.NumCPU()-1, setControllingQueue, controlwg)
+	for _, claimedName := range names {
+		setControllingQueue <- claimedName.Name
+	}
+	controlwg.Wait()
+	close(setControllingQueue)
+	logrus.Info("ClaimTrieSync: controlling claim status update complete... ")
+	logrus.Info("ClaimTrieSync: Processed " + strconv.Itoa(len(names)) + " claimed names.")
 }
 
-func getClaimStatus(claim *model.Claim) string {
-	return "Accepted"
-}
-
-func initWorkers(nrWorkers int, jobs <-chan lbrycrd.Claim) {
+func initSyncWorkers(nrWorkers int, jobs <-chan lbrycrd.Claim, wg sync.WaitGroup) {
+	defer wg.Done()
 	for i := 0; i < nrWorkers; i++ {
-		go processor(jobs)
+		wg.Add(1)
+		go syncProcessor(jobs)
 	}
 }
 
-func processor(jobs <-chan lbrycrd.Claim) error {
+func initControllingWorkers(nrWorkers int, jobs <-chan string, wg sync.WaitGroup) {
+	defer wg.Done()
+	for i := 0; i < nrWorkers; i++ {
+		wg.Add(1)
+		go controllingProcessor(jobs)
+	}
+}
+
+func syncProcessor(jobs <-chan lbrycrd.Claim) error {
 	for job := range jobs {
 		syncClaim(&job)
 	}
 	return nil
+}
+
+func controllingProcessor(names <-chan string) error {
+	for name := range names {
+		setControllingClaimForName(name)
+	}
+	return nil
+}
+
+func setControllingClaimForName(name string) {
+	claim, _ := model.ClaimsG(
+		qm.Where(model.ClaimColumns.Name+"=?", name),
+		qm.And(model.ClaimColumns.BidState+"=?", "Active"),
+		qm.OrderBy(model.ClaimColumns.ValidAtHeight+" DESC")).One()
+
+	if claim != nil {
+		claim.BidState = "Controlling"
+
+		err := datastore.PutClaim(claim)
+		if err != nil {
+			panic(err)
+		}
+	}
+
 }
 
 func syncClaim(claimJSON *lbrycrd.Claim) {
@@ -53,7 +112,7 @@ func syncClaim(claimJSON *lbrycrd.Claim) {
 	if claim == nil {
 		unknown, _ := model.UnknownClaimsG(qm.Where(model.UnknownClaimColumns.ClaimID+"=?", claimJSON.ClaimId)).One()
 		if unknown == nil {
-			logrus.Error("Missing Claim: ", claimJSON.ClaimId, " ", claimJSON.TxId, " ", claimJSON.N)
+			//logrus.Error("Missing Claim: ", claimJSON.ClaimId, " ", claimJSON.TxId, " ", claimJSON.N)
 		}
 		return
 	}
@@ -61,4 +120,25 @@ func syncClaim(claimJSON *lbrycrd.Claim) {
 	claim.EffectiveAmount = claimJSON.EffectiveAmount
 	claim.BidState = getClaimStatus(claim)
 	datastore.PutClaim(claim)
+}
+
+func getClaimStatus(claim *model.Claim) string {
+	status := "Accepted"
+	//Transaction and output should never be missing if the claim exists.
+	transaction := claim.TransactionByHashG().OneP()
+	output := transaction.OutputsG(qm.Where(model.OutputColumns.Vout+"=?", claim.Vout)).OneP()
+	spend, _ := output.SpentByInputG().One()
+	if spend != nil {
+		status = "Spent"
+	}
+	height := claim.Height
+	if height+blocksToExpiration > uint(blockHeight) {
+		status = "Expired"
+	}
+	//Neither Spent or Expired = Active
+	if status == "Accepted" {
+		status = "Active"
+	}
+
+	return status
 }

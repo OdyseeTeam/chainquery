@@ -2,18 +2,22 @@ package processing
 
 import (
 	"encoding/hex"
+	"encoding/json"
+	"strconv"
 	"time"
 
 	"github.com/lbryio/chainquery/datastore"
 	"github.com/lbryio/chainquery/lbrycrd"
 	"github.com/lbryio/chainquery/model"
+	"github.com/lbryio/errors.go"
 
+	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
-func CreateUpdateAddresses(outputs []lbrycrd.Vout, blockSeconds uint64) (map[string]uint64, error) {
+func CreateUpdateVoutAddresses(tx *model.Transaction, outputs *[]lbrycrd.Vout, blockSeconds uint64) (map[string]uint64, error) {
 	addressIdMap := make(map[string]uint64)
-	for _, output := range outputs {
+	for _, output := range *outputs {
 		if len(output.ScriptPubKey.Addresses) == 0 {
 			if output.ScriptPubKey.Type == lbrycrd.NON_STANDARD {
 				scriptBytes, err := hex.DecodeString(output.ScriptPubKey.Hex)
@@ -35,6 +39,7 @@ func CreateUpdateAddresses(outputs []lbrycrd.Vout, blockSeconds uint64) (map[str
 			foundAddress, _ := model.AddressesG(qm.Where(model.AddressColumns.Address+"=?", address)).One()
 			if foundAddress != nil {
 				addressIdMap[address] = foundAddress.ID
+				createTxAddressIfNotExist(tx.ID, foundAddress.ID)
 			} else {
 				newAddress := model.Address{}
 				newAddress.Address = address
@@ -45,10 +50,53 @@ func CreateUpdateAddresses(outputs []lbrycrd.Vout, blockSeconds uint64) (map[str
 					return nil, err
 				}
 				addressIdMap[address] = newAddress.ID
+				createTxAddressIfNotExist(tx.ID, newAddress.ID)
 			}
 		}
 	}
 
 	return addressIdMap, nil
 
+}
+
+func CreateUpdateVinAddresses(tx model.Transaction, inputs *[]lbrycrd.Vin, blockSeconds uint64) (map[string]uint64, error) {
+	addressIdMap := make(map[string]uint64)
+	for _, input := range *inputs {
+		src_output := datastore.GetOutput(input.Txid, uint(input.Vout))
+		if src_output == nil {
+			if input.Coinbase != "" {
+				continue //No addresses for coinbase inputs.
+			}
+			panic("Missing source output for " + input.Txid + "-" + strconv.Itoa(int(input.Vout)))
+		}
+		var addresses []string
+		if !src_output.AddressList.Valid {
+			jsonAddress, err := getAddressFromNonStandardVout(src_output.ScriptPubKeyHex.String)
+			if err != nil {
+				logrus.Error("AddressParseError: ", err)
+			}
+			addresses = append(addresses, jsonAddress)
+		} else {
+			err := json.Unmarshal([]byte(src_output.AddressList.String), &addresses)
+			if err != nil {
+				panic(errors.Prefix("Could not parse AddressList from source output", err))
+			}
+		}
+		for _, address := range addresses {
+			addr := datastore.GetAddress(address)
+			addressIdMap[address] = addr.ID
+			createTxAddressIfNotExist(tx.ID, addr.ID)
+		}
+	}
+	return addressIdMap, nil
+
+}
+
+func createTxAddressIfNotExist(txID uint64, addressID uint64) {
+	if datastore.GetTxAddress(txID, addressID) == nil {
+		txAddress := model.TransactionAddress{}
+		txAddress.TransactionID = txID
+		txAddress.AddressID = addressID
+		datastore.PutTxAddress(&txAddress)
+	}
 }

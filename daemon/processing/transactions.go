@@ -1,6 +1,7 @@
 package processing
 
 import (
+	"sync"
 	"time"
 
 	"github.com/lbryio/chainquery/datastore"
@@ -12,7 +13,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
-	"sync"
 )
 
 type txDebitCredits struct {
@@ -87,12 +87,6 @@ func ProcessTx(jsonTx *lbrycrd.TxRawResult, blockTime uint64) error {
 	transaction.TransactionSize = uint64(jsonTx.Size)
 	transaction.Value = 0.0 //p.GetTotalValue(jsonTx.Vout)
 
-	_, err = CreateUpdateAddresses(jsonTx.Vout, blockTime)
-	if err != nil {
-		err := errors.Prefix("Address Creation Error: ", err)
-		return err
-	}
-
 	txDbCrAddrMap := NewTxDebitCredits()
 
 	if foundTx != nil {
@@ -103,14 +97,26 @@ func ProcessTx(jsonTx *lbrycrd.TxRawResult, blockTime uint64) error {
 	if err != nil {
 		return err
 	}
+	//Save transaction before the id is used.
+	_, err = CreateUpdateVoutAddresses(transaction, &jsonTx.Vout, blockTime)
+	if err != nil {
+		err := errors.Prefix("Vout Address Creation Error: ", err)
+		return err
+	}
+	_, err = CreateUpdateVinAddresses(*transaction, &jsonTx.Vin, blockTime)
+	if err != nil {
+		err := errors.Prefix("Vin Address Creation Error: ", err)
+		return err
+	}
+
 	vins := jsonTx.Vin
-	vinjobs := make(chan VinToProcess, 2000)
-	errors := make(chan error, 2000)
+	vinjobs := make(chan VinToProcess, len(vins))
+	errors := make(chan error, len(vins))
 	workers := util.Min(len(vins), 6)
 	InitVinWorkers(workers, vinjobs, errors)
 	for i := range vins {
 		index := i
-		vinjobs <- VinToProcess{jsonVin: &vins[index], tx: *transaction, txDC: txDbCrAddrMap}
+		vinjobs <- VinToProcess{jsonVin: &vins[index], tx: transaction, txDC: txDbCrAddrMap}
 	}
 	close(vinjobs)
 	for i := 0; i < len(vins); i++ {
@@ -122,13 +128,13 @@ func ProcessTx(jsonTx *lbrycrd.TxRawResult, blockTime uint64) error {
 	}
 	close(errors)
 	vouts := jsonTx.Vout
-	voutjobs := make(chan VoutToProcess, 2000)
-	errors = make(chan error, 2000)
+	voutjobs := make(chan VoutToProcess, len(vouts))
+	errors = make(chan error, len(vouts))
 	workers = util.Min(len(vouts), 6)
 	InitVoutWorkers(workers, voutjobs, errors)
 	for i := range vouts {
 		index := i
-		voutjobs <- VoutToProcess{jsonVout: &vouts[index], tx: *transaction, txDC: txDbCrAddrMap}
+		voutjobs <- VoutToProcess{jsonVout: &vouts[index], tx: transaction, txDC: txDbCrAddrMap}
 	}
 	close(voutjobs)
 	for i := 0; i < len(vouts); i++ {
