@@ -1,4 +1,11 @@
+
 # LBRY Chain Query
+
+[![Go Report Card](https://goreportcard.com/badge/github.com/lbryio/chainquery)](https://goreportcard.com/report/github.com/lbryio/chainquery)
+
+[![Maintainability](https://api.codeclimate.com/v1/badges/3f60ac6b2d7e96f93992/maintainability)](https://codeclimate.com/github/lbryio/chainquery/maintainability)
+
+[![Test Coverage](https://api.codeclimate.com/v1/badges/3f60ac6b2d7e96f93992/test_coverage)](https://codeclimate.com/github/lbryio/chainquery/test_coverage)
 
 ## Active Development Notice
  

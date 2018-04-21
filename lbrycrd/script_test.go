@@ -30,7 +30,7 @@ var P2SHPairs = []HashAddressPair{
 func TestGetAddressFromP2PKH(t *testing.T) {
 	for _, pair := range P2PKHPairs {
 		good := pair.address
-		result, err := GetAddressFromP2PKH(pair.hash)
+		result, err := getAddressFromP2PKH(pair.hash)
 		if err != nil {
 			t.Error(err)
 		} else if result != good {
@@ -42,7 +42,7 @@ func TestGetAddressFromP2PKH(t *testing.T) {
 func TestGetAddressFromP2PK(t *testing.T) {
 	for _, pair := range P2PKPairs {
 		good := pair.address
-		result, err := GetAddressFromP2PK(pair.hash)
+		result, err := getAddressFromP2PK(pair.hash)
 		if err != nil {
 			t.Error(err)
 		} else if result != good {
@@ -54,7 +54,7 @@ func TestGetAddressFromP2PK(t *testing.T) {
 func TestGetAddressFromP2SH(t *testing.T) {
 	for _, pair := range P2SHPairs {
 		good := pair.address
-		result, err := GetAddressFromP2SH(pair.hash)
+		result, err := getAddressFromP2SH(pair.hash)
 		if err != nil {
 			t.Error(err)
 		} else if result != good {

@@ -98,53 +98,53 @@ func ProcessTx(jsonTx *lbrycrd.TxRawResult, blockTime uint64) error {
 		return err
 	}
 	//Save transaction before the id is used.
-	_, err = CreateUpdateVoutAddresses(transaction, &jsonTx.Vout, blockTime)
+	_, err = createUpdateVoutAddresses(transaction, &jsonTx.Vout, blockTime)
 	if err != nil {
 		err := errors.Prefix("Vout Address Creation Error: ", err)
 		return err
 	}
-	_, err = CreateUpdateVinAddresses(*transaction, &jsonTx.Vin, blockTime)
+	_, err = createUpdateVinAddresses(*transaction, &jsonTx.Vin, blockTime)
 	if err != nil {
 		err := errors.Prefix("Vin Address Creation Error: ", err)
 		return err
 	}
 
 	vins := jsonTx.Vin
-	vinjobs := make(chan VinToProcess, len(vins))
-	errors := make(chan error, len(vins))
+	vinjobs := make(chan vinToProcess, len(vins))
+	errorchan := make(chan error, len(vins))
 	workers := util.Min(len(vins), 6)
-	InitVinWorkers(workers, vinjobs, errors)
+	initVinWorkers(workers, vinjobs, errorchan)
 	for i := range vins {
 		index := i
-		vinjobs <- VinToProcess{jsonVin: &vins[index], tx: transaction, txDC: txDbCrAddrMap}
+		vinjobs <- vinToProcess{jsonVin: &vins[index], tx: transaction, txDC: txDbCrAddrMap}
 	}
 	close(vinjobs)
 	for i := 0; i < len(vins); i++ {
-		err := <-errors
+		err := <-errorchan
 		if err != nil {
 			logrus.Error("Vin Error->", err)
 			panic(err)
 		}
 	}
-	close(errors)
+	close(errorchan)
 	vouts := jsonTx.Vout
-	voutjobs := make(chan VoutToProcess, len(vouts))
-	errors = make(chan error, len(vouts))
+	voutjobs := make(chan voutToProcess, len(vouts))
+	errorchan = make(chan error, len(vouts))
 	workers = util.Min(len(vouts), 6)
-	InitVoutWorkers(workers, voutjobs, errors)
+	initVoutWorkers(workers, voutjobs, errorchan)
 	for i := range vouts {
 		index := i
-		voutjobs <- VoutToProcess{jsonVout: &vouts[index], tx: transaction, txDC: txDbCrAddrMap}
+		voutjobs <- voutToProcess{jsonVout: &vouts[index], tx: transaction, txDC: txDbCrAddrMap}
 	}
 	close(voutjobs)
 	for i := 0; i < len(vouts); i++ {
-		err := <-errors
+		err := <-errorchan
 		if err != nil {
 			logrus.Error("Vout Error->", err)
 			panic(err)
 		}
 	}
-	close(errors)
+	close(errorchan)
 	for addr, DC := range txDbCrAddrMap.AddrDCMap {
 
 		address := datastore.GetAddress(addr)

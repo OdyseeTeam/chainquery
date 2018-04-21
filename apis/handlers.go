@@ -5,6 +5,7 @@ import (
 
 	"github.com/lbryio/chainquery/db"
 	"github.com/lbryio/lbry.go/errors"
+
 	"github.com/sirupsen/logrus"
 )
 

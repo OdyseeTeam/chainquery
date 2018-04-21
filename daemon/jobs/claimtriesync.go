@@ -35,7 +35,7 @@ func ClaimTrieSync() {
 	for _, claimedName := range names {
 		claims, err := lbrycrd.GetClaimsForName(claimedName.Name)
 		if err != nil {
-			panic(err)
+			logrus.Error("Could not get claims for name: ", claimedName.Name, " Error: ", err)
 		}
 		for _, claimJSON := range claims.Claims {
 			processingQueue <- claimJSON

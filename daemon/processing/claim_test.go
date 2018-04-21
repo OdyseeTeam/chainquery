@@ -38,9 +38,9 @@ var claimIdTests = []claimIdMatch{
 	{"84cae80fbe8e49eb45a69ea3af884016c58e8ccb",
 		"caf6a81ec886ed2a930a16814f0fdd488a753b22a77f5fb67a11fd3b985edb15",
 		0},
-	{"cafe80622cebed351cd0b441f44f42802a0e7dce",
-		"3cef7db4221d17d544d0595ac34a27db974e1202bac63db126186c218b48f1d1",
-		0},
+	{"0fa76228fe19362a1b0af300217990f061460312",
+		"7f3be2ae728ce3a3b5deee57011db1d284276594164b712914acc2f41b3d7152",
+		1},
 }
 
 func TestGetClaimIDFromOutput(t *testing.T) {

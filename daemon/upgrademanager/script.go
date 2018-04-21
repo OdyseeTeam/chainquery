@@ -9,7 +9,7 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
-func ReProcessAllClaims() {
+func reProcessAllClaims() {
 	outputs := model.OutputsG(qm.Where(model.OutputColumns.Type+" =?", lbrycrd.NON_STANDARD),
 		qm.Select(model.OutputColumns.TransactionHash)).AllP()
 	for _, output := range outputs {

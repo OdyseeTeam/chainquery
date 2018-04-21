@@ -4,7 +4,6 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 
-	"github.com/lbryio/chainquery/util"
 	"github.com/lbryio/lbry.go/errors"
 
 	"github.com/btcsuite/btcd/chaincfg"
@@ -33,7 +32,7 @@ const (
 
 )
 
-var MainNetParams = chaincfg.Params{
+var mainNetParams = chaincfg.Params{
 	PubKeyHashAddrID: 0x55,
 	ScriptHashAddrID: 0x7a,
 	PrivateKeyID:     0x1c,
@@ -121,7 +120,7 @@ func ParseClaimSupportScript(script []byte) (name string, claimid string, pubkey
 	claimidBytesToRead := int(script[nameEnd])
 	claimidStart := nameEnd + 1
 	claimidEnd := claimidStart + claimidBytesToRead
-	bytes := util.ReverseBytes(script[claimidStart:claimidEnd])
+	bytes := reverseBytes(script[claimidStart:claimidEnd])
 	claimid = hex.EncodeToString(bytes)
 
 	//PubKeyScript
@@ -149,7 +148,7 @@ func ParseClaimUpdateScript(script []byte) (name string, claimid string, value [
 	claimidBytesToRead := int(script[nameEnd])
 	claimidStart := nameEnd + 1
 	claimidEnd := claimidStart + claimidBytesToRead
-	bytes := util.ReverseBytes(script[claimidStart:claimidEnd])
+	bytes := reverseBytes(script[claimidStart:claimidEnd])
 	claimid = hex.EncodeToString(bytes)
 
 	//Value
@@ -210,15 +209,15 @@ func GetAddressFromPublicKeyScript(script []byte) (address string) {
 	case P2PK:
 		// <pubkey> OP_CHECKSIG
 		//log.Debug("sig P2PK ", hex.EncodeToString(script[0:len(script)-1]))
-		address, err = GetAddressFromP2PK(hex.EncodeToString(script[0 : len(script)-1]))
+		address, err = getAddressFromP2PK(hex.EncodeToString(script[0 : len(script)-1]))
 	case P2PKH:
 		// OP_DUP OP_HASH160 <bytes2read> <PubKeyHash> OP_EQUALVERIFY OP_CHECKSIG
 		//log.Debug("sig P2PKH ", hex.EncodeToString(script[3:len(script)-2]))
-		address, err = GetAddressFromP2PKH(hex.EncodeToString(script[3 : len(script)-2]))
+		address, err = getAddressFromP2PKH(hex.EncodeToString(script[3 : len(script)-2]))
 	case P2SH:
 		// OP_HASH160 <bytes2read> <Hash160(redeemScript)> OP_EQUAL
 		//log.Debug("sig P2SH ", hex.EncodeToString(script[2:len(script)-1]))
-		address, err = GetAddressFromP2SH(hex.EncodeToString(script[2 : len(script)-1]))
+		address, err = getAddressFromP2SH(hex.EncodeToString(script[2 : len(script)-1]))
 	case NON_STANDARD:
 		address = "UNKNOWN"
 	}
@@ -262,12 +261,12 @@ func isPayToPublicKeyHashScript(script []byte) bool {
 
 }
 
-func GetAddressFromP2PK(hexstring string) (string, error) {
+func getAddressFromP2PK(hexstring string) (string, error) {
 	hexstringBytes, err := hex.DecodeString(hexstring)
 	if err != nil {
 		return "", err
 	}
-	addr, err := btcutil.NewAddressPubKey(hexstringBytes, &MainNetParams)
+	addr, err := btcutil.NewAddressPubKey(hexstringBytes, &mainNetParams)
 	if err != nil {
 		return "", err
 	}
@@ -276,12 +275,12 @@ func GetAddressFromP2PK(hexstring string) (string, error) {
 	return address, nil
 }
 
-func GetAddressFromP2PKH(hexstring string) (string, error) {
+func getAddressFromP2PKH(hexstring string) (string, error) {
 	hexstringBytes, err := hex.DecodeString(hexstring)
 	if err != nil {
 		return "", err
 	}
-	addr, err := btcutil.NewAddressPubKeyHash(hexstringBytes, &MainNetParams)
+	addr, err := btcutil.NewAddressPubKeyHash(hexstringBytes, &mainNetParams)
 	if err != nil {
 		return "", err
 	}
@@ -290,15 +289,24 @@ func GetAddressFromP2PKH(hexstring string) (string, error) {
 
 }
 
-func GetAddressFromP2SH(hexstring string) (string, error) {
+func getAddressFromP2SH(hexstring string) (string, error) {
 	hexstringBytes, err := hex.DecodeString(hexstring)
 	if err != nil {
 		return "", err
 	}
-	addr, err := btcutil.NewAddressScriptHashFromHash(hexstringBytes, &MainNetParams)
+	addr, err := btcutil.NewAddressScriptHashFromHash(hexstringBytes, &mainNetParams)
 	if err != nil {
 		return "", err
 	}
 	address := addr.EncodeAddress()
 	return address, nil
+}
+
+// rev reverses a byte slice. useful for switching endian-ness
+func reverseBytes(b []byte) []byte {
+	r := make([]byte, len(b))
+	for left, right := 0, len(b)-1; left < right; left, right = left+1, right-1 {
+		r[left], r[right] = b[right], b[left]
+	}
+	return r
 }

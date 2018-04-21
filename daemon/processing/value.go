@@ -3,50 +3,48 @@ package processing
 import (
 	"encoding/hex"
 
-	"github.com/lbryio/chainquery/lbrycrd/schemas/schema_version_01"
-	"github.com/lbryio/chainquery/lbrycrd/schemas/schema_version_02"
-	"github.com/lbryio/chainquery/lbrycrd/schemas/schema_version_03"
+	"github.com/lbryio/chainquery/lbrycrd"
 	"github.com/lbryio/lbry.go/errors"
 	"github.com/lbryio/lbryschema.go/claim"
 	"github.com/lbryio/lbryschema.go/pb"
 )
 
 // TODO - Needs to be moved to lbryschema.go
-func decodeClaimValue(name string, value []byte) (*pb.Claim, error) {
-	claim, err := decodeClaimFromValueBytes(value)
+func DecodeClaimValue(name string, value []byte) (*pb.Claim, error) {
+	pbClaim, err := decodeClaimFromValueBytes(value)
 	if err == nil {
-		return claim, nil
+		return pbClaim, nil
 	}
 
-	v1Claim := new(schema_version_01.Claim)
+	v1Claim := new(lbrycrd.V1Claim)
 	err = v1Claim.Unmarshal(value)
 	if err != nil {
-		v2Claim := new(schema_version_02.Claim)
+		v2Claim := new(lbrycrd.V2Claim)
 		err := v2Claim.Unmarshal(value)
 		if err != nil {
-			v3Claim := new(schema_version_03.Claim)
+			v3Claim := new(lbrycrd.V3Claim)
 			err := v3Claim.Unmarshal(value)
 			if err != nil {
 				return nil, errors.Prefix("Claim "+name+" value has no matching verion - "+string(value), err)
 			}
 
-			claim, err = migrateV3Claim(*v3Claim)
+			pbClaim, err = migrateV3Claim(*v3Claim)
 			if err != nil {
 				return nil, errors.Prefix("V3 Metadata Migration Error", err)
 			}
 		}
 
-		claim, err = migrateV2Claim(*v2Claim)
+		pbClaim, err = migrateV2Claim(*v2Claim)
 		if err != nil {
 			return nil, errors.Prefix("V2 Metadata Migration Error ", err)
 		}
 	}
 
-	claim, err = migrateV1Claim(*v1Claim)
+	pbClaim, err = migrateV1Claim(*v1Claim)
 	if err != nil {
 		return nil, errors.Prefix("V1 Metadata Migration Error ", err)
 	}
-	return claim, nil
+	return pbClaim, nil
 }
 
 func decodeClaimFromValueBytes(value []byte) (*pb.Claim, error) {
@@ -58,7 +56,7 @@ func decodeClaimFromValueBytes(value []byte) (*pb.Claim, error) {
 }
 
 func newClaim() *pb.Claim {
-	claim := new(pb.Claim)
+	pbClaim := new(pb.Claim)
 	stream := new(pb.Stream)
 	metadata := new(pb.Metadata)
 	source := new(pb.Source)
@@ -67,29 +65,29 @@ func newClaim() *pb.Claim {
 	metadata.Fee = fee
 	stream.Metadata = metadata
 	stream.Source = source
-	claim.Stream = stream
-	claim.PublisherSignature = pubsig
+	pbClaim.Stream = stream
+	pbClaim.PublisherSignature = pubsig
 
 	//Fee version
 	feeVersion := pb.Fee__0_0_1
-	claim.GetStream().GetMetadata().GetFee().Version = &feeVersion
+	pbClaim.GetStream().GetMetadata().GetFee().Version = &feeVersion
 	//Metadata version
 	mdVersion := pb.Metadata__0_1_0
-	claim.GetStream().GetMetadata().Version = &mdVersion
+	pbClaim.GetStream().GetMetadata().Version = &mdVersion
 	//Source version
 	srcVersion := pb.Source__0_0_1
-	claim.GetStream().GetSource().Version = &srcVersion
+	pbClaim.GetStream().GetSource().Version = &srcVersion
 	//Stream version
 	strmVersion := pb.Stream__0_0_1
-	claim.GetStream().Version = &strmVersion
+	pbClaim.GetStream().Version = &strmVersion
 	//Claim version
 	clmVersion := pb.Claim__0_0_1
-	claim.Version = &clmVersion
+	pbClaim.Version = &clmVersion
 	//Claim type
 	clmType := pb.Claim_streamType
-	claim.ClaimType = &clmType
+	pbClaim.ClaimType = &clmType
 
-	return claim
+	return pbClaim
 }
 
 func setMetaData(claim pb.Claim, author string, description string, language pb.Metadata_Language, license string,
@@ -105,68 +103,67 @@ func setMetaData(claim pb.Claim, author string, description string, language pb.
 
 }
 
-func migrateV1Claim(vClaim schema_version_01.Claim) (*pb.Claim, error) {
+func migrateV1Claim(vClaim lbrycrd.V1Claim) (*pb.Claim, error) {
 
-	claim := newClaim()
+	pbClaim := newClaim()
 	//Stream
 	// -->Universal
-	setFee(vClaim.Fee, claim)
+	setFee(vClaim.Fee, pbClaim)
 	// -->MetaData
-	defaultNSFW := false
 	language := pb.Metadata_Language(pb.Metadata_Language_value[vClaim.Language])
-	setMetaData(*claim, vClaim.Author, vClaim.Description, language,
-		vClaim.License, nil, vClaim.Title, vClaim.Thumbnail, defaultNSFW)
+	setMetaData(*pbClaim, vClaim.Author, vClaim.Description, language,
+		vClaim.License, nil, vClaim.Title, vClaim.Thumbnail, false)
 	// -->Source
-	claim.GetStream().GetSource().ContentType = &vClaim.ContentType
+	pbClaim.GetStream().GetSource().ContentType = &vClaim.ContentType
 	sourceType := pb.Source_SourceTypes(pb.Source_SourceTypes_value["lbry_sd_hash"])
-	claim.GetStream().GetSource().SourceType = &sourceType
+	pbClaim.GetStream().GetSource().SourceType = &sourceType
 	src, err := hex.DecodeString(vClaim.Sources.LbrySDHash)
-	claim.GetStream().GetSource().Source = src
+	pbClaim.GetStream().GetSource().Source = src
 
-	return claim, err
+	return pbClaim, err
 }
 
-func migrateV2Claim(vClaim schema_version_02.Claim) (*pb.Claim, error) {
+func migrateV2Claim(vClaim lbrycrd.V2Claim) (*pb.Claim, error) {
 
-	claim := newClaim()
+	pbClaim := newClaim()
 	//Stream
 	// -->Fee
-	setFee(vClaim.Fee, claim)
+	setFee(vClaim.Fee, pbClaim)
 	// -->MetaData
 	language := pb.Metadata_Language(pb.Metadata_Language_value[vClaim.Language])
-	setMetaData(*claim, vClaim.Author, vClaim.Description, language,
+	setMetaData(*pbClaim, vClaim.Author, vClaim.Description, language,
 		vClaim.License, vClaim.LicenseURL, vClaim.Title, vClaim.Thumbnail, vClaim.NSFW)
 	// -->Source
-	claim.GetStream().GetSource().ContentType = &vClaim.ContentType
+	pbClaim.GetStream().GetSource().ContentType = &vClaim.ContentType
 	sourceType := pb.Source_SourceTypes(pb.Source_SourceTypes_value["lbry_sd_hash"])
-	claim.GetStream().GetSource().SourceType = &sourceType
+	pbClaim.GetStream().GetSource().SourceType = &sourceType
 	src, err := hex.DecodeString(vClaim.Sources.LbrySDHash)
-	claim.GetStream().GetSource().Source = src
+	pbClaim.GetStream().GetSource().Source = src
 
-	return claim, err
+	return pbClaim, err
 }
 
-func migrateV3Claim(vClaim schema_version_03.Claim) (*pb.Claim, error) {
+func migrateV3Claim(vClaim lbrycrd.V3Claim) (*pb.Claim, error) {
 
-	claim := newClaim()
+	pbClaim := newClaim()
 	//Stream
 	// -->Fee
-	setFee(vClaim.Fee, claim)
+	setFee(vClaim.Fee, pbClaim)
 	// -->MetaData
 	language := pb.Metadata_Language(pb.Metadata_Language_value[vClaim.Language])
-	setMetaData(*claim, vClaim.Author, vClaim.Description, language,
+	setMetaData(*pbClaim, vClaim.Author, vClaim.Description, language,
 		vClaim.License, vClaim.LicenseURL, vClaim.Title, vClaim.Thumbnail, vClaim.NSFW)
 	// -->Source
-	claim.GetStream().GetSource().ContentType = &vClaim.ContentType
+	pbClaim.GetStream().GetSource().ContentType = &vClaim.ContentType
 	sourceType := pb.Source_SourceTypes(pb.Source_SourceTypes_value["lbry_sd_hash"])
-	claim.GetStream().GetSource().SourceType = &sourceType
+	pbClaim.GetStream().GetSource().SourceType = &sourceType
 	src, err := hex.DecodeString(vClaim.Sources.LbrySDHash)
-	claim.GetStream().GetSource().Source = src
+	pbClaim.GetStream().GetSource().Source = src
 
-	return claim, err
+	return pbClaim, err
 }
 
-func setFee(fee *schema_version_01.Fee, claim *pb.Claim) {
+func setFee(fee *lbrycrd.Fee, pbClaim *pb.Claim) {
 	if fee != nil {
 		amount := float32(0.0)
 		currency := pb.Fee_LBC
@@ -185,8 +182,8 @@ func setFee(fee *schema_version_01.Fee, claim *pb.Claim) {
 			address = fee.USD.Address
 		}
 		//Fee Settings
-		claim.GetStream().GetMetadata().GetFee().Amount = &amount
-		claim.GetStream().GetMetadata().GetFee().Currency = &currency
-		claim.GetStream().GetMetadata().GetFee().Address = []byte(address)
+		pbClaim.GetStream().GetMetadata().GetFee().Amount = &amount
+		pbClaim.GetStream().GetMetadata().GetFee().Currency = &currency
+		pbClaim.GetStream().GetMetadata().GetFee().Address = []byte(address)
 	}
 }

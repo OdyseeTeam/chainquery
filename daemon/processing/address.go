@@ -15,7 +15,7 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
-func CreateUpdateVoutAddresses(tx *model.Transaction, outputs *[]lbrycrd.Vout, blockSeconds uint64) (map[string]uint64, error) {
+func createUpdateVoutAddresses(tx *model.Transaction, outputs *[]lbrycrd.Vout, blockSeconds uint64) (map[string]uint64, error) {
 	addressIdMap := make(map[string]uint64)
 	for _, output := range *outputs {
 		if len(output.ScriptPubKey.Addresses) == 0 {
@@ -59,7 +59,7 @@ func CreateUpdateVoutAddresses(tx *model.Transaction, outputs *[]lbrycrd.Vout, b
 
 }
 
-func CreateUpdateVinAddresses(tx model.Transaction, inputs *[]lbrycrd.Vin, blockSeconds uint64) (map[string]uint64, error) {
+func createUpdateVinAddresses(tx model.Transaction, inputs *[]lbrycrd.Vin, blockSeconds uint64) (map[string]uint64, error) {
 	addressIdMap := make(map[string]uint64)
 	for _, input := range *inputs {
 		src_output := datastore.GetOutput(input.Txid, uint(input.Vout))

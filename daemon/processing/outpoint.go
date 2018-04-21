@@ -14,51 +14,51 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type VinToProcess struct {
+type vinToProcess struct {
 	jsonVin *lbrycrd.Vin
 	tx      *m.Transaction
 	txDC    *txDebitCredits
 }
 
-type VoutToProcess struct {
+type voutToProcess struct {
 	jsonVout *lbrycrd.Vout
 	tx       *m.Transaction
 	txDC     *txDebitCredits
 }
 
-var VinInputChannel = make(chan VinToProcess)
-var VinOutputChannel = make(chan error)
+var vinInputChannel = make(chan vinToProcess)
+var vinOutputChannel = make(chan error)
 
-func InitVinWorkers(nrWorkers int, jobs <-chan VinToProcess, results chan<- error) {
+func initVinWorkers(nrWorkers int, jobs <-chan vinToProcess, results chan<- error) {
 	for i := 0; i < nrWorkers; i++ {
-		go VinProcessor(jobs, results)
+		go vinProcessor(jobs, results)
 	}
 }
 
-func VinProcessor(jobs <-chan VinToProcess, results chan<- error) error {
+func vinProcessor(jobs <-chan vinToProcess, results chan<- error) error {
 	for job := range jobs {
-		results <- ProcessVin(job.jsonVin, job.tx, job.txDC)
+		results <- processVin(job.jsonVin, job.tx, job.txDC)
 	}
 	return nil
 }
 
-var VoutInputChannel = make(chan VinToProcess)
-var VoutOutputChannel = make(chan error)
+var voutInputChannel = make(chan vinToProcess)
+var voutOutputChannel = make(chan error)
 
-func InitVoutWorkers(nrWorkers int, jobs <-chan VoutToProcess, results chan<- error) {
+func initVoutWorkers(nrWorkers int, jobs <-chan voutToProcess, results chan<- error) {
 	for i := 0; i < nrWorkers; i++ {
-		go VoutProcessor(jobs, results)
+		go voutProcessor(jobs, results)
 	}
 }
 
-func VoutProcessor(jobs <-chan VoutToProcess, results chan<- error) error {
+func voutProcessor(jobs <-chan voutToProcess, results chan<- error) error {
 	for job := range jobs {
-		results <- ProcessVout(job.jsonVout, job.tx, job.txDC)
+		results <- processVout(job.jsonVout, job.tx, job.txDC)
 	}
 	return nil
 }
 
-func ProcessVin(jsonVin *lbrycrd.Vin, tx *m.Transaction, txDC *txDebitCredits) error {
+func processVin(jsonVin *lbrycrd.Vin, tx *m.Transaction, txDC *txDebitCredits) error {
 	vin := &m.Input{}
 	foundVin := ds.GetInput(tx.Hash, len(jsonVin.Coinbase) > 0, jsonVin.Txid, uint(jsonVin.Vout))
 	if foundVin != nil {
@@ -157,7 +157,7 @@ func processCoinBaseVin(jsonVin *lbrycrd.Vin, vin *m.Input) error {
 	return nil
 }
 
-func ProcessVout(jsonVout *lbrycrd.Vout, tx *m.Transaction, txDC *txDebitCredits) error {
+func processVout(jsonVout *lbrycrd.Vout, tx *m.Transaction, txDC *txDebitCredits) error {
 	vout := &m.Output{}
 	foundVout := ds.GetOutput(tx.Hash, uint(jsonVout.N))
 	if foundVout != nil {
