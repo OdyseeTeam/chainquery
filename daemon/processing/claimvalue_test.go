@@ -1,4 +1,4 @@
-package lbrycrd
+package processing
 
 import (
 	"encoding/hex"
@@ -46,7 +46,7 @@ func TestMigrationFromJSONVersion1(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		claim, err := DecodeClaimValue("", valueBytes)
+		claim, err := decodeClaimValue("", valueBytes)
 		if err != nil {
 			t.Error("Decode error: ", err)
 		}

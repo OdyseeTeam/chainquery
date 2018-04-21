@@ -3,20 +3,15 @@ package main
 //go:generate go-bindata -o migration/bindata.go -pkg migration -ignore bindata.go migration/
 
 import (
-	"math/rand"
 	"net/http"
 	"os"
 	"strconv"
-	"time"
 
 	"github.com/lbryio/chainquery/config"
 	"github.com/lbryio/chainquery/daemon"
-	"github.com/lbryio/chainquery/daemon/jobs"
 	"github.com/lbryio/chainquery/db"
 	"github.com/lbryio/chainquery/lbrycrd"
-	"github.com/lbryio/chainquery/swagger/apiserver"
 
-	"github.com/jasonlvhit/gocron"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -26,11 +21,10 @@ func main() {
 	config.InitializeConfiguration()
 	//defer profile.Start(profile.ProfilePath(os.Getenv("HOME") + "/chainquery")).Stop()
 
-	rand.Seed(time.Now().UnixNano())
 	log.SetFormatter(&log.TextFormatter{FullTimestamp: true})
 	http.DefaultClient.Timeout = config.GetDefaultClientTimeout()
 
-	if len(os.Args) < 2 { //
+	if len(os.Args) < 2 {
 		return
 	}
 
@@ -44,52 +38,24 @@ func main() {
 
 	command := os.Args[1]
 	switch command {
-	case "version":
-		println("ALPHA")
-	case "test":
-		log.Println(`¯\_(ツ)_/¯`)
-	case "serve":
-		teardown := webServerSetup()
-		defer teardown()
-		go swagger.InitApiServer()
-		go initJobs()
-		daemon.InitDaemon()
-
 	default:
 		log.Errorf("Invalid command: '%s'\n", command)
-	}
-}
-
-func webServerSetup() func() {
-	var teardownFuncs []func()
-
-	dbInstance, err := db.Init(config.GetMySQLDSN(), DebugMode)
-	if err != nil {
-		panic(err)
-	}
-	teardownFuncs = append(teardownFuncs, func() { dbInstance.Close() })
-	lbrycrdClient, err := lbrycrd.New(config.GetLBRYcrdURL())
-	if err != nil {
-		panic(err)
-	}
-
-	teardownFuncs = append(teardownFuncs, func() { lbrycrdClient.Shutdown() })
-	lbrycrd.SetDefaultClient(lbrycrdClient)
-
-	_, err = lbrycrdClient.GetBalance("")
-	if err != nil {
-		log.Panicf("Error connecting to lbrycrd: %+v", err)
-	}
-
-	return func() {
-		for _, f := range teardownFuncs {
-			f()
+	case "version":
+		println("ALPHA")
+	case "serve":
+		dbInstance, err := db.Init(config.GetMySQLDSN(), DebugMode)
+		if err != nil {
+			panic(err)
 		}
-	}
-}
+		defer dbInstance.Close()
 
-func initJobs() {
-	jobs.ClaimTrieSync()
-	gocron.Every(5).Minutes().Do(jobs.ClaimTrieSync)
-	<-gocron.Start()
+		lbrycrdClient := lbrycrd.Init()
+		defer lbrycrdClient.Shutdown()
+
+		_, err = lbrycrd.GetBalance()
+		if err != nil {
+			log.Panicf("Error connecting to lbrycrd: %+v", err)
+		}
+		daemon.DoYourThing()
+	}
 }

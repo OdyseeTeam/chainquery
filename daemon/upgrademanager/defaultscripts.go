@@ -18,7 +18,7 @@ func ReProcessAllClaims() {
 		if err != nil {
 			panic(err)
 		}
-		txResult, err := lbrycrd.DefaultClient().GetRawTransactionResponse(tx.Hash)
+		txResult, err := lbrycrd.GetRawTransactionResponse(tx.Hash)
 		if err != nil {
 			panic(err)
 		}

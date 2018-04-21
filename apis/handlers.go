@@ -1,10 +1,11 @@
 package apis
 
 import (
-	"github.com/lbryio/chainquery/db"
-	"github.com/lbryio/errors.go"
-	"github.com/sirupsen/logrus"
 	"net/http"
+
+	"github.com/lbryio/chainquery/db"
+	"github.com/lbryio/lbry.go/errors"
+	"github.com/sirupsen/logrus"
 )
 
 const (

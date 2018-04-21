@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/lbryio/chainquery/daemon/jobs"
 	"github.com/lbryio/chainquery/daemon/processing"
 	"github.com/lbryio/chainquery/daemon/upgrademanager"
 	"github.com/lbryio/chainquery/lbrycrd"
@@ -38,19 +39,19 @@ var ProcessingDelay time.Duration //Set by `applySettings`
 var DaemonDelay time.Duration     //Set by `applySettings`
 var iteration int64 = 0
 
-func InitDaemon() {
-	//testFunction()
+func DoYourThing() {
+	go initJobs()
 	upgrademanager.RunUpgradesForVersion()
-	initBlockQueue()
 	runDaemon()
 }
 
-func initBlockQueue() {
-
-}
-
-func testFunction(params ...interface{}) {
-
+func initJobs() {
+	jobs.ClaimTrieSync()
+	t := time.NewTicker(5 * time.Minute)
+	for {
+		<-t.C
+		jobs.ClaimTrieSync()
+	}
 }
 
 func ApplySettings(processingDelay time.Duration, daemonDelay time.Duration) {
@@ -86,7 +87,7 @@ func runDaemon() {
 
 func daemonIteration() error {
 
-	height, err := lbrycrd.DefaultClient().GetBlockCount()
+	height, err := lbrycrd.GetBlockCount()
 	if err != nil {
 		return err
 	}
@@ -111,11 +112,11 @@ func runGenesisBlock() {
 }
 
 func getBlockToProcess(height *uint64) (*lbrycrd.GetBlockResponse, error) {
-	hash, err := lbrycrd.DefaultClient().GetBlockHash(*height)
+	hash, err := lbrycrd.GetBlockHash(*height)
 	if err != nil {
 		return nil, errors.Prefix("GetBlockHash Error("+string(*height)+"): ", err)
 	}
-	jsonBlock, err := lbrycrd.DefaultClient().GetBlock(*hash)
+	jsonBlock, err := lbrycrd.GetBlock(*hash)
 	if err != nil {
 		return nil, errors.Prefix("GetBlock Error("+*hash+"): ", err)
 	}
@@ -151,16 +152,16 @@ func runBlockProcessing(height *uint64) {
 	block.Version = uint64(jsonBlock.Version)
 	block.VersionHex = jsonBlock.VersionHex
 	if foundBlock != nil {
-		err = block.Update(boil.GetDB())
+		err = block.UpdateG()
 	} else {
-		err = block.Insert(boil.GetDB())
+		err = block.InsertG()
 	}
 	if err != nil {
 		log.Error(err)
 	}
 	Txs := jsonBlock.Tx
 	for i := range Txs {
-		jsonTx, err := lbrycrd.DefaultClient().GetRawTransactionResponse(Txs[i])
+		jsonTx, err := lbrycrd.GetRawTransactionResponse(Txs[i])
 		err = processing.ProcessTx(jsonTx, block.BlockTime)
 		if err != nil {
 			log.Error(err)

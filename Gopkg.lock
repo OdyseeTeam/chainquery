@@ -6,11 +6,19 @@
   name = "github.com/btcsuite/btcd"
   packages = [
     "btcec",
+    "btcjson",
     "chaincfg",
     "chaincfg/chainhash",
+    "rpcclient",
     "wire"
   ]
   revision = "2be2f12b358dc57d70b8f501b00be450192efbc3"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/btcsuite/btclog"
+  packages = ["."]
+  revision = "84c8d2346e9fc8c7b947e243b9c24e6df9fd206a"
 
 [[projects]]
   branch = "master"
@@ -21,6 +29,18 @@
     "bech32"
   ]
   revision = "501929d3d046174c3d39f0ea54ece471aa17238c"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/btcsuite/go-socks"
+  packages = ["socks"]
+  revision = "4720035b7bfd2a9bb130b1c184f8bbe41b6f0d0f"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/btcsuite/websocket"
+  packages = ["."]
+  revision = "31079b6807923eb23992c421b114992b95131b55"
 
 [[projects]]
   name = "github.com/caarlos0/env"
@@ -46,9 +66,10 @@
   version = "v1.0.0"
 
 [[projects]]
+  branch = "master"
   name = "github.com/go-ini/ini"
   packages = ["."]
-  revision = "e7fea39b01aea8d5671f6858f0532f56e8bff3a5"
+  revision = "bda519ae5f4cbc60d391ff8610711627a08b86ae"
 
 [[projects]]
   name = "github.com/go-sql-driver/mysql"
@@ -114,15 +135,10 @@
 
 [[projects]]
   branch = "master"
-  name = "github.com/lbryio/errors.go"
-  packages = ["."]
-  revision = "dd131cce3d6f9c0b2351537cec85955ebc0be5e0"
-
-[[projects]]
-  branch = "master"
   name = "github.com/lbryio/lbry.go"
   packages = [
     "errors",
+    "lbrycrd",
     "null",
     "querytools",
     "util"
@@ -257,12 +273,6 @@
   revision = "6b95e5d3d7840a737841e2eb446e1c82641f8393"
 
 [[projects]]
-  name = "github.com/ybbus/jsonrpc"
-  packages = ["."]
-  revision = "af3b3899128285b8a17568bb7936824759a12873"
-  version = "v1.0.1"
-
-[[projects]]
   branch = "master"
   name = "golang.org/x/crypto"
   packages = [
@@ -356,6 +366,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "7a9754e094ee8aef70a3341a814a0c425ff1def1d4ba2bb6d9c88f6ce2d128ca"
+  inputs-digest = "977f3af8d532881415132aa66311ed262a7f70648bad0600f7ef0d2017263866"
   solver-name = "gps-cdcl"
   solver-version = 1
