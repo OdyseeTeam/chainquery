@@ -1,11 +1,16 @@
 
 # LBRY Chain Query
 
+![Code Climate](https://img.shields.io/codeclimate/tech-debt/lbryio/chainquery.svg)
+
 [![Go Report Card](https://goreportcard.com/badge/github.com/lbryio/chainquery)](https://goreportcard.com/report/github.com/lbryio/chainquery)
 
 [![Maintainability](https://api.codeclimate.com/v1/badges/3f60ac6b2d7e96f93992/maintainability)](https://codeclimate.com/github/lbryio/chainquery/maintainability)
 
-[![Test Coverage](https://api.codeclimate.com/v1/badges/3f60ac6b2d7e96f93992/test_coverage)](https://codeclimate.com/github/lbryio/chainquery/test_coverage)
+![GitHub release](https://img.shields.io/github/release/lbryio/chainquery.svg)
+
+![Github commits (since latest release)](https://img.shields.io/github/commits-since/lbryio/chainquery/latest.svg)
+
 
 ## Active Development Notice
  
