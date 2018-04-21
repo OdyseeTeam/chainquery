@@ -11,6 +11,7 @@ import (
 	"github.com/lbryio/chainquery/daemon"
 	"github.com/lbryio/chainquery/db"
 	"github.com/lbryio/chainquery/lbrycrd"
+	"github.com/lbryio/chainquery/swagger/apiserver"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -56,6 +57,7 @@ func main() {
 		if err != nil {
 			log.Panicf("Error connecting to lbrycrd: %+v", err)
 		}
+		go swagger.InitApiServer()
 		daemon.DoYourThing()
 	}
 }
