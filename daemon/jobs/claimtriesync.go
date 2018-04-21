@@ -96,17 +96,20 @@ func setControllingClaimForName(name string) {
 		qm.OrderBy(model.ClaimColumns.ValidAtHeight+" DESC")).One()
 
 	if claim != nil {
-		claim.BidState = "Controlling"
+		if claim.BidState != "Controlling" {
 
-		err := datastore.PutClaim(claim)
-		if err != nil {
-			panic(err)
+			claim.BidState = "Controlling"
+
+			err := datastore.PutClaim(claim)
+			if err != nil {
+				panic(err)
+			}
 		}
 	}
-
 }
 
 func syncClaim(claimJSON *lbrycrd.Claim) {
+	hasChanges := false
 	claim := datastore.GetClaim(claimJSON.ClaimId)
 	if claim == nil {
 		unknown, _ := model.UnknownClaimsG(qm.Where(model.UnknownClaimColumns.ClaimID+"=?", claimJSON.ClaimId)).One()
@@ -115,10 +118,23 @@ func syncClaim(claimJSON *lbrycrd.Claim) {
 		}
 		return
 	}
-	claim.ValidAtHeight = uint(claimJSON.ValidAtHeight)
-	claim.EffectiveAmount = claimJSON.EffectiveAmount
-	claim.BidState = getClaimStatus(claim)
-	datastore.PutClaim(claim)
+	if claim.ValidAtHeight != uint(claimJSON.ValidAtHeight) {
+		claim.ValidAtHeight = uint(claimJSON.ValidAtHeight)
+		hasChanges = true
+	}
+	if claim.EffectiveAmount != claimJSON.EffectiveAmount {
+		claim.EffectiveAmount = claimJSON.EffectiveAmount
+		hasChanges = true
+
+	}
+	status := getClaimStatus(claim)
+	if claim.BidState != status {
+		claim.BidState = getClaimStatus(claim)
+		hasChanges = true
+	}
+	if hasChanges {
+		datastore.PutClaim(claim)
+	}
 }
 
 func getClaimStatus(claim *model.Claim) string {

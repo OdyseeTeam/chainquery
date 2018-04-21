@@ -44,7 +44,7 @@ func DoYourThing() {
 
 func initJobs() {
 	jobs.ClaimTrieSync()
-	t := time.NewTicker(5 * time.Minute)
+	t := time.NewTicker(15 * time.Minute)
 	for {
 		<-t.C
 		jobs.ClaimTrieSync()
