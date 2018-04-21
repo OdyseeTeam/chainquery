@@ -10,12 +10,12 @@
 package swagger
 
 import (
-	"io/ioutil"
-	"net/url"
-	"net/http"
-	"strings"
-	"golang.org/x/net/context"
 	"encoding/json"
+	"golang.org/x/net/context"
+	"io/ioutil"
+	"net/http"
+	"net/url"
+	"strings"
 )
 
 // Linger please
@@ -25,19 +25,18 @@ var (
 
 type StatApiService service
 
-
 /* StatApiService Returns a summary of Address activity
- It returns sent, recieved, balance, and number of transactions it has been used in.
- * @param ctx context.Context for authentication, logging, tracing, etc.
- @param lbryAddress A LbryAddress
- @return AddressSummary*/
-func (a *StatApiService) AddressSummary(ctx context.Context, lbryAddress string) (AddressSummary,  *http.Response, error) {
+It returns sent, recieved, balance, and number of transactions it has been used in.
+* @param ctx context.Context for authentication, logging, tracing, etc.
+@param lbryAddress A LbryAddress
+@return AddressSummary*/
+func (a *StatApiService) AddressSummary(ctx context.Context, lbryAddress string) (AddressSummary, *http.Response, error) {
 	var (
 		localVarHttpMethod = strings.ToUpper("Get")
-		localVarPostBody interface{}
-		localVarFileName string
-		localVarFileBytes []byte
-	 	successPayload  AddressSummary
+		localVarPostBody   interface{}
+		localVarFileName   string
+		localVarFileBytes  []byte
+		successPayload     AddressSummary
 	)
 
 	// create path and map variables
@@ -47,10 +46,9 @@ func (a *StatApiService) AddressSummary(ctx context.Context, lbryAddress string)
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
 
-
 	localVarQueryParams.Add("LbryAddress", parameterToString(lbryAddress, ""))
 	// to determine the Content-Type header
-	localVarHttpContentTypes := []string{ "application/json",  }
+	localVarHttpContentTypes := []string{"application/json"}
 
 	// set Content-Type header
 	localVarHttpContentType := selectHeaderContentType(localVarHttpContentTypes)
@@ -61,7 +59,7 @@ func (a *StatApiService) AddressSummary(ctx context.Context, lbryAddress string)
 	// to determine the Accept header
 	localVarHttpHeaderAccepts := []string{
 		"application/json",
-		}
+	}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
@@ -87,20 +85,19 @@ func (a *StatApiService) AddressSummary(ctx context.Context, lbryAddress string)
 		return successPayload, localVarHttpResponse, err
 	}
 
-
 	return successPayload, localVarHttpResponse, err
 }
 
 /* StatApiService Returns important status information about Chain Query
  * @param ctx context.Context for authentication, logging, tracing, etc.
  @return TableStatus*/
-func (a *StatApiService) Status(ctx context.Context) (TableStatus,  *http.Response, error) {
+func (a *StatApiService) Status(ctx context.Context) (TableStatus, *http.Response, error) {
 	var (
 		localVarHttpMethod = strings.ToUpper("Get")
-		localVarPostBody interface{}
-		localVarFileName string
-		localVarFileBytes []byte
-	 	successPayload  TableStatus
+		localVarPostBody   interface{}
+		localVarFileName   string
+		localVarFileBytes  []byte
+		successPayload     TableStatus
 	)
 
 	// create path and map variables
@@ -110,9 +107,8 @@ func (a *StatApiService) Status(ctx context.Context) (TableStatus,  *http.Respon
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
 
-
 	// to determine the Content-Type header
-	localVarHttpContentTypes := []string{ "application/json",  }
+	localVarHttpContentTypes := []string{"application/json"}
 
 	// set Content-Type header
 	localVarHttpContentType := selectHeaderContentType(localVarHttpContentTypes)
@@ -123,7 +119,7 @@ func (a *StatApiService) Status(ctx context.Context) (TableStatus,  *http.Respon
 	// to determine the Accept header
 	localVarHttpHeaderAccepts := []string{
 		"application/json",
-		}
+	}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
@@ -149,7 +145,5 @@ func (a *StatApiService) Status(ctx context.Context) (TableStatus,  *http.Respon
 		return successPayload, localVarHttpResponse, err
 	}
 
-
 	return successPayload, localVarHttpResponse, err
 }
-

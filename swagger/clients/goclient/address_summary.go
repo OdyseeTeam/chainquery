@@ -10,7 +10,6 @@
 package swagger
 
 type AddressSummary struct {
-
 	Address string `json:"Address,omitempty"`
 
 	// Total amount received by address from all transactions it was a part of.

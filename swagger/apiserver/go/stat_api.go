@@ -9,8 +9,8 @@
 package swagger
 
 import (
+	"encoding/json"
 	"net/http"
-    "encoding/json"
 
 	"github.com/lbryio/chainquery/apis"
 )
@@ -19,20 +19,20 @@ func HandleAddressSummary(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	response, err := apis.HandleAction("AddressSummary", w, r)
 	if err != nil {
-    		w.WriteHeader(http.StatusInternalServerError)
-    		w.Write([]byte(err.Error()))
-    }
-    process(w,response)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+	}
+	process(w, response)
 }
 
 func HandleStatus(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	response, err := apis.HandleAction("Status", w, r)
 	if err != nil {
-    		w.WriteHeader(http.StatusInternalServerError)
-    		w.Write([]byte(err.Error()))
-    }
-    process(w,response)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+	}
+	process(w, response)
 }
 
 // Processes the response information and sends it back.

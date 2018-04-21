@@ -1,4 +1,3 @@
-
 /*
  * Chain Query
  *
@@ -11,6 +10,5 @@ package swagger
 
 // Contains an array of tables and their row count.
 type TableStatus struct {
-
 	Status []TableSize `json:"Status,omitempty"`
 }

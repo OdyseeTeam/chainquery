@@ -1,4 +1,3 @@
-
 /*
  * Chain Query
  *
