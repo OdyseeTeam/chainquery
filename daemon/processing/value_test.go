@@ -46,7 +46,7 @@ func TestMigrationFromJSONVersion1(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		claim, err := decodeClaimValue("", valueBytes)
+		claim, err := DecodeClaimValue("", valueBytes)
 		if err != nil {
 			t.Error("Decode error: ", err)
 		}

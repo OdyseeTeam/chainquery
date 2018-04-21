@@ -3,3 +3,5 @@
 /bin
 swagger-codegen-cli.jar
 chainqueryconfig.toml
+cover.out
+.cover

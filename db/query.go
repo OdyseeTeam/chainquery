@@ -28,7 +28,7 @@ func GetTableStatus() (*g.TableStatus, error) {
 		return nil, err
 	}
 	defer rows.Close()
-	var statrows = []g.TableSize{}
+	var statrows []g.TableSize
 	for rows.Next() {
 		var stat g.TableSize
 		err = rows.Scan(&stat.TableName, &stat.NrRows)
