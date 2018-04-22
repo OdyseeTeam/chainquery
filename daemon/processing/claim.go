@@ -125,6 +125,7 @@ func processClaim(pbClaim *pb.Claim, claim *model.Claim, value []byte, output mo
 	claim.Vout = output.Vout
 	claim.Version = pbClaim.GetVersion().String()
 	claim.ValueAsHex = hex.EncodeToString(value)
+	claim.ClaimType = int8(pb.Claim_ClaimType_value[pbClaim.GetClaimType().String()])
 
 	var js map[string]interface{} //JSON Map
 	if json.Unmarshal(value, &js) == nil {
