@@ -156,6 +156,7 @@ CREATE TABLE IF NOT EXISTS `output`
     CONSTRAINT `Cnt_AddressesValidJson` CHECK(`address_list` IS NULL OR JSON_VALID(`address_list`)),
     INDEX `Idx_OutputValue` (`value`),
     INDEX `Idx_Oupoint` (`vout`,`transaction_hash`) COMMENT 'needed for references in this column order',
+    INDEX `Idx_ASM` (script_pub_key_asm(255)) COMMENT 'needed in cases where the ASM needs to be parsed with speed',
     INDEX `Idx_OuptutCreated` (`created`),
     INDEX `Idx_OutputModified` (`modified`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4;
@@ -197,7 +198,7 @@ CREATE TABLE IF NOT EXISTS `claim`
     `vout` INTEGER UNSIGNED NOT NULL,
     `name` VARCHAR(1024) NOT NULL,
     `claim_id` CHAR(40) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
-    `claim_type` TINYINT(1) NOT NULL, -- 1 - CertificateType, 2 - StreamType should not be tinyint limits as bool sqlboiler
+    `claim_type` TINYINT(2) NOT NULL, -- 1 - CertificateType, 2 - StreamType
     `publisher_id` CHAR(40) CHARACTER SET latin1 COLLATE latin1_general_ci COMMENT 'references a ClaimId with CertificateType',
     `publisher_sig` VARCHAR(200) CHARACTER SET latin1 COLLATE latin1_general_ci,
     `certificate` TEXT,
