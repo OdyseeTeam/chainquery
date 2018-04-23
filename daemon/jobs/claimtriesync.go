@@ -30,7 +30,7 @@ func ClaimTrieSync() {
 	//For syncing the claims
 	logrus.Info("ClaimTrieSync: claim  update started... ")
 	syncwg := sync.WaitGroup{}
-	processingQueue := make(chan lbrycrd.Claim)
+	processingQueue := make(chan lbrycrd.Claim, 100)
 	initSyncWorkers(runtime.NumCPU()-1, processingQueue, syncwg)
 	for _, claimedName := range names {
 		claims, err := lbrycrd.GetClaimsForName(claimedName.Name)
@@ -48,7 +48,7 @@ func ClaimTrieSync() {
 	//For Setting Controlling Claims
 	logrus.Info("ClaimTrieSync: controlling claim status update started... ")
 	controlwg := sync.WaitGroup{}
-	setControllingQueue := make(chan string)
+	setControllingQueue := make(chan string, 100)
 	initControllingWorkers(runtime.NumCPU()-1, setControllingQueue, controlwg)
 	for _, claimedName := range names {
 		setControllingQueue <- claimedName.Name
