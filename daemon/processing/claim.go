@@ -226,7 +226,7 @@ func setMetaDataInfo(claim *model.Claim, pbClaim *pb.Claim) {
 
 				claim.Fee = float64(fee.GetAmount())
 
-				claim.FeeAddress = hex.EncodeToString(fee.GetAddress())
+				claim.FeeAddress = string(fee.GetAddress())
 			}
 		}
 	}

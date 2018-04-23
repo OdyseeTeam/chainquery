@@ -108,10 +108,7 @@ func migrateV1Claim(vClaim lbrycrd.V1Claim) (*pb.Claim, error) {
 	pbClaim := newClaim()
 	//Stream
 	// -->Universal
-	err := setFee(vClaim.Fee, pbClaim)
-	if err != nil {
-		return nil, err
-	}
+	setFee(vClaim.Fee, pbClaim)
 	// -->MetaData
 	language := pb.Metadata_Language(pb.Metadata_Language_value[vClaim.Language])
 	setMetaData(*pbClaim, vClaim.Author, vClaim.Description, language,
@@ -131,10 +128,7 @@ func migrateV2Claim(vClaim lbrycrd.V2Claim) (*pb.Claim, error) {
 	pbClaim := newClaim()
 	//Stream
 	// -->Fee
-	err := setFee(vClaim.Fee, pbClaim)
-	if err != nil {
-		return nil, err
-	}
+	setFee(vClaim.Fee, pbClaim)
 	// -->MetaData
 	language := pb.Metadata_Language(pb.Metadata_Language_value[vClaim.Language])
 	setMetaData(*pbClaim, vClaim.Author, vClaim.Description, language,
@@ -154,10 +148,7 @@ func migrateV3Claim(vClaim lbrycrd.V3Claim) (*pb.Claim, error) {
 	pbClaim := newClaim()
 	//Stream
 	// -->Fee
-	err := setFee(vClaim.Fee, pbClaim)
-	if err != nil {
-		return nil, err
-	}
+	setFee(vClaim.Fee, pbClaim)
 	// -->MetaData
 	language := pb.Metadata_Language(pb.Metadata_Language_value[vClaim.Language])
 	setMetaData(*pbClaim, vClaim.Author, vClaim.Description, language,
@@ -172,7 +163,7 @@ func migrateV3Claim(vClaim lbrycrd.V3Claim) (*pb.Claim, error) {
 	return pbClaim, err
 }
 
-func setFee(fee *lbrycrd.Fee, pbClaim *pb.Claim) error {
+func setFee(fee *lbrycrd.Fee, pbClaim *pb.Claim) {
 	if fee != nil {
 		amount := float32(0.0)
 		currency := pb.Fee_LBC
@@ -193,11 +184,6 @@ func setFee(fee *lbrycrd.Fee, pbClaim *pb.Claim) error {
 		//Fee Settings
 		pbClaim.GetStream().GetMetadata().GetFee().Amount = &amount
 		pbClaim.GetStream().GetMetadata().GetFee().Currency = &currency
-		hexAddress, err := hex.DecodeString(address)
-		if err != nil {
-			return err
-		}
-		pbClaim.GetStream().GetMetadata().GetFee().Address = hexAddress
+		pbClaim.GetStream().GetMetadata().GetFee().Address = []byte(address)
 	}
-	return nil
 }

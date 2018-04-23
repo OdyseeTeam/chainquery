@@ -111,8 +111,8 @@ func ProcessTx(jsonTx *lbrycrd.TxRawResult, blockTime uint64) error {
 	}
 
 	vins := jsonTx.Vin
-	vinjobs := make(chan vinToProcess, 100)
-	errorchan := make(chan error, 100)
+	vinjobs := make(chan vinToProcess, len(vins))
+	errorchan := make(chan error, len(vins))
 	workers := util.Min(len(vins), runtime.NumCPU())
 	initVinWorkers(workers, vinjobs, errorchan)
 	for i := range vins {
@@ -129,8 +129,8 @@ func ProcessTx(jsonTx *lbrycrd.TxRawResult, blockTime uint64) error {
 	}
 	close(errorchan)
 	vouts := jsonTx.Vout
-	voutjobs := make(chan voutToProcess, 100)
-	errorchan = make(chan error, 100)
+	voutjobs := make(chan voutToProcess, len(vouts))
+	errorchan = make(chan error, len(vouts))
 	workers = util.Min(len(vouts), runtime.NumCPU())
 	initVoutWorkers(workers, voutjobs, errorchan)
 	for i := range vouts {
