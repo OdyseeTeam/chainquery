@@ -13,6 +13,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
+	"runtime"
 )
 
 type txDebitCredits struct {
@@ -110,9 +111,9 @@ func ProcessTx(jsonTx *lbrycrd.TxRawResult, blockTime uint64) error {
 	}
 
 	vins := jsonTx.Vin
-	vinjobs := make(chan vinToProcess, len(vins))
-	errorchan := make(chan error, len(vins))
-	workers := util.Min(len(vins), 6)
+	vinjobs := make(chan vinToProcess, 100)
+	errorchan := make(chan error, 100)
+	workers := util.Min(len(vins), runtime.NumCPU())
 	initVinWorkers(workers, vinjobs, errorchan)
 	for i := range vins {
 		index := i
@@ -128,9 +129,9 @@ func ProcessTx(jsonTx *lbrycrd.TxRawResult, blockTime uint64) error {
 	}
 	close(errorchan)
 	vouts := jsonTx.Vout
-	voutjobs := make(chan voutToProcess, len(vouts))
-	errorchan = make(chan error, len(vouts))
-	workers = util.Min(len(vouts), 6)
+	voutjobs := make(chan voutToProcess, 100)
+	errorchan = make(chan error, 100)
+	workers = util.Min(len(vouts), runtime.NumCPU())
 	initVoutWorkers(workers, voutjobs, errorchan)
 	for i := range vouts {
 		index := i
