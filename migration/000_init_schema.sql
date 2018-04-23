@@ -221,6 +221,7 @@ CREATE TABLE IF NOT EXISTS `claim`
     `title` TEXT,
     `fee` DOUBLE(18,8) DEFAULT 0 NOT NULL,
     `fee_currency` CHAR(30),
+    `fee_address` VARCHAR(40) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
     `is_filtered` TINYINT(1) DEFAULT 0 NOT NULL,
     `bid_state` VARCHAR(20) DEFAULT "Accepted" NOT NULL,
 

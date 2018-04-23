@@ -1180,7 +1180,7 @@ func testClaimsSelect(t *testing.T) {
 }
 
 var (
-	claimDBTypes = map[string]string{`Author`: `varchar`, `BidState`: `varchar`, `Certificate`: `text`, `ClaimID`: `char`, `ClaimType`: `tinyint`, `ContentType`: `varchar`, `Created`: `datetime`, `Description`: `mediumtext`, `EffectiveAmount`: `double`, `Fee`: `double`, `FeeCurrency`: `char`, `Height`: `int`, `ID`: `bigint`, `IsFiltered`: `tinyint`, `IsNSFW`: `tinyint`, `Language`: `varchar`, `Modified`: `datetime`, `Name`: `varchar`, `PublisherID`: `char`, `PublisherSig`: `varchar`, `SDHash`: `varchar`, `ThumbnailURL`: `text`, `Title`: `text`, `TransactionByHashID`: `varchar`, `TransactionTime`: `bigint`, `ValidAtHeight`: `int`, `ValueAsHex`: `mediumtext`, `ValueAsJSON`: `mediumtext`, `Version`: `varchar`, `Vout`: `int`}
+	claimDBTypes = map[string]string{`Author`: `varchar`, `BidState`: `varchar`, `Certificate`: `text`, `ClaimID`: `char`, `ClaimType`: `tinyint`, `ContentType`: `varchar`, `Created`: `datetime`, `Description`: `mediumtext`, `EffectiveAmount`: `double`, `Fee`: `double`, `FeeAddress`: `varchar`, `FeeCurrency`: `char`, `Height`: `int`, `ID`: `bigint`, `IsFiltered`: `tinyint`, `IsNSFW`: `tinyint`, `Language`: `varchar`, `Modified`: `datetime`, `Name`: `varchar`, `PublisherID`: `char`, `PublisherSig`: `varchar`, `SDHash`: `varchar`, `ThumbnailURL`: `text`, `Title`: `text`, `TransactionByHashID`: `varchar`, `TransactionTime`: `bigint`, `ValidAtHeight`: `int`, `ValueAsHex`: `mediumtext`, `ValueAsJSON`: `mediumtext`, `Version`: `varchar`, `Vout`: `int`}
 	_            = bytes.MinRead
 )
 

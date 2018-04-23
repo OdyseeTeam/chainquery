@@ -225,6 +225,8 @@ func setMetaDataInfo(claim *model.Claim, pbClaim *pb.Claim) {
 				claim.FeeCurrency.Valid = true
 
 				claim.Fee = float64(fee.GetAmount())
+
+				claim.FeeAddress = hex.EncodeToString(fee.GetAddress())
 			}
 		}
 	}
