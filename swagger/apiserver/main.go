@@ -13,10 +13,12 @@ import (
 	"net/http"
 
 	sw "github.com/lbryio/chainquery/swagger/apiserver/go"
+
+	"github.com/sirupsen/logrus"
 )
 
 func InitApiServer() {
-	log.Printf("API Server started")
+	logrus.Info("API Server started")
 
 	router := sw.NewRouter()
 
