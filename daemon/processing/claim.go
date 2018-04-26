@@ -8,6 +8,7 @@ import (
 	"github.com/lbryio/chainquery/model"
 	"github.com/lbryio/lbry.go/errors"
 	"github.com/lbryio/lbry.go/util"
+	"github.com/lbryio/lbryschema.go/address/base58"
 	"github.com/lbryio/lbryschema.go/pb"
 
 	"github.com/lbryio/chainquery/datastore"
@@ -225,8 +226,7 @@ func setMetaDataInfo(claim *model.Claim, pbClaim *pb.Claim) {
 				claim.FeeCurrency.Valid = true
 
 				claim.Fee = float64(fee.GetAmount())
-
-				claim.FeeAddress = string(fee.GetAddress())
+				claim.FeeAddress = base58.EncodeBase58(fee.GetAddress())
 			}
 		}
 	}

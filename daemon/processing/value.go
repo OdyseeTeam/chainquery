@@ -3,6 +3,7 @@ package processing
 import (
 	"encoding/hex"
 
+	"github.com/btcsuite/btcutil/base58"
 	"github.com/lbryio/chainquery/lbrycrd"
 	"github.com/lbryio/lbry.go/errors"
 	"github.com/lbryio/lbryschema.go/claim"
@@ -184,6 +185,6 @@ func setFee(fee *lbrycrd.Fee, pbClaim *pb.Claim) {
 		//Fee Settings
 		pbClaim.GetStream().GetMetadata().GetFee().Amount = &amount
 		pbClaim.GetStream().GetMetadata().GetFee().Currency = &currency
-		pbClaim.GetStream().GetMetadata().GetFee().Address = []byte(address)
+		pbClaim.GetStream().GetMetadata().GetFee().Address = base58.Decode(address)
 	}
 }
