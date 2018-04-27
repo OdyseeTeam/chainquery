@@ -1,6 +1,8 @@
 
 # LBRY Chain Query
 
+[![Build Status](https://travis-ci.org/lbryio/chainquery.svg?branch=master)](https://travis-ci.org/lbryio/chainquery)
+
 ![Code Climate](https://img.shields.io/codeclimate/tech-debt/lbryio/chainquery.svg)
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/lbryio/chainquery)](https://goreportcard.com/report/github.com/lbryio/chainquery)
