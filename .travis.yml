@@ -1,3 +1,5 @@
+os: linux
+dist: trusty
 language: go
 
 # Only the last two Go releases are supported by the Go team with security
@@ -38,6 +40,7 @@ before_script:
 # script always run to completion (set +e). All of these code checks are must haves
 # in a modern Go project.
 script:
+  - ./build.sh                               # Build Chainquery sucessfully
   - test -z $(gofmt -s -l $GO_FILES)         # Fail if a .go file hasn't been formatted with gofmt
   - go test -v -race ./...                   # Run all the tests with the race detector enabled
   - go vet ./...                             # go vet is the official Go static analyzer
