@@ -2,6 +2,7 @@ package processing
 
 import (
 	"encoding/hex"
+	"github.com/btcsuite/btcutil/base58"
 	"testing"
 )
 
@@ -68,7 +69,7 @@ func TestMigrationFromJSONVersion1(t *testing.T) {
 		if claim.GetStream().GetMetadata().GetFee().GetCurrency().String() != pair.Claim.FeeCurrency {
 			t.Error("Fee Currency mismatch: expected", pair.Claim.FeeCurrency, "got", claim.GetStream().GetMetadata().GetFee().GetCurrency())
 		}
-		hexaddress := string(claim.GetStream().GetMetadata().GetFee().GetAddress())
+		hexaddress := base58.Encode(claim.GetStream().GetMetadata().GetFee().GetAddress())
 		if hexaddress != pair.Claim.FeeAddress {
 			t.Error("Fee Address mismatch: expected", pair.Claim.FeeAddress, "got", hexaddress)
 		}
