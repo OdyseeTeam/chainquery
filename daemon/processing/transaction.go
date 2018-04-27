@@ -69,6 +69,39 @@ func (txDC *txDebitCredits) add(address string, value float64) error {
 
 func ProcessTx(jsonTx *lbrycrd.TxRawResult, blockTime uint64) error {
 	defer util.TimeTrack(time.Now(), "processTx "+jsonTx.Txid+" -- ", "daemonprofile")
+
+	//Save transaction before the id is used any where else otherwise it will be 0
+	transaction, err := saveUpdateTransaction(jsonTx)
+	if err != nil {
+		return err
+	}
+
+	txDbCrAddrMap := NewTxDebitCredits()
+
+	_, err = createUpdateVoutAddresses(transaction, &jsonTx.Vout, blockTime)
+	if err != nil {
+		err := errors.Prefix("Vout Address Creation Error: ", err)
+		return err
+	}
+	_, err = createUpdateVinAddresses(transaction, &jsonTx.Vin, blockTime)
+	if err != nil {
+		err := errors.Prefix("Vin Address Creation Error: ", err)
+		return err
+	}
+
+	// Process the inputs of the tranasction
+	saveUpdateInputs(transaction, jsonTx, txDbCrAddrMap)
+
+	// Process the outputs of the transaction
+	saveUpdateOutputs(transaction, jsonTx, txDbCrAddrMap)
+
+	//Set the send and receive values for the transaction
+	setSendReceive(transaction, txDbCrAddrMap)
+
+	return nil
+}
+
+func saveUpdateTransaction(jsonTx *lbrycrd.TxRawResult) (*model.Transaction, error) {
 	transaction := &model.Transaction{}
 	foundTx, err := model.TransactionsG(qm.Where(model.TransactionColumns.Hash+"=?", jsonTx.Txid)).One()
 	if foundTx != nil {
@@ -86,9 +119,6 @@ func ProcessTx(jsonTx *lbrycrd.TxRawResult, blockTime uint64) error {
 	transaction.OutputCount = uint(len(jsonTx.Vout))
 	transaction.Raw.String = jsonTx.Hex
 	transaction.TransactionSize = uint64(jsonTx.Size)
-	transaction.Value = 0.0 //p.GetTotalValue(jsonTx.Vout)
-
-	txDbCrAddrMap := NewTxDebitCredits()
 
 	if foundTx != nil {
 		transaction.Update(boil.GetDB())
@@ -96,20 +126,13 @@ func ProcessTx(jsonTx *lbrycrd.TxRawResult, blockTime uint64) error {
 		err = transaction.Insert(boil.GetDB())
 	}
 	if err != nil {
-		return err
-	}
-	//Save transaction before the id is used.
-	_, err = createUpdateVoutAddresses(transaction, &jsonTx.Vout, blockTime)
-	if err != nil {
-		err := errors.Prefix("Vout Address Creation Error: ", err)
-		return err
-	}
-	_, err = createUpdateVinAddresses(*transaction, &jsonTx.Vin, blockTime)
-	if err != nil {
-		err := errors.Prefix("Vin Address Creation Error: ", err)
-		return err
+		return nil, err
 	}
 
+	return transaction, nil
+}
+
+func saveUpdateInputs(transaction *model.Transaction, jsonTx *lbrycrd.TxRawResult, txDbCrAddrMap *txDebitCredits) {
 	vins := jsonTx.Vin
 	vinjobs := make(chan vinToProcess, len(vins))
 	errorchan := make(chan error, len(vins))
@@ -128,10 +151,13 @@ func ProcessTx(jsonTx *lbrycrd.TxRawResult, blockTime uint64) error {
 		}
 	}
 	close(errorchan)
+}
+
+func saveUpdateOutputs(transaction *model.Transaction, jsonTx *lbrycrd.TxRawResult, txDbCrAddrMap *txDebitCredits) {
 	vouts := jsonTx.Vout
 	voutjobs := make(chan voutToProcess, len(vouts))
-	errorchan = make(chan error, len(vouts))
-	workers = util.Min(len(vouts), runtime.NumCPU())
+	errorchan := make(chan error, len(vouts))
+	workers := util.Min(len(vouts), runtime.NumCPU())
 	initVoutWorkers(workers, voutjobs, errorchan)
 	for i := range vouts {
 		index := i
@@ -146,6 +172,9 @@ func ProcessTx(jsonTx *lbrycrd.TxRawResult, blockTime uint64) error {
 		}
 	}
 	close(errorchan)
+}
+
+func setSendReceive(transaction *model.Transaction, txDbCrAddrMap *txDebitCredits) {
 	for addr, DC := range txDbCrAddrMap.AddrDCMap {
 
 		address := datastore.GetAddress(addr)
@@ -158,6 +187,4 @@ func ProcessTx(jsonTx *lbrycrd.TxRawResult, blockTime uint64) error {
 		datastore.PutTxAddress(txAddr)
 
 	}
-
-	return err
 }
