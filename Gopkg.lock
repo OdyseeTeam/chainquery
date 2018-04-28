@@ -43,17 +43,6 @@
   revision = "31079b6807923eb23992c421b114992b95131b55"
 
 [[projects]]
-  name = "github.com/caarlos0/env"
-  packages = ["."]
-  revision = "0cf029d5748c52beb2c9d20c81880cb4bdf8f788"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/denisenkom/go-mssqldb"
-  packages = ["."]
-  revision = "ee492709d4324cdcb051d2ac266b77ddc380f5c5"
-
-[[projects]]
   name = "github.com/fsnotify/fsnotify"
   packages = ["."]
   revision = "c2828203cd70a50dcccfb2761f8b1f8ceef9a8e9"
@@ -129,11 +118,6 @@
   version = "v3.0.7"
 
 [[projects]]
-  name = "github.com/kat-co/vala"
-  packages = ["."]
-  revision = "42e1d8b61f12b4fcadea0c062782e466924a3aaa"
-
-[[projects]]
   branch = "master"
   name = "github.com/lbryio/lbry.go"
   packages = [
@@ -160,15 +144,6 @@
   name = "github.com/lbryio/null.go"
   packages = ["."]
   revision = "109a79fb20ecd191f58366a452b38f7cf0ae1741"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/lib/pq"
-  packages = [
-    ".",
-    "oid"
-  ]
-  revision = "88edab0803230a3898347e77b474f8c1820a1f20"
 
 [[projects]]
   name = "github.com/magiconair/properties"
@@ -200,12 +175,6 @@
     "sqlparse"
   ]
   revision = "38004e7a77f2b350ea8467038dca66073d907725"
-
-[[projects]]
-  name = "github.com/satori/go.uuid"
-  packages = ["."]
-  revision = "f58768cc1a7a7e77a3bd49e98cdd21419399b6a3"
-  version = "v1.2.0"
 
 [[projects]]
   name = "github.com/shopspring/decimal"
@@ -261,14 +230,10 @@
   branch = "master"
   name = "github.com/volatiletech/sqlboiler"
   packages = [
-    "bdb",
-    "bdb/drivers",
     "boil",
     "queries",
     "queries/qm",
-    "randomize",
-    "strmangle",
-    "types"
+    "strmangle"
   ]
   revision = "6b95e5d3d7840a737841e2eb446e1c82641f8393"
 
@@ -276,7 +241,6 @@
   branch = "master"
   name = "golang.org/x/crypto"
   packages = [
-    "md4",
     "ripemd160",
     "ssh/terminal"
   ]
@@ -366,6 +330,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "977f3af8d532881415132aa66311ed262a7f70648bad0600f7ef0d2017263866"
+  inputs-digest = "63d06bce73347ba8a9ea0c686f3685c906d4e8564373578d4a1dcc6a2dd03adf"
   solver-name = "gps-cdcl"
   solver-version = 1
