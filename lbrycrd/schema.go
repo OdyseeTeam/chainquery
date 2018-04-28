@@ -58,8 +58,8 @@ type V3Claim struct {
 }
 
 type FeeInfo struct {
-	Amount  float32 `json:amount`  //Required
-	Address string  `json:address` //Required
+	Amount  float32 `json:"amount"`  //Required
+	Address string  `json:"address"` //Required
 }
 
 type Sources struct {

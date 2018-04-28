@@ -7,11 +7,11 @@ import (
 )
 
 type AddressSummary struct {
-	Id            uint64  `boil:id`
-	Address       string  `boil:address`
-	TotalReceived float64 `boil:total_received`
-	TotalSent     float64 `boil:total_sent`
-	Balance       float64 `boil:balance`
+	Id            uint64  `boil:"id"`
+	Address       string  `boil:"address"`
+	TotalReceived float64 `boil:"total_received"`
+	TotalSent     float64 `boil:"total_sent"`
+	Balance       float64 `boil:"balance"`
 }
 
 func GetTableStatus() (*g.TableStatus, error) {

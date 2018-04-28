@@ -31,7 +31,7 @@ func ClaimTrieSync() {
 	logrus.Info("ClaimTrieSync: claim  update started... ")
 	syncwg := sync.WaitGroup{}
 	processingQueue := make(chan lbrycrd.Claim, 100)
-	initSyncWorkers(runtime.NumCPU()-1, processingQueue, syncwg)
+	initSyncWorkers(runtime.NumCPU()-1, processingQueue, &syncwg)
 	for _, claimedName := range names {
 		claims, err := lbrycrd.GetClaimsForName(claimedName.Name)
 		if err != nil {
@@ -49,7 +49,7 @@ func ClaimTrieSync() {
 	logrus.Info("ClaimTrieSync: controlling claim status update started... ")
 	controlwg := sync.WaitGroup{}
 	setControllingQueue := make(chan string, 100)
-	initControllingWorkers(runtime.NumCPU()-1, setControllingQueue, controlwg)
+	initControllingWorkers(runtime.NumCPU()-1, setControllingQueue, &controlwg)
 	for _, claimedName := range names {
 		setControllingQueue <- claimedName.Name
 	}
@@ -59,7 +59,7 @@ func ClaimTrieSync() {
 	logrus.Info("ClaimTrieSync: Processed " + strconv.Itoa(len(names)) + " claimed names.")
 }
 
-func initSyncWorkers(nrWorkers int, jobs <-chan lbrycrd.Claim, wg sync.WaitGroup) {
+func initSyncWorkers(nrWorkers int, jobs <-chan lbrycrd.Claim, wg *sync.WaitGroup) {
 	defer wg.Done()
 	for i := 0; i < nrWorkers; i++ {
 		wg.Add(1)
@@ -67,7 +67,7 @@ func initSyncWorkers(nrWorkers int, jobs <-chan lbrycrd.Claim, wg sync.WaitGroup
 	}
 }
 
-func initControllingWorkers(nrWorkers int, jobs <-chan string, wg sync.WaitGroup) {
+func initControllingWorkers(nrWorkers int, jobs <-chan string, wg *sync.WaitGroup) {
 	defer wg.Done()
 	for i := 0; i < nrWorkers; i++ {
 		wg.Add(1)
