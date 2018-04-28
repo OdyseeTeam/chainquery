@@ -49,8 +49,8 @@ script:
   - ./scripts/test.sh
   # Run integration tests
   - ./scripts/int_tests.sh
-  # go vet is the official Go static analyzer - ignore autogen code
-  - go vet ./... | grep -v /vendor/ | grep -v /model/ | grep -v /swagger/ | grep -v /migration/
+  # go vet is the official Go static analyzer
+  - go vet ./...
   # "go vet on steroids" + linter - ignore autogen code
   - megacheck ./... | grep -v /vendor/ | grep -v /model/ | grep -v /swagger/ | grep -v /migration/
   # forbid code with huge functions
