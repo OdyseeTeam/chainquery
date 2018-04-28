@@ -114,7 +114,7 @@ func syncClaim(claimJSON *lbrycrd.Claim) {
 	if claim == nil {
 		unknown, _ := model.UnknownClaimsG(qm.Where(model.UnknownClaimColumns.ClaimID+"=?", claimJSON.ClaimId)).One()
 		if unknown == nil {
-			//logrus.Error("Missing Claim: ", claimJSON.ClaimId, " ", claimJSON.TxId, " ", claimJSON.N)
+			logrus.Debug("Missing Claim: ", claimJSON.ClaimId, " ", claimJSON.TxId, " ", claimJSON.N)
 		}
 		return
 	}

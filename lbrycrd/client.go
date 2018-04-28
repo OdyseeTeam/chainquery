@@ -14,6 +14,7 @@ import (
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/shopspring/decimal"
+	"github.com/sirupsen/logrus"
 )
 
 var defaultClient *upstream.Client
@@ -52,7 +53,7 @@ func call(response interface{}, command string, params ...interface{}) error {
 }
 
 func callNoDecode(command string, params ...interface{}) (interface{}, error) {
-	//logrus.Debugln("jsonrpc: " + command + " " + debugParams(params))
+	logrus.Debug("jsonrpc: " + command + " " + debugParams(params))
 	var err error
 
 	encodedParams := make([]json.RawMessage, len(params))

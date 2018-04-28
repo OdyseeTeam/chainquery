@@ -49,9 +49,13 @@ func RunBlockProcessing(height *uint64) {
 	Txs := jsonBlock.Tx
 	for i := range Txs {
 		jsonTx, err := lbrycrd.GetRawTransactionResponse(Txs[i])
-		err = ProcessTx(jsonTx, block.BlockTime)
 		if err != nil {
 			logrus.Error(err)
+		} else {
+			err = ProcessTx(jsonTx, block.BlockTime)
+			if err != nil {
+				logrus.Error(err)
+			}
 		}
 	}
 }

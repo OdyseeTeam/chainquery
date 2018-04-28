@@ -45,7 +45,7 @@ func IsClaimScript(script []byte) bool {
 }
 
 func IsClaimNameScript(script []byte) bool {
-	if script != nil && len(script) > 0 {
+	if len(script) > 0 {
 		return script[0] == OP_CLAIM_NAME
 	}
 	log.Error("script is nil or length 0!")
@@ -53,14 +53,14 @@ func IsClaimNameScript(script []byte) bool {
 }
 
 func IsClaimSupportScript(script []byte) bool {
-	if script != nil && len(script) > 0 {
+	if len(script) > 0 {
 		return script[0] == OP_SUPPORT_CLAIM
 	}
 	return false
 }
 
 func IsClaimUpdateScript(script []byte) bool {
-	if script != nil && len(script) > 0 {
+	if len(script) > 0 {
 		return script[0] == OP_UPDATE_CLAIM
 	}
 	return false
@@ -241,7 +241,7 @@ func getPublicKeyScriptType(script []byte) string {
 }
 
 func isPayToScriptHashScript(script []byte) bool {
-	if script != nil && len(script) > 0 {
+	if len(script) > 0 {
 		return script[0] == OP_UPDATE_CLAIM
 	}
 	return false

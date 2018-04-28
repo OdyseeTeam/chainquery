@@ -16,8 +16,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var DebugMode bool
-
 func main() {
 	config.InitializeConfiguration()
 	//defer profile.Start(profile.ProfilePath(os.Getenv("HOME") + "/chainquery")).Stop()

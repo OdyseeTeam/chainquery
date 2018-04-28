@@ -24,25 +24,24 @@ func processAsClaim(script []byte, vout model.Output, tx model.Transaction) (add
 		if err != nil {
 			return nil, err
 		}
-		return nil, nil
 	} else if lbrycrd.IsClaimSupportScript(script) {
 		name, claimid, pubkeyscript, err = processClaimSupportScript(&script, vout, tx)
 		if err != nil {
 			return nil, err
 		}
-		return nil, nil
 	} else if lbrycrd.IsClaimUpdateScript(script) {
 		name, claimid, pubkeyscript, err = processClaimUpdateScript(&script, vout, tx)
 		if err != nil {
 			return nil, err
 		}
-		return nil, nil
+	} else {
+		return nil, errors.Base("Not a claim -- " + hex.EncodeToString(script))
 	}
 	pksAddress := lbrycrd.GetAddressFromPublicKeyScript(pubkeyscript)
 	address = &pksAddress
 	logrus.Debug("Handled Claim: ", " Name ", name, ", ClaimID ", claimid)
 
-	return nil, errors.Base("Not a claim -- " + hex.EncodeToString(script))
+	return address, nil
 }
 
 func processClaimNameScript(script *[]byte, vout model.Output, tx model.Transaction) (name string, claimid string, pkscript []byte, err error) {
@@ -114,6 +113,9 @@ func processClaimUpdateScript(script *[]byte, vout model.Output, tx model.Transa
 			return name, claimId, pubkeyscript, err
 		}
 		err = datastore.PutClaim(claim)
+		if err != nil {
+			return name, claimId, pubkeyscript, err
+		}
 	}
 	return name, claimId, pubkeyscript, err
 }

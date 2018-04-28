@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"strconv"
-	"time"
 
 	ds "github.com/lbryio/chainquery/datastore"
 	"github.com/lbryio/chainquery/lbrycrd"
@@ -26,9 +25,6 @@ type voutToProcess struct {
 	txDC     *txDebitCredits
 }
 
-var vinInputChannel = make(chan vinToProcess)
-var vinOutputChannel = make(chan error)
-
 func initVinWorkers(nrWorkers int, jobs <-chan vinToProcess, results chan<- error) {
 	for i := 0; i < nrWorkers; i++ {
 		go vinProcessor(jobs, results)
@@ -41,9 +37,6 @@ func vinProcessor(jobs <-chan vinToProcess, results chan<- error) error {
 	}
 	return nil
 }
-
-var voutInputChannel = make(chan vinToProcess)
-var voutOutputChannel = make(chan error)
 
 func initVoutWorkers(nrWorkers int, jobs <-chan voutToProcess, results chan<- error) {
 	for i := 0; i < nrWorkers; i++ {
@@ -231,18 +224,6 @@ func getAddressFromNonStandardVout(hexString string) (address string, err error)
 	}
 	address = lbrycrd.GetAddressFromPublicKeyScript(pksBytes)
 	return address, nil
-}
-
-func createTransactionAddress(txID uint64, addressID uint64) m.TransactionAddress {
-
-	txAddress := m.TransactionAddress{}
-	txAddress.TransactionID = txID
-	txAddress.AddressID = addressID
-	txAddress.DebitAmount = 0.0
-	txAddress.CreditAmount = 0.0
-	txAddress.LatestTransactionTime = time.Now()
-
-	return txAddress
 }
 
 func processScript(vout m.Output, tx m.Transaction) error {

@@ -32,12 +32,6 @@ func Init(dsn string, debug bool) (*QueryLogger, error) {
 
 	boil.SetDB(logWrapper)
 
-	// ensure that db supports transactions
-	_, ok := boil.GetDB().(boil.Beginner)
-	if !ok {
-		//return nil, errors.Err("database does not support transactions")
-	}
-
 	migrations := &migrate.AssetMigrationSource{
 		Asset:    migration.Asset,
 		AssetDir: migration.AssetDir,

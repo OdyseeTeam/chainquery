@@ -28,17 +28,17 @@ func DecodeClaimValue(name string, value []byte) (*pb.Claim, error) {
 			if err != nil {
 				return nil, errors.Prefix("Claim "+name+" value has no matching verion - "+string(value), err)
 			}
-
 			pbClaim, err = migrateV3Claim(*v3Claim)
 			if err != nil {
 				return nil, errors.Prefix("V3 Metadata Migration Error", err)
 			}
+			return pbClaim, nil
 		}
-
 		pbClaim, err = migrateV2Claim(*v2Claim)
 		if err != nil {
 			return nil, errors.Prefix("V2 Metadata Migration Error ", err)
 		}
+		return pbClaim, nil
 	}
 
 	pbClaim, err = migrateV1Claim(*v1Claim)

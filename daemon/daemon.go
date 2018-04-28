@@ -23,7 +23,6 @@ const (
 	DAEMONMODE     = 3 // 1 block per Daemon iteration
 )
 
-var workers = runtime.NumCPU() / 2 //Split cores between processors and lbycrd
 var lastHeightProcessed uint64 = 0 // Around 165,000 is when protobuf takes affect.
 var blockHeight uint64 = 0
 var running = false
