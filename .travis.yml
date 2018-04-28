@@ -41,12 +41,19 @@ before_script:
 # script always run to completion (set +e). All of these code checks are must haves
 # in a modern Go project.
 script:
-  - ./scripts/build.sh                       # Build Chainquery sucessfully
-  - test -z $(gofmt -s -l $GO_FILES)         # Fail if a .go file hasn't been formatted with gofmt
-  - ./scripts/test.sh                        # Run unit tests
-  - ./scripts/int_tests.sh                   # Run integration tests
-
-  - go vet ./...                             # go vet is the official Go static analyzer
-  - megacheck ./...                          # "go vet on steroids" + linter
-  - gocyclo -over 19 $GO_FILES               # forbid code with huge functions
-  - golint -set_exit_status $(go list ./... | grep -v /vendor/ | grep -v /model/ | grep -v /swagger/ | grep -v /migration/ ) # one last linter
+  # Build Chainquery sucessfully
+  - ./scripts/build.sh
+  # Fail if a .go file hasn't been formatted with gofmt
+  - test -z $(gofmt -s -l $GO_FILES)
+  # Run unit tests
+  - ./scripts/test.sh
+  # Run integration tests
+  - ./scripts/int_tests.sh
+  # go vet is the official Go static analyzer - ignore autogen code
+  - go vet ./... | grep -v /vendor/ | grep -v /model/ | grep -v /swagger/ | grep -v /migration/
+  # "go vet on steroids" + linter - ignore autogen code
+  - megacheck ./... | grep -v /vendor/ | grep -v /model/ | grep -v /swagger/ | grep -v /migration/
+  # forbid code with huge functions
+  - gocyclo -over 19 $GO_FILES
+  # one last linter - ignore autogen code
+  - golint -set_exit_status $(go list ./... | grep -v /vendor/ | grep -v /model/ | grep -v /swagger/ | grep -v /migration/ )
