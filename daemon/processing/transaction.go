@@ -100,10 +100,8 @@ func ProcessTx(jsonTx *lbrycrd.TxRawResult, blockTime uint64) error {
 
 func saveUpdateTransaction(jsonTx *lbrycrd.TxRawResult) (*model.Transaction, error) {
 	transaction := &model.Transaction{}
-	foundTx, err := model.TransactionsG(qm.Where(model.TransactionColumns.Hash+"=?", jsonTx.Txid)).One()
-	if err != nil {
-		logrus.Error("Find Transaction Error: ", err)
-	}
+	// Error is not helpful. It returns an error if there is nothing in the database.
+	foundTx, _ := model.TransactionsG(qm.Where(model.TransactionColumns.Hash+"=?", jsonTx.Txid)).One()
 	if foundTx != nil {
 		transaction = foundTx
 	}
@@ -121,11 +119,11 @@ func saveUpdateTransaction(jsonTx *lbrycrd.TxRawResult) (*model.Transaction, err
 	transaction.TransactionSize = uint64(jsonTx.Size)
 
 	if foundTx != nil {
-		if err = transaction.UpdateG(); err != nil {
+		if err := transaction.UpdateG(); err != nil {
 			return transaction, err
 		}
 	} else {
-		if err = transaction.InsertG(); err != nil {
+		if err := transaction.InsertG(); err != nil {
 			return nil, err
 		}
 	}
