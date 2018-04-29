@@ -13,6 +13,7 @@
 
 ![Github commits (since latest release)](https://img.shields.io/github/commits-since/lbryio/chainquery/latest.svg)
 
+[![Coverage Status](https://coveralls.io/repos/github/lbryio/chainquery/badge.svg?branch=master)](https://coveralls.io/github/lbryio/chainquery?branch=master)
 
 ## Active Development Notice
  
