@@ -65,7 +65,7 @@ script:
   # checks for unhandled errors
   - errcheck $(go list ./... | grep -v /vendor/ | grep -v /model | grep -v /swagger/ | grep -v /migration )
   # "go vet on steroids" + linter - ignore autogen code
-  - megacheck ./... | grep -v vendor | grep -v model | grep -v swagger | grep -v migration
+  - megacheck -simple.exit-non-zero=true $(go list ./... | grep -v /vendor/ | grep -v /model | grep -v /swagger/ | grep -v /migration )
   # check for unnecessary conversions - ignore autogen code
   - unconvert -v $(go list ./... | grep -v /vendor/ | grep -v /model | grep -v /swagger/ | grep -v /migration )
   # one last linter - ignore autogen code
