@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 
+	"github.com/lbryio/chainquery/datastore"
 	"github.com/lbryio/chainquery/lbrycrd"
 	"github.com/lbryio/chainquery/model"
 	"github.com/lbryio/lbry.go/errors"
@@ -11,7 +12,6 @@ import (
 	"github.com/lbryio/lbryschema.go/address/base58"
 	"github.com/lbryio/lbryschema.go/pb"
 
-	"github.com/lbryio/chainquery/datastore"
 	"github.com/sirupsen/logrus"
 )
 
@@ -51,7 +51,7 @@ func processClaimNameScript(script *[]byte, vout model.Output, tx model.Transact
 	}
 	name, value, pkscript, err := lbrycrd.ParseClaimNameScript(*script)
 	if err != nil {
-		errors.Prefix("Claim name script parsing error: ", err)
+		err := errors.Prefix("Claim name script parsing error: ", err)
 		return name, claimid, pkscript, err
 	}
 	pbClaim, err := DecodeClaimValue(name, value)
@@ -80,12 +80,12 @@ func processClaimNameScript(script *[]byte, vout model.Output, tx model.Transact
 func processClaimSupportScript(script *[]byte, vout model.Output, tx model.Transaction) (name string, claimid string, pubkeyscript []byte, err error) {
 	name, claimid, pubkeyscript, err = lbrycrd.ParseClaimSupportScript(*script)
 	if err != nil {
-		errors.Prefix("Claim support processing error: ", err)
+		err := errors.Prefix("Claim support processing error: ", err)
 		return name, claimid, pubkeyscript, err
 	}
 	support := datastore.GetSupport(tx.Hash, vout.Vout)
 	support = processSupport(claimid, support, vout, tx)
-	datastore.PutSupport(support)
+	err = datastore.PutSupport(support)
 
 	return name, claimid, pubkeyscript, err
 }
@@ -93,7 +93,7 @@ func processClaimSupportScript(script *[]byte, vout model.Output, tx model.Trans
 func processClaimUpdateScript(script *[]byte, vout model.Output, tx model.Transaction) (name string, claimId string, pubkeyscript []byte, err error) {
 	name, claimId, value, pubkeyscript, err := lbrycrd.ParseClaimUpdateScript(*script)
 	if err != nil {
-		errors.Prefix("Claim update processing error: ", err)
+		err := errors.Prefix("Claim update processing error: ", err)
 		return name, claimId, pubkeyscript, err
 	}
 	pbClaim, err := DecodeClaimValue(name, value)
@@ -124,7 +124,8 @@ func processClaim(pbClaim *pb.Claim, claim *model.Claim, value []byte, output mo
 	if claim == nil {
 		claim = &model.Claim{}
 	}
-	claim.SetTransactionByHashG(false, &tx)
+	claim.TransactionByHashID.String = tx.Hash
+	claim.TransactionByHashID.Valid = true
 	claim.Vout = output.Vout
 	claim.Version = pbClaim.GetVersion().String()
 	claim.ValueAsHex = hex.EncodeToString(value)
@@ -269,7 +270,9 @@ func saveUnknownClaim(name string, claimid string, isUpdate bool, value []byte, 
 		unknownClaim.ValueAsJSON.Valid = true
 	}
 
-	unknownClaim.SetOutputG(false, &vout)
-	unknownClaim.InsertG()
+	unknownClaim.OutputID = vout.ID
+	if err := unknownClaim.InsertG(); err != nil {
+		logrus.Error("UnknownClaim Saving Error: ", err)
+	}
 
 }

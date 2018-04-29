@@ -46,7 +46,7 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		defer dbInstance.Close()
+		defer db.CloseDB(dbInstance)
 
 		lbrycrdClient := lbrycrd.Init()
 		defer lbrycrdClient.Shutdown()

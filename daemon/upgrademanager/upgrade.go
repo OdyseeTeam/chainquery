@@ -5,6 +5,7 @@ import (
 	//"github.com/lbryio/chainquery/util"
 	//"time"
 	"github.com/lbryio/chainquery/model"
+	"github.com/lbryio/lbry.go/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -22,7 +23,10 @@ func RunUpgradesForVersion() {
 	var err error
 	if !model.ApplicationStatusExistsGP(1) {
 		appStatus = &model.ApplicationStatus{AppVersion: 1, APIVersion: 1, DataVersion: 1}
-		appStatus.InsertG()
+		if err := appStatus.InsertG(); err != nil {
+			err := errors.Prefix("App Status Error: ", err)
+			panic(err)
+		}
 	} else {
 		appStatus, err = model.FindApplicationStatusG(1)
 		if err != nil {
@@ -40,7 +44,10 @@ func RunUpgradesForVersion() {
 		appStatus.DataVersion = DataVersion
 		appStatus.APIVersion = ApiVersion
 	}
-	appStatus.UpdateG()
+	if err := appStatus.UpdateG(); err != nil {
+		err := errors.Prefix("App Status Error: ", err)
+		panic(err)
+	}
 	logrus.Info("All necessary upgrades are finished!")
 }
 

@@ -57,7 +57,10 @@ func initFlags() {
 	pflag.StringP(CONFIGPATHFLAG, "c", "", "Specify non-default location of the configuration of chainquery.")
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
 	pflag.Parse()
-	viper.BindPFlags(pflag.CommandLine)
+	if err := viper.BindPFlags(pflag.CommandLine); err != nil {
+		panic(err)
+	}
+
 }
 
 func readConfig() {

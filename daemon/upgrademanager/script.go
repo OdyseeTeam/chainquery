@@ -28,6 +28,9 @@ func reProcessAllClaims() {
 			panic(err)
 		}
 		logrus.Debug("Processing ", block.Height, " ", tx.Hash)
-		processing.ProcessTx(txResult, block.BlockTime)
+		err = processing.ProcessTx(txResult, block.BlockTime)
+		if err != nil {
+			logrus.Error("Reprocess Claim Error: ", err)
+		}
 	}
 }

@@ -66,11 +66,11 @@ func runDaemon() {
 	}
 }
 
-func daemonIteration() error {
+func daemonIteration() {
 
 	height, err := lbrycrd.GetBlockCount()
 	if err != nil {
-		return err
+		log.Error(err)
 	}
 	blockHeight = *height - BlockConfirmationBuffer
 	if lastHeightProcessed == uint64(0) {
@@ -94,7 +94,6 @@ func daemonIteration() error {
 			break
 		}
 	}
-	return nil
 }
 
 func ApplySettings(processingDelay time.Duration, daemonDelay time.Duration) {

@@ -1,6 +1,7 @@
 package processing
 
 import (
+	"runtime"
 	"sync"
 	"time"
 
@@ -11,9 +12,7 @@ import (
 	"github.com/lbryio/lbry.go/errors"
 
 	"github.com/sirupsen/logrus"
-	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
-	"runtime"
 )
 
 type txDebitCredits struct {
@@ -44,7 +43,7 @@ func (addDC *AddrDebitCredits) Credits() float64 {
 	return addDC.credits
 }
 
-func (txDC *txDebitCredits) subtract(address string, value float64) error {
+func (txDC *txDebitCredits) subtract(address string, value float64) {
 	txDC.mutex.Lock()
 	if txDC.AddrDCMap[address] == nil {
 		addrDC := AddrDebitCredits{}
@@ -52,10 +51,9 @@ func (txDC *txDebitCredits) subtract(address string, value float64) error {
 	}
 	txDC.AddrDCMap[address].debits = txDC.AddrDCMap[address].debits + value
 	txDC.mutex.Unlock()
-	return nil
 }
 
-func (txDC *txDebitCredits) add(address string, value float64) error {
+func (txDC *txDebitCredits) add(address string, value float64) {
 	txDC.mutex.Lock()
 	if txDC.AddrDCMap[address] == nil {
 		addrDC := AddrDebitCredits{}
@@ -63,8 +61,6 @@ func (txDC *txDebitCredits) add(address string, value float64) error {
 	}
 	txDC.AddrDCMap[address].credits = txDC.AddrDCMap[address].credits + value
 	txDC.mutex.Unlock()
-
-	return nil
 }
 
 func ProcessTx(jsonTx *lbrycrd.TxRawResult, blockTime uint64) error {
@@ -121,12 +117,13 @@ func saveUpdateTransaction(jsonTx *lbrycrd.TxRawResult) (*model.Transaction, err
 	transaction.TransactionSize = uint64(jsonTx.Size)
 
 	if foundTx != nil {
-		transaction.Update(boil.GetDB())
+		if err = transaction.UpdateG(); err != nil {
+			return transaction, err
+		}
 	} else {
-		err = transaction.Insert(boil.GetDB())
-	}
-	if err != nil {
-		return nil, err
+		if err = transaction.InsertG(); err != nil {
+			return nil, err
+		}
 	}
 
 	return transaction, nil
@@ -184,7 +181,8 @@ func setSendReceive(transaction *model.Transaction, txDbCrAddrMap *txDebitCredit
 		txAddr.CreditAmount = DC.Credits()
 		txAddr.DebitAmount = DC.Debits()
 
-		datastore.PutTxAddress(txAddr)
-
+		if err := datastore.PutTxAddress(txAddr); err != nil {
+			panic(err) //Should never happen or something is wrong
+		}
 	}
 }

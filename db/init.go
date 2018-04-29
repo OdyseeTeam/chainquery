@@ -45,3 +45,9 @@ func Init(dsn string, debug bool) (*QueryLogger, error) {
 
 	return logWrapper, nil
 }
+
+func CloseDB(db *QueryLogger) {
+	if err := db.Close(); err != nil {
+		log.Error("Closing DB Error: ", err)
+	}
+}

@@ -31,11 +31,10 @@ func initVinWorkers(nrWorkers int, jobs <-chan vinToProcess, results chan<- erro
 	}
 }
 
-func vinProcessor(jobs <-chan vinToProcess, results chan<- error) error {
+func vinProcessor(jobs <-chan vinToProcess, results chan<- error) {
 	for job := range jobs {
 		results <- processVin(job.jsonVin, job.tx, job.txDC)
 	}
-	return nil
 }
 
 func initVoutWorkers(nrWorkers int, jobs <-chan voutToProcess, results chan<- error) {
@@ -44,11 +43,10 @@ func initVoutWorkers(nrWorkers int, jobs <-chan voutToProcess, results chan<- er
 	}
 }
 
-func voutProcessor(jobs <-chan voutToProcess, results chan<- error) error {
+func voutProcessor(jobs <-chan voutToProcess, results chan<- error) {
 	for job := range jobs {
 		results <- processVout(job.jsonVout, job.tx, job.txDC)
 	}
-	return nil
 }
 
 func processVin(jsonVin *lbrycrd.Vin, tx *m.Transaction, txDC *txDebitCredits) error {
@@ -86,7 +84,11 @@ func processVin(jsonVin *lbrycrd.Vin, tx *m.Transaction, txDC *txDebitCredits) e
 
 			vin.Value = src_output.Value
 			var addresses []string
-			json.Unmarshal([]byte(src_output.AddressList.String), &addresses)
+			if src_output.AddressList.Valid {
+				if err := json.Unmarshal([]byte(src_output.AddressList.String), &addresses); err != nil {
+					logrus.Error("Error unmarshalling source output address list: ", err)
+				}
+			}
 			var address *m.Address
 			if len(addresses) > 0 {
 				address = ds.GetAddress(addresses[0])

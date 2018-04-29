@@ -1,7 +1,11 @@
 package db
 
 import (
+	"database/sql"
+
 	g "github.com/lbryio/chainquery/swagger/clients/goclient"
+
+	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 )
@@ -27,7 +31,7 @@ func GetTableStatus() (*g.TableStatus, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer closeRows(rows)
 	var statrows []g.TableSize
 	for rows.Next() {
 		var stat g.TableSize
@@ -60,4 +64,10 @@ func GetAddressSummary(address string) (*AddressSummary, error) {
 
 	return &addressSummary, nil
 
+}
+
+func closeRows(rows *sql.Rows) {
+	if err := rows.Close(); err != nil {
+		logrus.Error("Closing rows error: ", err)
+	}
 }

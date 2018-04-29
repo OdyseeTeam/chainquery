@@ -75,18 +75,16 @@ func initControllingWorkers(nrWorkers int, jobs <-chan string, wg *sync.WaitGrou
 	}
 }
 
-func syncProcessor(jobs <-chan lbrycrd.Claim) error {
+func syncProcessor(jobs <-chan lbrycrd.Claim) {
 	for job := range jobs {
 		syncClaim(&job)
 	}
-	return nil
 }
 
-func controllingProcessor(names <-chan string) error {
+func controllingProcessor(names <-chan string) {
 	for name := range names {
 		setControllingClaimForName(name)
 	}
-	return nil
 }
 
 func setControllingClaimForName(name string) {
@@ -133,7 +131,9 @@ func syncClaim(claimJSON *lbrycrd.Claim) {
 		hasChanges = true
 	}
 	if hasChanges {
-		datastore.PutClaim(claim)
+		if err := datastore.PutClaim(claim); err != nil {
+			logrus.Error("ClaimTrieSync: ", err)
+		}
 	}
 }
 

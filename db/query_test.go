@@ -1,13 +1,13 @@
 package db
 
 import (
+	"os"
 	"testing"
 
+	"github.com/lbryio/chainquery/config"
 	"github.com/lbryio/chainquery/model"
 
-	"github.com/lbryio/chainquery/config"
 	"github.com/volatiletech/sqlboiler/queries/qm"
-	"os"
 )
 
 func TestMain(m *testing.M) {
@@ -16,7 +16,7 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		panic(err)
 	}
-	defer dbInstance.Close()
+	defer CloseDB(dbInstance)
 	os.Exit(m.Run())
 }
 
