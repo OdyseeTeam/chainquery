@@ -51,7 +51,7 @@ func voutProcessor(jobs <-chan voutToProcess, results chan<- error) {
 
 func processVin(jsonVin *lbrycrd.Vin, tx *m.Transaction, txDC *txDebitCredits) error {
 	vin := &m.Input{}
-	foundVin := ds.GetInput(tx.Hash, len(jsonVin.Coinbase) > 0, jsonVin.Txid, uint(jsonVin.Vout))
+	foundVin := ds.GetInput(tx.Hash, len(jsonVin.Coinbase) > 0, jsonVin.TxID, uint(jsonVin.Vout))
 	if foundVin != nil {
 		vin = foundVin
 	}
@@ -61,10 +61,11 @@ func processVin(jsonVin *lbrycrd.Vin, tx *m.Transaction, txDC *txDebitCredits) e
 
 	if jsonVin.Coinbase != "" { //
 		// No Source Output - Generation of Coin
-		err := processCoinBaseVin(jsonVin, vin)
-		return err
+		if err := processCoinBaseVin(jsonVin, vin); err != nil {
+			return err
+		}
 	} else {
-		vin.PrevoutHash.String = jsonVin.Txid
+		vin.PrevoutHash.String = jsonVin.TxID
 		vin.PrevoutHash.Valid = true
 		vin.PrevoutN.Uint = uint(jsonVin.Vout)
 		vin.PrevoutN.Valid = true
@@ -72,41 +73,41 @@ func processVin(jsonVin *lbrycrd.Vin, tx *m.Transaction, txDC *txDebitCredits) e
 		vin.ScriptSigHex.Valid = true
 		vin.ScriptSigAsm.String = jsonVin.ScriptSig.Asm
 		vin.ScriptSigAsm.Valid = true
-		src_output := ds.GetOutput(vin.PrevoutHash.String, vin.PrevoutN.Uint)
-		if src_output == nil {
+		srcOutput := ds.GetOutput(vin.PrevoutHash.String, vin.PrevoutN.Uint)
+		if srcOutput == nil {
 			id := strconv.Itoa(int(tx.ID))
 			sequence := strconv.FormatUint(uint64(vin.Sequence), 10)
 			logrus.Error("Tx ", tx.ID, ", Vin ", vin.PrevoutN.Uint, " - ", vin.PrevoutHash.String)
 			err := errors.Base("No source output for vin in tx: (" + id + ") - (" + sequence + ")")
 			panic(err)
 		}
-		if src_output != nil {
+		if srcOutput != nil {
 
-			vin.Value = src_output.Value
+			vin.Value = srcOutput.Value
 			var addresses []string
-			if src_output.AddressList.Valid {
-				if err := json.Unmarshal([]byte(src_output.AddressList.String), &addresses); err != nil {
+			if srcOutput.AddressList.Valid {
+				if err := json.Unmarshal([]byte(srcOutput.AddressList.String), &addresses); err != nil {
 					logrus.Error("Error unmarshalling source output address list: ", err)
 				}
 			}
 			var address *m.Address
 			if len(addresses) > 0 {
 				address = ds.GetAddress(addresses[0])
-			} else if src_output.Type.String == lbrycrd.NON_STANDARD {
+			} else if srcOutput.Type.String == lbrycrd.NonStandard {
 
-				jsonAddress, err := getAddressFromNonStandardVout(src_output.ScriptPubKeyHex.String)
+				jsonAddress, err := getAddressFromNonStandardVout(srcOutput.ScriptPubKeyHex.String)
 				if err != nil {
 					return err
 				}
 				address = ds.GetAddress(jsonAddress)
 				if address == nil {
-					logrus.Error("No addresses for vout address list! ", src_output.ID, " -> ", src_output.AddressList.String)
+					logrus.Error("No addresses for vout address list! ", srcOutput.ID, " -> ", srcOutput.AddressList.String)
 					panic(nil)
 				}
 
 			}
 			if address != nil {
-				txDC.subtract(address.Address, src_output.Value.Float64)
+				txDC.subtract(address.Address, srcOutput.Value.Float64)
 				vin.InputAddressID.Uint64 = address.ID
 				vin.InputAddressID.Valid = true
 				// Store input - Needed to store input address below
@@ -120,13 +121,13 @@ func processVin(jsonVin *lbrycrd.Vin, tx *m.Transaction, txDC *txDebitCredits) e
 					panic(err)
 				}
 			} else {
-				logrus.Error("No Address created for Vin: ", vin.ID, " of tx ", tx.ID, " vout: ", src_output.ID, " Address: ", addresses[0])
+				logrus.Error("No Address created for Vin: ", vin.ID, " of tx ", tx.ID, " vout: ", srcOutput.ID, " Address: ", addresses[0])
 				panic(nil)
 			}
-			// Update the src_output spent if successful
-			src_output.IsSpent = true
-			src_output.SpentByInputID.Uint64 = vin.ID
-			err := ds.PutOutput(src_output)
+			// Update the srcOutput spent if successful
+			srcOutput.IsSpent = true
+			srcOutput.SpentByInputID.Uint64 = vin.ID
+			err := ds.PutOutput(srcOutput)
 			if err != nil {
 				return err
 			}
@@ -176,7 +177,7 @@ func processVout(jsonVout *lbrycrd.Vout, tx *m.Transaction, txDC *txDebitCredits
 		address = ds.GetAddress(jsonVout.ScriptPubKey.Addresses[0])
 		vout.AddressList.String = string(jsonAddresses)
 		vout.AddressList.Valid = true
-	} else if vout.Type.String == lbrycrd.NON_STANDARD {
+	} else if vout.Type.String == lbrycrd.NonStandard {
 		jsonAddress, err := getAddressFromNonStandardVout(vout.ScriptPubKeyHex.String)
 		if err != nil {
 			return err
@@ -233,7 +234,7 @@ func processScript(vout m.Output, tx m.Transaction) error {
 	if err != nil {
 		return err
 	}
-	isNonStandard := vout.Type.String == lbrycrd.NON_STANDARD
+	isNonStandard := vout.Type.String == lbrycrd.NonStandard
 	isClaimScript := lbrycrd.IsClaimScript(scriptBytes)
 	if isNonStandard && isClaimScript {
 		_, err = processAsClaim(scriptBytes, vout, tx)

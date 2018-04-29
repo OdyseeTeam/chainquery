@@ -5,13 +5,13 @@ import (
 	"testing"
 )
 
-type claimIdMatch struct {
-	ClaimId string
+type claimIDMatch struct {
+	ClaimID string
 	TxHash  string
 	N       uint
 }
 
-var claimIdTests = []claimIdMatch{
+var claimIDTests = []claimIDMatch{
 
 	{"589bc4845caca70977332025990b2a1807732b44",
 		"6a9dbe3084b86cec8aa519970d2245dfa15193294cab65819a0d96d455c2a5df",
@@ -45,13 +45,13 @@ var claimIdTests = []claimIdMatch{
 
 func TestGetClaimIDFromOutput(t *testing.T) {
 
-	for _, claimMatch := range claimIdTests {
+	for _, claimMatch := range claimIDTests {
 		claimID, err := util.ClaimIDFromOutpoint(claimMatch.TxHash, int(claimMatch.N))
 		if err != nil {
 			t.Error(err)
 		}
-		if claimID != claimMatch.ClaimId {
-			t.Error("Expected ", claimMatch.ClaimId, " got ", claimID)
+		if claimID != claimMatch.ClaimID {
+			t.Error("Expected ", claimMatch.ClaimID, " got ", claimID)
 		}
 	}
 

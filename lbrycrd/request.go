@@ -27,7 +27,7 @@ func GetBlockHash(i uint64) (*string, error) {
 	return &value, nil
 }
 
-//Returns the highest block LBRYcrd is aware of.
+// GetBlockCount returns the highest block LBRYcrd is aware of.
 func GetBlockCount() (*uint64, error) {
 	defer util.TimeTrack(time.Now(), "getblockcount", "lbrycrdprofile")
 	rawresponse, err := callNoDecode("getblockcount")
@@ -44,7 +44,7 @@ func GetBlockCount() (*uint64, error) {
 
 }
 
-//Returns the raw transactions structured data. This will not always work. LBRYcrd must have
+// GetRawTransactionResponse returns the raw transactions structured data. This will not always work. LBRYcrd must have
 //-txindex turned on otherwise only transactions in the memory pool can be returned.
 func GetRawTransactionResponse(hash string) (*TxRawResult, error) {
 	defer util.TimeTrack(time.Now(), "getrawtransaction", "lbrycrdprofile")
@@ -53,7 +53,7 @@ func GetRawTransactionResponse(hash string) (*TxRawResult, error) {
 	return response, call(&response, "getrawtransaction", hash, 1)
 }
 
-//Returns the balance of a wallet address.
+// GetBalance returns the balance of a wallet address.
 func GetBalance() (*float64, error) {
 	defer util.TimeTrack(time.Now(), "getbalance", "lbrycrdprofile")
 	rawresponse, err := callNoDecode("getbalance")
@@ -69,7 +69,7 @@ func GetBalance() (*float64, error) {
 	return &floatValue, nil
 }
 
-//Gets all the claims current active in the claim trie
+// GetClaimsInTrie gets all the claims current active in the claim trie
 func GetClaimsInTrie() ([]ClaimNameResult, error) {
 	defer util.TimeTrack(time.Now(), "getclaimsintrie", "lbrycrdprofile")
 	response := new([]ClaimNameResult)
@@ -77,6 +77,7 @@ func GetClaimsInTrie() ([]ClaimNameResult, error) {
 	return *response, call(&response, "getclaimsintrie")
 }
 
+// GetClaimsForName gets all the claims for a name in the claimtrie.
 func GetClaimsForName(name string) (ClaimsForNameResult, error) {
 	response := new(ClaimsForNameResult)
 

@@ -13,22 +13,23 @@ import (
 
 const (
 	//lbrycrd				//btcd
-	OP_CLAIM_NAME    = 0xb5 //OP_NOP6 			= 181
-	OP_SUPPORT_CLAIM = 0xb6 //OP_NOP7 			= 182
-	OP_UPDATE_CLAIM  = 0xb7 //OP_NOP8 			= 183
-	OP_DUP           = 0x76 //OP_DUP 			= 118
-	OP_CHECKSIG      = 0xac //OP_CHECKSIG 		= 172
-	OP_EQUALVERIFY   = 0x88 //OP_EQUALVERIFY 	= 136
-	OP_HASH160       = 0xa9 //OP_HASH160		= 169
-	OP_PUSHDATA1     = 0x4c //OP_PUSHDATA1  	= 76
-	OP_PUSHDATA2     = 0x4d //OP_PUSHDATA2 		= 77
-	OP_PUSHDATA4     = 0x4e //OP_PUSHDATA4 		= 78
+	opClaimName    = 0xb5 //OP_NOP6 			= 181
+	opSupportClaim = 0xb6 //OP_NOP7 			= 182
+	opUpdateClaim  = 0xb7 //OP_NOP8 			= 183
+	opDup          = 0x76 //opDup 			= 118
+	opChecksig     = 0xac //opChecksig 		= 172
+	opEqualverify  = 0x88 //opEqualverify 	= 136
+	opHash160      = 0xa9 //opHash160		= 169
+	opPushdata1    = 0x4c //opPushdata1  	= 76
+	opPushdata2    = 0x4d //opPushdata2 		= 77
+	opPushdata4    = 0x4e //opPushdata4 		= 78
 
 	// Types of vOut scripts
-	P2SH         = "scripthash"  // Pay to Script Hash
-	P2PK         = "pubkey"      // Pay to Public Key
-	P2PKH        = "pubkeyhash"  // Pay to Public Key Hash
-	NON_STANDARD = "nonstandard" // Non Standard - Used for Claims in LBRY
+	p2SH  = "scripthash" // Pay to Script Hash
+	p2PK  = "pubkey"     // Pay to Public Key
+	p2PKH = "pubkeyhash" // Pay to Public Key Hash
+	// NonStandard is a transaction type, usually used for a claim.
+	NonStandard = "nonstandard" // Non Standard - Used for Claims in LBRY
 
 )
 
@@ -38,43 +39,48 @@ var mainNetParams = chaincfg.Params{
 	PrivateKeyID:     0x1c,
 }
 
+// IsClaimScript return true if the script for the vout contains the right opt codes pertaining to a claim.
 func IsClaimScript(script []byte) bool {
-	return script[0] == OP_SUPPORT_CLAIM ||
-		script[0] == OP_CLAIM_NAME ||
-		script[0] == OP_UPDATE_CLAIM
+	return script[0] == opSupportClaim ||
+		script[0] == opClaimName ||
+		script[0] == opUpdateClaim
 }
 
+// IsClaimNameScript returns true if the script for the vout contains the OP_CLAIM_NAME code.
 func IsClaimNameScript(script []byte) bool {
 	if len(script) > 0 {
-		return script[0] == OP_CLAIM_NAME
+		return script[0] == opClaimName
 	}
 	log.Error("script is nil or length 0!")
 	return false
 }
 
+// IsClaimSupportScript returns true if the script for the vout contains the OP_CLAIM_SUPPORT code.
 func IsClaimSupportScript(script []byte) bool {
 	if len(script) > 0 {
-		return script[0] == OP_SUPPORT_CLAIM
+		return script[0] == opSupportClaim
 	}
 	return false
 }
 
+// IsClaimUpdateScript returns true if the script for the vout contains the OP_CLAIM_UPDATE code.
 func IsClaimUpdateScript(script []byte) bool {
 	if len(script) > 0 {
-		return script[0] == OP_UPDATE_CLAIM
+		return script[0] == opUpdateClaim
 	}
 	return false
 }
 
+// ParseClaimNameScript parses a script for the claim of a name.
 func ParseClaimNameScript(script []byte) (name string, value []byte, pubkeyscript []byte, err error) {
 	// Already validated by blockchain so can be assumed
-	// OP_CLAIM_NAME Name Value OP_2DROP OP_DROP pubkeyscript
+	// opClaimName Name Value OP_2DROP OP_DROP pubkeyscript
 	nameBytesToRead := int(script[1])
 	nameStart := 2
-	if nameBytesToRead == OP_PUSHDATA1 {
+	if nameBytesToRead == opPushdata1 {
 		nameBytesToRead = int(script[2])
 		nameStart = 3
-	} else if nameBytesToRead > OP_PUSHDATA1 {
+	} else if nameBytesToRead > opPushdata1 {
 		panic(errors.Base("Bytes to read is more than next byte! "))
 	}
 	nameEnd := nameStart + nameBytesToRead
@@ -82,13 +88,13 @@ func ParseClaimNameScript(script []byte) (name string, value []byte, pubkeyscrip
 	dataPushType := int(script[nameEnd])
 	valueBytesToRead := int(script[nameEnd])
 	valueStart := nameEnd + 1
-	if dataPushType == OP_PUSHDATA1 {
+	if dataPushType == opPushdata1 {
 		valueBytesToRead = int(script[nameEnd+1])
 		valueStart = nameEnd + 2
-	} else if dataPushType == OP_PUSHDATA2 {
+	} else if dataPushType == opPushdata2 {
 		valueStart = nameEnd + 3
 		valueBytesToRead = int(binary.LittleEndian.Uint16(script[nameEnd+1 : valueStart]))
-	} else if dataPushType == OP_PUSHDATA4 {
+	} else if dataPushType == opPushdata4 {
 		valueStart = nameEnd + 5
 		valueBytesToRead = int(binary.LittleEndian.Uint32(script[nameEnd+2 : valueStart]))
 	}
@@ -100,23 +106,24 @@ func ParseClaimNameScript(script []byte) (name string, value []byte, pubkeyscrip
 	return name, value, pubkeyscript, err
 }
 
+// ParseClaimSupportScript parses a script for a support of a claim.
 func ParseClaimSupportScript(script []byte) (name string, claimid string, pubkeyscript []byte, err error) {
 	// Already validated by blockchain so can be assumed
-	// OP_SUPPORT_CLAIM vchName vchClaimId OP_2DROP OP_DROP pubkeyscript
+	// opSupportClaim vchName vchClaimId OP_2DROP OP_DROP pubkeyscript
 
 	//Name
 	nameBytesToRead := int(script[1])
 	nameStart := 2
-	if nameBytesToRead == OP_PUSHDATA1 {
+	if nameBytesToRead == opPushdata1 {
 		nameBytesToRead = int(script[2])
 		nameStart = 3
-	} else if nameBytesToRead > OP_PUSHDATA1 {
+	} else if nameBytesToRead > opPushdata1 {
 		panic(errors.Base("Bytes to read is more than next byte! "))
 	}
 	nameEnd := nameStart + nameBytesToRead
 	name = string(script[nameStart:nameEnd])
 
-	//ClaimId
+	//ClaimID
 	claimidBytesToRead := int(script[nameEnd])
 	claimidStart := nameEnd + 1
 	claimidEnd := claimidStart + claimidBytesToRead
@@ -129,22 +136,23 @@ func ParseClaimSupportScript(script []byte) (name string, claimid string, pubkey
 	return
 }
 
+// ParseClaimUpdateScript parses a script for an update of a claim.
 func ParseClaimUpdateScript(script []byte) (name string, claimid string, value []byte, pubkeyscript []byte, err error) {
-	// OP_UPDATE_CLAIM Name ClaimId Value OP_2DROP OP_2DROP pubkeyscript
+	// opUpdateClaim Name ClaimID Value OP_2DROP OP_2DROP pubkeyscript
 
 	//Name
 	nameBytesToRead := int(script[1])
 	nameStart := 2
-	if nameBytesToRead == OP_PUSHDATA1 {
+	if nameBytesToRead == opPushdata1 {
 		nameBytesToRead = int(script[2])
 		nameStart = 3
-	} else if nameBytesToRead > OP_PUSHDATA1 {
+	} else if nameBytesToRead > opPushdata1 {
 		panic(errors.Base("Bytes to read is more than next byte! "))
 	}
 	nameEnd := nameStart + nameBytesToRead
 	name = string(script[nameStart:nameEnd])
 
-	//ClaimId
+	//ClaimID
 	claimidBytesToRead := int(script[nameEnd])
 	claimidStart := nameEnd + 1
 	claimidEnd := claimidStart + claimidBytesToRead
@@ -155,13 +163,13 @@ func ParseClaimUpdateScript(script []byte) (name string, claimid string, value [
 	dataPushType := int(script[claimidEnd])
 	valueBytesToRead := int(script[claimidEnd])
 	valueStart := claimidEnd + 1
-	if dataPushType == OP_PUSHDATA1 {
+	if dataPushType == opPushdata1 {
 		valueBytesToRead = int(script[claimidEnd+1])
 		valueStart = claimidEnd + 2
-	} else if dataPushType == OP_PUSHDATA2 {
+	} else if dataPushType == opPushdata2 {
 		valueStart = claimidEnd + 3
 		valueBytesToRead = int(binary.LittleEndian.Uint16(script[claimidEnd+1 : valueStart]))
-	} else if dataPushType == OP_PUSHDATA4 {
+	} else if dataPushType == opPushdata4 {
 		valueStart = claimidEnd + 5
 		valueBytesToRead = int(binary.LittleEndian.Uint32(script[claimidEnd+2 : valueStart]))
 	}
@@ -175,6 +183,7 @@ func ParseClaimUpdateScript(script []byte) (name string, claimid string, value [
 	return name, claimid, value, pubkeyscript, err
 }
 
+// GetPubKeyScriptFromClaimPKS gets the public key script at the end of a claim script.
 func GetPubKeyScriptFromClaimPKS(script []byte) (pubkeyscript []byte, err error) {
 	if IsClaimScript(script) {
 		if IsClaimNameScript(script) {
@@ -202,23 +211,24 @@ func GetPubKeyScriptFromClaimPKS(script []byte) (pubkeyscript []byte, err error)
 	return
 }
 
+// GetAddressFromPublicKeyScript returns the address associated with a public key script.
 func GetAddressFromPublicKeyScript(script []byte) (address string) {
 	spkType := getPublicKeyScriptType(script)
 	var err error
 	switch spkType {
-	case P2PK:
-		// <pubkey> OP_CHECKSIG
-		//log.Debug("sig P2PK ", hex.EncodeToString(script[0:len(script)-1]))
+	case p2PK:
+		// <pubkey> opChecksig
+		//log.Debug("sig p2PK ", hex.EncodeToString(script[0:len(script)-1]))
 		address, err = getAddressFromP2PK(hex.EncodeToString(script[0 : len(script)-1]))
-	case P2PKH:
-		// OP_DUP OP_HASH160 <bytes2read> <PubKeyHash> OP_EQUALVERIFY OP_CHECKSIG
-		//log.Debug("sig P2PKH ", hex.EncodeToString(script[3:len(script)-2]))
+	case p2PKH:
+		// opDup opHash160 <bytes2read> <PubKeyHash> opEqualverify opChecksig
+		//log.Debug("sig p2PKH ", hex.EncodeToString(script[3:len(script)-2]))
 		address, err = getAddressFromP2PKH(hex.EncodeToString(script[3 : len(script)-2]))
-	case P2SH:
-		// OP_HASH160 <bytes2read> <Hash160(redeemScript)> OP_EQUAL
-		//log.Debug("sig P2SH ", hex.EncodeToString(script[2:len(script)-1]))
+	case p2SH:
+		// opHash160 <bytes2read> <Hash160(redeemScript)> OP_EQUAL
+		//log.Debug("sig p2SH ", hex.EncodeToString(script[2:len(script)-1]))
 		address, err = getAddressFromP2SH(hex.EncodeToString(script[2 : len(script)-1]))
-	case NON_STANDARD:
+	case NonStandard:
 		address = "UNKNOWN"
 	}
 
@@ -231,33 +241,33 @@ func GetAddressFromPublicKeyScript(script []byte) (address string) {
 
 func getPublicKeyScriptType(script []byte) string {
 	if isPayToPublicKey(script) {
-		return P2PK
+		return p2PK
 	} else if isPayToPublicKeyHashScript(script) {
-		return P2PKH
+		return p2PKH
 	} else if isPayToScriptHashScript(script) {
-		return P2SH
+		return p2SH
 	}
-	return NON_STANDARD
+	return NonStandard
 }
 
 func isPayToScriptHashScript(script []byte) bool {
 	if len(script) > 0 {
-		return script[0] == OP_UPDATE_CLAIM
+		return script[0] == opUpdateClaim
 	}
 	return false
 }
 
 func isPayToPublicKey(script []byte) bool {
-	return script[len(script)-1] == OP_CHECKSIG &&
-		script[len(script)-2] == OP_EQUALVERIFY &&
-		script[0] != OP_DUP
+	return script[len(script)-1] == opChecksig &&
+		script[len(script)-2] == opEqualverify &&
+		script[0] != opDup
 
 }
 
 func isPayToPublicKeyHashScript(script []byte) bool {
 	return len(script) > 0 &&
-		script[0] == OP_DUP &&
-		script[1] == OP_HASH160
+		script[0] == opDup &&
+		script[1] == opHash160
 
 }
 

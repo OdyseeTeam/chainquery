@@ -2,20 +2,15 @@ package util
 
 import (
 	"log"
-	"strconv"
 	"time"
 
 	"github.com/spf13/viper"
 )
 
-func Plus(decimal string, value float64) string {
-	deciValue, _ := strconv.ParseFloat(decimal, 64)
-	deciValue = deciValue + value
-	deciString := strconv.FormatFloat(deciValue, 'f', -1, 64)
-
-	return deciString
-}
-
+// TimeTrack is a function that tracks the time spent and outputs specific timing information. This is important for
+// chainquery profiling and is used throughout. It can be reused by just passing `always` as the profile. The basic
+// usage is `defer util.TimeTrack(time.Now(),"<useful identifier>","<profile>")`. This should be placed at the top of
+// the function where time is to be tracked, or at any point where you want to start tracking time.
 func TimeTrack(start time.Time, name string, profile string) {
 	if profile == "daemonprofile" && viper.GetBool("daemonprofile") {
 		elapsed := time.Since(start)
@@ -36,6 +31,7 @@ func TimeTrack(start time.Time, name string, profile string) {
 
 }
 
+// Min is a helpful function to take the min between two integers.
 func Min(x, y int) int {
 	if x < y {
 		return x

@@ -56,7 +56,7 @@ func processClaimNameScript(script *[]byte, vout model.Output, tx model.Transact
 	}
 	pbClaim, err := DecodeClaimValue(name, value)
 	if err != nil {
-		logrus.Warning("saving non-conforming claim - Name: ", name, " ClaimId: ", claimid)
+		logrus.Warning("saving non-conforming claim - Name: ", name, " ClaimID: ", claimid)
 		saveUnknownClaim(name, claimid, false, value, vout, tx)
 		return name, claimid, pkscript, nil
 	}
@@ -90,34 +90,34 @@ func processClaimSupportScript(script *[]byte, vout model.Output, tx model.Trans
 	return name, claimid, pubkeyscript, err
 }
 
-func processClaimUpdateScript(script *[]byte, vout model.Output, tx model.Transaction) (name string, claimId string, pubkeyscript []byte, err error) {
-	name, claimId, value, pubkeyscript, err := lbrycrd.ParseClaimUpdateScript(*script)
+func processClaimUpdateScript(script *[]byte, vout model.Output, tx model.Transaction) (name string, claimID string, pubkeyscript []byte, err error) {
+	name, claimID, value, pubkeyscript, err := lbrycrd.ParseClaimUpdateScript(*script)
 	if err != nil {
 		err := errors.Prefix("Claim update processing error: ", err)
-		return name, claimId, pubkeyscript, err
+		return name, claimID, pubkeyscript, err
 	}
 	pbClaim, err := DecodeClaimValue(name, value)
 	if err != nil {
-		logrus.Warning("saving non-conforming claim - Update: ", name, " ClaimId: ", claimId)
-		saveUnknownClaim(name, claimId, true, value, vout, tx)
-		return name, claimId, pubkeyscript, nil
+		logrus.Warning("saving non-conforming claim - Update: ", name, " ClaimID: ", claimID)
+		saveUnknownClaim(name, claimID, true, value, vout, tx)
+		return name, claimID, pubkeyscript, nil
 	}
 	if pbClaim != nil && err == nil {
-		claim := datastore.GetClaim(claimId)
+		claim := datastore.GetClaim(claimID)
 		claim, err := processUpdateClaim(pbClaim, claim, value)
 		if err != nil {
-			return name, claimId, pubkeyscript, err
+			return name, claimID, pubkeyscript, err
 		}
 		if claim == nil {
-			logrus.Warning("ClaimUpdate for non-existent claim! ", claimId, " ", tx.Hash, " ", vout.Vout)
-			return name, claimId, pubkeyscript, err
+			logrus.Warning("ClaimUpdate for non-existent claim! ", claimID, " ", tx.Hash, " ", vout.Vout)
+			return name, claimID, pubkeyscript, err
 		}
 		err = datastore.PutClaim(claim)
 		if err != nil {
-			return name, claimId, pubkeyscript, err
+			return name, claimID, pubkeyscript, err
 		}
 	}
-	return name, claimId, pubkeyscript, err
+	return name, claimID, pubkeyscript, err
 }
 
 func processClaim(pbClaim *pb.Claim, claim *model.Claim, value []byte, output model.Output, tx model.Transaction) (*model.Claim, error) {
@@ -182,8 +182,8 @@ func processUpdateClaim(pbClaim *pb.Claim, claim *model.Claim, value []byte) (*m
 
 func setPublisherInfo(claim *model.Claim, pbClaim *pb.Claim) {
 	if pbClaim.GetPublisherSignature() != nil {
-		publisherClaimId := hex.EncodeToString(pbClaim.GetPublisherSignature().GetCertificateId())
-		claim.PublisherID.String = publisherClaimId
+		publisherClaimID := hex.EncodeToString(pbClaim.GetPublisherSignature().GetCertificateId())
+		claim.PublisherID.String = publisherClaimID
 		claim.PublisherID.Valid = true
 		claim.PublisherSig.String = hex.EncodeToString(pbClaim.GetPublisherSignature().GetSignature())
 		claim.PublisherSig.Valid = true

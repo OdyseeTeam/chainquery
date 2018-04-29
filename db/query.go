@@ -10,14 +10,16 @@ import (
 	"github.com/volatiletech/sqlboiler/queries"
 )
 
+// AddressSummary summarizes information for an address from chainquery database
 type AddressSummary struct {
-	Id            uint64  `boil:"id"`
+	ID            uint64  `boil:"id"`
 	Address       string  `boil:"address"`
 	TotalReceived float64 `boil:"total_received"`
 	TotalSent     float64 `boil:"total_sent"`
 	Balance       float64 `boil:"balance"`
 }
 
+// GetTableStatus provides size information for the tables in the chainquery database
 func GetTableStatus() (*g.TableStatus, error) {
 	println("here2")
 	stats := g.TableStatus{}
@@ -47,6 +49,7 @@ func GetTableStatus() (*g.TableStatus, error) {
 	return &stats, nil
 }
 
+// GetAddressSummary returns summary information of an address in the chainquery database.
 func GetAddressSummary(address string) (*AddressSummary, error) {
 	addressSummary := AddressSummary{}
 	err := queries.RawG(

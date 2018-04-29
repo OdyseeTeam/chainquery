@@ -12,6 +12,7 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 )
 
+// Init initializes a database connection based on the dsn provided. It also sets it as the global db connection.
 func Init(dsn string, debug bool) (*QueryLogger, error) {
 	dsn += "?parseTime=1&collation=utf8mb4_unicode_ci"
 	dbConn, err := sqlx.Connect("mysql", dsn)
@@ -46,6 +47,7 @@ func Init(dsn string, debug bool) (*QueryLogger, error) {
 	return logWrapper, nil
 }
 
+// CloseDB is a wrapper function to allow error handle when it is usually deferred.
 func CloseDB(db *QueryLogger) {
 	if err := db.Close(); err != nil {
 		log.Error("Closing DB Error: ", err)

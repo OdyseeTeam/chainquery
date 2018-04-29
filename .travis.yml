@@ -63,10 +63,10 @@ script:
   # forbid code with huge functions
   - gocyclo -ignore "_test" -avg -over 19 $GO_FILES
   # checks for unhandled errors
-  - errcheck $(go list ./... | grep -v /vendor/ | grep -v /model | grep -v /swagger/ | grep -v /migration/ )
+  - errcheck $(go list ./... | grep -v /vendor/ | grep -v /model | grep -v /swagger/ | grep -v /migration )
   # "go vet on steroids" + linter - ignore autogen code
-  - megacheck ./... | grep -v /vendor/ | grep -v /model | grep -v /swagger/ | grep -v /migration/
+  - megacheck ./... | grep -v vendor | grep -v model | grep -v swagger | grep -v migration
   # check for unnecessary conversions - ignore autogen code
-  - unconvert -v $(go list ./... | grep -v /vendor/ | grep -v /model/ | grep -v /swagger/ | grep -v /migration/ )
+  - unconvert -v $(go list ./... | grep -v /vendor/ | grep -v /model | grep -v /swagger/ | grep -v /migration )
   # one last linter - ignore autogen code
-  - golint -set_exit_status $(go list ./... | grep -v /vendor/ | grep -v /model/ | grep -v /swagger/ | grep -v /migration/ )
+  - golint -set_exit_status $(go list ./... | grep -v /vendor/ | grep -v /model/ | grep -v /swagger/ | grep -v /migration )

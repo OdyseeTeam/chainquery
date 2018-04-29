@@ -16,10 +16,10 @@ import (
 )
 
 func createUpdateVoutAddresses(tx *model.Transaction, outputs *[]lbrycrd.Vout, blockSeconds uint64) (map[string]uint64, error) {
-	addressIdMap := make(map[string]uint64)
+	addressIDMap := make(map[string]uint64)
 	for _, output := range *outputs {
 		if len(output.ScriptPubKey.Addresses) == 0 {
-			if output.ScriptPubKey.Type == lbrycrd.NON_STANDARD {
+			if output.ScriptPubKey.Type == lbrycrd.NonStandard {
 				scriptBytes, err := hex.DecodeString(output.ScriptPubKey.Hex)
 				if err != nil {
 					return nil, err
@@ -38,7 +38,7 @@ func createUpdateVoutAddresses(tx *model.Transaction, outputs *[]lbrycrd.Vout, b
 		for _, address := range output.ScriptPubKey.Addresses {
 			foundAddress, _ := model.AddressesG(qm.Where(model.AddressColumns.Address+"=?", address)).One()
 			if foundAddress != nil {
-				addressIdMap[address] = foundAddress.ID
+				addressIDMap[address] = foundAddress.ID
 				createTxAddressIfNotExist(tx.ID, foundAddress.ID)
 			} else {
 				newAddress := model.Address{}
@@ -49,46 +49,46 @@ func createUpdateVoutAddresses(tx *model.Transaction, outputs *[]lbrycrd.Vout, b
 				if err != nil {
 					return nil, err
 				}
-				addressIdMap[address] = newAddress.ID
+				addressIDMap[address] = newAddress.ID
 				createTxAddressIfNotExist(tx.ID, newAddress.ID)
 			}
 		}
 	}
 
-	return addressIdMap, nil
+	return addressIDMap, nil
 
 }
 
 func createUpdateVinAddresses(tx *model.Transaction, inputs *[]lbrycrd.Vin, blockSeconds uint64) (map[string]uint64, error) {
-	addressIdMap := make(map[string]uint64)
+	addressIDMap := make(map[string]uint64)
 	for _, input := range *inputs {
-		src_output := datastore.GetOutput(input.Txid, uint(input.Vout))
-		if src_output == nil {
+		srcOutput := datastore.GetOutput(input.TxID, uint(input.Vout))
+		if srcOutput == nil {
 			if input.Coinbase != "" {
 				continue //No addresses for coinbase inputs.
 			}
-			panic("Missing source output for " + input.Txid + "-" + strconv.Itoa(int(input.Vout)))
+			panic("Missing source output for " + input.TxID + "-" + strconv.Itoa(int(input.Vout)))
 		}
 		var addresses []string
-		if !src_output.AddressList.Valid {
-			jsonAddress, err := getAddressFromNonStandardVout(src_output.ScriptPubKeyHex.String)
+		if !srcOutput.AddressList.Valid {
+			jsonAddress, err := getAddressFromNonStandardVout(srcOutput.ScriptPubKeyHex.String)
 			if err != nil {
 				logrus.Error("AddressParseError: ", err)
 			}
 			addresses = append(addresses, jsonAddress)
 		} else {
-			err := json.Unmarshal([]byte(src_output.AddressList.String), &addresses)
+			err := json.Unmarshal([]byte(srcOutput.AddressList.String), &addresses)
 			if err != nil {
 				panic(errors.Prefix("Could not parse AddressList from source output", err))
 			}
 		}
 		for _, address := range addresses {
 			addr := datastore.GetAddress(address)
-			addressIdMap[address] = addr.ID
+			addressIDMap[address] = addr.ID
 			createTxAddressIfNotExist(tx.ID, addr.ID)
 		}
 	}
-	return addressIdMap, nil
+	return addressIDMap, nil
 
 }
 

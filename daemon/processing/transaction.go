@@ -16,53 +16,54 @@ import (
 )
 
 type txDebitCredits struct {
-	AddrDCMap map[string]*AddrDebitCredits
+	addrDCMap map[string]*addrDebitCredits
 	mutex     *sync.RWMutex
 }
 
-func NewTxDebitCredits() *txDebitCredits {
+func newTxDebitCredits() *txDebitCredits {
 	t := txDebitCredits{}
-	v := make(map[string]*AddrDebitCredits)
-	t.AddrDCMap = v
+	v := make(map[string]*addrDebitCredits)
+	t.addrDCMap = v
 	t.mutex = &sync.RWMutex{}
 
 	return &t
 
 }
 
-type AddrDebitCredits struct {
+type addrDebitCredits struct {
 	debits  float64
 	credits float64
 }
 
-func (addDC *AddrDebitCredits) Debits() float64 {
+func (addDC *addrDebitCredits) Debits() float64 {
 	return addDC.debits
 }
 
-func (addDC *AddrDebitCredits) Credits() float64 {
+func (addDC *addrDebitCredits) Credits() float64 {
 	return addDC.credits
 }
 
 func (txDC *txDebitCredits) subtract(address string, value float64) {
 	txDC.mutex.Lock()
-	if txDC.AddrDCMap[address] == nil {
-		addrDC := AddrDebitCredits{}
-		txDC.AddrDCMap[address] = &addrDC
+	if txDC.addrDCMap[address] == nil {
+		addrDC := addrDebitCredits{}
+		txDC.addrDCMap[address] = &addrDC
 	}
-	txDC.AddrDCMap[address].debits = txDC.AddrDCMap[address].debits + value
+	txDC.addrDCMap[address].debits = txDC.addrDCMap[address].debits + value
 	txDC.mutex.Unlock()
 }
 
 func (txDC *txDebitCredits) add(address string, value float64) {
 	txDC.mutex.Lock()
-	if txDC.AddrDCMap[address] == nil {
-		addrDC := AddrDebitCredits{}
-		txDC.AddrDCMap[address] = &addrDC
+	if txDC.addrDCMap[address] == nil {
+		addrDC := addrDebitCredits{}
+		txDC.addrDCMap[address] = &addrDC
 	}
-	txDC.AddrDCMap[address].credits = txDC.AddrDCMap[address].credits + value
+	txDC.addrDCMap[address].credits = txDC.addrDCMap[address].credits + value
 	txDC.mutex.Unlock()
 }
 
+// ProcessTx processes an individual transaction from a block.
 func ProcessTx(jsonTx *lbrycrd.TxRawResult, blockTime uint64) error {
 	defer util.TimeTrack(time.Now(), "processTx "+jsonTx.Txid+" -- ", "daemonprofile")
 
@@ -72,7 +73,7 @@ func ProcessTx(jsonTx *lbrycrd.TxRawResult, blockTime uint64) error {
 		return err
 	}
 
-	txDbCrAddrMap := NewTxDebitCredits()
+	txDbCrAddrMap := newTxDebitCredits()
 
 	_, err = createUpdateVoutAddresses(transaction, &jsonTx.Vout, blockTime)
 	if err != nil {
@@ -100,6 +101,9 @@ func ProcessTx(jsonTx *lbrycrd.TxRawResult, blockTime uint64) error {
 func saveUpdateTransaction(jsonTx *lbrycrd.TxRawResult) (*model.Transaction, error) {
 	transaction := &model.Transaction{}
 	foundTx, err := model.TransactionsG(qm.Where(model.TransactionColumns.Hash+"=?", jsonTx.Txid)).One()
+	if err != nil {
+		logrus.Error("Find Transaction Error: ", err)
+	}
 	if foundTx != nil {
 		transaction = foundTx
 	}
@@ -172,7 +176,7 @@ func saveUpdateOutputs(transaction *model.Transaction, jsonTx *lbrycrd.TxRawResu
 }
 
 func setSendReceive(transaction *model.Transaction, txDbCrAddrMap *txDebitCredits) {
-	for addr, DC := range txDbCrAddrMap.AddrDCMap {
+	for addr, DC := range txDbCrAddrMap.addrDCMap {
 
 		address := datastore.GetAddress(addr)
 

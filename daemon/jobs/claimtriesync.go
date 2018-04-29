@@ -16,6 +16,7 @@ import (
 var blockHeight uint64
 var blocksToExpiration uint = 262974 //Hardcoded! https://lbry.io/faq/claimtrie-implementation
 
+// ClaimTrieSync synchronizes claimtrie information that is calculated and enforced by lbrycrd.
 func ClaimTrieSync() {
 	logrus.Info("ClaimTrieSync: started... ")
 	count, err := lbrycrd.GetBlockCount()
@@ -108,11 +109,11 @@ func setControllingClaimForName(name string) {
 
 func syncClaim(claimJSON *lbrycrd.Claim) {
 	hasChanges := false
-	claim := datastore.GetClaim(claimJSON.ClaimId)
+	claim := datastore.GetClaim(claimJSON.ClaimID)
 	if claim == nil {
-		unknown, _ := model.UnknownClaimsG(qm.Where(model.UnknownClaimColumns.ClaimID+"=?", claimJSON.ClaimId)).One()
+		unknown, _ := model.UnknownClaimsG(qm.Where(model.UnknownClaimColumns.ClaimID+"=?", claimJSON.ClaimID)).One()
 		if unknown == nil {
-			logrus.Debug("Missing Claim: ", claimJSON.ClaimId, " ", claimJSON.TxId, " ", claimJSON.N)
+			logrus.Debug("Missing Claim: ", claimJSON.ClaimID, " ", claimJSON.TxID, " ", claimJSON.N)
 		}
 		return
 	}

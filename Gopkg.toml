@@ -31,10 +31,6 @@ required = ["github.com/lbryio/null.go"]
 #  revision = "a5ecb5d9547afe8d1672073dbdc348203de744a0"
 
 [[constraint]]
-  name = "github.com/caarlos0/env"
-  revision = "0cf029d5748c52beb2c9d20c81880cb4bdf8f788"
-
-[[constraint]]
   name = "github.com/go-ini/ini"
   branch = "master"
 
@@ -45,10 +41,6 @@ required = ["github.com/lbryio/null.go"]
 [[constraint]]
   name = "github.com/jmoiron/sqlx"
   revision = "d9bd385d68c068f1fabb5057e3dedcbcbb039d0f"
-
-[[constraint]]
-  name = "github.com/kat-co/vala"
-  revision = "42e1d8b61f12b4fcadea0c062782e466924a3aaa"
 
 [[constraint]]
   name = "github.com/lbryio/null.go"

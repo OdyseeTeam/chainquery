@@ -10,7 +10,7 @@ import (
 )
 
 func reProcessAllClaims() {
-	outputs := model.OutputsG(qm.Where(model.OutputColumns.Type+" =?", lbrycrd.NON_STANDARD),
+	outputs := model.OutputsG(qm.Where(model.OutputColumns.Type+" =?", lbrycrd.NonStandard),
 		qm.Select(model.OutputColumns.TransactionHash)).AllP()
 	for _, output := range outputs {
 		tx, err := model.TransactionsG(qm.Where(model.TransactionColumns.Hash+"=?", output.TransactionHash),

@@ -10,12 +10,12 @@ import (
 )
 
 const (
-	AppVersion  = 2
-	ApiVersion  = 2
-	DataVersion = 2
+	appVersion  = 2
+	apiVersion  = 2
+	dataVersion = 2
 )
 
-//Migrations are for structure of the data. Upgrade Manager scripts are for the data itself.
+// RunUpgradesForVersion - Migrations are for structure of the data. Upgrade Manager scripts are for the data itself.
 // Since it could take hours to rebuild the data chainquery is designed to reprocess data so
 // that there is no downtime of data availability since many system will be using it.
 func RunUpgradesForVersion() {
@@ -35,14 +35,14 @@ func RunUpgradesForVersion() {
 		}
 		////Run all upgrades and let it determine if they should execute
 		//
-		////upgrade_123(appStatus.AppVersion)
-		upgradeFrom_1(appStatus.AppVersion)
+		////upgrade123(appStatus.appVersion)
+		upgradeFrom1(appStatus.AppVersion)
 		////Increment and save
 		//
-		logrus.Info("Upgrading app status version to App-", AppVersion, " Data-", DataVersion, " Api-", ApiVersion)
-		appStatus.AppVersion = AppVersion
-		appStatus.DataVersion = DataVersion
-		appStatus.APIVersion = ApiVersion
+		logrus.Info("Upgrading app status version to App-", appVersion, " Data-", dataVersion, " Api-", apiVersion)
+		appStatus.AppVersion = appVersion
+		appStatus.DataVersion = dataVersion
+		appStatus.APIVersion = apiVersion
 	}
 	if err := appStatus.UpdateG(); err != nil {
 		err := errors.Prefix("App Status Error: ", err)
@@ -52,14 +52,14 @@ func RunUpgradesForVersion() {
 }
 
 //
-//func upgradeFrom_123(version int){
+//func upgradeFrom123(version int){
 //	util.TimeTrack(time.Now(),"script DoThis","always")
 //	if version < 123{
 //		scriptDoThis()
 //	}
 //}
 
-func upgradeFrom_1(version int) {
+func upgradeFrom1(version int) {
 	if version < 2 {
 		logrus.Info("Re-Processing all claim outputs")
 		reProcessAllClaims()

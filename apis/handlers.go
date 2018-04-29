@@ -10,8 +10,10 @@ import (
 )
 
 const (
+	// ADDRESSSUMARY Const for AddressSummary API Handler
 	ADDRESSSUMARY = "AddressSummary"
-	STATUS        = "Status"
+	// STATUS Const for Status API Handler
+	STATUS = "Status"
 )
 
 // Response is returned by API handlers
@@ -23,6 +25,7 @@ type Response struct {
 	Error       error
 }
 
+// HandleAction handles all operations comming from swagger API. This is the entry point to chainquery.
 func HandleAction(operation string, w http.ResponseWriter, r *http.Request) (*Response, error) {
 	switch operation {
 	case STATUS:

@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-//Outputs
+// GetOutput makes creating,retrieving,updating the model type simplified.
 func GetOutput(txHash string, vout uint) *model.Output {
 	defer util.TimeTrack(time.Now(), "GetOutput", "mysqlprofile")
 	txHashMatch := qm.Where(model.OutputColumns.TransactionHash+"=?", txHash)
@@ -27,6 +27,7 @@ func GetOutput(txHash string, vout uint) *model.Output {
 	return nil
 }
 
+// PutOutput makes creating,retrieving,updating the model type simplified.
 func PutOutput(output *model.Output) error {
 	defer util.TimeTrack(time.Now(), "PutOutput", "mysqlprofile")
 	if output != nil {
@@ -48,7 +49,7 @@ func PutOutput(output *model.Output) error {
 	return nil
 }
 
-//Inputs
+// GetInput makes creating,retrieving,updating the model type simplified.
 func GetInput(txHash string, isCoinBase bool, prevHash string, prevN uint) *model.Input {
 	defer util.TimeTrack(time.Now(), "GetInput", "mysqlprofile")
 	//Unique
@@ -68,6 +69,7 @@ func GetInput(txHash string, isCoinBase bool, prevHash string, prevN uint) *mode
 	return nil
 }
 
+//PutInput makes creating,retrieving,updating the model type simplified.
 func PutInput(input *model.Input) error {
 	defer util.TimeTrack(time.Now(), "PutInput", "mysqlprofile")
 	if input != nil {
@@ -93,8 +95,7 @@ func PutInput(input *model.Input) error {
 	return nil
 }
 
-//Addresses
-
+// GetAddress makes creating,retrieving,updating the model type simplified.
 func GetAddress(addr string) *model.Address {
 	defer util.TimeTrack(time.Now(), "GetAddress", "mysqlprofile")
 	addrMatch := qm.Where(model.AddressColumns.Address+"=?", addr)
@@ -111,6 +112,7 @@ func GetAddress(addr string) *model.Address {
 	return nil
 }
 
+//PutAddress  makes creating,retrieving,updating the model type simplified.
 func PutAddress(address *model.Address) error {
 	defer util.TimeTrack(time.Now(), "PutAddress", "mysqlprofile")
 	if address != nil {
@@ -132,12 +134,11 @@ func PutAddress(address *model.Address) error {
 
 }
 
-// Transaction Addresses
-
-func GetTxAddress(txId uint64, addrId uint64) *model.TransactionAddress {
+// GetTxAddress makes creating,retrieving,updating the model type simplified.
+func GetTxAddress(txID uint64, addrID uint64) *model.TransactionAddress {
 	defer util.TimeTrack(time.Now(), "GetTxAddress", "mysqlprofile")
-	if model.TransactionAddressExistsGP(txId, addrId) {
-		txAddress, err := model.FindTransactionAddressG(txId, addrId)
+	if model.TransactionAddressExistsGP(txID, addrID) {
+		txAddress, err := model.FindTransactionAddressG(txID, addrID)
 		if err != nil {
 			logrus.Error("Datastore(GETTXADDRESS): ", err)
 		}
@@ -146,6 +147,7 @@ func GetTxAddress(txId uint64, addrId uint64) *model.TransactionAddress {
 	return nil
 }
 
+// PutTxAddress makes creating,retrieving,updating the model type simplified.
 func PutTxAddress(txAddress *model.TransactionAddress) error {
 	defer util.TimeTrack(time.Now(), "PutTxAddres", "mysqlprofile")
 	if txAddress != nil {
@@ -166,15 +168,14 @@ func PutTxAddress(txAddress *model.TransactionAddress) error {
 	return nil
 }
 
-//Claims
-
+// GetClaim makes creating,retrieving,updating the model type simplified.
 func GetClaim(addr string) *model.Claim {
 	defer util.TimeTrack(time.Now(), "GetClaim", "mysqlprofile")
-	claimIdMatch := qm.Where(model.ClaimColumns.ClaimID+"=?", addr)
+	claimIDMatch := qm.Where(model.ClaimColumns.ClaimID+"=?", addr)
 
-	if model.ClaimsG(claimIdMatch).ExistsP() {
+	if model.ClaimsG(claimIDMatch).ExistsP() {
 
-		claim, err := model.ClaimsG(claimIdMatch).One()
+		claim, err := model.ClaimsG(claimIDMatch).One()
 		if err != nil {
 			logrus.Error("Datastore(GETCLAIM): ", err)
 		}
@@ -184,6 +185,7 @@ func GetClaim(addr string) *model.Claim {
 	return nil
 }
 
+// PutClaim makes creating,retrieving,updating the model type simplified.
 func PutClaim(claim *model.Claim) error {
 	defer util.TimeTrack(time.Now(), "PutClaim", "mysqlprofile")
 	if claim != nil {
@@ -202,8 +204,7 @@ func PutClaim(claim *model.Claim) error {
 	return nil
 }
 
-//Supports
-
+// GetSupport makes creating,retrieving,updating the model type simplified.
 func GetSupport(txHash string, vout uint) *model.Support {
 	defer util.TimeTrack(time.Now(), "GetSupport", "mysqlprofile")
 	txHashMatch := qm.Where(model.SupportColumns.TransactionHash+"=?", txHash)
@@ -220,6 +221,7 @@ func GetSupport(txHash string, vout uint) *model.Support {
 	return nil
 }
 
+// PutSupport makes creating,retrieving,updating the model type simplified.
 func PutSupport(support *model.Support) error {
 	defer util.TimeTrack(time.Now(), "PutSupport", "mysqlprofile")
 	if support != nil {

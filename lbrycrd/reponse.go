@@ -1,13 +1,15 @@
 package lbrycrd
 
+// ClaimNameResult models the data from the claimtrie of lbrycrd.
 type ClaimNameResult struct {
 	Name   string        `json:"name"`
 	Claims []ClaimResult `json:"claims,omitempty"`
 }
 
+// ClaimResult models the static data of a claim in the claimtrie
 type ClaimResult struct {
-	ClaimId  string  `json:"claimId"`
-	TxId     string  `json:"txid"`
+	ClaimID  string  `json:"claimId"`
+	TxID     string  `json:"txid"`
 	Sequence uint64  `json:"n"`
 	Amount   float64 `json:"amount"`
 	Height   uint64  `json:"height"`
@@ -86,7 +88,7 @@ type Vout struct {
 // same structure.
 type Vin struct {
 	Coinbase  string     `json:"coinbase"`
-	Txid      string     `json:"txid"`
+	TxID      string     `json:"txid"`
 	Vout      uint64     `json:"vout"`
 	ScriptSig *ScriptSig `json:"scriptSig"`
 	Sequence  uint64     `json:"sequence"`
@@ -110,16 +112,18 @@ type ScriptSig struct {
 	Hex string `json:"hex"`
 }
 
+// ClaimsForNameResult models the claim list for a name in the claimtrie of lbrycrd.
 type ClaimsForNameResult struct {
 	LastTakeOverHeight int32     `json:"nLastTakeoverheight"`
 	Claims             []Claim   `json:"claims"`
 	UnmatchedSupports  []Support `json:"unmatched supports"`
 }
 
+// Claim models the data of a claim both static and dynamic. Used for claimtrie sync.
 type Claim struct {
 	Name            string    `json:"name,omitempty"`
-	ClaimId         string    `json:"claimId"`
-	TxId            string    `json:"txid"`
+	ClaimID         string    `json:"claimId"`
+	TxID            string    `json:"txid"`
 	N               int32     `json:"n"`
 	Height          int32     `json:"nHeight"`
 	ValidAtHeight   int32     `json:"nValidAtHeight"`
@@ -128,8 +132,9 @@ type Claim struct {
 	Supports        []Support `json:"supports,omitempty"`
 }
 
+// Support models the support information for a claim in the claimtrie of lbrycrd.
 type Support struct {
-	TxId          string  `json:"txid"`
+	TxID          string  `json:"txid"`
 	N             int32   `json:"n"`
 	Height        int32   `json:"nHeight"`
 	ValidAtHeight int32   `json:"nValidAtHeight"`

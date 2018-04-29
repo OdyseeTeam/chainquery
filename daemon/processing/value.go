@@ -11,6 +11,8 @@ import (
 )
 
 // TODO - Needs to be moved to lbryschema.go
+
+// DecodeClaimValue take a byte array and tries to decode it to a protobuf claim or migrate it from either json v1,2,3
 func DecodeClaimValue(name string, value []byte) (*pb.Claim, error) {
 	pbClaim, err := decodeClaimFromValueBytes(value)
 	if err == nil {

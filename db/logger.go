@@ -17,12 +17,14 @@ func logQueryTime(logger *log.Logger, startTime time.Time) {
 	logger.Debugln("Query took " + time.Since(startTime).String())
 }
 
+// QueryLogger implements the Executor interface
 type QueryLogger struct {
 	DB      *sqlx.DB
 	Logger  *log.Logger
 	Enabled bool
 }
 
+// Query implements the Executor Query function
 func (d *QueryLogger) Query(query string, args ...interface{}) (*sql.Rows, error) {
 	if d.Logger != nil {
 		q, err := querytools.InterpolateParams(query, args...)
@@ -35,6 +37,7 @@ func (d *QueryLogger) Query(query string, args ...interface{}) (*sql.Rows, error
 	return d.DB.Query(query, args...)
 }
 
+// Exec implements the Executor Exec function
 func (d *QueryLogger) Exec(query string, args ...interface{}) (sql.Result, error) {
 	if d.Logger != nil {
 		q, err := querytools.InterpolateParams(query, args...)
@@ -47,6 +50,7 @@ func (d *QueryLogger) Exec(query string, args ...interface{}) (sql.Result, error
 	return d.DB.Exec(query, args...)
 }
 
+// QueryRow implements the Executor QueryRow function
 func (d *QueryLogger) QueryRow(query string, args ...interface{}) *sql.Row {
 	if d.Logger != nil {
 		q, err := querytools.InterpolateParams(query, args...)
@@ -59,6 +63,7 @@ func (d *QueryLogger) QueryRow(query string, args ...interface{}) *sql.Row {
 	return d.DB.QueryRow(query, args...)
 }
 
+// Begin implements the Executor Begin function
 func (d *QueryLogger) Begin() (boil.Transactor, error) {
 	if d.Logger != nil {
 		d.Logger.Debug("->  Beginning tx")
@@ -70,6 +75,7 @@ func (d *QueryLogger) Begin() (boil.Transactor, error) {
 	return &queryLoggerTx{Tx: tx, logger: d.Logger}, nil
 }
 
+// Close implements the Executor Close function
 func (d *QueryLogger) Close() error {
 	if d.Logger != nil {
 		d.Logger.Print("Closing DB connection")
@@ -82,6 +88,7 @@ type queryLoggerTx struct {
 	logger *log.Logger
 }
 
+// Query implements the Executor Query function on a transaction
 func (t *queryLoggerTx) Query(query string, args ...interface{}) (*sql.Rows, error) {
 	if t.logger != nil {
 		q, err := querytools.InterpolateParams(query, args...)
@@ -94,6 +101,7 @@ func (t *queryLoggerTx) Query(query string, args ...interface{}) (*sql.Rows, err
 	return t.Tx.Query(query, args...)
 }
 
+// Exec implements the Executor Exec function on a transaction
 func (t *queryLoggerTx) Exec(query string, args ...interface{}) (sql.Result, error) {
 	if t.logger != nil {
 		q, err := querytools.InterpolateParams(query, args...)
@@ -106,6 +114,7 @@ func (t *queryLoggerTx) Exec(query string, args ...interface{}) (sql.Result, err
 	return t.Tx.Exec(query, args...)
 }
 
+// QueryRow implements the Executor QueryRow function on a transaction
 func (t *queryLoggerTx) QueryRow(query string, args ...interface{}) *sql.Row {
 	if t.logger != nil {
 		q, err := querytools.InterpolateParams(query, args...)
@@ -118,6 +127,7 @@ func (t *queryLoggerTx) QueryRow(query string, args ...interface{}) *sql.Row {
 	return t.Tx.QueryRow(query, args...)
 }
 
+// Commit implements the Executor Commit function on a transaction
 func (t *queryLoggerTx) Commit() error {
 	if t.logger != nil {
 		t.logger.Debug("->  Committing tx")
@@ -125,6 +135,7 @@ func (t *queryLoggerTx) Commit() error {
 	return t.Tx.Commit()
 }
 
+// RollBack implements the Executor Rollback function on a transaction
 func (t *queryLoggerTx) Rollback() error {
 	if t.logger != nil {
 		t.logger.Debug("->  Rolling back tx")

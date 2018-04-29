@@ -19,8 +19,12 @@ import (
 
 var defaultClient *upstream.Client
 
+// LBRYcrdURL is the connection string for lbrycrd and is set from the configuration
+var LBRYcrdURL string
+
+// Init initializes a client with settings from the configuration of chainquery
 func Init() *upstream.Client {
-	lbrycrdClient, err := upstream.NewWithDefaultURL()
+	lbrycrdClient, err := upstream.New(LBRYcrdURL)
 	if err != nil {
 		panic(err)
 	}

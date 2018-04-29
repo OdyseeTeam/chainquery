@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/lbryio/chainquery/daemon"
+	"github.com/lbryio/chainquery/global"
+	"github.com/lbryio/chainquery/lbrycrd"
 	"github.com/lbryio/lbry.go/errors"
 
 	"github.com/fsnotify/fsnotify"
@@ -17,25 +19,27 @@ import (
 )
 
 const ( // config setting keys
-	DEBUGMODE            = "debugmode"
-	MYSQLDSN             = "mysqldsn"
-	LBRYCRDURL           = "lbrycrdurl"
-	PROFILEMODE          = "profilemode"
-	DAEMONMODE           = "daemonmode"
-	PROCESSINGDELAY      = "processingdelay"
-	DAEMONDELAY          = "daemondelay"
-	DEFAULTCLIENTTIMEOUT = "defaultclienttimeout"
-	DAEMONPROFILE        = "daemonprofile"
-	LBRYCRDPROFILE       = "lbrycrdprofile"
-	MYSQLPROFILE         = "mysqlprofile"
+	debugmode            = "debugmode"
+	mysqldsn             = "mysqldsn"
+	lbrycrdurl           = "lbrycrdurl"
+	profilemode          = "profilemode"
+	daemonmode           = "daemonmode"
+	processingdelay      = "processingdelay"
+	daemondelay          = "daemondelay"
+	defaultclienttimeout = "defaultclienttimeout"
+	daemonprofile        = "daemonprofile"
+	lbrycrdprofile       = "lbrycrdprofile"
+	mysqlprofile         = "mysqlprofile"
 )
 
-const ( //Flags
-	CONFIGPATHFLAG  = "configpath"
-	REINDEXFLAG     = "reindex"
-	REINDEXWIPEFLAG = "reindexwipe"
+const (
+	//Chainquery Flags
+	configpathflag  = "configpath"
+	reindexflag     = "reindex"
+	reindexwipeflag = "reindexwipe"
 )
 
+// InitializeConfiguration is the main entry point from outside the package. This initializes the configuration and watcher.
 func InitializeConfiguration() {
 	initDefaults()
 	initFlags()
@@ -52,9 +56,9 @@ func InitializeConfiguration() {
 
 func initFlags() {
 	// using standard library "flag" package
-	pflag.BoolP(REINDEXFLAG, "r", false, "Rebuilds the database from the 1st block. Does not wipe the database")
-	pflag.BoolP(REINDEXWIPEFLAG, "w", false, "Drops all tables and rebuilds the database from the 1st block.")
-	pflag.StringP(CONFIGPATHFLAG, "c", "", "Specify non-default location of the configuration of chainquery.")
+	pflag.BoolP(reindexflag, "r", false, "Rebuilds the database from the 1st block. Does not wipe the database")
+	pflag.BoolP(reindexwipeflag, "w", false, "Drops all tables and rebuilds the database from the 1st block.")
+	pflag.StringP(configpathflag, "c", "", "Specify non-default location of the configuration of chainquery.")
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
 	pflag.Parse()
 	if err := viper.BindPFlags(pflag.CommandLine); err != nil {
@@ -65,7 +69,7 @@ func initFlags() {
 
 func readConfig() {
 	viper.SetConfigName("chainqueryconfig")              // name of config file (without extension)
-	viper.AddConfigPath(viper.GetString(CONFIGPATHFLAG)) // 1 - commandline config path
+	viper.AddConfigPath(viper.GetString(configpathflag)) // 1 - commandline config path
 	viper.AddConfigPath("$HOME/")                        // 2 - check $HOME
 	viper.AddConfigPath(".")                             // 3 - optionally look for config in the working directory
 	viper.AddConfigPath("./config/default/")             // 4 - use default that comes with the branch
@@ -77,29 +81,35 @@ func readConfig() {
 }
 
 func initDefaults() {
-	viper.SetDefault(DEBUGMODE, false)
-	viper.SetDefault(MYSQLDSN, "lbry:lbry@tcp(localhost:3306)/chainquery")
-	viper.SetDefault(LBRYCRDURL, "rpc://lbry:lbry@localhost:9245")
-	viper.SetDefault(PROFILEMODE, false)
-	viper.SetDefault(DAEMONMODE, daemon.BEASTMODE)
-	viper.SetDefault(DEFAULTCLIENTTIMEOUT, 20*time.Second)
-	viper.SetDefault(DAEMONDELAY, 1)       //Seconds
-	viper.SetDefault(PROCESSINGDELAY, 100) //Milliseconds
-	viper.SetDefault(DAEMONPROFILE, false)
-	viper.SetDefault(LBRYCRDPROFILE, false)
-	viper.SetDefault(MYSQLPROFILE, false)
+	//Setting viper defaults in the event there are not settings set in the config file.
+	viper.SetDefault(debugmode, false)
+	viper.SetDefault(mysqldsn, "lbry:lbry@tcp(localhost:3306)/chainquery")
+	viper.SetDefault(lbrycrdurl, "rpc://lbry:lbry@localhost:9245")
+	viper.SetDefault(profilemode, false)
+	viper.SetDefault(daemonmode, 0) //BEASTMODE
+	viper.SetDefault(defaultclienttimeout, 20*time.Second)
+	viper.SetDefault(daemondelay, 1)       //Seconds
+	viper.SetDefault(processingdelay, 100) //Milliseconds
+	viper.SetDefault(daemonprofile, false)
+	viper.SetDefault(lbrycrdprofile, false)
+	viper.SetDefault(mysqlprofile, false)
 }
 
 func processConfiguration() {
-	isdebug := viper.GetBool(DEBUGMODE)
+	isdebug := viper.GetBool(debugmode)
 	if isdebug {
 		logrus.Info("Setting DebugMode=true")
 		logrus.SetLevel(logrus.DebugLevel)
 	}
-	daemon.ProcessingMode = GetDaemonMode()
-	logrus.Info("Daemon mode = ", GetDaemonMode())
-	daemon.ApplySettings(GetProcessingDelay(), GetDaemonDelay())
-	daemon.Reindex = viper.GetBool(REINDEXFLAG)
+
+	settings := global.DaemonSettings{
+		DaemonMode:      GetDaemonMode(),
+		ProcessingDelay: GetProcessingDelay(),
+		DaemonDelay:     GetDaemonDelay(),
+		IsReIndex:       viper.GetBool(reindexflag)}
+
+	daemon.ApplySettings(settings)
+	lbrycrd.LBRYcrdURL = GetLBRYcrdURL()
 }
 
 func getLbrycrdURLFromConfFile() (string, error) {

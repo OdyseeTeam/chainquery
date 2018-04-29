@@ -11,6 +11,9 @@ import (
 	"time"
 )
 
+// RunBlockProcessing runs the processing of a block at a specific height. While any height can be passed in it is
+// important to note that if the previous block is not processed it will panic to prevent corruption because blocks
+// must be processed in order.
 func RunBlockProcessing(height *uint64) {
 	defer util.TimeTrack(time.Now(), "runBlockProcessing", "daemonprofile")
 	jsonBlock, err := getBlockToProcess(height)
