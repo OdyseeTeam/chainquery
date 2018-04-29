@@ -23,7 +23,7 @@ func RunBlockProcessing(height *uint64) {
 	if foundBlock != nil {
 		block = foundBlock
 	}
-	block.Height = uint64(*height)
+	block.Height = *height
 	block.Confirmations = uint(jsonBlock.Confirmations)
 	block.Hash = jsonBlock.Hash
 	block.BlockTime = uint64(jsonBlock.Time)

@@ -170,15 +170,15 @@ func setFee(fee *lbrycrd.Fee, pbClaim *pb.Claim) {
 		currency := pb.Fee_LBC
 		address := ""
 		if fee.BTC != nil {
-			amount = float32(fee.BTC.Amount)
+			amount = fee.BTC.Amount
 			currency = pb.Fee_LBC
 			address = fee.BTC.Address
 		} else if fee.LBC != nil {
-			amount = float32(fee.LBC.Amount)
+			amount = fee.LBC.Amount
 			currency = pb.Fee_LBC
 			address = fee.LBC.Address
 		} else if fee.USD != nil {
-			amount = float32(fee.USD.Amount)
+			amount = fee.USD.Amount
 			currency = pb.Fee_USD
 			address = fee.USD.Address
 		}
