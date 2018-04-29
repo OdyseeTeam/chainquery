@@ -105,8 +105,9 @@ func setMetaData(claim pb.Claim, author string, description string, language pb.
 }
 
 func migrateV1Claim(vClaim lbrycrd.V1Claim) (*pb.Claim, error) {
-
 	pbClaim := newClaim()
+	//Not part of json V1
+	pbClaim.PublisherSignature = nil
 	//Stream
 	// -->Universal
 	setFee(vClaim.Fee, pbClaim)
@@ -125,8 +126,9 @@ func migrateV1Claim(vClaim lbrycrd.V1Claim) (*pb.Claim, error) {
 }
 
 func migrateV2Claim(vClaim lbrycrd.V2Claim) (*pb.Claim, error) {
-
 	pbClaim := newClaim()
+	//Not part of json V2
+	pbClaim.PublisherSignature = nil
 	//Stream
 	// -->Fee
 	setFee(vClaim.Fee, pbClaim)
@@ -145,8 +147,9 @@ func migrateV2Claim(vClaim lbrycrd.V2Claim) (*pb.Claim, error) {
 }
 
 func migrateV3Claim(vClaim lbrycrd.V3Claim) (*pb.Claim, error) {
-
 	pbClaim := newClaim()
+	//Not part of json V3
+	pbClaim.PublisherSignature = nil
 	//Stream
 	// -->Fee
 	setFee(vClaim.Fee, pbClaim)
