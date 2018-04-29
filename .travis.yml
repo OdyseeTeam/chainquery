@@ -57,15 +57,15 @@ script:
   - ./scripts/int_tests.sh
   # Checks for unused vars and fields on structs
   - varcheck ./...
-  - aligncheck ./...
+  - structcheck ./...
   # go vet is the official Go static analyzer
   - go vet ./...
+  # forbid code with huge functions
+  - gocyclo -ignore "_test" -avg -over 19 $GO_FILES
   # checks for unhandled errors
   - errcheck $(go list ./... | grep -v /vendor/ | grep -v /model | grep -v /swagger/ | grep -v /migration/ )
   # "go vet on steroids" + linter - ignore autogen code
   - megacheck ./... | grep -v /vendor/ | grep -v /model | grep -v /swagger/ | grep -v /migration/
-  # forbid code with huge functions
-  - gocyclo -ignore "_test" -avg -over 19 $GO_FILES
   # check for unnecessary conversions - ignore autogen code
   - unconvert -v $(go list ./... | grep -v /vendor/ | grep -v /model/ | grep -v /swagger/ | grep -v /migration/ )
   # one last linter - ignore autogen code
