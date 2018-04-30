@@ -85,7 +85,9 @@ func processClaimSupportScript(script *[]byte, vout model.Output, tx model.Trans
 	}
 	support := datastore.GetSupport(tx.Hash, vout.Vout)
 	support = processSupport(claimid, support, vout, tx)
-	err = datastore.PutSupport(support)
+	if err := datastore.PutSupport(support); err != nil {
+		logrus.Warning("Support for unknown claim! ", claimid)
+	}
 
 	return name, claimid, pubkeyscript, err
 }
@@ -112,9 +114,12 @@ func processClaimUpdateScript(script *[]byte, vout model.Output, tx model.Transa
 			logrus.Warning("ClaimUpdate for non-existent claim! ", claimID, " ", tx.Hash, " ", vout.Vout)
 			return name, claimID, pubkeyscript, err
 		}
-		err = datastore.PutClaim(claim)
-		if err != nil {
-			return name, claimID, pubkeyscript, err
+		//logrus.Info("ClaimId: ", claim.ClaimID, " PublishId ", claim.PublisherID.String, " ", claim.PublisherID.Valid, " TxID ", claim.TransactionByHashID)
+		if err := datastore.PutClaim(claim); err != nil {
+			logrus.Warning("Claim updates to invalid certificate claim. ", claim.PublisherID)
+			if logrus.GetLevel() == logrus.DebugLevel {
+				logrus.WithError(err)
+			}
 		}
 	}
 	return name, claimID, pubkeyscript, err
@@ -153,8 +158,11 @@ func processSupport(claimID string, support *model.Support, output model.Output,
 	support.TransactionHash.Valid = true
 	support.Vout = output.Vout
 	support.SupportAmount = output.Value.Float64
-	support.SupportedClaimID = claimID
-
+	if claim := datastore.GetClaim(claimID); claim != nil {
+		support.SupportedClaimID = claimID
+		return support
+	}
+	logrus.Warning("Claim Support for claim ", claimID, " is a non-existent claim.")
 	return support
 
 }
