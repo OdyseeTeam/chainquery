@@ -67,7 +67,7 @@ func createUpdateVinAddresses(tx *model.Transaction, inputs *[]lbrycrd.Vin, bloc
 			if input.Coinbase != "" {
 				continue //No addresses for coinbase inputs.
 			}
-			panic("Missing source output for " + input.TxID + "-" + strconv.Itoa(int(input.Vout)))
+			return nil, errors.Base("Missing source output for " + input.TxID + "-" + strconv.Itoa(int(input.Vout)))
 		}
 		var addresses []string
 		if !srcOutput.AddressList.Valid {

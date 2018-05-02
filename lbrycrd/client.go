@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
-	"sort"
-	"strings"
 
 	"github.com/lbryio/lbry.go/errors"
 	upstream "github.com/lbryio/lbry.go/lbrycrd"
@@ -14,7 +12,6 @@ import (
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/shopspring/decimal"
-	"github.com/sirupsen/logrus"
 )
 
 var defaultClient *upstream.Client
@@ -32,22 +29,6 @@ func Init() *upstream.Client {
 	return lbrycrdClient
 }
 
-func debugParams(params ...interface{}) string {
-	var s []string
-	for _, v := range params {
-		r := reflect.ValueOf(v)
-		if r.Kind() == reflect.Ptr {
-			if r.IsNil() {
-				continue
-			}
-			v = r.Elem().Interface()
-		}
-		s = append(s, fmt.Sprintf("%v", v))
-	}
-	sort.Strings(s)
-	return strings.Join(s, " ")
-}
-
 func call(response interface{}, command string, params ...interface{}) error {
 	result, err := callNoDecode(command, params...)
 	if err != nil {
@@ -57,7 +38,7 @@ func call(response interface{}, command string, params ...interface{}) error {
 }
 
 func callNoDecode(command string, params ...interface{}) (interface{}, error) {
-	logrus.Debug("jsonrpc: " + command + " " + debugParams(params))
+	//logrus.Debug("jsonrpc: " + command + " " + debugParams(params))
 	var err error
 
 	encodedParams := make([]json.RawMessage, len(params))

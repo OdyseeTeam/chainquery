@@ -101,6 +101,7 @@ func processConfiguration() {
 		logrus.Info("Setting DebugMode=true")
 		logrus.SetLevel(logrus.DebugLevel)
 	}
+	logrus.SetLevel(logrus.InfoLevel)
 
 	settings := global.DaemonSettings{
 		DaemonMode:      GetDaemonMode(),

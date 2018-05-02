@@ -133,7 +133,8 @@ func syncClaim(claimJSON *lbrycrd.Claim) {
 	}
 	if hasChanges {
 		if err := datastore.PutClaim(claim); err != nil {
-			logrus.Error("ClaimTrieSync: ", err)
+			logrus.Error("ClaimTrieSync: unable to sync claim ", claim.ClaimID, ". JSON-", claimJSON)
+			logrus.Debug("Error: ", err)
 		}
 	}
 }

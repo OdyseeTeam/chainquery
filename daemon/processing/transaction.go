@@ -15,6 +15,32 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
+type txToProcess struct {
+	tx        *lbrycrd.TxRawResult
+	blockTime uint64
+	failcount int
+}
+
+type txProcessError struct {
+	tx        *lbrycrd.TxRawResult
+	blockTime uint64
+	err       error
+	failcount int
+}
+
+func initTxWorkers(nrWorkers int, jobs <-chan txToProcess, results chan<- txProcessError) {
+	for i := 0; i < nrWorkers; i++ {
+		go txProcessor(jobs, results)
+	}
+}
+
+func txProcessor(jobs <-chan txToProcess, results chan<- txProcessError) {
+	for job := range jobs {
+		err := ProcessTx(job.tx, job.blockTime)
+		results <- txProcessError{tx: job.tx, blockTime: job.blockTime, err: err, failcount: job.failcount + 1}
+	}
+}
+
 type txDebitCredits struct {
 	addrDCMap map[string]*addrDebitCredits
 	mutex     *sync.RWMutex

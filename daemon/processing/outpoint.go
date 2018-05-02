@@ -79,7 +79,7 @@ func processVin(jsonVin *lbrycrd.Vin, tx *m.Transaction, txDC *txDebitCredits) e
 			sequence := strconv.FormatUint(uint64(vin.Sequence), 10)
 			logrus.Error("Tx ", tx.ID, ", Vin ", vin.PrevoutN.Uint, " - ", vin.PrevoutHash.String)
 			err := errors.Base("No source output for vin in tx: (" + id + ") - (" + sequence + ")")
-			panic(err)
+			return err
 		}
 		if srcOutput != nil {
 
