@@ -56,7 +56,9 @@ func ClaimTrieSync() {
 		saveJobError(jobStatus, err)
 	}
 	jobStatus.LastSync = time.Now()
-	jobStatus.UpdateG()
+	if err := jobStatus.UpdateG(); err != nil {
+		panic(err)
+	}
 	logrus.Info("ClaimTrieSync: Processed " + strconv.Itoa(len(updatedClaims)) + " claims.")
 }
 
