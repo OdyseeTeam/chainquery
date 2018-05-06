@@ -27,7 +27,7 @@ func GetTableStatus() (*g.TableStatus, error) {
 		`SELECT TABLE_NAME as "table",` +
 			`SUM(TABLE_ROWS) as "rows" ` +
 			`FROM INFORMATION_SCHEMA.TABLES ` +
-			`WHERE TABLE_SCHEMA = "lbrycrd" ` +
+			`WHERE TABLE_SCHEMA = "chainquery" ` +
 			`GROUP BY TABLE_NAME;`)
 
 	if err != nil {
