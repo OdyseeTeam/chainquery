@@ -14,7 +14,7 @@ const (
 	ADDRESSSUMARY = "AddressSummary"
 	// STATUS Const for Status API Handler
 	STATUS = "Status"
-	// QUERY Const for Query API Hander
+	// SQLQUERY Const for Query API Hander
 	SQLQUERY = "SQLQuery"
 )
 

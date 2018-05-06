@@ -12,7 +12,7 @@ import (
 //Executor used for chainquery db
 var chainquery boil.Executor
 
-// Initializes the api chainquery db connection
+// InitAPIQuery initializes the api chainquery db connection
 func InitAPIQuery(dsn string, debug bool) (*QueryLogger, error) {
 	if dsn == "" {
 		return nil, errors.Base("chainquery DSN was not provided.")
