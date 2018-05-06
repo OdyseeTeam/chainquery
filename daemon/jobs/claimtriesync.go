@@ -206,9 +206,9 @@ func getClaimStatus(claim *model.Claim) string {
 }
 
 func getUpdatedClaims(jobStatus *model.JobStatus) (model.ClaimSlice, error) {
-	claimIdCol := model.TableNames.Claim + "." + model.ClaimColumns.ClaimID
+	claimIDCol := model.TableNames.Claim + "." + model.ClaimColumns.ClaimID
 	claimNameCol := model.TableNames.Claim + "." + model.ClaimColumns.Name
-	supportedIdCol := model.TableNames.Support + "." + model.SupportColumns.SupportedClaimID
+	supportedIDCol := model.TableNames.Support + "." + model.SupportColumns.SupportedClaimID
 	supportModifiedCol := model.TableNames.Support + ".modified" //+model.SupportColumns.Modified
 	claimModifiedCol := model.TableNames.Claim + "." + model.ClaimColumns.Modified
 	sqlFormat := "2006-01-02 15:04:05"
@@ -216,14 +216,14 @@ func getUpdatedClaims(jobStatus *model.JobStatus) (model.ClaimSlice, error) {
 	lastSyncStr := "'" + lastsync + "'"
 	clause := qm.SQL(`
 		SELECT 
-					` + claimIdCol + `, 
+					` + claimIDCol + `, 
 					` + claimNameCol + `
 		FROM 		` + model.TableNames.Claim + ` 
 		LEFT JOIN 	` + model.TableNames.Support + `  
-			ON 		` + supportedIdCol + "=" + claimIdCol + `  
+			ON 		` + supportedIDCol + "=" + claimIDCol + `  
 		WHERE 		` + supportModifiedCol + ">=" + lastSyncStr + ` 
 		OR 			` + claimModifiedCol + ">=" + lastSyncStr + `  
-		GROUP BY 	` + claimIdCol + `,` + claimNameCol)
+		GROUP BY 	` + claimIDCol + `,` + claimNameCol)
 
 	return model.ClaimsG(clause).All()
 
