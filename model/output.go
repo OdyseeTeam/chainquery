@@ -78,10 +78,12 @@ var OutputColumns = struct {
 
 // outputR is where relationships are stored.
 type outputR struct {
-	Transaction   *Transaction
-	SpentByInput  *Input
-	Addresses     AddressSlice
-	UnknownClaims UnknownClaimSlice
+	Transaction      *Transaction
+	SpentByInput     *Input
+	Addresses        AddressSlice
+	OutputClaims     OutputClaimSlice
+	VoutOutputClaims OutputClaimSlice
+	UnknownClaims    UnknownClaimSlice
 }
 
 // outputL is where Load methods for each relationship are stored.
@@ -283,6 +285,58 @@ func (o *Output) Addresses(exec boil.Executor, mods ...qm.QueryMod) addressQuery
 
 	if len(queries.GetSelect(query.Query)) == 0 {
 		queries.SetSelect(query.Query, []string{"`address`.*"})
+	}
+
+	return query
+}
+
+// OutputClaimsG retrieves all the output_claim's output claim.
+func (o *Output) OutputClaimsG(mods ...qm.QueryMod) outputClaimQuery {
+	return o.OutputClaims(boil.GetDB(), mods...)
+}
+
+// OutputClaims retrieves all the output_claim's output claim with an executor.
+func (o *Output) OutputClaims(exec boil.Executor, mods ...qm.QueryMod) outputClaimQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("`output_claim`.`output_id`=?", o.TransactionHash),
+	)
+
+	query := OutputClaims(exec, queryMods...)
+	queries.SetFrom(query.Query, "`output_claim`")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"`output_claim`.*"})
+	}
+
+	return query
+}
+
+// VoutOutputClaimsG retrieves all the output_claim's output claim via vout_id column.
+func (o *Output) VoutOutputClaimsG(mods ...qm.QueryMod) outputClaimQuery {
+	return o.VoutOutputClaims(boil.GetDB(), mods...)
+}
+
+// VoutOutputClaims retrieves all the output_claim's output claim with an executor via vout_id column.
+func (o *Output) VoutOutputClaims(exec boil.Executor, mods ...qm.QueryMod) outputClaimQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("`output_claim`.`vout_id`=?", o.Vout),
+	)
+
+	query := OutputClaims(exec, queryMods...)
+	queries.SetFrom(query.Query, "`output_claim`")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"`output_claim`.*"})
 	}
 
 	return query
@@ -527,6 +581,136 @@ func (outputL) LoadAddresses(e boil.Executor, singular bool, maybeOutput interfa
 		for _, local := range slice {
 			if local.ID == localJoinCol {
 				local.R.Addresses = append(local.R.Addresses, foreign)
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadOutputClaims allows an eager lookup of values, cached into the
+// loaded structs of the objects.
+func (outputL) LoadOutputClaims(e boil.Executor, singular bool, maybeOutput interface{}) error {
+	var slice []*Output
+	var object *Output
+
+	count := 1
+	if singular {
+		object = maybeOutput.(*Output)
+	} else {
+		slice = *maybeOutput.(*[]*Output)
+		count = len(slice)
+	}
+
+	args := make([]interface{}, count)
+	if singular {
+		if object.R == nil {
+			object.R = &outputR{}
+		}
+		args[0] = object.TransactionHash
+	} else {
+		for i, obj := range slice {
+			if obj.R == nil {
+				obj.R = &outputR{}
+			}
+			args[i] = obj.TransactionHash
+		}
+	}
+
+	query := fmt.Sprintf(
+		"select * from `output_claim` where `output_id` in (%s)",
+		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
+	)
+	if boil.DebugMode {
+		fmt.Fprintf(boil.DebugWriter, "%s\n%v\n", query, args)
+	}
+
+	results, err := e.Query(query, args...)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load output_claim")
+	}
+	defer results.Close()
+
+	var resultSlice []*OutputClaim
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice output_claim")
+	}
+
+	if singular {
+		object.R.OutputClaims = resultSlice
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.TransactionHash == foreign.OutputID {
+				local.R.OutputClaims = append(local.R.OutputClaims, foreign)
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadVoutOutputClaims allows an eager lookup of values, cached into the
+// loaded structs of the objects.
+func (outputL) LoadVoutOutputClaims(e boil.Executor, singular bool, maybeOutput interface{}) error {
+	var slice []*Output
+	var object *Output
+
+	count := 1
+	if singular {
+		object = maybeOutput.(*Output)
+	} else {
+		slice = *maybeOutput.(*[]*Output)
+		count = len(slice)
+	}
+
+	args := make([]interface{}, count)
+	if singular {
+		if object.R == nil {
+			object.R = &outputR{}
+		}
+		args[0] = object.Vout
+	} else {
+		for i, obj := range slice {
+			if obj.R == nil {
+				obj.R = &outputR{}
+			}
+			args[i] = obj.Vout
+		}
+	}
+
+	query := fmt.Sprintf(
+		"select * from `output_claim` where `vout_id` in (%s)",
+		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
+	)
+	if boil.DebugMode {
+		fmt.Fprintf(boil.DebugWriter, "%s\n%v\n", query, args)
+	}
+
+	results, err := e.Query(query, args...)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load output_claim")
+	}
+	defer results.Close()
+
+	var resultSlice []*OutputClaim
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice output_claim")
+	}
+
+	if singular {
+		object.R.VoutOutputClaims = resultSlice
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.Vout == foreign.VoutID {
+				local.R.VoutOutputClaims = append(local.R.VoutOutputClaims, foreign)
 				break
 			}
 		}
@@ -1047,6 +1231,174 @@ func removeAddressesFromOutputsSlice(o *Output, related []*Address) {
 			break
 		}
 	}
+}
+
+// AddOutputClaimsG adds the given related objects to the existing relationships
+// of the output, optionally inserting them as new records.
+// Appends related to o.R.OutputClaims.
+// Sets related.R.Output appropriately.
+// Uses the global database handle.
+func (o *Output) AddOutputClaimsG(insert bool, related ...*OutputClaim) error {
+	return o.AddOutputClaims(boil.GetDB(), insert, related...)
+}
+
+// AddOutputClaimsP adds the given related objects to the existing relationships
+// of the output, optionally inserting them as new records.
+// Appends related to o.R.OutputClaims.
+// Sets related.R.Output appropriately.
+// Panics on error.
+func (o *Output) AddOutputClaimsP(exec boil.Executor, insert bool, related ...*OutputClaim) {
+	if err := o.AddOutputClaims(exec, insert, related...); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// AddOutputClaimsGP adds the given related objects to the existing relationships
+// of the output, optionally inserting them as new records.
+// Appends related to o.R.OutputClaims.
+// Sets related.R.Output appropriately.
+// Uses the global database handle and panics on error.
+func (o *Output) AddOutputClaimsGP(insert bool, related ...*OutputClaim) {
+	if err := o.AddOutputClaims(boil.GetDB(), insert, related...); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// AddOutputClaims adds the given related objects to the existing relationships
+// of the output, optionally inserting them as new records.
+// Appends related to o.R.OutputClaims.
+// Sets related.R.Output appropriately.
+func (o *Output) AddOutputClaims(exec boil.Executor, insert bool, related ...*OutputClaim) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.OutputID = o.TransactionHash
+			if err = rel.Insert(exec); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE `output_claim` SET %s WHERE %s",
+				strmangle.SetParamNames("`", "`", 0, []string{"output_id"}),
+				strmangle.WhereClause("`", "`", 0, outputClaimPrimaryKeyColumns),
+			)
+			values := []interface{}{o.TransactionHash, rel.OutputID, rel.VoutID, rel.ClaimID}
+
+			if boil.DebugMode {
+				fmt.Fprintln(boil.DebugWriter, updateQuery)
+				fmt.Fprintln(boil.DebugWriter, values)
+			}
+
+			if _, err = exec.Exec(updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.OutputID = o.TransactionHash
+		}
+	}
+
+	if o.R == nil {
+		o.R = &outputR{
+			OutputClaims: related,
+		}
+	} else {
+		o.R.OutputClaims = append(o.R.OutputClaims, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &outputClaimR{
+				Output: o,
+			}
+		} else {
+			rel.R.Output = o
+		}
+	}
+	return nil
+}
+
+// AddVoutOutputClaimsG adds the given related objects to the existing relationships
+// of the output, optionally inserting them as new records.
+// Appends related to o.R.VoutOutputClaims.
+// Sets related.R.Vout appropriately.
+// Uses the global database handle.
+func (o *Output) AddVoutOutputClaimsG(insert bool, related ...*OutputClaim) error {
+	return o.AddVoutOutputClaims(boil.GetDB(), insert, related...)
+}
+
+// AddVoutOutputClaimsP adds the given related objects to the existing relationships
+// of the output, optionally inserting them as new records.
+// Appends related to o.R.VoutOutputClaims.
+// Sets related.R.Vout appropriately.
+// Panics on error.
+func (o *Output) AddVoutOutputClaimsP(exec boil.Executor, insert bool, related ...*OutputClaim) {
+	if err := o.AddVoutOutputClaims(exec, insert, related...); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// AddVoutOutputClaimsGP adds the given related objects to the existing relationships
+// of the output, optionally inserting them as new records.
+// Appends related to o.R.VoutOutputClaims.
+// Sets related.R.Vout appropriately.
+// Uses the global database handle and panics on error.
+func (o *Output) AddVoutOutputClaimsGP(insert bool, related ...*OutputClaim) {
+	if err := o.AddVoutOutputClaims(boil.GetDB(), insert, related...); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// AddVoutOutputClaims adds the given related objects to the existing relationships
+// of the output, optionally inserting them as new records.
+// Appends related to o.R.VoutOutputClaims.
+// Sets related.R.Vout appropriately.
+func (o *Output) AddVoutOutputClaims(exec boil.Executor, insert bool, related ...*OutputClaim) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.VoutID = o.Vout
+			if err = rel.Insert(exec); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE `output_claim` SET %s WHERE %s",
+				strmangle.SetParamNames("`", "`", 0, []string{"vout_id"}),
+				strmangle.WhereClause("`", "`", 0, outputClaimPrimaryKeyColumns),
+			)
+			values := []interface{}{o.Vout, rel.OutputID, rel.VoutID, rel.ClaimID}
+
+			if boil.DebugMode {
+				fmt.Fprintln(boil.DebugWriter, updateQuery)
+				fmt.Fprintln(boil.DebugWriter, values)
+			}
+
+			if _, err = exec.Exec(updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.VoutID = o.Vout
+		}
+	}
+
+	if o.R == nil {
+		o.R = &outputR{
+			VoutOutputClaims: related,
+		}
+	} else {
+		o.R.VoutOutputClaims = append(o.R.VoutOutputClaims, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &outputClaimR{
+				Vout: o,
+			}
+		} else {
+			rel.R.Vout = o
+		}
+	}
+	return nil
 }
 
 // AddUnknownClaimsG adds the given related objects to the existing relationships

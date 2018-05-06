@@ -47,6 +47,7 @@ func DoYourThing() {
 }
 
 func initJobs() {
+	go jobs.ClaimTrieSync()
 	t := time.NewTicker(15 * time.Minute)
 	for {
 		<-t.C
@@ -57,7 +58,7 @@ func initJobs() {
 func runDaemon() {
 	lastBlock, _ := model.Blocks(boil.GetDB(), qm.OrderBy(model.BlockColumns.Height+" DESC"), qm.Limit(1)).One()
 	if lastBlock != nil && lastBlock.Height > 100 && !reindex {
-		lastHeightProcessed = lastBlock.Height - 100 //Start 100 sooner just in case something happened.
+		lastHeightProcessed = lastBlock.Height - 1 //Start 1 sooner just in case something happened.
 	}
 	log.Info("Daemon initialized and running")
 	for {

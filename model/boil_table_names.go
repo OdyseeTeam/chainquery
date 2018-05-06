@@ -10,8 +10,10 @@ var TableNames = struct {
 	Claim              string
 	Input              string
 	InputAddress       string
+	JobStatus          string
 	Output             string
 	OutputAddress      string
+	OutputClaim        string
 	Support            string
 	Transaction        string
 	TransactionAddress string
@@ -23,8 +25,10 @@ var TableNames = struct {
 	Claim:              "claim",
 	Input:              "input",
 	InputAddress:       "input_address",
+	JobStatus:          "job_status",
 	Output:             "output",
 	OutputAddress:      "output_address",
+	OutputClaim:        "output_claim",
 	Support:            "support",
 	Transaction:        "transaction",
 	TransactionAddress: "transaction_address",

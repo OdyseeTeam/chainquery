@@ -88,7 +88,7 @@ func initDefaults() {
 	viper.SetDefault(profilemode, false)
 	viper.SetDefault(daemonmode, 0) //BEASTMODE
 	viper.SetDefault(defaultclienttimeout, 20*time.Second)
-	viper.SetDefault(daemondelay, 1)       //Seconds
+	viper.SetDefault(daemondelay, 60)      //Seconds
 	viper.SetDefault(processingdelay, 100) //Milliseconds
 	viper.SetDefault(daemonprofile, false)
 	viper.SetDefault(lbrycrdprofile, false)

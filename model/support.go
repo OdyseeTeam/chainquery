@@ -28,6 +28,8 @@ type Support struct {
 	BidState         string      `boil:"bid_state" json:"bid_state" toml:"bid_state" yaml:"bid_state"`
 	TransactionHash  null.String `boil:"transaction_hash" json:"transaction_hash,omitempty" toml:"transaction_hash" yaml:"transaction_hash,omitempty"`
 	Vout             uint        `boil:"vout" json:"vout" toml:"vout" yaml:"vout"`
+	Created          time.Time   `boil:"created" json:"created" toml:"created" yaml:"created"`
+	Modified         time.Time   `boil:"modified" json:"modified" toml:"modified" yaml:"modified"`
 
 	R *supportR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L supportL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -40,6 +42,8 @@ var SupportColumns = struct {
 	BidState         string
 	TransactionHash  string
 	Vout             string
+	Created          string
+	Modified         string
 }{
 	ID:               "id",
 	SupportedClaimID: "supported_claim_id",
@@ -47,6 +51,8 @@ var SupportColumns = struct {
 	BidState:         "bid_state",
 	TransactionHash:  "transaction_hash",
 	Vout:             "vout",
+	Created:          "created",
+	Modified:         "modified",
 }
 
 // supportR is where relationships are stored.
@@ -58,9 +64,9 @@ type supportR struct {
 type supportL struct{}
 
 var (
-	supportColumns               = []string{"id", "supported_claim_id", "support_amount", "bid_state", "transaction_hash", "vout"}
+	supportColumns               = []string{"id", "supported_claim_id", "support_amount", "bid_state", "transaction_hash", "vout", "created", "modified"}
 	supportColumnsWithoutDefault = []string{"supported_claim_id", "transaction_hash", "vout"}
-	supportColumnsWithDefault    = []string{"id", "support_amount", "bid_state"}
+	supportColumnsWithDefault    = []string{"id", "support_amount", "bid_state", "created", "modified"}
 	supportPrimaryKeyColumns     = []string{"id"}
 )
 

@@ -1,9 +1,9 @@
 package util
 
 import (
-	"log"
 	"time"
 
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
@@ -14,19 +14,19 @@ import (
 func TimeTrack(start time.Time, name string, profile string) {
 	if profile == "daemonprofile" && viper.GetBool("daemonprofile") {
 		elapsed := time.Since(start)
-		log.Printf("%s %s took %s", name, profile, elapsed)
+		logrus.Infof("%s %s took %s", name, profile, elapsed)
 	}
 	if profile == "lbrycrdprofile" && viper.GetBool("lbrycrdprofile") {
 		elapsed := time.Since(start)
-		log.Printf("%s %s took %s", name, profile, elapsed)
+		logrus.Infof("%s %s took %s", name, profile, elapsed)
 	}
 	if profile == "mysqlprofile" && viper.GetBool("mysqlprofile") {
 		elapsed := time.Since(start)
-		log.Printf("%s %s took %s", name, profile, elapsed)
+		logrus.Infof("%s %s took %s", name, profile, elapsed)
 	}
 	if profile == "always" {
 		elapsed := time.Since(start)
-		log.Printf("%s %s took %s", name, profile, elapsed)
+		logrus.Infof("%s took %s", name, elapsed)
 	}
 
 }
