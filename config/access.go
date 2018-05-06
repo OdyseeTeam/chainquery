@@ -51,3 +51,8 @@ func GetProcessingDelay() time.Duration {
 func GetDaemonDelay() time.Duration {
 	return viper.GetDuration(daemondelay) * time.Second
 }
+
+// GetAPIHostAndPort gets the host and port string the api server should bind and listen too.
+func GetAPIHostAndPort() string {
+	return viper.GetString(apihostport)
+}

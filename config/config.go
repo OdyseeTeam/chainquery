@@ -31,6 +31,7 @@ const ( // config setting keys
 	daemonprofile        = "daemonprofile"
 	lbrycrdprofile       = "lbrycrdprofile"
 	mysqlprofile         = "mysqlprofile"
+	apihostport          = "apihostport"
 )
 
 const (
@@ -95,9 +96,12 @@ func initDefaults() {
 	viper.SetDefault(daemonprofile, false)
 	viper.SetDefault(lbrycrdprofile, false)
 	viper.SetDefault(mysqlprofile, false)
+	viper.SetDefault(apihostport, "0.0.0.0:6300")
 }
 
 func processConfiguration() {
+	// Things that listen live for setting changes that need to be applied. Settings that are retrieved do not need
+	// to be set here.
 	isdebug := viper.GetBool(debugmode)
 	if isdebug {
 		logrus.Info("Setting DebugMode=true")

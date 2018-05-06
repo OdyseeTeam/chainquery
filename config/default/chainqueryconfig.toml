@@ -10,6 +10,9 @@
 #API MySQL DSN is required for chainquery to expose a SQL query service
 #DEFAULT-apimysqldsn="lbry:lbry@tcp(localhost:3306)/chainquery"
 
+#API Host and Port is required for the API Server to bind and listen on.
+#DEFAULT-apihostport="0.0.0.0:6300"
+
 #Profile mode enables and disables the reporting of a profile for chainquery
 #DEFAULT-profilemode=false
 

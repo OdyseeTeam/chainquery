@@ -56,7 +56,7 @@ func main() {
 		if err != nil {
 			log.Panicf("Error connecting to lbrycrd: %+v", err)
 		}
-		go swagger.InitApiServer()
+		go swagger.InitApiServer(config.GetAPIHostAndPort())
 		daemon.DoYourThing()
 	}
 }

@@ -20,7 +20,7 @@ import (
 
 )
 
-func InitApiServer() {
+func InitApiServer(hostAndPort string) {
     logrus.Info("API Server started")
     //API Chainquery DB connection
     chainqueryInstance, err := db.InitAPIQuery(config.GetAPIMySQLDSN(), false)
@@ -30,6 +30,6 @@ func InitApiServer() {
     defer db.CloseDB(chainqueryInstance)
 	router := sw.NewRouter()
 
-	log.Fatal(http.ListenAndServe(":6300", router))
+	log.Fatal(http.ListenAndServe(hostAndPort, router))
 }
 
