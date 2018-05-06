@@ -42,6 +42,7 @@ func main() {
 	case "version":
 		println("ALPHA")
 	case "serve":
+		//Main Chainquery DB connection
 		dbInstance, err := db.Init(config.GetMySQLDSN(), DebugMode)
 		if err != nil {
 			panic(err)

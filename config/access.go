@@ -13,6 +13,12 @@ func GetMySQLDSN() string {
 	return viper.GetString(mysqldsn)
 }
 
+//GetAPIMySQLDSN gets the API MySql DSN from viper. This intended to be another account with limited privileges
+//for the apis to prevent potential abuse. It should have read only privileges at a minimum.
+func GetAPIMySQLDSN() string {
+	return viper.GetString(apimysqldsn)
+}
+
 // GetLBRYcrdURL gets the LBRYcrd URL from viper configuration
 func GetLBRYcrdURL() string {
 	if viper.IsSet(lbrycrdurl) {

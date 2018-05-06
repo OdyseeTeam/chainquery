@@ -10,8 +10,11 @@ basePath: "/api"
 tags:
 - name: "stat"
   description: "Operations that describe the status of ChainQuery"
+- name: "query"
+  description: "Operations dealing with raw queries to the chainquery database."
 schemes:
 - "http"
+- "https"
 consumes:
 - "application/json"
 produces:
@@ -65,6 +68,48 @@ paths:
             \ it has been used in."
           schema:
             $ref: "#/definitions/AddressSummary"
+          x-oad-type: "response"
+    x-oad-type: "operation"
+  /SQL:
+    get:
+      tags:
+      - "query"
+      summary: "Use SQL in a RESTful way"
+      description: "API exposed for sending SQL queries directly against the chainquery\
+        \ database. Since this is an exposed API there are limits to its use. These\
+        \ limits include queries per hour, read-only, limited to 60 second timeout. "
+      operationId: "SQL Query"
+      parameters:
+      - name: "query"
+        in: "path"
+        description: "The SQL query to be put against the chainquery database."
+        required: true
+        type: "string"
+        x-oad-type: "parameter"
+        x-exportParamName: "Query"
+      responses:
+        200:
+          description: "It will return the rows as a json array."
+          schema:
+            type: "array"
+            items:
+              type: "object"
+              description: "object with fields representing the selected columns of\
+                \ the query."
+              title: "Row object"
+              properties: {}
+              x-oad-type: "object"
+            x-oad-type: "array"
+          x-oad-type: "response"
+        400:
+          description: "This is returned when the sql query has failed, either due\
+            \ to syntax issues with the query, nameing, priviledges etc. An error\
+            \ is provided with the response."
+          schema:
+            type: "string"
+            description: "what went wrong?"
+            title: "error message"
+            x-oad-type: "string"
           x-oad-type: "response"
     x-oad-type: "operation"
 definitions:

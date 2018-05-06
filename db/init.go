@@ -47,6 +47,27 @@ func Init(dsn string, debug bool) (*QueryLogger, error) {
 	return logWrapper, nil
 }
 
+func dbInitConnection(dsn string, driverName string, debug bool) (*sqlx.DB, *QueryLogger, error) {
+	dsn += "?parseTime=1&collation=utf8mb4_unicode_ci"
+	dbConn, err := sqlx.Connect(driverName, dsn)
+	if err != nil {
+		return nil, nil, errors.Err(err)
+	}
+
+	err = dbConn.Ping()
+	if err != nil {
+		return nil, nil, errors.Err(err)
+	}
+
+	logWrapper := &QueryLogger{DB: dbConn}
+	if debug {
+		logWrapper.Logger = log.StandardLogger()
+		//boil.DebugMode = true // this just prints everything twice
+	}
+
+	return dbConn, logWrapper, nil
+}
+
 // CloseDB is a wrapper function to allow error handle when it is usually deferred.
 func CloseDB(db *QueryLogger) {
 	if err := db.Close(); err != nil {

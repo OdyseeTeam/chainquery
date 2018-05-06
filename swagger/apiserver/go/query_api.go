@@ -16,24 +16,10 @@ import (
 	"github.com/lbryio/chainquery/apis"
 )
 
-func HandleAddressSummary(w http.ResponseWriter, r *http.Request) {
+func HandleSQLQuery(w http.ResponseWriter, r *http.Request) {
     start := time.Now()
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	response, err := apis.HandleAction("AddressSummary", w, r)
-	if err != nil {
-    		w.WriteHeader(http.StatusInternalServerError)
-    		w.Write([]byte(err.Error()))
-    }
-    elapsed := time.Since(start)
-    timeTaken := fmt.Sprintf("%s", elapsed)
-    response.TimeSpent = timeTaken
-    process(w,response)
-}
-
-func HandleStatus(w http.ResponseWriter, r *http.Request) {
-    start := time.Now()
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	response, err := apis.HandleAction("Status", w, r)
+	response, err := apis.HandleAction("SQLQuery", w, r)
 	if err != nil {
     		w.WriteHeader(http.StatusInternalServerError)
     		w.Write([]byte(err.Error()))

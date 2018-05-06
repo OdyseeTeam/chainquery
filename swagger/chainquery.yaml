@@ -2,6 +2,9 @@ tags:
   -
     name: stat
     description: 'Operations that describe the status of ChainQuery'
+  -
+    name: query
+    description: 'Operations dealing with raw queries to the chainquery database.'
 paths:
   /Status:
     get:
@@ -47,6 +50,42 @@ paths:
         -
           $ref: '#/parameters/address'
           x-oad-type: reference
+    x-oad-type: operation
+  /SQL:
+    get:
+      operationId: 'SQL Query'
+      summary: 'Use SQL in a RESTful way'
+      description: 'API exposed for sending SQL queries directly against the chainquery database. Since this is an exposed API there are limits to its use. These limits include queries per hour, read-only, limited to 60 second timeout. '
+      tags:
+        - query
+      responses:
+        '200':
+          description: 'It will return the rows as a json array.'
+          schema:
+            x-oad-type: array
+            type: array
+            items:
+              x-oad-type: object
+              type: object
+              title: 'Row object'
+              description: 'object with fields representing the selected columns of the query.'
+          x-oad-type: response
+        '400':
+          description: 'This is returned when the sql query has failed, either due to syntax issues with the query, nameing, priviledges etc. An error is provided with the response.'
+          schema:
+            x-oad-type: string
+            type: string
+            title: 'error message'
+            description: 'what went wrong?'
+          x-oad-type: response
+      parameters:
+        -
+          name: query
+          in: path
+          description: 'The SQL query to be put against the chainquery database.'
+          required: true
+          type: string
+          x-oad-type: parameter
     x-oad-type: operation
 parameters:
   address:
@@ -126,6 +165,7 @@ host: ':6300'
 basePath: /api
 schemes:
   - http
+  - https
 consumes:
   - application/json
 produces:

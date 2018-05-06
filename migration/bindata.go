@@ -104,7 +104,7 @@ func migration001_supportsSql() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "migration/001_supports.sql", size: 1578, mode: os.FileMode(420), modTime: time.Unix(1525564799, 0)}
+	info := bindataFileInfo{name: "migration/001_supports.sql", size: 1578, mode: os.FileMode(420), modTime: time.Unix(1525576232, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }

@@ -21,6 +21,7 @@ import (
 const ( // config setting keys
 	debugmode            = "debugmode"
 	mysqldsn             = "mysqldsn"
+	apimysqldsn          = "apimysqldsn"
 	lbrycrdurl           = "lbrycrdurl"
 	profilemode          = "profilemode"
 	daemonmode           = "daemonmode"
@@ -84,6 +85,7 @@ func initDefaults() {
 	//Setting viper defaults in the event there are not settings set in the config file.
 	viper.SetDefault(debugmode, false)
 	viper.SetDefault(mysqldsn, "lbry:lbry@tcp(localhost:3306)/chainquery")
+	viper.SetDefault(apimysqldsn, "lbry:lbry@tcp(localhost:3306)/chainquery")
 	viper.SetDefault(lbrycrdurl, "rpc://lbry:lbry@localhost:9245")
 	viper.SetDefault(profilemode, false)
 	viper.SetDefault(daemonmode, 0) //BEASTMODE

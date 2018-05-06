@@ -9,11 +9,13 @@
 package swagger
 
 import (
-	"fmt"
-	"net/http"
-	"strings"
+    "fmt"
+    "net/http"
+    "strings"
+    "encoding/json"
 
-	"github.com/gorilla/mux"
+    "github.com/lbryio/chainquery/apis"
+    "github.com/gorilla/mux"
 )
 
 type Route struct {
@@ -55,6 +57,13 @@ var routes = Routes{
 	},
 
 	Route{
+		"SQLQuery",
+		strings.ToUpper("Get"),
+		"/api/SQL",
+		HandleSQLQuery,
+	},
+
+	Route{
 		"AddressSummary",
 		strings.ToUpper("Get"),
 		"/api/AddressSummary",
@@ -67,4 +76,18 @@ var routes = Routes{
 		"/api/Status",
 		HandleStatus,
 	},
+}
+
+// Processes the response information and sends it back.
+func process(w http.ResponseWriter, response *apis.Response) {
+    jsonBytes, err := json.MarshalIndent(response, "", "  ")
+    if err != nil {
+        w.WriteHeader(http.StatusInternalServerError)
+        w.Write([]byte("Error encoding response to json"))
+    }
+    _, err = w.Write(jsonBytes) //Ignore bytes written
+    if err != nil {
+        w.WriteHeader(http.StatusInternalServerError)
+        w.Write([]byte("Error encoding response to json"))
+    }
 }

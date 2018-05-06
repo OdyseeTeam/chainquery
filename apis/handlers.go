@@ -14,6 +14,8 @@ const (
 	ADDRESSSUMARY = "AddressSummary"
 	// STATUS Const for Status API Handler
 	STATUS = "Status"
+	// QUERY Const for Query API Hander
+	SQLQUERY = "SQLQuery"
 )
 
 // Response is returned by API handlers
@@ -34,6 +36,10 @@ func HandleAction(operation string, w http.ResponseWriter, r *http.Request) (*Re
 		return response, nil
 	case ADDRESSSUMARY:
 		payload, err := getAddressSummary(r)
+		response := processPayload(payload, err)
+		return response, nil
+	case SQLQUERY:
+		payload, err := getSQLResult(r)
 		response := processPayload(payload, err)
 		return response, nil
 	default:
@@ -70,4 +76,14 @@ func getAddressSummary(r *http.Request) (interface{}, error) {
 		return nil, err
 	}
 	return summary, nil
+}
+
+func getSQLResult(r *http.Request) (interface{}, error) {
+	query := r.FormValue("query")
+	result, err := db.APIQuery(query)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }

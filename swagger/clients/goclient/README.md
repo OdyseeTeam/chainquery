@@ -21,6 +21,7 @@ All URIs are relative to *http://:6300/api*
 
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
+*QueryApi* | [**SQLQuery**](docs/QueryApi.md#sqlquery) | **Get** /SQL | Use SQL in a RESTful way
 *StatApi* | [**AddressSummary**](docs/StatApi.md#addresssummary) | **Get** /AddressSummary | Returns a summary of Address activity
 *StatApi* | [**Status**](docs/StatApi.md#status) | **Get** /Status | Returns important status information about Chain Query
 

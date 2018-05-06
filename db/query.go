@@ -69,6 +69,17 @@ func GetAddressSummary(address string) (*AddressSummary, error) {
 
 }
 
+// APIQuery is the entry point from the API to chainquery. The results are turned into json.
+func APIQuery(query string, args ...interface{}) (interface{}, error) {
+	rows, err := apiQuery(query, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	return jsonify(rows), nil
+
+}
+
 func closeRows(rows *sql.Rows) {
 	if err := rows.Close(); err != nil {
 		logrus.Error("Closing rows error: ", err)
