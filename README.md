@@ -69,6 +69,45 @@ cd "$(go env GOPATH)/src/github.com/lbryio/chainquery"
 ./dev.sh
 ```
 
+## The Model 
+
+The model of Chainquery at its foundation constist of the fundemental data types found in the block chain.
+This information is then expounded on with additional columns and tables that make querying the data much easier.
+
+###[Latest Schema](/db/chainquery_schema.sql)
+
+## What does Chainqeuery consist of?
+
+Chainquery consists of 4 main parts. The API Server, the Daemon, the Job Scheduler, and the upgrade manager. 
+
+### API Server
+
+The API Server services either structured queries via defined APIs or raw SQL against 
+the Chainquery MySQL database. The APIs are documented via [Chainquery APIs](https://lbryio.github.io/chainquery/),
+a work in progress :) . 
+
+### Daemon
+
+The Daemon is responsible for updating the Chainquery database to keep it in sync with lbrycrd data. The daemon runs periodically to check if there are newly 
+confirmed(6 confirmations currently) blocks that need to be processed. The Daemon simply processes the block and its
+transactions. The entry points are [daemon iterations](/daemon/daemon.go)(`func daemonIteration()`) [block processing](/daemon/block.go)(`func RunBlockProcessing(height *uint64)`), 
+[transaction processing](/daemon/processing/transaction.go)(`func ProcessTx(jsonTx *lbrycrd.TxRawResult, blockTime uint64)`).
+
+### Job Scheduler
+
+The job scheduler schedules different types of jobs to update the Chainquery database [example](/daemon/jobs/claimtriesync.go).
+These jobs synchronize different areas of the data either to make queries faster or ascertain information that is not
+directly part of the raw blockchain. The example provided is leveraged to handle the status of a claim which is actually
+stored in the ClaimTrie of LBRYcrd. So it runs periodically to make sure Chainquery has the most up to date status of 
+claims in the trie. The table `job_status` stores the current state of a particular job, like when it last synced.
+
+### Upgrade Manager
+
+The upgrade manager handles data upgrades between versions. The table  `application_status` stores information about the
+state of the application as it relates to the data, api and app versions. This is all leveraged by the upgrade manager so it 
+knows what scripts might need to be run to keep the data in sync across deployments. The [scripts](/daemon/upgrademanager/script.go)
+are foundation of the [upgrade manager](/daemon/upgrademanager/upgrade.go).
+
 ## Contributing
 
 Contributions to this project are welcome, encouraged, and compensated. For more details, see [lbry.io/faq/contributing](https://lbry.io/faq/contributing)
