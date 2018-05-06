@@ -501,7 +501,7 @@ func (addressL) LoadOutputs(e boil.Executor, singular bool, maybeAddress interfa
 		one := new(Output)
 		var localJoinCol uint64
 
-		err = results.Scan(&one.ID, &one.TransactionID, &one.TransactionHash, &one.Value, &one.Vout, &one.Type, &one.ScriptPubKeyAsm, &one.ScriptPubKeyHex, &one.RequiredSignatures, &one.Hash160, &one.AddressList, &one.IsSpent, &one.SpentByInputID, &one.Created, &one.Modified, &localJoinCol)
+		err = results.Scan(&one.ID, &one.TransactionID, &one.TransactionHash, &one.Value, &one.Vout, &one.Type, &one.ScriptPubKeyAsm, &one.ScriptPubKeyHex, &one.RequiredSignatures, &one.Hash160, &one.AddressList, &one.IsSpent, &one.SpentByInputID, &one.Created, &one.Modified, &one.ClaimID, &localJoinCol)
 		if err = results.Err(); err != nil {
 			return errors.Wrap(err, "failed to plebian-bind eager loaded slice output")
 		}

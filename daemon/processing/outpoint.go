@@ -208,9 +208,18 @@ func processVout(jsonVout *lbrycrd.Vout, tx *m.Transaction, txDC *txDebitCredits
 	}
 
 	// Process script for potential claims
-	err = processScript(*vout, *tx)
+	claimid, err := processScriptForClaim(*vout, *tx)
 	if err != nil {
 		return err
+	}
+	if claimid != nil {
+		//Update output to link to the proper claim id
+		claim := ds.GetClaim(*claimid)
+		if claim != nil {
+			if err := vout.SetClaimG(false, claim); err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil
@@ -229,21 +238,22 @@ func getAddressFromNonStandardVout(hexString string) (address string, err error)
 	return address, nil
 }
 
-func processScript(vout m.Output, tx m.Transaction) error {
+func processScriptForClaim(vout m.Output, tx m.Transaction) (*string, error) {
+	var claimid *string
 	scriptBytes, err := hex.DecodeString(vout.ScriptPubKeyHex.String)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	isNonStandard := vout.Type.String == lbrycrd.NonStandard
 	isClaimScript := lbrycrd.IsClaimScript(scriptBytes)
 	if isNonStandard && isClaimScript {
-		_, err = processAsClaim(scriptBytes, vout, tx)
+		_, claimid, err = processAsClaim(scriptBytes, vout, tx)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	} else if isNonStandard {
 		logrus.Error("Non standard script and not a valid claim!")
 	}
 
-	return nil
+	return claimid, nil
 }

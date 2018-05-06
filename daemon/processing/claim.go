@@ -15,33 +15,33 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func processAsClaim(script []byte, vout model.Output, tx model.Transaction) (address *string, err error) {
+func processAsClaim(script []byte, vout model.Output, tx model.Transaction) (address *string, claimID *string, err error) {
 	var pubkeyscript []byte
 	var name string
 	var claimid string
 	if lbrycrd.IsClaimNameScript(script) {
 		name, claimid, pubkeyscript, err = processClaimNameScript(&script, vout, tx)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 	} else if lbrycrd.IsClaimSupportScript(script) {
 		name, claimid, pubkeyscript, err = processClaimSupportScript(&script, vout, tx)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 	} else if lbrycrd.IsClaimUpdateScript(script) {
 		name, claimid, pubkeyscript, err = processClaimUpdateScript(&script, vout, tx)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 	} else {
-		return nil, errors.Base("Not a claim -- " + hex.EncodeToString(script))
+		return nil, nil, errors.Base("Not a claim -- " + hex.EncodeToString(script))
 	}
 	pksAddress := lbrycrd.GetAddressFromPublicKeyScript(pubkeyscript)
 	address = &pksAddress
 	logrus.Debug("Handled Claim: ", " Name ", name, ", ClaimID ", claimid)
 
-	return address, nil
+	return address, &claimid, nil
 }
 
 func processClaimNameScript(script *[]byte, vout model.Output, tx model.Transaction) (name string, claimid string, pkscript []byte, err error) {
