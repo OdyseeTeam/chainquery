@@ -5,3 +5,5 @@ swagger-codegen-cli.jar
 chainqueryconfig.toml
 cover.out
 .cover
+.DS_Store
+swagger/.DSStore
