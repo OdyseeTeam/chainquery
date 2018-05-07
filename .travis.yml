@@ -70,6 +70,7 @@ script:
   - unconvert -v $(go list ./... | grep -v /vendor/ | grep -v /model | grep -v /swagger/ | grep -v /migration )
   # one last linter - ignore autogen code
   - golint -set_exit_status $(go list ./... | grep -v /vendor/ | grep -v /model/ | grep -v /swagger/ | grep -v /migration )
+  - go-bindata -version
 
 # calls goreleaser
 deploy:
@@ -77,5 +78,5 @@ deploy:
   skip_cleanup: true
   script: curl -sL https://git.io/goreleaser | bash
   on:
-    tags: true
+    #tags: true
     condition: $TRAVIS_OS_NAME = linux
