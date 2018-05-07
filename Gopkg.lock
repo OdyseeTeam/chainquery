@@ -112,6 +112,17 @@
   revision = "d9bd385d68c068f1fabb5057e3dedcbcbb039d0f"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/johntdyer/slack-go"
+  packages = ["."]
+  revision = "95fac1160b220c5abcf8b0ef88e9c3cb213c09f4"
+
+[[projects]]
+  name = "github.com/johntdyer/slackrus"
+  packages = ["."]
+  revision = "3992f319fd0ac349483279ef74742cd787841cba"
+
+[[projects]]
   name = "github.com/jteeuwen/go-bindata"
   packages = ["."]
   revision = "bbd0c6e271208dce66d8fda4bc536453cd27fc4a"
@@ -330,6 +341,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "63d06bce73347ba8a9ea0c686f3685c906d4e8564373578d4a1dcc6a2dd03adf"
+  inputs-digest = "92d6ead75210f2188630047d1276541fb18efc78845df1b39fa0d40dc00d36a9"
   solver-name = "gps-cdcl"
   solver-version = 1

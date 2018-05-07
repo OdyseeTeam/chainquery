@@ -9,27 +9,24 @@
 package swagger
 
 import (
-	"log"
 	"net/http"
 
-    "github.com/lbryio/chainquery/config"
-    "github.com/lbryio/chainquery/db"
-    sw "github.com/lbryio/chainquery/swagger/apiserver/go"
+	"github.com/lbryio/chainquery/config"
+	"github.com/lbryio/chainquery/db"
+	sw "github.com/lbryio/chainquery/swagger/apiserver/go"
 
-    "github.com/sirupsen/logrus"
-
+	"github.com/sirupsen/logrus"
 )
 
 func InitApiServer(hostAndPort string) {
-    logrus.Info("API Server started")
-    //API Chainquery DB connection
-    chainqueryInstance, err := db.InitAPIQuery(config.GetAPIMySQLDSN(), false)
-    if err != nil {
-        logrus.Error("unable to connect to chainquery database instance for API Server: ", err)
-    }
-    defer db.CloseDB(chainqueryInstance)
+	logrus.Info("API Server started")
+	//API Chainquery DB connection
+	chainqueryInstance, err := db.InitAPIQuery(config.GetAPIMySQLDSN(), false)
+	if err != nil {
+		logrus.Error("unable to connect to chainquery database instance for API Server: ", err)
+	}
+	defer db.CloseDB(chainqueryInstance)
 	router := sw.NewRouter()
 
-	log.Fatal(http.ListenAndServe(hostAndPort, router))
+	logrus.Fatal(http.ListenAndServe(hostAndPort, router))
 }
-

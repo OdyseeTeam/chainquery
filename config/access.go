@@ -56,3 +56,8 @@ func GetDaemonDelay() time.Duration {
 func GetAPIHostAndPort() string {
 	return viper.GetString(apihostport)
 }
+
+// GetDebugMode returns true/false if the app is in debug mode.
+func GetDebugMode() bool {
+	return viper.GetBool(debugmode)
+}

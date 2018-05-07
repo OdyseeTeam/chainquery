@@ -5,7 +5,6 @@ package main
 import (
 	"net/http"
 	"os"
-	"strconv"
 
 	"github.com/lbryio/chainquery/config"
 	"github.com/lbryio/chainquery/daemon"
@@ -18,21 +17,12 @@ import (
 
 func main() {
 	config.InitializeConfiguration()
-	//defer profile.Start(profile.ProfilePath(os.Getenv("HOME") + "/chainquery")).Stop()
-
+	config.InitSlack()
 	log.SetFormatter(&log.TextFormatter{FullTimestamp: true})
 	http.DefaultClient.Timeout = config.GetDefaultClientTimeout()
 
 	if len(os.Args) < 2 {
 		return
-	}
-
-	DebugMode, err := strconv.ParseBool(os.Getenv("DEBUGGING"))
-	if err != nil {
-		DebugMode = false
-	}
-	if DebugMode {
-		log.SetLevel(log.DebugLevel)
 	}
 
 	command := os.Args[1]
@@ -43,9 +33,9 @@ func main() {
 		println("ALPHA")
 	case "serve":
 		//Main Chainquery DB connection
-		dbInstance, err := db.Init(config.GetMySQLDSN(), DebugMode)
+		dbInstance, err := db.Init(config.GetMySQLDSN(), config.GetDebugMode())
 		if err != nil {
-			panic(err)
+			log.Panic(err)
 		}
 		defer db.CloseDB(dbInstance)
 

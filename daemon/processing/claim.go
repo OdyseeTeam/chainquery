@@ -56,7 +56,7 @@ func processClaimNameScript(script *[]byte, vout model.Output, tx model.Transact
 	}
 	pbClaim, err := DecodeClaimValue(name, value)
 	if err != nil {
-		logrus.Warning("saving non-conforming claim - Name: ", name, " ClaimID: ", claimid)
+		logrus.Debug("saving non-conforming claim - Name: ", name, " ClaimID: ", claimid)
 		saveUnknownClaim(name, claimid, false, value, vout, tx)
 		return name, claimid, pkscript, nil
 	}
@@ -86,7 +86,7 @@ func processClaimSupportScript(script *[]byte, vout model.Output, tx model.Trans
 	support := datastore.GetSupport(tx.Hash, vout.Vout)
 	support = processSupport(claimid, support, vout, tx)
 	if err := datastore.PutSupport(support); err != nil {
-		logrus.Warning("Support for unknown claim! ", claimid)
+		logrus.Debug("Support for unknown claim! ", claimid)
 	}
 
 	return name, claimid, pubkeyscript, err
@@ -100,7 +100,7 @@ func processClaimUpdateScript(script *[]byte, vout model.Output, tx model.Transa
 	}
 	pbClaim, err := DecodeClaimValue(name, value)
 	if err != nil {
-		logrus.Warning("saving non-conforming claim - Update: ", name, " ClaimID: ", claimID)
+		logrus.Debug("saving non-conforming claim - Update: ", name, " ClaimID: ", claimID)
 		saveUnknownClaim(name, claimID, true, value, vout, tx)
 		return name, claimID, pubkeyscript, nil
 	}
@@ -111,12 +111,12 @@ func processClaimUpdateScript(script *[]byte, vout model.Output, tx model.Transa
 			return name, claimID, pubkeyscript, err
 		}
 		if claim == nil {
-			logrus.Warning("ClaimUpdate for non-existent claim! ", claimID, " ", tx.Hash, " ", vout.Vout)
+			logrus.Debug("ClaimUpdate for non-existent claim! ", claimID, " ", tx.Hash, " ", vout.Vout)
 			return name, claimID, pubkeyscript, err
 		}
 		//logrus.Info("ClaimId: ", claim.ClaimID, " PublishId ", claim.PublisherID.String, " ", claim.PublisherID.Valid, " TxID ", claim.TransactionByHashID)
 		if err := datastore.PutClaim(claim); err != nil {
-			logrus.Warning("Claim updates to invalid certificate claim. ", claim.PublisherID)
+			logrus.Debug("Claim updates to invalid certificate claim. ", claim.PublisherID)
 			if logrus.GetLevel() == logrus.DebugLevel {
 				logrus.WithError(err)
 			}

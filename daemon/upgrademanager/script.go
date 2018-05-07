@@ -16,16 +16,16 @@ func reProcessAllClaims() {
 		tx, err := model.TransactionsG(qm.Where(model.TransactionColumns.Hash+"=?", output.TransactionHash),
 			qm.Select(model.TransactionColumns.Hash, model.TransactionColumns.BlockByHashID)).One()
 		if err != nil {
-			panic(err)
+			logrus.Panic(err)
 		}
 		txResult, err := lbrycrd.GetRawTransactionResponse(tx.Hash)
 		if err != nil {
-			panic(err)
+			logrus.Panic(err)
 		}
 
 		block, err := model.BlocksG(qm.Where(model.BlockColumns.Hash+"=?", txResult.BlockHash)).One()
 		if err != nil {
-			panic(err)
+			logrus.Panic(err)
 		}
 		logrus.Debug("Processing ", block.Height, " ", tx.Hash)
 		err = processing.ProcessTx(txResult, block.BlockTime)

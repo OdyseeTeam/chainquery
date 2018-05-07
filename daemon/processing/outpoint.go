@@ -102,7 +102,7 @@ func processVin(jsonVin *lbrycrd.Vin, tx *m.Transaction, txDC *txDebitCredits) e
 				address = ds.GetAddress(jsonAddress)
 				if address == nil {
 					logrus.Error("No addresses for vout address list! ", srcOutput.ID, " -> ", srcOutput.AddressList.String)
-					panic(nil)
+					logrus.Panic(nil)
 				}
 
 			}
@@ -118,11 +118,11 @@ func processVin(jsonVin *lbrycrd.Vin, tx *m.Transaction, txDC *txDebitCredits) e
 				err = vin.SetInputAddressG(false, address)
 				if err != nil {
 					logrus.Error("Failure inserting InputAddress: Vin ", vin.ID, "Address(", address.ID, ") ", address.Address)
-					panic(err)
+					logrus.Panic(err)
 				}
 			} else {
 				logrus.Error("No Address created for Vin: ", vin.ID, " of tx ", tx.ID, " vout: ", srcOutput.ID, " Address: ", addresses[0])
-				panic(nil)
+				logrus.Panic(nil)
 			}
 			// Update the srcOutput spent if successful
 			srcOutput.IsSpent = true
@@ -192,8 +192,7 @@ func processVout(jsonVout *lbrycrd.Vout, tx *m.Transaction, txDC *txDebitCredits
 		txDC.add(address.Address, jsonVout.Value)
 	} else {
 		//All addresses for transaction are created and inserted into the DB ahead of time
-		logrus.Error("No address in db for \"", jsonAddresses[0], "\" txId: ", tx.ID)
-		panic(nil)
+		logrus.Panic("No address in db for \"", jsonAddresses[0], "\" txId: ", tx.ID)
 	}
 
 	// Save output

@@ -13,6 +13,7 @@ import (
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/go-ini/ini"
+	"github.com/johntdyer/slackrus"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -32,6 +33,9 @@ const ( // config setting keys
 	lbrycrdprofile       = "lbrycrdprofile"
 	mysqlprofile         = "mysqlprofile"
 	apihostport          = "apihostport"
+	slackhookurl         = "slackhookurl"
+	slackchannel         = "slackchannel"
+	slackloglevel        = "slackloglevel"
 )
 
 const (
@@ -53,7 +57,22 @@ func InitializeConfiguration() {
 		readConfig()
 		processConfiguration()
 	})
+}
 
+// InitSlack initializes the slack connection and posts info level or greater to the set channel.
+func InitSlack() {
+	slackURL := viper.GetString(slackhookurl)
+	slackChannel := viper.GetString(slackchannel)
+	slackLogLevel := viper.GetInt(slackloglevel)
+	if slackURL != "" && slackChannel != "" {
+		logrus.AddHook(&slackrus.SlackrusHook{
+			HookURL:        slackURL,
+			AcceptedLevels: slackrus.LevelThreshold(logrus.Level(slackLogLevel)),
+			Channel:        slackChannel,
+			IconEmoji:      ":golang:",
+			Username:       "ChainQuery",
+		})
+	}
 }
 
 func initFlags() {
@@ -64,7 +83,7 @@ func initFlags() {
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
 	pflag.Parse()
 	if err := viper.BindPFlags(pflag.CommandLine); err != nil {
-		panic(err)
+		logrus.Panic(err)
 	}
 
 }
@@ -97,6 +116,7 @@ func initDefaults() {
 	viper.SetDefault(lbrycrdprofile, false)
 	viper.SetDefault(mysqlprofile, false)
 	viper.SetDefault(apihostport, "0.0.0.0:6300")
+	viper.SetDefault(slackloglevel, 0)
 }
 
 func processConfiguration() {

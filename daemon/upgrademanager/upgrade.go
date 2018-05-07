@@ -40,7 +40,7 @@ func RunUpgradesForVersion() {
 		upgradeFrom2(appStatus.AppVersion)
 		////Increment and save
 		//
-		logrus.Info("Upgrading app status version to App-", appVersion, " Data-", dataVersion, " Api-", apiVersion)
+		logrus.Debug("Upgrading app status version to App-", appVersion, " Data-", dataVersion, " Api-", apiVersion)
 		appStatus.AppVersion = appVersion
 		appStatus.DataVersion = dataVersion
 		appStatus.APIVersion = apiVersion
@@ -49,7 +49,7 @@ func RunUpgradesForVersion() {
 		err := errors.Prefix("App Status Error: ", err)
 		panic(err)
 	}
-	logrus.Info("All necessary upgrades are finished!")
+	logrus.Debug("All necessary upgrades are finished!")
 }
 
 //

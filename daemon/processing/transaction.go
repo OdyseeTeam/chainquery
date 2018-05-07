@@ -193,7 +193,7 @@ func saveUpdateOutputs(transaction *model.Transaction, jsonTx *lbrycrd.TxRawResu
 		err := <-errorchan
 		if err != nil {
 			logrus.Error("Vout Error->", err)
-			panic(err)
+			logrus.Panic(err)
 		}
 	}
 	close(errorchan)
@@ -210,7 +210,7 @@ func setSendReceive(transaction *model.Transaction, txDbCrAddrMap *txDebitCredit
 		txAddr.DebitAmount = DC.Debits()
 
 		if err := datastore.PutTxAddress(txAddr); err != nil {
-			panic(err) //Should never happen or something is wrong
+			logrus.Panic(err) //Should never happen or something is wrong
 		}
 	}
 }

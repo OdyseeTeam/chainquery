@@ -63,5 +63,9 @@ required = ["github.com/lbryio/null.go"]
   revision = "f006c2ac4710855cf0f916dd6b77acf6b048dc6e"
 
 [[constraint]]
+  name = "github.com/johntdyer/slackrus"
+  revision = "3992f319fd0ac349483279ef74742cd787841cba"
+
+[[constraint]]
   name = "github.com/jteeuwen/go-bindata"
   version = "3.0.7"

@@ -65,7 +65,7 @@ func runDaemon() {
 		time.Sleep(daemonDelay)
 		if !running {
 			running = true
-			log.Info("Running daemon iteration ", iteration)
+			log.Debug("Running daemon iteration ", iteration)
 			go daemonIteration()
 			iteration++
 		}

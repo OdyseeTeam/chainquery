@@ -23,7 +23,7 @@ var blocksToExpiration uint = 262974 //Hardcoded! https://lbry.io/faq/claimtrie-
 // ClaimTrieSync synchronizes claimtrie information that is calculated and enforced by lbrycrd.
 func ClaimTrieSync() {
 	defer util.TimeTrack(time.Now(), "ClaimTrieSync", "always")
-	logrus.Info("ClaimTrieSync: started... ")
+	logrus.Debug("ClaimTrieSync: started... ")
 	jobStatus, err := getClaimTrieSyncJobStatus()
 	if err != nil {
 		logrus.Error(err)
@@ -34,10 +34,10 @@ func ClaimTrieSync() {
 		panic(err)
 	}
 	if len(updatedClaims) == 0 {
-		logrus.Info("ClaimTrieSync: All claims are up to date :)")
+		logrus.Debug("ClaimTrieSync: All claims are up to date :)")
 		return
 	}
-	logrus.Info("Claims to update " + strconv.Itoa(len(updatedClaims)))
+	logrus.Debug("Claims to update " + strconv.Itoa(len(updatedClaims)))
 
 	//Get blockheight for calculating expired status
 	count, err := lbrycrd.GetBlockCount()
@@ -59,7 +59,7 @@ func ClaimTrieSync() {
 	if err := jobStatus.UpdateG(); err != nil {
 		panic(err)
 	}
-	logrus.Info("ClaimTrieSync: Processed " + strconv.Itoa(len(updatedClaims)) + " claims.")
+	logrus.Debug("ClaimTrieSync: Processed " + strconv.Itoa(len(updatedClaims)) + " claims.")
 }
 
 func initSyncWorkers(nrWorkers int, jobs <-chan lbrycrd.Claim, wg *sync.WaitGroup) {
@@ -93,7 +93,7 @@ func controllingProcessor(names <-chan string, wg *sync.WaitGroup) {
 }
 
 func setControllingClaimForNames(claims model.ClaimSlice) error {
-	logrus.Info("ClaimTrieSync: controlling claim status update started... ")
+	logrus.Debug("ClaimTrieSync: controlling claim status update started... ")
 	controlwg := sync.WaitGroup{}
 	setControllingQueue := make(chan string, 100)
 	initControllingWorkers(runtime.NumCPU()-1, setControllingQueue, &controlwg)
@@ -102,7 +102,7 @@ func setControllingClaimForNames(claims model.ClaimSlice) error {
 	}
 	close(setControllingQueue)
 	controlwg.Wait()
-	logrus.Info("ClaimTrieSync: controlling claim status update complete... ")
+	logrus.Debug("ClaimTrieSync: controlling claim status update complete... ")
 
 	return nil
 }
@@ -128,7 +128,7 @@ func setControllingClaimForName(name string) {
 
 func syncClaims(claims model.ClaimSlice) error {
 
-	logrus.Info("ClaimTrieSync: claim  update started... ")
+	logrus.Debug("ClaimTrieSync: claim  update started... ")
 	syncwg := sync.WaitGroup{}
 	processingQueue := make(chan lbrycrd.Claim, 100)
 	initSyncWorkers(runtime.NumCPU()-1, processingQueue, &syncwg)
@@ -147,7 +147,7 @@ func syncClaims(claims model.ClaimSlice) error {
 	close(processingQueue)
 	syncwg.Wait()
 
-	logrus.Info("ClaimTrieSync: claim  update complete... ")
+	logrus.Debug("ClaimTrieSync: claim  update complete... ")
 
 	return nil
 }

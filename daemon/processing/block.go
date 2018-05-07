@@ -84,7 +84,7 @@ func syncTransactionsOfBlock(txs []string, blockTime uint64) {
 		for i := 0; i < cnt; i++ {
 			txError := <-errorchan
 			if txError.failcount > 1000 {
-				panic(errors.Base("transaction " + txError.tx.Txid + " failed more than 1000 times!"))
+				logrus.Panic(errors.Base("transaction " + txError.tx.Txid + " failed more than 1000 times!"))
 			}
 			if txError.err != nil {
 				go func() {

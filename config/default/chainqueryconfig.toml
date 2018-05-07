@@ -36,3 +36,13 @@
 #DEFAULT-daemonprofile=false
 #DEFAULT-lbrycrdprofile=false
 #DEFAULT-mysqlprofile=false
+
+#Slack Hook URL allows slack integration. All logging info level and above is posted to a slack channel.
+#DEFAULT-slackhookurl=[unset]
+
+#Slack Channel is the channel that you want the messages to appear. Works together with the hook url.
+#DEFAULT-slackchannel=[unset]
+
+#Slack Log Level tells chainquery what level of logging will be sent to the slack channel. It will log all levels below
+# it as well. Panic=0,Fatal=1,Error=2,Warning=3,Info=4,Debug=5
+#DEFAULT-slackloglevel=0
