@@ -47,6 +47,7 @@ before_script:
 # script always run to completion (set +e). All of these code checks are must haves
 # in a modern Go project.
 script:
+  - git status
   # Build Chainquery sucessfully
   - ./scripts/build.sh
   # Fail if a .go file hasn't been formatted with gofmt
@@ -70,7 +71,7 @@ script:
   - unconvert -v $(go list ./... | grep -v /vendor/ | grep -v /model | grep -v /swagger/ | grep -v /migration )
   # one last linter - ignore autogen code
   - golint -set_exit_status $(go list ./... | grep -v /vendor/ | grep -v /model/ | grep -v /swagger/ | grep -v /migration )
-  - go-bindata -version
+  - git status
 
 # calls goreleaser
 deploy:
