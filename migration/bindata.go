@@ -84,7 +84,7 @@ func migration000_init_schemaSql() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "migration/000_init_schema.sql", size: 15364, mode: os.FileMode(420), modTime: time.Unix(1525307810, 0)}
+	info := bindataFileInfo{name: "migration/000_init_schema.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -104,7 +104,7 @@ func migration001_supportsSql() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "migration/001_supports.sql", size: 1075, mode: os.FileMode(420), modTime: time.Unix(1525617158, 0)}
+	info := bindataFileInfo{name: "migration/001_supports.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -162,7 +162,7 @@ func AssetNames() []string {
 // _bindata is a table, holding each asset generator, mapped to its name.
 var _bindata = map[string]func() (*asset, error){
 	"migration/000_init_schema.sql": migration000_init_schemaSql,
-	"migration/001_supports.sql": migration001_supportsSql,
+	"migration/001_supports.sql":    migration001_supportsSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -204,10 +204,11 @@ type bintree struct {
 	Func     func() (*asset, error)
 	Children map[string]*bintree
 }
+
 var _bintree = &bintree{nil, map[string]*bintree{
 	"migration": &bintree{nil, map[string]*bintree{
 		"000_init_schema.sql": &bintree{migration000_init_schemaSql, map[string]*bintree{}},
-		"001_supports.sql": &bintree{migration001_supportsSql, map[string]*bintree{}},
+		"001_supports.sql":    &bintree{migration001_supportsSql, map[string]*bintree{}},
 	}},
 }}
 
@@ -257,4 +258,3 @@ func _filePath(dir, name string) string {
 	cannonicalName := strings.Replace(name, "\\", "/", -1)
 	return filepath.Join(append([]string{dir}, strings.Split(cannonicalName, "/")...)...)
 }
-
