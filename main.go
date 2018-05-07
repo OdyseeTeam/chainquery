@@ -44,10 +44,6 @@ func main() {
 		lbrycrdClient := lbrycrd.Init()
 		defer lbrycrdClient.Shutdown()
 
-		_, err = lbrycrd.GetBalance()
-		if err != nil {
-			log.Panicf("Error connecting to lbrycrd: %+v", err)
-		}
 		go swagger.InitApiServer(config.GetAPIHostAndPort())
 		daemon.DoYourThing()
 	}

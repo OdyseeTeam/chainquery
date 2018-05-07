@@ -12,6 +12,7 @@ import (
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/shopspring/decimal"
+	"github.com/sirupsen/logrus"
 )
 
 var defaultClient *upstream.Client
@@ -26,6 +27,10 @@ func Init() *upstream.Client {
 		panic(err)
 	}
 	defaultClient = lbrycrdClient
+	_, err = GetBalance()
+	if err != nil {
+		logrus.Panicf("Error connecting to lbrycrd: %+v", err)
+	}
 	return lbrycrdClient
 }
 
