@@ -50,6 +50,7 @@ script:
   - git status
   # Build Chainquery sucessfully
   - ./scripts/build.sh
+  - git status
   # Fail if a .go file hasn't been formatted with gofmt
   - test -z $(gofmt -s -l $GO_FILES)
   # Run unit tests
