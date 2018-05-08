@@ -9,6 +9,7 @@ import (
 	"github.com/lbryio/chainquery/lbrycrd"
 	"github.com/lbryio/chainquery/model"
 	"github.com/lbryio/chainquery/util"
+	"github.com/lbryio/errors.go"
 
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -238,18 +239,19 @@ func getClaimTrieSyncJobStatus() (*model.JobStatus, error) {
 	if jobStatus == nil {
 		jobStatus = &model.JobStatus{JobName: claimTrieSyncJob, LastSync: time.Time{}}
 		if err := jobStatus.InsertG(); err != nil {
-			return nil, err
+			logrus.Panic("Cannot Retrieve/Create JobStatus for " + claimTrieSyncJob)
 		}
 	}
 
 	return jobStatus, nil
 }
 
-func saveJobError(jobStatus *model.JobStatus, err error) {
-	jobStatus.ErrorMessage.String = err.Error()
+func saveJobError(jobStatus *model.JobStatus, error error) {
+	jobStatus.ErrorMessage.String = error.Error()
 	jobStatus.ErrorMessage.Valid = true
+	jobStatus.IsSuccess = false
 	cols := model.JobStatusColumns
-	if err := jobStatus.UpsertG([]string{cols.JobName, cols.LastSync, cols.IsSuccess, cols.ErrorMessage}); err != nil {
-		logrus.Error(err)
+	if err := jobStatus.UpsertG([]string{cols.JobName, cols.IsSuccess, cols.ErrorMessage}); err != nil {
+		logrus.Error(errors.Prefix("Saving Job Error Message "+error.Error(), err))
 	}
 }
