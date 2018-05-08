@@ -162,7 +162,7 @@ func processSupport(claimID string, support *model.Support, output model.Output,
 		support.SupportedClaimID = claimID
 		return support
 	}
-	logrus.Warning("Claim Support for claim ", claimID, " is a non-existent claim.")
+	logrus.Debug("Claim Support for claim ", claimID, " is a non-existent claim.")
 	return support
 
 }
