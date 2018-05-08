@@ -25,9 +25,9 @@ The project is under active development so sql migrations are not being used yet
 
 #### OSX
 
-- In order to use  `wget` you will need `brew install wget` (used in [build.sh](build.sh))
-- Chainquery is built for Linux by default in  [build.sh](build.sh), so you will need to modify the cross compilation for an OSX build.
-
+- In order to use  `wget` you will need `brew install wget` (used in [build.sh](/scripts/build.sh))
+- Chainquery is built for Linux by default in  [build.sh](/scripts/build.sh), so you will need to modify the cross compilation for an OSX build.
+- Be sure to give execute privileges to the [scripts](/scripts) you plan to use.
 
 ### Go
 
@@ -57,7 +57,7 @@ Make sure you have Go 1.9+
 - Run `./lbrycrdd -server -daemon -txindex -conf=$HOME/.lbrycrd/lbrycrd.conf`. If you get an error about indexing, add the `-reindex` flag for one run. You will only need to
   reindex once.
 
-##Configuration
+## Configuration
 
 Chainquery can be[configured](/config/default/chainqueryconfig.toml)via toml file.
 
@@ -71,12 +71,12 @@ cd "$(go env GOPATH)/src/github.com/lbryio/chainquery"
 
 ## The Model 
 
-The model of Chainquery at its foundation constist of the fundemental data types found in the block chain.
+The model of Chainquery at its foundation consist of the fundamental data types found in the block chain.
 This information is then expounded on with additional columns and tables that make querying the data much easier.
 
-###[Latest Schema](/db/chainquery_schema.sql)
+### [Latest Schema](/db/chainquery_schema.sql)
 
-## What does Chainqeuery consist of?
+## What does Chainquery consist of?
 
 Chainquery consists of 4 main parts. The API Server, the Daemon, the Job Scheduler, and the upgrade manager. 
 
@@ -90,7 +90,7 @@ a work in progress :) .
 
 The Daemon is responsible for updating the Chainquery database to keep it in sync with lbrycrd data. The daemon runs periodically to check if there are newly 
 confirmed(6 confirmations currently) blocks that need to be processed. The Daemon simply processes the block and its
-transactions. The entry points are [daemon iterations](/daemon/daemon.go)(`func daemonIteration()`) [block processing](/daemon/block.go)(`func RunBlockProcessing(height *uint64)`), 
+transactions. The entry points are [daemon iterations](/daemon/daemon.go)(`func daemonIteration()`) [block processing](/daemon/processing/block.go)(`func RunBlockProcessing(height *uint64)`), 
 [transaction processing](/daemon/processing/transaction.go)(`func ProcessTx(jsonTx *lbrycrd.TxRawResult, blockTime uint64)`).
 
 ### Job Scheduler
