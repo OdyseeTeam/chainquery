@@ -32,7 +32,7 @@ func main() {
 	default:
 		log.Errorf("Invalid command: '%s'\n", command)
 	case "version":
-		println("v0.0.7")
+		println("v0.0.9")
 	case "serve":
 		//Main Chainquery DB connection
 		dbInstance, err := db.Init(config.GetMySQLDSN(), config.GetDebugMode())
