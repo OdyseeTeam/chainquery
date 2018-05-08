@@ -51,7 +51,9 @@ func initJobs() {
 	t := time.NewTicker(15 * time.Minute)
 	for {
 		<-t.C
-		go jobs.ClaimTrieSync()
+		if !jobs.ClaimTrieSyncRunning {
+			go jobs.ClaimTrieSync()
+		}
 	}
 }
 

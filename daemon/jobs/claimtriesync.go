@@ -19,9 +19,11 @@ const claimTrieSyncJob = "claimtriesyncjob"
 
 var blockHeight uint64
 var blocksToExpiration uint = 262974 //Hardcoded! https://lbry.io/faq/claimtrie-implementation
+var ClaimTrieSyncRunning = false
 
 // ClaimTrieSync synchronizes claimtrie information that is calculated and enforced by lbrycrd.
 func ClaimTrieSync() {
+	ClaimTrieSyncRunning = true
 	defer util.TimeTrack(time.Now(), "ClaimTrieSync", "always")
 	logrus.Debug("ClaimTrieSync: started... ")
 	jobStatus, err := getClaimTrieSyncJobStatus()
@@ -60,6 +62,7 @@ func ClaimTrieSync() {
 		panic(err)
 	}
 	logrus.Debug("ClaimTrieSync: Processed " + strconv.Itoa(len(updatedClaims)) + " claims.")
+	ClaimTrieSyncRunning = false
 }
 
 func initSyncWorkers(nrWorkers int, jobs <-chan lbrycrd.Claim, wg *sync.WaitGroup) {
