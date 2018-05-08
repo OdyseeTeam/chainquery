@@ -39,7 +39,7 @@ func ClaimTrieSync() {
 		logrus.Debug("ClaimTrieSync: All claims are up to date :)")
 		return
 	}
-	logrus.Debug("Claims to update " + strconv.Itoa(len(updatedClaims)))
+	logrus.Debug("ClaimTrieSync: Claims to update " + strconv.Itoa(len(updatedClaims)))
 
 	//Get blockheight for calculating expired status
 	count, err := lbrycrd.GetBlockCount()
@@ -137,11 +137,11 @@ func syncClaims(claims model.ClaimSlice) error {
 	initSyncWorkers(runtime.NumCPU()-1, processingQueue, &syncwg)
 	for i, claim := range claims {
 		if i%1000 == 0 {
-			logrus.Info("syncing ", i, " of ", len(claims), " queued - ", len(processingQueue))
+			logrus.Info("ClaimTrieSync: syncing ", i, " of ", len(claims), " queued - ", len(processingQueue))
 		}
 		claims, err := lbrycrd.GetClaimsForName(claim.Name)
 		if err != nil {
-			logrus.Error("Could not get claims for name: ", claim.Name, " Error: ", err)
+			logrus.Error("ClaimTrieSync: Could not get claims for name: ", claim.Name, " Error: ", err)
 		}
 		for _, claimJSON := range claims.Claims {
 			processingQueue <- claimJSON
@@ -161,7 +161,7 @@ func syncClaim(claimJSON *lbrycrd.Claim) {
 	if claim == nil {
 		unknown, _ := model.UnknownClaimsG(qm.Where(model.UnknownClaimColumns.ClaimID+"=?", claimJSON.ClaimID)).One()
 		if unknown == nil {
-			logrus.Debug("Missing Claim: ", claimJSON.ClaimID, " ", claimJSON.TxID, " ", claimJSON.N)
+			logrus.Debug("ClaimTrieSync: Missing Claim ", claimJSON.ClaimID, " ", claimJSON.TxID, " ", claimJSON.N)
 		}
 		return
 	}
