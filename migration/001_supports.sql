@@ -2,6 +2,9 @@
 
 -- +migrate StatementBegin
 ALTER TABLE output ADD COLUMN `claim_id` CHAR(40) CHARACTER SET latin1 COLLATE latin1_general_ci;
+-- +migrate StatementEnd
+
+-- +migrate StatementBegin
 ALTER TABLE output ADD FOREIGN KEY `fk_claim` (`claim_id`) REFERENCES `claim` (`claim_id`) ON DELETE CASCADE ON UPDATE NO ACTION;
 -- +migrate StatementEnd
 
