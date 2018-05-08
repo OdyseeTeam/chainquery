@@ -24,7 +24,7 @@ var LBRYcrdURL string
 func Init() *upstream.Client {
 	lbrycrdClient, err := upstream.New(LBRYcrdURL)
 	if err != nil {
-		panic(err)
+		logrus.Panic("Initializing LBRYcrd Client: ", err)
 	}
 	defaultClient = lbrycrdClient
 	_, err = GetBalance()
