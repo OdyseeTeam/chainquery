@@ -9,20 +9,20 @@
 package swagger
 
 import (
-    "fmt"
-    "net/http"
-    "strings"
-    "encoding/json"
+	"net/http"
+	"strings"
 
-    "github.com/lbryio/chainquery/apis"
-    "github.com/gorilla/mux"
+	. "github.com/lbryio/chainquery/apiactions"
+	. "github.com/lbryio/lbry.go/api"
+
+	"github.com/gorilla/mux"
 )
 
 type Route struct {
 	Name        string
 	Method      string
 	Pattern     string
-	HandlerFunc http.HandlerFunc
+	HandlerFunc Handler
 }
 
 type Routes []Route
@@ -44,50 +44,39 @@ func NewRouter() *mux.Router {
 	return router
 }
 
-func Index(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hello World!")
-}
-
 var routes = Routes{
 	Route{
 		"Index",
 		"GET",
 		"/api/",
-		Index,
+		IndexAction,
+	},
+
+	Route{
+		"AutoUpdate",
+		strings.ToUpper("Get"),
+		"/api/autoupdate",
+		AutoUpdateAction,
 	},
 
 	Route{
 		"SQLQuery",
 		strings.ToUpper("Get"),
-		"/api/SQL",
-		HandleSQLQuery,
+		"/api/sql",
+		SQLQueryAction,
 	},
 
 	Route{
 		"AddressSummary",
 		strings.ToUpper("Get"),
-		"/api/AddressSummary",
-		HandleAddressSummary,
+		"/api/addresssummary",
+		AddressSummaryAction,
 	},
 
 	Route{
-		"Status",
+		"ChainQueryStatus",
 		strings.ToUpper("Get"),
-		"/api/Status",
-		HandleStatus,
+		"/api/status",
+		ChainQueryStatusAction,
 	},
-}
-
-// Processes the response information and sends it back.
-func process(w http.ResponseWriter, response *apis.Response) {
-    jsonBytes, err := json.MarshalIndent(response, "", "  ")
-    if err != nil {
-        w.WriteHeader(http.StatusInternalServerError)
-        w.Write([]byte("Error encoding response to json"))
-    }
-    _, err = w.Write(jsonBytes) //Ignore bytes written
-    if err != nil {
-        w.WriteHeader(http.StatusInternalServerError)
-        w.Write([]byte("Error encoding response to json"))
-    }
 }

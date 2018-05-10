@@ -1,11 +1,11 @@
 # swagger_client.StatApi
 
-All URIs are relative to *http://:6300/api*
+All URIs are relative to *http://0.0.0.0:6300/api*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**address_summary**](StatApi.md#address_summary) | **GET** /AddressSummary | Returns a summary of Address activity
-[**status**](StatApi.md#status) | **GET** /Status | Returns important status information about Chain Query
+[**address_summary**](StatApi.md#address_summary) | **GET** /addresssummary | Returns a summary of Address activity
+[**chain_query_status**](StatApi.md#chain_query_status) | **GET** /status | Returns important status information about Chain Query
 
 
 # **address_summary**
@@ -56,8 +56,8 @@ No authorization required
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
-# **status**
-> TableStatus status()
+# **chain_query_status**
+> TableStatus chain_query_status()
 
 Returns important status information about Chain Query
 
@@ -74,10 +74,10 @@ api_instance = swagger_client.StatApi()
 
 try:
     # Returns important status information about Chain Query
-    api_response = api_instance.status()
+    api_response = api_instance.chain_query_status()
     pprint(api_response)
 except ApiException as e:
-    print("Exception when calling StatApi->status: %s\n" % e)
+    print("Exception when calling StatApi->chain_query_status: %s\n" % e)
 ```
 
 ### Parameters

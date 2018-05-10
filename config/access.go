@@ -5,6 +5,7 @@ import (
 
 	"github.com/lbryio/lbry.go/errors"
 
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
@@ -27,7 +28,7 @@ func GetLBRYcrdURL() string {
 	url, err := getLbrycrdURLFromConfFile()
 	if err != nil {
 		err = errors.Prefix("LBRYcrd conf file error: ", err)
-		panic(err)
+		logrus.Panic(err)
 	}
 	return url
 }
@@ -60,4 +61,9 @@ func GetAPIHostAndPort() string {
 // GetDebugMode returns true/false if the app is in debug mode.
 func GetDebugMode() bool {
 	return viper.GetBool(debugmode)
+}
+
+// GetSelfUpdateCommand returns the command that should be executed to trigger a self update of the software.
+func GetSelfUpdateCommand() string {
+	return viper.GetString(selfupdatecommand)
 }

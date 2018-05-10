@@ -46,3 +46,6 @@
 #Slack Log Level tells chainquery what level of logging will be sent to the slack channel. It will log all levels below
 # it as well. Panic=0,Fatal=1,Error=2,Warning=3,Info=4,Debug=5
 #DEFAULT-slackloglevel=0
+
+#The command that should be executed to trigger a self update of the software. For linux, for example, `<yourscript>.sh`
+#DEFAULT-selfupdatecommand=[unset]

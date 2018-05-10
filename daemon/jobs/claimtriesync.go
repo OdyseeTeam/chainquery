@@ -9,8 +9,8 @@ import (
 	"github.com/lbryio/chainquery/lbrycrd"
 	"github.com/lbryio/chainquery/model"
 	"github.com/lbryio/chainquery/util"
-	"github.com/lbryio/errors.go"
 
+	"github.com/lbryio/lbry.go/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"time"

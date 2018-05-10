@@ -7,7 +7,7 @@
   <p></p>
   <p>API exposed for sending SQL queries directly against the chainquery database. Since this is an exposed API there are limits to its use. These limits include queries per hour, read-only, limited to 60 second timeout. </p>
   <h3 class="section">URL</h3>
-  <code>http://:6300/api/SQL</code>
+  <code>http://0.0.0.0:6300/api/sql</code>
   <h3 class="section">HTTP Method</h3>
   <code>GET</code>
   <h3 class="section">Response Type</h3>
@@ -24,6 +24,17 @@
       <span class="param-type">String</span>
       
       <p class="param-description">The SQL query to be put against the chainquery database.</p>
+	  </li>
+	  <li class="parameter">
+      
+      
+      <span class="param-in">Path: </span>
+      
+      
+      <span class="param-name">values</span>
+      <span class="param-type">List(String)</span>
+      
+      <p class="param-description">when passing in a query use &#39;?&#39; for values which will be replaced in order of appearance with this array.</p>
 	  </li>
   </ul>
 </div>

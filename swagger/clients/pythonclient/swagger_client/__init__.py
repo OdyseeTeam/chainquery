@@ -16,6 +16,7 @@
 from __future__ import absolute_import
 
 # import apis into sdk package
+from swagger_client.api.default_api import DefaultApi
 from swagger_client.api.query_api import QueryApi
 from swagger_client.api.stat_api import StatApi
 

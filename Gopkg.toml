@@ -23,9 +23,6 @@
 #   non-go = false
 #   go-tests = true
 #   unused-packages = true
-
-required = ["github.com/lbryio/null.go"]
-
 #[[constraint]]
 #  name = "github.com/btcsuite/btcutil"
 #  revision = "a5ecb5d9547afe8d1672073dbdc348203de744a0"
@@ -43,8 +40,8 @@ required = ["github.com/lbryio/null.go"]
   revision = "d9bd385d68c068f1fabb5057e3dedcbcbb039d0f"
 
 [[constraint]]
-  name = "github.com/lbryio/null.go"
-  revision = "109a79fb20ecd191f58366a452b38f7cf0ae1741"
+  name = "github.com/lbryio/lbry.go"
+  branch ="apiserver"
 
 [[constraint]]
   branch = "master"

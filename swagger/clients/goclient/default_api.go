@@ -10,8 +10,6 @@
 package swagger
 
 import (
-	"encoding/json"
-	"fmt"
 	"golang.org/x/net/context"
 	"io/ioutil"
 	"net/http"
@@ -24,27 +22,22 @@ var (
 	_ context.Context
 )
 
-type QueryApiService service
+type DefaultApiService service
 
-/* QueryApiService Use SQL in a RESTful way
-API exposed for sending SQL queries directly against the chainquery database. Since this is an exposed API there are limits to its use. These limits include queries per hour, read-only, limited to 60 second timeout.
+/* DefaultApiService auto updates the application with the latest release based on TravisCI webhook
+takes a webhook as defined by https://docs.travis-ci.com/user/notifications/#Webhooks-Delivery-Format, validates the public key, chooses whether or not update the application. If so it shuts down the api, downloads the latest release from https://github.com/lbryio/chainquery/releases, replaces the binary and starts the api again.
 * @param ctx context.Context for authentication, logging, tracing, etc.
-@param query The SQL query to be put against the chainquery database.
-@param values when passing in a query use &#39;?&#39; for values which will be replaced in order of appearance with this array.
-@return []interface{}*/
-func (a *QueryApiService) SQLQuery(ctx context.Context, query string, values []string) ([]interface{}, *http.Response, error) {
+@return */
+func (a *DefaultApiService) AutoUpdate(ctx context.Context) (*http.Response, error) {
 	var (
 		localVarHttpMethod = strings.ToUpper("Get")
 		localVarPostBody   interface{}
 		localVarFileName   string
 		localVarFileBytes  []byte
-		successPayload     []interface{}
 	)
 
 	// create path and map variables
-	localVarPath := a.client.cfg.BasePath + "/sql"
-	localVarPath = strings.Replace(localVarPath, "{"+"query"+"}", fmt.Sprintf("%v", query), -1)
-	localVarPath = strings.Replace(localVarPath, "{"+"values"+"}", fmt.Sprintf("%v", values), -1)
+	localVarPath := a.client.cfg.BasePath + "/autoupdate"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -71,22 +64,18 @@ func (a *QueryApiService) SQLQuery(ctx context.Context, query string, values []s
 	}
 	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFileName, localVarFileBytes)
 	if err != nil {
-		return successPayload, nil, err
+		return nil, err
 	}
 
 	localVarHttpResponse, err := a.client.callAPI(r)
 	if err != nil || localVarHttpResponse == nil {
-		return successPayload, localVarHttpResponse, err
+		return localVarHttpResponse, err
 	}
 	defer localVarHttpResponse.Body.Close()
 	if localVarHttpResponse.StatusCode >= 300 {
 		bodyBytes, _ := ioutil.ReadAll(localVarHttpResponse.Body)
-		return successPayload, localVarHttpResponse, reportError("Status: %v, Body: %s", localVarHttpResponse.Status, bodyBytes)
+		return localVarHttpResponse, reportError("Status: %v, Body: %s", localVarHttpResponse.Status, bodyBytes)
 	}
 
-	if err = json.NewDecoder(localVarHttpResponse.Body).Decode(&successPayload); err != nil {
-		return successPayload, localVarHttpResponse, err
-	}
-
-	return successPayload, localVarHttpResponse, err
+	return localVarHttpResponse, err
 }

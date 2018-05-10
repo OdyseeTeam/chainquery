@@ -6,9 +6,9 @@ tags:
     name: query
     description: 'Operations dealing with raw queries to the chainquery database.'
 paths:
-  /Status:
+  /status:
     get:
-      operationId: status
+      operationId: ChainQueryStatus
       summary: 'Returns important status information about Chain Query'
       consumes:
         - application/json
@@ -26,7 +26,7 @@ paths:
             $ref: '#/definitions/TableStatus'
           x-oad-type: response
     x-oad-type: operation
-  /AddressSummary:
+  /addresssummary:
     get:
       operationId: AddressSummary
       summary: 'Returns a summary of Address activity'
@@ -51,7 +51,7 @@ paths:
           $ref: '#/parameters/address'
           x-oad-type: reference
     x-oad-type: operation
-  /SQL:
+  /sql:
     get:
       operationId: 'SQL Query'
       summary: 'Use SQL in a RESTful way'
@@ -86,6 +86,26 @@ paths:
           required: true
           type: string
           x-oad-type: parameter
+        -
+          name: values
+          in: path
+          description: 'when passing in a query use ''?'' for values which will be replaced in order of appearance with this array.'
+          required: true
+          type: array
+          collectionFormat: csv
+          items:
+            type: string
+          x-oad-type: parameter
+    x-oad-type: operation
+  /autoupdate:
+    get:
+      operationId: AutoUpdate
+      summary: 'auto updates the application with the latest release based on TravisCI webhook'
+      description: 'takes a webhook as defined by https://docs.travis-ci.com/user/notifications/#Webhooks-Delivery-Format, validates the public key, chooses whether or not update the application. If so it shuts down the api, downloads the latest release from https://github.com/lbryio/chainquery/releases, replaces the binary and starts the api again.'
+      responses:
+        '200':
+          description: 'sucessfully recieved and validated.'
+          x-oad-type: response
     x-oad-type: operation
 parameters:
   address:
@@ -161,7 +181,7 @@ info:
   title: 'Chain Query'
   version: 0.1.0
   description: 'The LBRY blockchain is read into SQL where important structured information can be extracted through the Chain Query API.'
-host: ':6300'
+host: '0.0.0.0:6300'
 basePath: /api
 schemes:
   - http

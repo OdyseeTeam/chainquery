@@ -1,11 +1,11 @@
 # \StatApi
 
-All URIs are relative to *http://:6300/api*
+All URIs are relative to *http://0.0.0.0:6300/api*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**AddressSummary**](StatApi.md#AddressSummary) | **Get** /AddressSummary | Returns a summary of Address activity
-[**Status**](StatApi.md#Status) | **Get** /Status | Returns important status information about Chain Query
+[**AddressSummary**](StatApi.md#AddressSummary) | **Get** /addresssummary | Returns a summary of Address activity
+[**ChainQueryStatus**](StatApi.md#ChainQueryStatus) | **Get** /status | Returns important status information about Chain Query
 
 
 # **AddressSummary**
@@ -36,8 +36,8 @@ No authorization required
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
-# **Status**
-> TableStatus Status(ctx, )
+# **ChainQueryStatus**
+> TableStatus ChainQueryStatus(ctx, )
 Returns important status information about Chain Query
 
 ### Required Parameters

@@ -51,27 +51,26 @@ import swagger_client
 from swagger_client.rest import ApiException
 from pprint import pprint
 # create an instance of the API class
-api_instance = swagger_client.QueryApi()
-query = 'query_example' # str | The SQL query to be put against the chainquery database.
+api_instance = swagger_client.DefaultApi()
 
 try:
-    # Use SQL in a RESTful way
-    api_response = api_instance.s_ql_query(query)
-    pprint(api_response)
+    # auto updates the application with the latest release based on TravisCI webhook
+    api_instance.auto_update()
 except ApiException as e:
-    print("Exception when calling QueryApi->s_ql_query: %s\n" % e)
+    print("Exception when calling DefaultApi->auto_update: %s\n" % e)
 
 ```
 
 ## Documentation for API Endpoints
 
-All URIs are relative to *http://:6300/api*
+All URIs are relative to *http://0.0.0.0:6300/api*
 
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
-*QueryApi* | [**s_ql_query**](docs/QueryApi.md#s_ql_query) | **GET** /SQL | Use SQL in a RESTful way
-*StatApi* | [**address_summary**](docs/StatApi.md#address_summary) | **GET** /AddressSummary | Returns a summary of Address activity
-*StatApi* | [**status**](docs/StatApi.md#status) | **GET** /Status | Returns important status information about Chain Query
+*DefaultApi* | [**auto_update**](docs/DefaultApi.md#auto_update) | **GET** /autoupdate | auto updates the application with the latest release based on TravisCI webhook
+*QueryApi* | [**s_ql_query**](docs/QueryApi.md#s_ql_query) | **GET** /sql | Use SQL in a RESTful way
+*StatApi* | [**address_summary**](docs/StatApi.md#address_summary) | **GET** /addresssummary | Returns a summary of Address activity
+*StatApi* | [**chain_query_status**](docs/StatApi.md#chain_query_status) | **GET** /status | Returns important status information about Chain Query
 
 
 ## Documentation For Models

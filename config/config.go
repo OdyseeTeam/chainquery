@@ -36,6 +36,7 @@ const ( // config setting keys
 	slackhookurl         = "slackhookurl"
 	slackchannel         = "slackchannel"
 	slackloglevel        = "slackloglevel"
+	selfupdatecommand    = "selfupdatecommand"
 )
 
 const (
@@ -97,7 +98,7 @@ func readConfig() {
 
 	err := viper.ReadInConfig() // Find and read the config file
 	if err != nil {             // Handle errors reading the config file
-		logrus.Warning("Error reading config file...defaults will be used")
+		logrus.Warning("Error reading config file...defaults will be used: ", err)
 	}
 }
 

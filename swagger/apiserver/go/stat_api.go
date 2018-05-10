@@ -8,38 +8,4 @@
  */
 package swagger
 
-import (
-    "fmt"
-    "net/http"
-    "time"
-
-	"github.com/lbryio/chainquery/apis"
-)
-
-func HandleAddressSummary(w http.ResponseWriter, r *http.Request) {
-    start := time.Now()
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	response, err := apis.HandleAction("AddressSummary", w, r)
-	if err != nil {
-    		w.WriteHeader(http.StatusInternalServerError)
-    		w.Write([]byte(err.Error()))
-    }
-    elapsed := time.Since(start)
-    timeTaken := fmt.Sprintf("%s", elapsed)
-    response.TimeSpent = timeTaken
-    process(w,response)
-}
-
-func HandleStatus(w http.ResponseWriter, r *http.Request) {
-    start := time.Now()
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	response, err := apis.HandleAction("Status", w, r)
-	if err != nil {
-    		w.WriteHeader(http.StatusInternalServerError)
-    		w.Write([]byte(err.Error()))
-    }
-    elapsed := time.Since(start)
-    timeTaken := fmt.Sprintf("%s", elapsed)
-    response.TimeSpent = timeTaken
-    process(w,response)
-}
+//Not using swagger for controller-api. These files have been added to the project git ignore.

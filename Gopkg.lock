@@ -43,6 +43,12 @@
   revision = "31079b6807923eb23992c421b114992b95131b55"
 
 [[projects]]
+  name = "github.com/fatih/color"
+  packages = ["."]
+  revision = "507f6050b8568533fb3f5504de8e5205fa62a114"
+  version = "v1.6.0"
+
+[[projects]]
   name = "github.com/fsnotify/fsnotify"
   packages = ["."]
   revision = "c2828203cd70a50dcccfb2761f8b1f8ceef9a8e9"
@@ -88,6 +94,12 @@
   version = "v1.6.1"
 
 [[projects]]
+  name = "github.com/gorilla/websocket"
+  packages = ["."]
+  revision = "ea4d1f681babbce9545c9c5f3d5194a789c89f5b"
+  version = "v1.2.0"
+
+[[projects]]
   branch = "master"
   name = "github.com/hashicorp/hcl"
   packages = [
@@ -129,16 +141,19 @@
   version = "v3.0.7"
 
 [[projects]]
-  branch = "master"
+  branch = "apiserver"
   name = "github.com/lbryio/lbry.go"
   packages = [
+    "api",
     "errors",
     "lbrycrd",
     "null",
     "querytools",
-    "util"
+    "travis",
+    "util",
+    "validator"
   ]
-  revision = "a5d371ca4780841b033afe486a94f8eb80a94259"
+  revision = "6af61cbf22811a377a338e90ed38ec219e0094c7"
 
 [[projects]]
   branch = "master"
@@ -152,9 +167,10 @@
   revision = "dd814b834b5511d65d640bdbb46237f19f38a3e5"
 
 [[projects]]
-  name = "github.com/lbryio/null.go"
+  name = "github.com/lbryio/ozzo-validation"
   packages = ["."]
-  revision = "109a79fb20ecd191f58366a452b38f7cf0ae1741"
+  revision = "d1008ad1fd04ceb5faedaf34881df0c504382706"
+  version = "v3.1"
 
 [[projects]]
   name = "github.com/magiconair/properties"
@@ -163,10 +179,28 @@
   version = "v1.7.6"
 
 [[projects]]
+  name = "github.com/mattn/go-colorable"
+  packages = ["."]
+  revision = "167de6bfdfba052fa6b2d3664c8f5272e23c9072"
+  version = "v0.0.9"
+
+[[projects]]
+  name = "github.com/mattn/go-isatty"
+  packages = ["."]
+  revision = "0360b2af4f38e8d38c7fce2a9f4e702702d73a39"
+  version = "v0.0.3"
+
+[[projects]]
   branch = "master"
   name = "github.com/mitchellh/mapstructure"
   packages = ["."]
   revision = "a4e142e9c047c904fa2f1e144d9a84e6133024bc"
+
+[[projects]]
+  name = "github.com/nlopes/slack"
+  packages = ["."]
+  revision = "8ab4d0b364ef1e9af5d102531da20d5ec902b6c4"
+  version = "v0.2.0"
 
 [[projects]]
   name = "github.com/pelletier/go-toml"
@@ -341,6 +375,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "92d6ead75210f2188630047d1276541fb18efc78845df1b39fa0d40dc00d36a9"
+  inputs-digest = "d7b43894dced36c7551e51d730271483880be294adc73d90255b0fca737e6e8e"
   solver-name = "gps-cdcl"
   solver-version = 1

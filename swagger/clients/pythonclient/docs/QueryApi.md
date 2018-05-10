@@ -1,14 +1,14 @@
 # swagger_client.QueryApi
 
-All URIs are relative to *http://:6300/api*
+All URIs are relative to *http://0.0.0.0:6300/api*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**s_ql_query**](QueryApi.md#s_ql_query) | **GET** /SQL | Use SQL in a RESTful way
+[**s_ql_query**](QueryApi.md#s_ql_query) | **GET** /sql | Use SQL in a RESTful way
 
 
 # **s_ql_query**
-> list[object] s_ql_query(query)
+> list[object] s_ql_query(query, values)
 
 Use SQL in a RESTful way
 
@@ -25,10 +25,11 @@ from pprint import pprint
 # create an instance of the API class
 api_instance = swagger_client.QueryApi()
 query = 'query_example' # str | The SQL query to be put against the chainquery database.
+values = ['values_example'] # list[str] | when passing in a query use '?' for values which will be replaced in order of appearance with this array.
 
 try:
     # Use SQL in a RESTful way
-    api_response = api_instance.s_ql_query(query)
+    api_response = api_instance.s_ql_query(query, values)
     pprint(api_response)
 except ApiException as e:
     print("Exception when calling QueryApi->s_ql_query: %s\n" % e)
@@ -39,6 +40,7 @@ except ApiException as e:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **query** | **str**| The SQL query to be put against the chainquery database. | 
+ **values** | [**list[str]**](str.md)| when passing in a query use &#39;?&#39; for values which will be replaced in order of appearance with this array. | 
 
 ### Return type
 

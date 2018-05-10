@@ -5,7 +5,7 @@ info:
     \ can be extracted through the Chain Query API."
   version: "0.1.0"
   title: "Chain Query"
-host: ":6300"
+host: "0.0.0.0:6300"
 basePath: "/api"
 tags:
 - name: "stat"
@@ -20,12 +20,12 @@ consumes:
 produces:
 - "application/json"
 paths:
-  /Status:
+  /status:
     get:
       tags:
       - "stat"
       summary: "Returns important status information about Chain Query"
-      operationId: "status"
+      operationId: "ChainQueryStatus"
       schemes:
       - "http"
       consumes:
@@ -40,7 +40,7 @@ paths:
             $ref: "#/definitions/TableStatus"
           x-oad-type: "response"
     x-oad-type: "operation"
-  /AddressSummary:
+  /addresssummary:
     get:
       tags:
       - "stat"
@@ -70,7 +70,7 @@ paths:
             $ref: "#/definitions/AddressSummary"
           x-oad-type: "response"
     x-oad-type: "operation"
-  /SQL:
+  /sql:
     get:
       tags:
       - "query"
@@ -87,6 +87,17 @@ paths:
         type: "string"
         x-oad-type: "parameter"
         x-exportParamName: "Query"
+      - name: "values"
+        in: "path"
+        description: "when passing in a query use '?' for values which will be replaced\
+          \ in order of appearance with this array."
+        required: true
+        type: "array"
+        items:
+          type: "string"
+        collectionFormat: "csv"
+        x-oad-type: "parameter"
+        x-exportParamName: "Values"
       responses:
         200:
           description: "It will return the rows as a json array."
@@ -110,6 +121,21 @@ paths:
             description: "what went wrong?"
             title: "error message"
             x-oad-type: "string"
+          x-oad-type: "response"
+    x-oad-type: "operation"
+  /autoupdate:
+    get:
+      summary: "auto updates the application with the latest release based on TravisCI\
+        \ webhook"
+      description: "takes a webhook as defined by https://docs.travis-ci.com/user/notifications/#Webhooks-Delivery-Format,\
+        \ validates the public key, chooses whether or not update the application.\
+        \ If so it shuts down the api, downloads the latest release from https://github.com/lbryio/chainquery/releases,\
+        \ replaces the binary and starts the api again."
+      operationId: "AutoUpdate"
+      parameters: []
+      responses:
+        200:
+          description: "sucessfully recieved and validated."
           x-oad-type: "response"
     x-oad-type: "operation"
 definitions:

@@ -1,25 +1,4 @@
 {{>partial_header}}
 package {{packageName}}
 
-{{#operations}}
-import (
-    "fmt"
-    "net/http"
-    "time"
-
-	"github.com/lbryio/chainquery/apis"
-){{#operation}}
-
-func Handle{{nickname}}(w http.ResponseWriter, r *http.Request) {
-    start := time.Now()
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	response, err := apis.HandleAction("{{nickname}}", w, r)
-	if err != nil {
-    		w.WriteHeader(http.StatusInternalServerError)
-    		w.Write([]byte(err.Error()))
-    }
-    elapsed := time.Since(start)
-    timeTaken := fmt.Sprintf("%s", elapsed)
-    response.TimeSpent = timeTaken
-    process(w,response)
-}{{/operation}}{{/operations}}
+//Not using swagger for controller-api. These files have been added to the project git ignore.

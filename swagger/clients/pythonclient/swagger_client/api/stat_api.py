@@ -117,7 +117,7 @@ class StatApi(object):
         auth_settings = []  # noqa: E501
 
         return self.api_client.call_api(
-            '/AddressSummary', 'GET',
+            '/addresssummary', 'GET',
             path_params,
             query_params,
             header_params,
@@ -132,12 +132,12 @@ class StatApi(object):
             _request_timeout=params.get('_request_timeout'),
             collection_formats=collection_formats)
 
-    def status(self, **kwargs):  # noqa: E501
+    def chain_query_status(self, **kwargs):  # noqa: E501
         """Returns important status information about Chain Query  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async=True
-        >>> thread = api.status(async=True)
+        >>> thread = api.chain_query_status(async=True)
         >>> result = thread.get()
 
         :param async bool
@@ -147,17 +147,17 @@ class StatApi(object):
         """
         kwargs['_return_http_data_only'] = True
         if kwargs.get('async'):
-            return self.status_with_http_info(**kwargs)  # noqa: E501
+            return self.chain_query_status_with_http_info(**kwargs)  # noqa: E501
         else:
-            (data) = self.status_with_http_info(**kwargs)  # noqa: E501
+            (data) = self.chain_query_status_with_http_info(**kwargs)  # noqa: E501
             return data
 
-    def status_with_http_info(self, **kwargs):  # noqa: E501
+    def chain_query_status_with_http_info(self, **kwargs):  # noqa: E501
         """Returns important status information about Chain Query  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async=True
-        >>> thread = api.status_with_http_info(async=True)
+        >>> thread = api.chain_query_status_with_http_info(async=True)
         >>> result = thread.get()
 
         :param async bool
@@ -177,7 +177,7 @@ class StatApi(object):
             if key not in all_params:
                 raise TypeError(
                     "Got an unexpected keyword argument '%s'"
-                    " to method status" % key
+                    " to method chain_query_status" % key
                 )
             params[key] = val
         del params['kwargs']
@@ -206,7 +206,7 @@ class StatApi(object):
         auth_settings = []  # noqa: E501
 
         return self.api_client.call_api(
-            '/Status', 'GET',
+            '/status', 'GET',
             path_params,
             query_params,
             header_params,

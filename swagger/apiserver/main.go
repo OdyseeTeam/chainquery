@@ -23,7 +23,7 @@ func InitApiServer(hostAndPort string) {
 	//API Chainquery DB connection
 	chainqueryInstance, err := db.InitAPIQuery(config.GetAPIMySQLDSN(), false)
 	if err != nil {
-		logrus.Error("unable to connect to chainquery database instance for API Server: ", err)
+		logrus.Panic("unable to connect to chainquery database instance for API Server: ", err)
 	}
 	defer db.CloseDB(chainqueryInstance)
 	router := sw.NewRouter()
