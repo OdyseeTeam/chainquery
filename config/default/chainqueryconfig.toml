@@ -48,4 +48,4 @@
 #DEFAULT-slackloglevel=0
 
 #The command that should be executed to trigger a self update of the software. For linux, for example, `<yourscript>.sh`
-#DEFAULT-selfupdatecommand=[unset]
+#DEFAULT-autoupdatecommand=[unset]

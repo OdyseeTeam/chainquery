@@ -3,6 +3,7 @@ package apiactions
 import (
 	"net/http"
 	"os/exec"
+	"strconv"
 	"time"
 
 	"github.com/lbryio/chainquery/db"
@@ -57,6 +58,9 @@ func IndexAction(r *http.Request) api.Response {
 	return api.Response{Data: "Hello World!"}
 }
 
+// AutoUpdateCommand is the path of the shell script to run in the environment chainquery is installed on. It should
+// stop the service, download and replace the new binary from https://github.com/lbryio/chainquery/releases, start the
+// service.
 var AutoUpdateCommand = ""
 
 // AutoUpdateAction takes a travis webhook for a successful deployment and runs an environment script to self update.
@@ -71,27 +75,34 @@ func AutoUpdateAction(r *http.Request) api.Response {
 	if err != nil {
 		return api.Response{Error: err}
 	}
-
-	if webHook.Status == 0 { // webHook.ShouldDeploy() doesn't work for chainquery autoupdate.
+	shouldUpdate := webHook.Status == 0 && !webHook.PullRequest && webHook.Tag != ""
+	if shouldUpdate { // webHook.ShouldDeploy() doesn't work for chainquery autoupdate.
 		if AutoUpdateCommand == "" {
-			logrus.Warnln("self-update triggered, but no self-update command configured")
+			err := errors.Base("auto-update triggered, but no auto-update command configured")
+			logrus.Error(err)
+			return api.Response{Error: err}
 		} else {
-			logrus.Info("self-updating")
-			// run self-update asynchronously
+			logrus.Info("chainquery is auto-updating...prepare for shutdown")
+			// run auto-update asynchronously
 			go func() {
 				time.Sleep(1 * time.Second) // leave time for handler to send response
 				cmd := exec.Command(AutoUpdateCommand)
 				out, err := cmd.Output()
 				if err != nil {
-					errMsg := "self-update error: " + errors.FullTrace(err) + "\nStdout: " + string(out)
+					errMsg := "auto-update error: " + errors.FullTrace(err) + "\nStdout: " + string(out)
 					if exitErr, ok := err.(*exec.ExitError); ok {
 						errMsg = errMsg + "\nStderr: " + string(exitErr.Stderr)
 					}
 					logrus.Errorln(errMsg)
 				}
 			}()
+			return api.Response{Data: "Successful launch of auto update"}
 		}
 	}
-
-	return api.Response{Data: "ok"}
+	message := "Auto-Update should not be deployed for one of the following:" +
+		" CI Status-" + webHook.StatusMessage +
+		", IsPullRequest-" + strconv.FormatBool(webHook.PullRequest) +
+		", TagName-" + webHook.Tag
+	logrus.Warn(message)
+	return api.Response{Data: message}
 }
