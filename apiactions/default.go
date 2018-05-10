@@ -81,23 +81,23 @@ func AutoUpdateAction(r *http.Request) api.Response {
 			err := errors.Base("auto-update triggered, but no auto-update command configured")
 			logrus.Error(err)
 			return api.Response{Error: err}
-		} else {
-			logrus.Info("chainquery is auto-updating...prepare for shutdown")
-			// run auto-update asynchronously
-			go func() {
-				time.Sleep(1 * time.Second) // leave time for handler to send response
-				cmd := exec.Command(AutoUpdateCommand)
-				out, err := cmd.Output()
-				if err != nil {
-					errMsg := "auto-update error: " + errors.FullTrace(err) + "\nStdout: " + string(out)
-					if exitErr, ok := err.(*exec.ExitError); ok {
-						errMsg = errMsg + "\nStderr: " + string(exitErr.Stderr)
-					}
-					logrus.Errorln(errMsg)
-				}
-			}()
-			return api.Response{Data: "Successful launch of auto update"}
 		}
+		logrus.Info("chainquery is auto-updating...prepare for shutdown")
+		// run auto-update asynchronously
+		go func() {
+			time.Sleep(1 * time.Second) // leave time for handler to send response
+			cmd := exec.Command(AutoUpdateCommand)
+			out, err := cmd.Output()
+			if err != nil {
+				errMsg := "auto-update error: " + errors.FullTrace(err) + "\nStdout: " + string(out)
+				if exitErr, ok := err.(*exec.ExitError); ok {
+					errMsg = errMsg + "\nStderr: " + string(exitErr.Stderr)
+				}
+				logrus.Errorln(errMsg)
+			}
+		}()
+		return api.Response{Data: "Successful launch of auto update"}
+
 	}
 	message := "Auto-Update should not be deployed for one of the following:" +
 		" CI Status-" + webHook.StatusMessage +
