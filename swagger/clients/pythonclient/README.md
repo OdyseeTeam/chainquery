@@ -52,10 +52,11 @@ from swagger_client.rest import ApiException
 from pprint import pprint
 # create an instance of the API class
 api_instance = swagger_client.DefaultApi()
+payload = NULL # object | 
 
 try:
     # auto updates the application with the latest release based on TravisCI webhook
-    api_instance.auto_update()
+    api_instance.auto_update(payload)
 except ApiException as e:
     print("Exception when calling DefaultApi->auto_update: %s\n" % e)
 
@@ -67,7 +68,7 @@ All URIs are relative to *http://0.0.0.0:6300/api*
 
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
-*DefaultApi* | [**auto_update**](docs/DefaultApi.md#auto_update) | **GET** /autoupdate | auto updates the application with the latest release based on TravisCI webhook
+*DefaultApi* | [**auto_update**](docs/DefaultApi.md#auto_update) | **POST** /autoupdate | auto updates the application with the latest release based on TravisCI webhook
 *QueryApi* | [**s_ql_query**](docs/QueryApi.md#s_ql_query) | **GET** /sql | Use SQL in a RESTful way
 *StatApi* | [**address_summary**](docs/StatApi.md#address_summary) | **GET** /addresssummary | Returns a summary of Address activity
 *StatApi* | [**chain_query_status**](docs/StatApi.md#chain_query_status) | **GET** /status | Returns important status information about Chain Query

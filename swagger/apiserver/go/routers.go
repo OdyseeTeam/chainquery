@@ -54,7 +54,7 @@ var routes = Routes{
 
 	Route{
 		"AutoUpdate",
-		strings.ToUpper("Get"),
+		strings.ToUpper("Post"),
 		"/api/autoupdate",
 		AutoUpdateAction,
 	},

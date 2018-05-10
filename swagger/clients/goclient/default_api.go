@@ -27,10 +27,11 @@ type DefaultApiService service
 /* DefaultApiService auto updates the application with the latest release based on TravisCI webhook
 takes a webhook as defined by https://docs.travis-ci.com/user/notifications/#Webhooks-Delivery-Format, validates the public key, chooses whether or not update the application. If so it shuts down the api, downloads the latest release from https://github.com/lbryio/chainquery/releases, replaces the binary and starts the api again.
 * @param ctx context.Context for authentication, logging, tracing, etc.
+@param payload
 @return */
-func (a *DefaultApiService) AutoUpdate(ctx context.Context) (*http.Response, error) {
+func (a *DefaultApiService) AutoUpdate(ctx context.Context, payload interface{}) (*http.Response, error) {
 	var (
-		localVarHttpMethod = strings.ToUpper("Get")
+		localVarHttpMethod = strings.ToUpper("Post")
 		localVarPostBody   interface{}
 		localVarFileName   string
 		localVarFileBytes  []byte
@@ -44,7 +45,7 @@ func (a *DefaultApiService) AutoUpdate(ctx context.Context) (*http.Response, err
 	localVarFormParams := url.Values{}
 
 	// to determine the Content-Type header
-	localVarHttpContentTypes := []string{"application/json"}
+	localVarHttpContentTypes := []string{"application/x-www-form-urlencoded"}
 
 	// set Content-Type header
 	localVarHttpContentType := selectHeaderContentType(localVarHttpContentTypes)
@@ -62,6 +63,8 @@ func (a *DefaultApiService) AutoUpdate(ctx context.Context) (*http.Response, err
 	if localVarHttpHeaderAccept != "" {
 		localVarHeaderParams["Accept"] = localVarHttpHeaderAccept
 	}
+	// body params
+	localVarPostBody = &payload
 	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFileName, localVarFileBytes)
 	if err != nil {
 		return nil, err

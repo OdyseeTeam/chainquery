@@ -124,7 +124,7 @@ paths:
           x-oad-type: "response"
     x-oad-type: "operation"
   /autoupdate:
-    get:
+    post:
       summary: "auto updates the application with the latest release based on TravisCI\
         \ webhook"
       description: "takes a webhook as defined by https://docs.travis-ci.com/user/notifications/#Webhooks-Delivery-Format,\
@@ -132,7 +132,21 @@ paths:
         \ If so it shuts down the api, downloads the latest release from https://github.com/lbryio/chainquery/releases,\
         \ replaces the binary and starts the api again."
       operationId: "AutoUpdate"
-      parameters: []
+      schemes:
+      - "http"
+      consumes:
+      - "application/x-www-form-urlencoded"
+      parameters:
+      - in: "body"
+        name: "payload"
+        required: true
+        schema:
+          type: "object"
+          title: "Travis webhook"
+          description: "formatted as https://docs.travis-ci.com/user/notifications/#Webhooks-Delivery-Format"
+          x-oad-type: "object"
+        x-oad-type: "parameter"
+        x-exportParamName: "Payload"
       responses:
         200:
           description: "sucessfully recieved and validated."

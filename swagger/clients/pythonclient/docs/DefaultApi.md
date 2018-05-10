@@ -4,11 +4,11 @@ All URIs are relative to *http://0.0.0.0:6300/api*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**auto_update**](DefaultApi.md#auto_update) | **GET** /autoupdate | auto updates the application with the latest release based on TravisCI webhook
+[**auto_update**](DefaultApi.md#auto_update) | **POST** /autoupdate | auto updates the application with the latest release based on TravisCI webhook
 
 
 # **auto_update**
-> auto_update()
+> auto_update(payload)
 
 auto updates the application with the latest release based on TravisCI webhook
 
@@ -24,16 +24,20 @@ from pprint import pprint
 
 # create an instance of the API class
 api_instance = swagger_client.DefaultApi()
+payload = NULL # object | 
 
 try:
     # auto updates the application with the latest release based on TravisCI webhook
-    api_instance.auto_update()
+    api_instance.auto_update(payload)
 except ApiException as e:
     print("Exception when calling DefaultApi->auto_update: %s\n" % e)
 ```
 
 ### Parameters
-This endpoint does not need any parameter.
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **payload** | **object**|  | 
 
 ### Return type
 
@@ -45,7 +49,7 @@ No authorization required
 
 ### HTTP request headers
 
- - **Content-Type**: application/json
+ - **Content-Type**: application/x-www-form-urlencoded
  - **Accept**: application/json
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)

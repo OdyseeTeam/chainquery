@@ -33,43 +33,45 @@ class DefaultApi(object):
             api_client = ApiClient()
         self.api_client = api_client
 
-    def auto_update(self, **kwargs):  # noqa: E501
+    def auto_update(self, payload, **kwargs):  # noqa: E501
         """auto updates the application with the latest release based on TravisCI webhook  # noqa: E501
 
         takes a webhook as defined by https://docs.travis-ci.com/user/notifications/#Webhooks-Delivery-Format, validates the public key, chooses whether or not update the application. If so it shuts down the api, downloads the latest release from https://github.com/lbryio/chainquery/releases, replaces the binary and starts the api again.  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async=True
-        >>> thread = api.auto_update(async=True)
+        >>> thread = api.auto_update(payload, async=True)
         >>> result = thread.get()
 
         :param async bool
+        :param object payload: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
         """
         kwargs['_return_http_data_only'] = True
         if kwargs.get('async'):
-            return self.auto_update_with_http_info(**kwargs)  # noqa: E501
+            return self.auto_update_with_http_info(payload, **kwargs)  # noqa: E501
         else:
-            (data) = self.auto_update_with_http_info(**kwargs)  # noqa: E501
+            (data) = self.auto_update_with_http_info(payload, **kwargs)  # noqa: E501
             return data
 
-    def auto_update_with_http_info(self, **kwargs):  # noqa: E501
+    def auto_update_with_http_info(self, payload, **kwargs):  # noqa: E501
         """auto updates the application with the latest release based on TravisCI webhook  # noqa: E501
 
         takes a webhook as defined by https://docs.travis-ci.com/user/notifications/#Webhooks-Delivery-Format, validates the public key, chooses whether or not update the application. If so it shuts down the api, downloads the latest release from https://github.com/lbryio/chainquery/releases, replaces the binary and starts the api again.  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async=True
-        >>> thread = api.auto_update_with_http_info(async=True)
+        >>> thread = api.auto_update_with_http_info(payload, async=True)
         >>> result = thread.get()
 
         :param async bool
+        :param object payload: (required)
         :return: None
                  If the method is called asynchronously,
                  returns the request thread.
         """
 
-        all_params = []  # noqa: E501
+        all_params = ['payload']  # noqa: E501
         all_params.append('async')
         all_params.append('_return_http_data_only')
         all_params.append('_preload_content')
@@ -84,6 +86,10 @@ class DefaultApi(object):
                 )
             params[key] = val
         del params['kwargs']
+        # verify the required parameter 'payload' is set
+        if ('payload' not in params or
+                params['payload'] is None):
+            raise ValueError("Missing the required parameter `payload` when calling `auto_update`")  # noqa: E501
 
         collection_formats = {}
 
@@ -97,19 +103,21 @@ class DefaultApi(object):
         local_var_files = {}
 
         body_params = None
+        if 'payload' in params:
+            body_params = params['payload']
         # HTTP header `Accept`
         header_params['Accept'] = self.api_client.select_header_accept(
             ['application/json'])  # noqa: E501
 
         # HTTP header `Content-Type`
         header_params['Content-Type'] = self.api_client.select_header_content_type(  # noqa: E501
-            ['application/json'])  # noqa: E501
+            ['application/x-www-form-urlencoded'])  # noqa: E501
 
         # Authentication setting
         auth_settings = []  # noqa: E501
 
         return self.api_client.call_api(
-            '/autoupdate', 'GET',
+            '/autoupdate', 'POST',
             path_params,
             query_params,
             header_params,

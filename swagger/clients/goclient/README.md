@@ -21,7 +21,7 @@ All URIs are relative to *http://0.0.0.0:6300/api*
 
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
-*DefaultApi* | [**AutoUpdate**](docs/DefaultApi.md#autoupdate) | **Get** /autoupdate | auto updates the application with the latest release based on TravisCI webhook
+*DefaultApi* | [**AutoUpdate**](docs/DefaultApi.md#autoupdate) | **Post** /autoupdate | auto updates the application with the latest release based on TravisCI webhook
 *QueryApi* | [**SQLQuery**](docs/QueryApi.md#sqlquery) | **Get** /sql | Use SQL in a RESTful way
 *StatApi* | [**AddressSummary**](docs/StatApi.md#addresssummary) | **Get** /addresssummary | Returns a summary of Address activity
 *StatApi* | [**ChainQueryStatus**](docs/StatApi.md#chainquerystatus) | **Get** /status | Returns important status information about Chain Query
