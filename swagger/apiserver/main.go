@@ -15,19 +15,11 @@ import (
 	"github.com/lbryio/chainquery/db"
 	sw "github.com/lbryio/chainquery/swagger/apiserver/go"
 
-	"github.com/lbryio/lbry.go/api"
 	"github.com/sirupsen/logrus"
 )
 
 func InitApiServer(hostAndPort string) {
 	logrus.Info("API Server started")
-	hs := make(map[string]string)
-	//hs["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
-	//hs["Content-Type"] = "application/json; charset=utf-8; application/x-www-form-urlencoded"
-	hs["X-Content-Type-Options"] = "nosniff"
-	hs["Content-Security-Policy"] = "default-src 'none'"
-	hs["Server"] = "localhost"
-	api.HeaderSettings = &hs
 	//API Chainquery DB connection
 	chainqueryInstance, err := db.InitAPIQuery(config.GetAPIMySQLDSN(), false)
 	if err != nil {
