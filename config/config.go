@@ -14,7 +14,6 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"github.com/go-ini/ini"
 	"github.com/johntdyer/slackrus"
-	"github.com/lbryio/chainquery/apiactions"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -140,7 +139,6 @@ func processConfiguration() {
 
 	daemon.ApplySettings(settings)
 	lbrycrd.LBRYcrdURL = GetLBRYcrdURL()
-	apiactions.AutoUpdateCommand = GetAutoUpdateCommand()
 
 }
 

@@ -48,7 +48,6 @@ before_script:
 # script always run to completion (set +e). All of these code checks are must haves
 # in a modern Go project.
 script:
-  - git status
   # Build Chainquery sucessfully
   - ./scripts/build.sh
   # Fail if a .go file hasn't been formatted with gofmt

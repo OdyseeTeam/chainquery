@@ -14,12 +14,14 @@ import (
 	"github.com/lbryio/chainquery/lbrycrd"
 	"github.com/lbryio/chainquery/swagger/apiserver"
 
+	"github.com/lbryio/chainquery/apiactions"
 	log "github.com/sirupsen/logrus"
 )
 
 func main() {
 	config.InitializeConfiguration()
 	config.InitSlack()
+	apiactions.AutoUpdateCommand = config.GetAutoUpdateCommand()
 	log.SetFormatter(&log.TextFormatter{FullTimestamp: true})
 	http.DefaultClient.Timeout = config.GetDefaultClientTimeout()
 
