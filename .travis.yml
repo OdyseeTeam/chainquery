@@ -80,3 +80,6 @@ deploy:
   on:
     tags: true
     condition: $TRAVIS_OS_NAME = linux
+notifications:
+  email: false
+  webhooks: https://chainquery.lbry.io/api/autoupdate
