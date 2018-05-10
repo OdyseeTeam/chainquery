@@ -6,66 +6,70 @@ import (
 	"time"
 
 	"github.com/lbryio/chainquery/db"
-	. "github.com/lbryio/lbry.go/api"
+	"github.com/lbryio/lbry.go/api"
+	"github.com/lbryio/lbry.go/errors"
 	"github.com/lbryio/lbry.go/travis"
 	v "github.com/lbryio/ozzo-validation"
 
-	"github.com/lbryio/lbry.go/errors"
 	"github.com/sirupsen/logrus"
 )
 
-func ChainQueryStatusAction(r *http.Request) Response {
+// ChainQueryStatusAction returns status information of the chainquery application. Currently, tables' name and size.
+func ChainQueryStatusAction(r *http.Request) api.Response {
 
 	status, err := db.GetTableStatus()
 	if err != nil {
-		return Response{Error: err}
+		return api.Response{Error: err}
 	}
-	return Response{Data: status}
+	return api.Response{Data: status}
 }
 
-func AddressSummaryAction(r *http.Request) Response {
+// AddressSummaryAction returns address details: received, spent, balance
+func AddressSummaryAction(r *http.Request) api.Response {
 	params := struct {
 		Address string
 	}{}
-	err := FormValues(r, &params, []*v.FieldRules{
+	err := api.FormValues(r, &params, []*v.FieldRules{
 		v.Field(&params.Address, v.Required),
 	})
 	if err != nil {
-		return Response{Error: err, Status: http.StatusBadRequest}
+		return api.Response{Error: err, Status: http.StatusBadRequest}
 	}
 	summary, err := db.GetAddressSummary(params.Address)
 	if err != nil {
-		return Response{Error: err, Status: http.StatusInternalServerError}
+		return api.Response{Error: err, Status: http.StatusInternalServerError}
 	}
-	return Response{Data: summary}
+	return api.Response{Data: summary}
 }
 
-func SQLQueryAction(r *http.Request) Response {
+// SQLQueryAction returns an array of structured data matching the queried results.
+func SQLQueryAction(r *http.Request) api.Response {
 	query := r.FormValue("query")
 	result, err := db.APIQuery(query)
 	if err != nil {
-		return Response{Error: err, Status: http.StatusBadRequest}
+		return api.Response{Error: err, Status: http.StatusBadRequest}
 	}
-	return Response{Data: result}
+	return api.Response{Data: result}
 }
 
-func IndexAction(r *http.Request) Response {
-	return Response{Data: "Hello World!"}
+// IndexAction returns Hello World!
+func IndexAction(r *http.Request) api.Response {
+	return api.Response{Data: "Hello World!"}
 }
 
 var AutoUpdateCommand = ""
 
-// SelfUpdateAction takes a travis webhook for a successful deployment and runs an environment script to self update.
-func AutoUpdateAction(r *http.Request) Response {
+// AutoUpdateAction takes a travis webhook for a successful deployment and runs an environment script to self update.
+func AutoUpdateAction(r *http.Request) api.Response {
 	err := travis.ValidateSignature(r)
 	logrus.Info(err)
 	if err != nil {
-		return Response{Error: err, Status: http.StatusBadRequest}
+		return api.Response{Error: err, Status: http.StatusBadRequest}
 	}
 
 	webHook, err := travis.NewFromRequest(r)
 	if err != nil {
-		return Response{Error: err}
+		return api.Response{Error: err}
 	}
 
 	if webHook.Status == 0 { // webHook.ShouldDeploy() doesn't work for chainquery autoupdate.
@@ -89,5 +93,5 @@ func AutoUpdateAction(r *http.Request) Response {
 		}
 	}
 
-	return Response{Data: "ok"}
+	return api.Response{Data: "ok"}
 }
