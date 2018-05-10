@@ -26,7 +26,7 @@ var ClaimTrieSyncRunning = false
 // ClaimTrieSync synchronizes claimtrie information that is calculated and enforced by lbrycrd.
 func ClaimTrieSync() {
 	ClaimTrieSyncRunning = true
-	defer util.TimeTrack(time.Now(), "ClaimTrieSync", "always")
+	//defer util.TimeTrack(time.Now(), "ClaimTrieSync", "always")
 	logrus.Debug("ClaimTrieSync: started... ")
 	jobStatus, err := getClaimTrieSyncJobStatus()
 	if err != nil {
@@ -139,7 +139,7 @@ func syncClaims(claims model.ClaimSlice) error {
 	initSyncWorkers(runtime.NumCPU()-1, processingQueue, &syncwg)
 	for i, claim := range claims {
 		if i%1000 == 0 {
-			logrus.Info("ClaimTrieSync: syncing ", i, " of ", len(claims), " queued - ", len(processingQueue))
+			logrus.Debug("ClaimTrieSync: syncing ", i, " of ", len(claims), " queued - ", len(processingQueue))
 		}
 		claims, err := lbrycrd.GetClaimsForName(claim.Name)
 		if err != nil {
