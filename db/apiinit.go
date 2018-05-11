@@ -52,11 +52,11 @@ func jsonify(rows *sql.Rows) rowSlice {
 	}
 
 	c := 0
-	results := make(map[string]interface{})
+
 	data := rowSlice{}
 
 	for rows.Next() {
-
+		results := make(map[string]interface{})
 		err = rows.Scan(scanArgs...)
 		if err != nil {
 			panic(err.Error())
