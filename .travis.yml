@@ -83,4 +83,4 @@ deploy:
 
 notifications:
   email: true
-  webhooks: http://chainquery.lbry.io/api/autoupdate
+  webhooks: https://chainquery.lbry.io/api/autoupdate
