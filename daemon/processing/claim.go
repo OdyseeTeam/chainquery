@@ -10,6 +10,7 @@ import (
 	"github.com/lbryio/lbry.go/errors"
 	"github.com/lbryio/lbry.go/util"
 	"github.com/lbryio/lbryschema.go/address/base58"
+	c "github.com/lbryio/lbryschema.go/claim"
 	"github.com/lbryio/lbryschema.go/pb"
 
 	"github.com/sirupsen/logrus"
@@ -136,10 +137,18 @@ func processClaim(pbClaim *pb.Claim, claim *model.Claim, value []byte, output mo
 	claim.ValueAsHex = hex.EncodeToString(value)
 	claim.ClaimType = int8(pb.Claim_ClaimType_value[pbClaim.GetClaimType().String()])
 
+	//legacy claim JSON
 	var js map[string]interface{} //JSON Map
 	if json.Unmarshal(value, &js) == nil {
 		claim.ValueAsJSON.String = string(value)
 		claim.ValueAsJSON.Valid = true
+	} else { // pbClaim JSON
+		if claimHelper, err := c.DecodeClaimHex(claim.ValueAsHex, "lbrycrd_main"); err == nil {
+			if jsonvalue, err := claimHelper.RenderJSON(); err == nil {
+				claim.ValueAsJSON.String = jsonvalue
+				claim.ValueAsJSON.Valid = true
+			}
+		}
 	}
 
 	setSourceInfo(claim, pbClaim)
