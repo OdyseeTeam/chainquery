@@ -12,25 +12,32 @@ import (
 func reProcessAllClaims() {
 	outputs := model.OutputsG(qm.Where(model.OutputColumns.Type+" =?", lbrycrd.NonStandard),
 		qm.Select(model.OutputColumns.TransactionHash)).AllP()
-	for _, output := range outputs {
-		tx, err := model.TransactionsG(qm.Where(model.TransactionColumns.Hash+"=?", output.TransactionHash),
-			qm.Select(model.TransactionColumns.Hash, model.TransactionColumns.BlockByHashID)).One()
-		if err != nil {
-			logrus.Panic(err)
-		}
-		txResult, err := lbrycrd.GetRawTransactionResponse(tx.Hash)
-		if err != nil {
-			logrus.Panic(err)
-		}
+	for i, output := range outputs {
+		processClaimOut(i, len(outputs), output.TransactionHash)
+	}
+}
 
-		block, err := model.BlocksG(qm.Where(model.BlockColumns.Hash+"=?", txResult.BlockHash)).One()
-		if err != nil {
-			logrus.Panic(err)
-		}
-		logrus.Debug("Processing ", block.Height, " ", tx.Hash)
-		err = processing.ProcessTx(txResult, block.BlockTime)
-		if err != nil {
-			logrus.Error("Reprocess Claim Error: ", err)
-		}
+func processClaimOut(index int, total int, txHash string) {
+	tx, err := model.TransactionsG(qm.Where(model.TransactionColumns.Hash+"=?", txHash),
+		qm.Select(model.TransactionColumns.Hash, model.TransactionColumns.BlockByHashID)).One()
+	if err != nil {
+		logrus.Panic(err)
+	}
+	txResult, err := lbrycrd.GetRawTransactionResponse(tx.Hash)
+	if err != nil {
+		logrus.Panic(err)
+	}
+
+	block, err := model.BlocksG(qm.Where(model.BlockColumns.Hash+"=?", txResult.BlockHash)).One()
+	if err != nil {
+		logrus.Panic(err)
+	}
+	if index%50 == 0 {
+		logrus.Info("(", index, "/", total, ")", "Processing@Height ", block.Height)
+	}
+
+	err = processing.ProcessTx(txResult, block.BlockTime)
+	if err != nil {
+		logrus.Error("Reprocess Claim Error: ", err)
 	}
 }
