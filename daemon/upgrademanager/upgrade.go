@@ -76,7 +76,7 @@ func upgradeFrom2(version int) {
 }
 
 func upgradeFrom3(version int) {
-	if version == 3 {
+	if version < 4 {
 		logrus.Info("Re-Processing all claim outputs")
 		reProcessAllClaims()
 	}
