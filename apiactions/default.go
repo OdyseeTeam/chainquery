@@ -103,6 +103,5 @@ func AutoUpdateAction(r *http.Request) api.Response {
 		" CI Status-" + webHook.StatusMessage +
 		", IsPullRequest-" + strconv.FormatBool(webHook.PullRequest) +
 		", TagName-" + webHook.Tag
-	logrus.Warn(message)
 	return api.Response{Data: message}
 }
