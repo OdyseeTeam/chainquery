@@ -153,7 +153,7 @@
     "util",
     "validator"
   ]
-  revision = "a7d65704f3abe6f08d8b143623bf33372108f0cf"
+  revision = "bc52edcc6708b04d98fb4cbbbf73ad82899ae433"
 
 [[projects]]
   branch = "master"

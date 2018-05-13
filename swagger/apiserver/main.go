@@ -28,7 +28,9 @@ func InitApiServer(hostAndPort string) {
 	hs["Content-Security-Policy"] = "default-src 'none'"
 	hs["Server"] = "lbry.io"
 	hs["Access-Control-Allow-Origin"] = "*"
-	api.HeaderSettings = &hs
+	api.HeaderSettings = hs
+	api.LogError = func(err error) { logrus.Error(err) }
+	api.LogInfo = func(info string) { logrus.Info(info) }
 	//API Chainquery DB connection
 	chainqueryInstance, err := db.InitAPIQuery(config.GetAPIMySQLDSN(), false)
 	if err != nil {
