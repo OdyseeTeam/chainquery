@@ -15,10 +15,6 @@
 
 [![Coverage Status](https://coveralls.io/repos/github/lbryio/chainquery/badge.svg?branch=master)](https://coveralls.io/github/lbryio/chainquery?branch=master)
 
-## Active Development Notice
- 
-The project is under active development so sql migrations are not being used yet. All changes to the schema are being added to the initial schema since there are so many changes currently. Please be sure to drop all tables before starting the app to ensure that you will have the latest schema if this is not the first time using the application.
-
 ## Prerequisites
 
 ### OS Specifics
@@ -31,7 +27,7 @@ The project is under active development so sql migrations are not being used yet
 
 ### Go
 
-Make sure you have Go 1.9+
+Make sure you have Go 1.10+ (required for [go-releaser](https://goreleaser.com/))
 
 - Ubuntu: https://launchpad.net/~longsleep/+archive/ubuntu/golang-backports or https://github.com/golang/go/wiki/Ubuntu
 - OSX: `brew install go`
@@ -59,7 +55,7 @@ Make sure you have Go 1.9+
 
 ## Configuration
 
-Chainquery can be[configured](/config/default/chainqueryconfig.toml)via toml file.
+Chainquery can be [configured](/config/default/chainqueryconfig.toml)via toml file.
 
 ## Running from Source
 
