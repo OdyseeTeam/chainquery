@@ -164,7 +164,7 @@
     "claim",
     "pb"
   ]
-  revision = "dd814b834b5511d65d640bdbb46237f19f38a3e5"
+  revision = "185433f2fd0c732547654749b98b37e56223dd22"
 
 [[projects]]
   name = "github.com/lbryio/ozzo-validation"
