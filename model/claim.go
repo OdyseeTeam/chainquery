@@ -38,7 +38,7 @@ type Claim struct {
 	ValueAsJSON         null.String `boil:"value_as_json" json:"value_as_json,omitempty" toml:"value_as_json" yaml:"value_as_json,omitempty"`
 	ValidAtHeight       uint        `boil:"valid_at_height" json:"valid_at_height" toml:"valid_at_height" yaml:"valid_at_height"`
 	Height              uint        `boil:"height" json:"height" toml:"height" yaml:"height"`
-	EffectiveAmount     float64     `boil:"effective_amount" json:"effective_amount" toml:"effective_amount" yaml:"effective_amount"`
+	EffectiveAmount     uint64      `boil:"effective_amount" json:"effective_amount" toml:"effective_amount" yaml:"effective_amount"`
 	Author              null.String `boil:"author" json:"author,omitempty" toml:"author" yaml:"author,omitempty"`
 	Description         null.String `boil:"description" json:"description,omitempty" toml:"description" yaml:"description,omitempty"`
 	ContentType         null.String `boil:"content_type" json:"content_type,omitempty" toml:"content_type" yaml:"content_type,omitempty"`

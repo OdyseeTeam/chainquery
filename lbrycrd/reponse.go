@@ -128,7 +128,7 @@ type Claim struct {
 	Height          int32     `json:"nHeight"`
 	ValidAtHeight   int32     `json:"nValidAtHeight"`
 	Amount          float64   `json:"nAmount"`
-	EffectiveAmount float64   `json:"nEffectiveAmount"`
+	EffectiveAmount uint64    `json:"nEffectiveAmount"`
 	Supports        []Support `json:"supports,omitempty"`
 }
 

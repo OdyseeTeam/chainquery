@@ -2,6 +2,7 @@
 // sources:
 // migration/000_init_schema.sql
 // migration/001_supports.sql
+// migration/002_decimals.sql
 // DO NOT EDIT!
 
 package migration
@@ -109,6 +110,26 @@ func migration001_supportsSql() (*asset, error) {
 	return a, nil
 }
 
+var _migration002_decimalsSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x84\x8d\x41\xcb\x82\x40\x14\x45\xf7\xfe\x8a\xbb\x53\xf9\x3e\x63\x08\x02\xc1\xd5\xa8\x93\x09\xaf\x27\xd4\xbc\x75\x8a\x3c\x43\xc8\x8a\xb0\x7e\x7f\x1b\x77\x05\xdd\xc5\x5d\x9c\xc5\x39\x49\x82\xbf\x69\x3c\x3f\xba\x59\x21\xf7\xc0\x92\x77\x07\x78\x9b\x93\x43\x7f\xe9\xc6\x09\xc5\xce\x72\xe5\x50\x34\x24\x7b\x46\xab\xc3\xa0\xfd\x3c\xbe\xf4\xd4\x4d\xb7\xe7\x75\x6e\xbf\xa1\xbc\xae\x6a\xf6\xd1\xda\xc4\x10\x3e\xd6\x15\xbb\x12\xdc\x78\xb0\x10\xa1\x74\x5b\x2b\xe4\x61\x90\xfd\xce\x0d\xaa\xed\xf2\x65\x23\x39\xb9\x68\x93\xfe\xa7\xf1\xa7\x2d\x34\x2b\xb3\x2c\x44\x16\x04\xef\x00\x00\x00\xff\xff\xde\x43\xaf\xbd\xd8\x00\x00\x00")
+
+func migration002_decimalsSqlBytes() ([]byte, error) {
+	return bindataRead(
+		_migration002_decimalsSql,
+		"migration/002_decimals.sql",
+	)
+}
+
+func migration002_decimalsSql() (*asset, error) {
+	bytes, err := migration002_decimalsSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "migration/002_decimals.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -163,6 +184,7 @@ func AssetNames() []string {
 var _bindata = map[string]func() (*asset, error){
 	"migration/000_init_schema.sql": migration000_init_schemaSql,
 	"migration/001_supports.sql":    migration001_supportsSql,
+	"migration/002_decimals.sql":    migration002_decimalsSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -209,6 +231,7 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"migration": &bintree{nil, map[string]*bintree{
 		"000_init_schema.sql": &bintree{migration000_init_schemaSql, map[string]*bintree{}},
 		"001_supports.sql":    &bintree{migration001_supportsSql, map[string]*bintree{}},
+		"002_decimals.sql":    &bintree{migration002_decimalsSql, map[string]*bintree{}},
 	}},
 }}
 
