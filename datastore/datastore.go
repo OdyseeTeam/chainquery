@@ -15,8 +15,9 @@ func GetOutput(txHash string, vout uint) *model.Output {
 	defer util.TimeTrack(time.Now(), "GetOutput", "mysqlprofile")
 	txHashMatch := qm.Where(model.OutputColumns.TransactionHash+"=?", txHash)
 	vOutMatch := qm.And(model.OutputColumns.Vout+"=?", vout)
+	key := outputKey{txHash: txHash, vout: vout}
 
-	if model.OutputsG(txHashMatch, vOutMatch).ExistsP() {
+	if CheckOutputCache(key) || model.OutputsG(txHashMatch, vOutMatch).ExistsP() {
 		output, err := model.OutputsG(txHashMatch, vOutMatch).One()
 		if err != nil {
 			logrus.Error("Datastore(GETOUTPUT): ", err)
@@ -28,18 +29,19 @@ func GetOutput(txHash string, vout uint) *model.Output {
 }
 
 // PutOutput makes creating,retrieving,updating the model type simplified.
-func PutOutput(output *model.Output) error {
+func PutOutput(output *model.Output, whitelist ...string) error {
 	defer util.TimeTrack(time.Now(), "PutOutput", "mysqlprofile")
 	if output != nil {
+		key := outputKey{txHash: output.TransactionHash, vout: output.Vout}
 		txHashMatch := qm.Where(model.OutputColumns.TransactionHash+"=?", output.TransactionHash)
 		vOutMatch := qm.And(model.OutputColumns.Vout+"=?", output.Vout)
 		var err error
-		if model.OutputsG(txHashMatch, vOutMatch).ExistsP() {
+		if CheckOutputCache(key) || model.OutputsG(txHashMatch, vOutMatch).ExistsP() {
 			output.Modified = time.Now()
-			err = output.UpdateG()
+			err = output.UpdateG(whitelist...)
 		} else {
 			err = output.InsertG()
-
+			AddToOuputCache(key)
 		}
 		if err != nil {
 			err = errors.Prefix("Datastore(PUTOUTPUT): ", err)
@@ -140,7 +142,9 @@ func PutAddress(address *model.Address) error {
 // GetTxAddress makes creating,retrieving,updating the model type simplified.
 func GetTxAddress(txID uint64, addrID uint64) *model.TransactionAddress {
 	defer util.TimeTrack(time.Now(), "GetTxAddress", "mysqlprofile")
-	if model.TransactionAddressExistsGP(txID, addrID) {
+	key := txAddressKey{txID: txID, addrID: addrID}
+	if CheckTxAddrCache(key) || model.TransactionAddressExistsGP(txID, addrID) {
+
 		txAddress, err := model.FindTransactionAddressG(txID, addrID)
 		if err != nil {
 			logrus.Error("Datastore(GETTXADDRESS): ", err)
@@ -154,13 +158,13 @@ func GetTxAddress(txID uint64, addrID uint64) *model.TransactionAddress {
 func PutTxAddress(txAddress *model.TransactionAddress) error {
 	defer util.TimeTrack(time.Now(), "PutTxAddres", "mysqlprofile")
 	if txAddress != nil {
-
+		key := txAddressKey{txID: txAddress.TransactionID, addrID: txAddress.AddressID}
 		var err error
-		if model.TransactionAddressExistsGP(txAddress.TransactionID, txAddress.AddressID) {
+		if CheckTxAddrCache(key) || model.TransactionAddressExistsGP(txAddress.TransactionID, txAddress.AddressID) {
 			err = txAddress.UpdateG()
 		} else {
 			err = txAddress.InsertG()
-
+			AddToTxAddrCache(key)
 		}
 		if err != nil {
 			err = errors.Prefix("Datastore(PUTTXADDRESS): ", err)

@@ -39,6 +39,8 @@ var processingDelay time.Duration //Set by `applySettings`
 var daemonDelay time.Duration     //Set by `applySettings`
 var iteration int64
 
+var blockQueue = make(chan uint64)
+
 //DoYourThing kicks off the daemon and jobs
 func DoYourThing() {
 	go initJobs()
@@ -58,19 +60,20 @@ func initJobs() {
 }
 
 func runDaemon() {
+	initBlockWorkers(1, blockQueue)
 	lastBlock, _ := model.Blocks(boil.GetDB(), qm.OrderBy(model.BlockColumns.Height+" DESC"), qm.Limit(1)).One()
 	if lastBlock != nil && lastBlock.Height > 100 && !reindex {
-		lastHeightProcessed = lastBlock.Height - 1 //Start 1 sooner just in case something happened.
+		lastHeightProcessed = lastBlock.Height - 100 //Start 1 sooner just in case something happened.
 	}
 	log.Info("Daemon initialized and running")
 	for {
-		time.Sleep(daemonDelay)
 		if !running {
 			running = true
 			log.Debug("Running daemon iteration ", iteration)
 			go daemonIteration()
 			iteration++
 		}
+		time.Sleep(daemonDelay)
 	}
 }
 
@@ -82,12 +85,12 @@ func daemonIteration() {
 	}
 	blockHeight = *height - blockConfirmationBuffer
 	if lastHeightProcessed == uint64(0) {
-		processing.RunBlockProcessing(&lastHeightProcessed)
+		blockQueue <- lastHeightProcessed
 	}
 	for {
 		next := lastHeightProcessed + 1
 		if blockHeight >= next {
-			processing.RunBlockProcessing(&next)
+			blockQueue <- next
 			lastHeightProcessed = next
 		}
 		if next%50 == 0 {
@@ -117,5 +120,17 @@ func ApplySettings(settings global.DaemonSettings) {
 		processingDelay = 100 * time.Millisecond
 	} else if processingMode == daemonmode {
 		processingDelay = daemonDelay //
+	}
+}
+
+func initBlockWorkers(nrWorkers int, jobs <-chan uint64) {
+	for i := 0; i < nrWorkers; i++ {
+		go BlockProcessor(jobs)
+	}
+}
+
+func BlockProcessor(blocks <-chan uint64) {
+	for block := range blocks {
+		processing.RunBlockProcessing(&block)
 	}
 }
