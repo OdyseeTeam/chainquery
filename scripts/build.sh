@@ -29,9 +29,10 @@
  importpath="github.com/lbryio/chainquery"
  mkdir -p "$DIR/bin"
  go generate -v
- VERSION="${TRAVIS_COMMIT:-"$(git describe --always --dirty --long)"}"
+ VERSION="${TRAVIS_COMMIT:-"$(git describe --tags --always --dirty)"}"
+ VERSIONLONG="${TRAVIS_COMMIT:-"$(git describe --tags --always --dirty --long)"}"
  COMMIT_MSG="$(echo ${TRAVIS_COMMIT_MESSAGE:-"$(git show -s --format=%s)"} | tr -d '"' | head -n 1)"
- GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -v -o "./bin/chainquery" -asmflags -trimpath="$DIR" -ldflags "-X ${importpath}/meta.version=${VERSION} -X \"${importpath}/meta.commitMsg=${COMMIT_MSG}\""
+ CGO_ENABLED=0 go build -v -o "./bin/chainquery" -asmflags -trimpath="$DIR" -ldflags "-X ${importpath}/meta.version=${VERSION} -X ${importpath}/meta.versionLong=${VERSIONLONG} -X \"${importpath}/meta.commitMsg=${COMMIT_MSG}\""
 
  echo "== Done building linux version $("$DIR/bin/chainquery" version) =="
  exit 0

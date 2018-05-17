@@ -8,13 +8,14 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/lbryio/chainquery/apiactions"
 	"github.com/lbryio/chainquery/config"
 	"github.com/lbryio/chainquery/daemon"
 	"github.com/lbryio/chainquery/db"
 	"github.com/lbryio/chainquery/lbrycrd"
+	"github.com/lbryio/chainquery/meta"
 	"github.com/lbryio/chainquery/swagger/apiserver"
 
-	"github.com/lbryio/chainquery/apiactions"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -34,7 +35,8 @@ func main() {
 	default:
 		log.Errorf("Invalid command: '%s'\n", command)
 	case "version":
-		println("v0.1.8")
+		println("Version: " + meta.GetVersion())
+		println("Version(long): " + meta.GetVersionLong())
 	case "serve":
 		//Main Chainquery DB connection
 		dbInstance, err := db.Init(config.GetMySQLDSN(), config.GetDebugMode())
