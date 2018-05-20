@@ -55,7 +55,7 @@ Make sure you have Go 1.10+ (required for [go-releaser](https://goreleaser.com/)
 
 ## Configuration
 
-Chainquery can be [configured](/config/default/chainqueryconfig.toml)via toml file.
+Chainquery can be [configured](/config/default/chainqueryconfig.toml) via toml file.
 
 ## Running from Source
 

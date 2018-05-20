@@ -16,7 +16,7 @@ CREATE TABLE `address`
   UNIQUE KEY `Idx_AddressTag` (`tag`),
   KEY `Idx_AddressCreated` (`created`),
   KEY `Idx_AddressModified` (`modified`)
-) ENGINE=InnoDB AUTO_INCREMENT=2755247 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4;
 
 CREATE TABLE `application_status`
 (
@@ -26,7 +26,7 @@ CREATE TABLE `application_status`
   `api_version` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `id` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4;
 
 CREATE TABLE `block`
 (
@@ -61,9 +61,10 @@ CREATE TABLE `block`
   KEY `Idx_PreviousBlockHash` (`previous_block_hash`),
   KEY `Idx_BlockCreated` (`created`),
   KEY `Idx_BlockModified` (`modified`)
-) ENGINE=InnoDB AUTO_INCREMENT=367302 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4;
 
-CREATE TABLE `claim` (
+CREATE TABLE `claim`
+(
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `transaction_by_hash_id` varchar(70) CHARACTER SET latin1 COLLATE latin1_general_ci DEFAULT NULL,
   `vout` int(10) unsigned NOT NULL,
@@ -80,7 +81,7 @@ CREATE TABLE `claim` (
   `value_as_json` mediumtext COLLATE utf8mb4_unicode_ci,
   `valid_at_height` int(10) unsigned NOT NULL,
   `height` int(10) unsigned NOT NULL,
-  `effective_amount` double(58,8) NOT NULL DEFAULT '0.00000000',
+  `effective_amount` bigint(20) unsigned NOT NULL DEFAULT '0',
   `author` varchar(512) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `description` mediumtext COLLATE utf8mb4_unicode_ci,
   `content_type` varchar(162) CHARACTER SET latin1 COLLATE latin1_general_ci DEFAULT NULL,
@@ -112,7 +113,22 @@ CREATE TABLE `claim` (
   KEY `Idx_ClaimTitle` (`title`(191)),
   CONSTRAINT `claim_ibfk_1` FOREIGN KEY (`transaction_by_hash_id`) REFERENCES `transaction` (`hash`) ON DELETE CASCADE ON UPDATE NO ACTION,
   CONSTRAINT `claim_ibfk_2` FOREIGN KEY (`publisher_id`) REFERENCES `claim` (`claim_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB AUTO_INCREMENT=138587 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4;
+
+CREATE TABLE `claim_checkpoint`
+(
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `claim_id` char(40) COLLATE latin1_general_ci NOT NULL,
+  `checkpoint` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `is_available` tinyint(1) NOT NULL,
+  `head_available` tinyint(1) NOT NULL,
+  `s_d_available` tinyint(1) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `id` (`id`),
+  KEY `idx_claim_id` (`claim_id`),
+  KEY `idx_checkpoint` (`checkpoint`),
+  KEY `idx_is_available` (`is_available`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_general_ci;
 
 CREATE TABLE `gorp_migrations`
 (
@@ -149,7 +165,7 @@ CREATE TABLE `input`
   KEY `Idx_InputTransactionHash` (`transaction_hash`),
   CONSTRAINT `input_ibfk_1` FOREIGN KEY (`input_address_id`) REFERENCES `address` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   CONSTRAINT `input_ibfk_2` FOREIGN KEY (`transaction_id`) REFERENCES `transaction` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB AUTO_INCREMENT=5559735 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4;
 
 CREATE TABLE `input_address`
 (
@@ -161,7 +177,8 @@ CREATE TABLE `input_address`
   CONSTRAINT `input_address_ibfk_2` FOREIGN KEY (`address_id`) REFERENCES `address` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4;
 
-CREATE TABLE `job_status` (
+CREATE TABLE `job_status`
+(
   `job_name` varchar(40) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
   `last_sync` datetime NOT NULL DEFAULT '0001-01-01 00:00:00',
   `is_success` tinyint(1) NOT NULL DEFAULT '0',
@@ -200,7 +217,7 @@ CREATE TABLE `output`
   CONSTRAINT `output_ibfk_1` FOREIGN KEY (`transaction_id`) REFERENCES `transaction` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   CONSTRAINT `output_ibfk_2` FOREIGN KEY (`spent_by_input_id`) REFERENCES `input` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   CONSTRAINT `output_ibfk_3` FOREIGN KEY (`claim_id`) REFERENCES `claim` (`claim_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB AUTO_INCREMENT=8186076 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4;
 
 CREATE TABLE `output_address`
 (
@@ -211,6 +228,40 @@ CREATE TABLE `output_address`
   CONSTRAINT `output_address_ibfk_1` FOREIGN KEY (`output_id`) REFERENCES `output` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   CONSTRAINT `output_address_ibfk_2` FOREIGN KEY (`address_id`) REFERENCES `address` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4;
+
+CREATE TABLE `peer`
+(
+  `node_id` char(100) COLLATE latin1_general_ci NOT NULL,
+  `known_i_p_list` text COLLATE latin1_general_ci,
+  PRIMARY KEY (`node_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_general_ci;
+
+CREATE TABLE `peer_claim`
+(
+  `peer_id` char(100) COLLATE latin1_general_ci NOT NULL,
+  `claim_id` char(40) COLLATE latin1_general_ci NOT NULL,
+  `created` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `last_seen` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`peer_id`,`claim_id`),
+  KEY `idx_claim_id` (`claim_id`),
+  KEY `idx_created` (`created`),
+  KEY `idx_last_seen` (`last_seen`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_general_ci;
+
+CREATE TABLE `peer_claim_checkpoint`
+(
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `peer_id` char(100) COLLATE latin1_general_ci NOT NULL,
+  `claim_id` char(40) COLLATE latin1_general_ci NOT NULL,
+  `checkpoint` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `is_available` tinyint(1) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `id` (`id`),
+  KEY `idx_peer_id` (`peer_id`),
+  KEY `idx_claim_id` (`claim_id`),
+  KEY `idx_checkpoint` (`checkpoint`),
+  KEY `idx_is_available` (`is_available`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_general_ci;
 
 CREATE TABLE `support`
 (
@@ -230,9 +281,10 @@ CREATE TABLE `support`
   KEY `Idx_vout` (`vout`),
   KEY `Idx_outpoint` (`transaction_hash`,`vout`),
   CONSTRAINT `support_ibfk_1` FOREIGN KEY (`supported_claim_id`) REFERENCES `claim` (`claim_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB AUTO_INCREMENT=5448 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4;
+) ENGINE=InnoDB AUTO_INCREMENT=5514 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4;
 
-CREATE TABLE `transaction` (
+CREATE TABLE `transaction`
+(
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `block_by_hash_id` varchar(70) CHARACTER SET latin1 COLLATE latin1_general_ci DEFAULT NULL,
   `input_count` int(10) unsigned NOT NULL,
@@ -257,7 +309,7 @@ CREATE TABLE `transaction` (
   KEY `Idx_TransactionCreated` (`created`),
   KEY `Idx_TransactionModified` (`modified`),
   CONSTRAINT `transaction_ibfk_1` FOREIGN KEY (`block_by_hash_id`) REFERENCES `block` (`hash`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB AUTO_INCREMENT=2837704 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4;
 
 CREATE TABLE `transaction_address`
 (
@@ -293,5 +345,5 @@ CREATE TABLE `unknown_claim`
   KEY `Idx_UnknowClaimOutput` (`output_id`),
   KEY `Idx_UnknowClaimTxHash` (`transaction_hash`),
   CONSTRAINT `unknown_claim_ibfk_1` FOREIGN KEY (`output_id`) REFERENCES `output` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB AUTO_INCREMENT=1743 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4;
--- Dump completed on 2018-05-06 19:14:00
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4;
+-- Dump completed on 2018-05-20  0:42:42
