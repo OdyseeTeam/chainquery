@@ -52,6 +52,8 @@ func DoYourThing() {
 func initJobs() {
 	//ClaimTrieSync
 	scheduleJob(jobs.ClaimTrieSync, 15*time.Minute)
+	//DHTHealthCheck
+	scheduleJob(jobs.CheckDHTHealth, 6*time.Hour)
 }
 
 func scheduleJob(job func(), howOften time.Duration) {

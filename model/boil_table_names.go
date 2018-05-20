@@ -4,31 +4,39 @@
 package model
 
 var TableNames = struct {
-	Address            string
-	ApplicationStatus  string
-	Block              string
-	Claim              string
-	Input              string
-	InputAddress       string
-	JobStatus          string
-	Output             string
-	OutputAddress      string
-	Support            string
-	Transaction        string
-	TransactionAddress string
-	UnknownClaim       string
+	Address             string
+	ApplicationStatus   string
+	Block               string
+	Claim               string
+	ClaimCheckpoint     string
+	Input               string
+	InputAddress        string
+	JobStatus           string
+	Output              string
+	OutputAddress       string
+	Peer                string
+	PeerClaim           string
+	PeerClaimCheckpoint string
+	Support             string
+	Transaction         string
+	TransactionAddress  string
+	UnknownClaim        string
 }{
-	Address:            "address",
-	ApplicationStatus:  "application_status",
-	Block:              "block",
-	Claim:              "claim",
-	Input:              "input",
-	InputAddress:       "input_address",
-	JobStatus:          "job_status",
-	Output:             "output",
-	OutputAddress:      "output_address",
-	Support:            "support",
-	Transaction:        "transaction",
-	TransactionAddress: "transaction_address",
-	UnknownClaim:       "unknown_claim",
+	Address:             "address",
+	ApplicationStatus:   "application_status",
+	Block:               "block",
+	Claim:               "claim",
+	ClaimCheckpoint:     "claim_checkpoint",
+	Input:               "input",
+	InputAddress:        "input_address",
+	JobStatus:           "job_status",
+	Output:              "output",
+	OutputAddress:       "output_address",
+	Peer:                "peer",
+	PeerClaim:           "peer_claim",
+	PeerClaimCheckpoint: "peer_claim_checkpoint",
+	Support:             "support",
+	Transaction:         "transaction",
+	TransactionAddress:  "transaction_address",
+	UnknownClaim:        "unknown_claim",
 }
