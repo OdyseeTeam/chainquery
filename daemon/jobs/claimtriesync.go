@@ -195,8 +195,7 @@ func getClaimStatus(claim *model.Claim) string {
 	//Transaction and output should never be missing if the claim exists.
 	transaction := claim.TransactionByHashG().OneP()
 	output := transaction.OutputsG(qm.Where(model.OutputColumns.Vout+"=?", claim.Vout)).OneP()
-	spend, _ := output.SpentByInputG().One()
-	if spend != nil {
+	if output.IsSpent {
 		status = "Spent"
 	}
 	height := claim.Height

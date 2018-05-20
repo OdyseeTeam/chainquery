@@ -127,6 +127,7 @@ func processVin(jsonVin *lbrycrd.Vin, tx *m.Transaction, txDC *txDebitCredits) e
 			// Update the srcOutput spent if successful
 			srcOutput.IsSpent = true
 			srcOutput.SpentByInputID.Uint64 = vin.ID
+			srcOutput.SpentByInputID.Valid = true
 			c := m.OutputColumns
 			err := ds.PutOutput(srcOutput, c.IsSpent, c.SpentByInputID)
 			if err != nil {
