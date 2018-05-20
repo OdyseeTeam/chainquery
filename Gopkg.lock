@@ -146,6 +146,7 @@
   packages = [
     "api",
     "errors",
+    "jsonrpc",
     "lbrycrd",
     "null",
     "querytools",
@@ -153,7 +154,7 @@
     "util",
     "validator"
   ]
-  revision = "bc52edcc6708b04d98fb4cbbbf73ad82899ae433"
+  revision = "a184c039db3d1f90866bacf33a8910e6398efbca"
 
 [[projects]]
   branch = "master"
@@ -222,10 +223,10 @@
   revision = "38004e7a77f2b350ea8467038dca66073d907725"
 
 [[projects]]
+  branch = "master"
   name = "github.com/shopspring/decimal"
   packages = ["."]
-  revision = "9ca7f51822d222ae4e246f070f9aad863599bd1a"
-  version = "1.0.0"
+  revision = "2df3e6ddaf6e9531dd02d7b6337f2d310f5e4f22"
 
 [[projects]]
   name = "github.com/sirupsen/logrus"
@@ -281,6 +282,12 @@
     "strmangle"
   ]
   revision = "6b95e5d3d7840a737841e2eb446e1c82641f8393"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/ybbus/jsonrpc"
+  packages = ["."]
+  revision = "2a548b7d822dd62717337a6b1e817fae1b14660a"
 
 [[projects]]
   branch = "master"
@@ -375,6 +382,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "d7b43894dced36c7551e51d730271483880be294adc73d90255b0fca737e6e8e"
+  inputs-digest = "1a623a48b415b2b9f6eb9026dd0720271f738859e3b1c8927bcdb2fe19677ed1"
   solver-name = "gps-cdcl"
   solver-version = 1
