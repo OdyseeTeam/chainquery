@@ -138,6 +138,8 @@ func initBlockWorkers(nrWorkers int, jobs <-chan uint64) {
 	}
 }
 
+// BlockProcessor takes a channel of block heights to process. When a new one comes in it runs block processing for
+// the block height
 func BlockProcessor(blocks <-chan uint64) {
 	for block := range blocks {
 		processing.RunBlockProcessing(&block)

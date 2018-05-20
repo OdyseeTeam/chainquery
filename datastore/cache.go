@@ -7,9 +7,9 @@ type txAddressKey struct {
 	txID   uint64
 	addrID uint64
 }
-type TACache map[txAddressKey]bool
+type tACache map[txAddressKey]bool
 
-var txAddrCache = TACache{}
+var txAddrCache = tACache{}
 var tcAddrLock = sync.RWMutex{}
 
 // Output Caching
@@ -17,30 +17,30 @@ type outputKey struct {
 	txHash string
 	vout   uint
 }
-type OCache map[outputKey]bool
+type oCache map[outputKey]bool
 
-var outputCache = OCache{}
+var outputCache = oCache{}
 var outputLock = sync.RWMutex{}
 
-func CheckTxAddrCache(key txAddressKey) bool {
+func checkTxAddrCache(key txAddressKey) bool {
 	tcAddrLock.RLock()
 	defer tcAddrLock.RUnlock()
 	return txAddrCache[key]
 }
 
-func CheckOutputCache(key outputKey) bool {
+func checkOutputCache(key outputKey) bool {
 	outputLock.RLock()
 	defer outputLock.RUnlock()
 	return outputCache[key]
 }
 
-func AddToTxAddrCache(key txAddressKey) {
+func addToTxAddrCache(key txAddressKey) {
 	tcAddrLock.Lock()
 	defer tcAddrLock.Unlock()
 	txAddrCache[key] = true
 }
 
-func AddToOuputCache(key outputKey) {
+func addToOuputCache(key outputKey) {
 	outputLock.Lock()
 	defer outputLock.Unlock()
 	outputCache[key] = true

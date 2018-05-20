@@ -31,6 +31,10 @@ var timeout uint = 60     //seconds
 var timeout64 uint64 = 60 //seconds
 var running bool
 
+// CheckDHTHealth is job that runs in the background and traverses over claims to check their file status on lbrynet
+// via the lbrynet daemon. It stores peers and the associations to claims. It also stores checkpoints for claims and
+// peers. For claims it is if they are generally available, for peers it is if their associated files are available
+// from them.
 func CheckDHTHealth() {
 	if !running {
 		running = true
