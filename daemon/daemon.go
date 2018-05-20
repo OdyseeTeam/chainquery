@@ -37,6 +37,7 @@ var blockConfirmationBuffer uint64 = 6 //Block is accepted at 6 confirmations
 var processingMode int            //Set by `applySettings`
 var processingDelay time.Duration //Set by `applySettings`
 var daemonDelay time.Duration     //Set by `applySettings`
+var blockWorkers uint64 = 1       //ToDo Should be configurable
 var iteration int64
 
 var blockQueue = make(chan uint64)
@@ -49,21 +50,27 @@ func DoYourThing() {
 }
 
 func initJobs() {
-	go jobs.ClaimTrieSync()
-	t := time.NewTicker(15 * time.Minute)
-	for {
-		<-t.C
-		if !jobs.ClaimTrieSyncRunning {
-			go jobs.ClaimTrieSync()
+	//ClaimTrieSync
+	scheduleJob(jobs.ClaimTrieSync, 15*time.Minute)
+}
+
+func scheduleJob(job func(), howOften time.Duration) {
+	go job()
+	go func() {
+		t := time.NewTicker(howOften)
+		for {
+			<-t.C
+			go job()
 		}
-	}
+	}()
 }
 
 func runDaemon() {
-	initBlockWorkers(1, blockQueue)
+	initBlockWorkers(int(blockWorkers), blockQueue)
 	lastBlock, _ := model.Blocks(boil.GetDB(), qm.OrderBy(model.BlockColumns.Height+" DESC"), qm.Limit(1)).One()
 	if lastBlock != nil && lastBlock.Height > 100 && !reindex {
-		lastHeightProcessed = lastBlock.Height - 100 //Start 1 sooner just in case something happened.
+		//Start 2 times the parallel blocks sooner just in case something happened.
+		lastHeightProcessed = lastBlock.Height - blockWorkers*2
 	}
 	log.Info("Daemon initialized and running")
 	for {
