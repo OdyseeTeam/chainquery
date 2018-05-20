@@ -20,50 +20,52 @@ const claimTrieSyncJob = "claimtriesyncjob"
 var blockHeight uint64
 var blocksToExpiration uint = 262974 //Hardcoded! https://lbry.io/faq/claimtrie-implementation
 // ClaimTrieSyncRunning is a variable used to show whether or not the job is running already.
-var ClaimTrieSyncRunning = false
+var claimTrieSyncRunning = false
 
 // ClaimTrieSync synchronizes claimtrie information that is calculated and enforced by lbrycrd.
 func ClaimTrieSync() {
-	ClaimTrieSyncRunning = true
-	//defer util.TimeTrack(time.Now(), "ClaimTrieSync", "always")
-	logrus.Debug("ClaimTrieSync: started... ")
-	jobStatus, err := getClaimTrieSyncJobStatus()
-	if err != nil {
-		logrus.Error(err)
-	}
-	updatedClaims, err := getUpdatedClaims(jobStatus)
-	if err != nil {
-		saveJobError(jobStatus, err)
-		panic(err)
-	}
-	if len(updatedClaims) == 0 {
-		logrus.Debug("ClaimTrieSync: All claims are up to date :)")
-		return
-	}
-	logrus.Debug("ClaimTrieSync: Claims to update " + strconv.Itoa(len(updatedClaims)))
+	if !claimTrieSyncRunning {
+		claimTrieSyncRunning = true
+		//defer util.TimeTrack(time.Now(), "ClaimTrieSync", "always")
+		logrus.Debug("ClaimTrieSync: started... ")
+		jobStatus, err := getClaimTrieSyncJobStatus()
+		if err != nil {
+			logrus.Error(err)
+		}
+		updatedClaims, err := getUpdatedClaims(jobStatus)
+		if err != nil {
+			saveJobError(jobStatus, err)
+			panic(err)
+		}
+		if len(updatedClaims) == 0 {
+			logrus.Debug("ClaimTrieSync: All claims are up to date :)")
+			return
+		}
+		logrus.Debug("ClaimTrieSync: Claims to update " + strconv.Itoa(len(updatedClaims)))
 
-	//Get blockheight for calculating expired status
-	count, err := lbrycrd.GetBlockCount()
-	if err != nil {
-		panic(err)
-	}
-	blockHeight = *count
+		//Get blockheight for calculating expired status
+		count, err := lbrycrd.GetBlockCount()
+		if err != nil {
+			panic(err)
+		}
+		blockHeight = *count
 
-	//For syncing the claims
-	if err := syncClaims(updatedClaims); err != nil {
-		saveJobError(jobStatus, err)
-	}
+		//For syncing the claims
+		if err := syncClaims(updatedClaims); err != nil {
+			saveJobError(jobStatus, err)
+		}
 
-	//For Setting Controlling Claims
-	if err := setControllingClaimForNames(updatedClaims); err != nil {
-		saveJobError(jobStatus, err)
+		//For Setting Controlling Claims
+		if err := setControllingClaimForNames(updatedClaims); err != nil {
+			saveJobError(jobStatus, err)
+		}
+		jobStatus.LastSync = time.Now()
+		if err := jobStatus.UpdateG(); err != nil {
+			panic(err)
+		}
+		logrus.Debug("ClaimTrieSync: Processed " + strconv.Itoa(len(updatedClaims)) + " claims.")
+		claimTrieSyncRunning = false
 	}
-	jobStatus.LastSync = time.Now()
-	if err := jobStatus.UpdateG(); err != nil {
-		panic(err)
-	}
-	logrus.Debug("ClaimTrieSync: Processed " + strconv.Itoa(len(updatedClaims)) + " claims.")
-	ClaimTrieSyncRunning = false
 }
 
 func initSyncWorkers(nrWorkers int, jobs <-chan lbrycrd.Claim, wg *sync.WaitGroup) {
