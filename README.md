@@ -1,5 +1,5 @@
 
-# LBRY Chain Query
+# LBRY Chainquery
 
 [![Build Status](https://travis-ci.org/lbryio/chainquery.svg?branch=master)](https://travis-ci.org/lbryio/chainquery)
 
