@@ -4,6 +4,7 @@
 // migration/001_supports.sql
 // migration/002_decimals.sql
 // migration/003_dht_tracking.sql
+// migration/004_new_indices.sql
 // DO NOT EDIT!
 
 package migration
@@ -151,6 +152,26 @@ func migration003_dht_trackingSql() (*asset, error) {
 	return a, nil
 }
 
+var _migration004_new_indicesSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xb4\x90\x41\x4b\xc3\x40\x10\x85\xef\xf9\x15\x73\x6b\x8b\x14\x14\xbc\x79\x9a\x6e\xb6\x18\x58\x53\x48\x36\xe2\x6d\x77\xe9\x8e\x61\x21\x59\x43\x76\x0a\xfe\x7c\x59\xac\x58\x51\xa4\x97\xdc\xde\x7b\xf0\xe6\x63\xde\x76\x0b\x37\x63\xe8\x67\xc7\x04\xdd\x54\x14\x97\xbe\x65\xc7\x34\x52\xe4\x1d\xf5\x21\x16\xa8\xb4\x6c\x40\xe3\x4e\x49\xb0\x6f\x27\x9e\x4e\x6c\x01\xcb\x12\xaa\xba\x94\x2f\x60\x2b\xff\x6e\xaa\xd4\x4e\x14\xd9\xc2\xda\x86\x64\xd2\xa7\xc6\x56\x6c\x1e\xfe\xbe\x2c\xa3\xbf\x9e\x79\x1c\x5c\x18\x7f\x21\xf7\x44\xe8\xfd\x4c\x29\x65\xea\x2b\x91\x71\x5f\x76\x01\xb0\x38\xa8\xee\xa9\x3e\x47\xdf\xa4\x67\x6c\xc4\x23\x36\xeb\xfb\xdb\x0d\x64\x81\x22\xd7\x5b\xa9\x61\x70\x1c\xe2\x5d\xee\x29\xd4\xf2\x6c\x4d\x4f\x91\x66\x37\x98\x63\x80\xfa\xa0\xa1\xee\x94\x82\x52\xee\xb1\x53\x1a\x56\xab\xe5\xc6\x12\x39\xbd\x98\xeb\xe7\x1b\xff\x8d\xf5\x11\x00\x00\xff\xff\xda\x0c\x60\xbb\x29\x02\x00\x00")
+
+func migration004_new_indicesSqlBytes() ([]byte, error) {
+	return bindataRead(
+		_migration004_new_indicesSql,
+		"migration/004_new_indices.sql",
+	)
+}
+
+func migration004_new_indicesSql() (*asset, error) {
+	bytes, err := migration004_new_indicesSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "migration/004_new_indices.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -207,6 +228,7 @@ var _bindata = map[string]func() (*asset, error){
 	"migration/001_supports.sql":     migration001_supportsSql,
 	"migration/002_decimals.sql":     migration002_decimalsSql,
 	"migration/003_dht_tracking.sql": migration003_dht_trackingSql,
+	"migration/004_new_indices.sql":  migration004_new_indicesSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -255,6 +277,7 @@ var _bintree = &bintree{nil, map[string]*bintree{
 		"001_supports.sql":     &bintree{migration001_supportsSql, map[string]*bintree{}},
 		"002_decimals.sql":     &bintree{migration002_decimalsSql, map[string]*bintree{}},
 		"003_dht_tracking.sql": &bintree{migration003_dht_trackingSql, map[string]*bintree{}},
+		"004_new_indices.sql":  &bintree{migration004_new_indicesSql, map[string]*bintree{}},
 	}},
 }}
 
