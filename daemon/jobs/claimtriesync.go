@@ -27,6 +27,7 @@ func ClaimTrieSync() {
 	if !claimTrieSyncRunning {
 		claimTrieSyncRunning = true
 		//defer util.TimeTrack(time.Now(), "ClaimTrieSync", "always")
+		started := time.Now()
 		logrus.Debug("ClaimTrieSync: started... ")
 		jobStatus, err := getClaimTrieSyncJobStatus()
 		if err != nil {
@@ -59,7 +60,7 @@ func ClaimTrieSync() {
 		if err := setControllingClaimForNames(updatedClaims); err != nil {
 			saveJobError(jobStatus, err)
 		}
-		jobStatus.LastSync = time.Now()
+		jobStatus.LastSync = started
 		if err := jobStatus.UpdateG(); err != nil {
 			panic(err)
 		}
