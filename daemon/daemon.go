@@ -53,7 +53,7 @@ func initJobs() {
 	//ClaimTrieSync
 	scheduleJob(jobs.ClaimTrieSync, 15*time.Minute)
 	//DHTHealthCheck
-	scheduleJob(jobs.CheckDHTHealth, 6*time.Hour)
+	//scheduleJob(jobs.CheckDHTHealth, 6*time.Hour)//Temporarily disabled for release.
 }
 
 func scheduleJob(job func(), howOften time.Duration) {
