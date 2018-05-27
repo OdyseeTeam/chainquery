@@ -1,6 +1,7 @@
 package util
 
 import (
+	"database/sql"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -37,4 +38,11 @@ func Min(x, y int) int {
 		return x
 	}
 	return y
+}
+
+//CloseRows Closes SQL Rows for custom SQL queries.
+func CloseRows(rows *sql.Rows) {
+	if err := rows.Close(); err != nil {
+		logrus.Error("Closing rows error: ", err)
+	}
 }

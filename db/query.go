@@ -1,11 +1,9 @@
 package db
 
 import (
-	"database/sql"
-
 	g "github.com/lbryio/chainquery/swagger/clients/goclient"
+	"github.com/lbryio/chainquery/util"
 
-	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 )
@@ -33,7 +31,7 @@ func GetTableStatus() (*g.TableStatus, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer CloseRows(rows)
+	defer util.CloseRows(rows)
 	var statrows []g.TableSize
 	for rows.Next() {
 		var stat g.TableSize
@@ -78,11 +76,4 @@ func APIQuery(query string, args ...interface{}) (interface{}, error) {
 
 	return jsonify(rows), nil
 
-}
-
-//CloseRows Closes SQL Rows for custom SQL queries.
-func CloseRows(rows *sql.Rows) {
-	if err := rows.Close(); err != nil {
-		logrus.Error("Closing rows error: ", err)
-	}
 }

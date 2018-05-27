@@ -4,9 +4,9 @@ import (
 	"encoding/hex"
 
 	"github.com/lbryio/chainquery/daemon/processing"
-	"github.com/lbryio/chainquery/db"
 	"github.com/lbryio/chainquery/lbrycrd"
 	"github.com/lbryio/chainquery/model"
+	"github.com/lbryio/chainquery/util"
 
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/boil"
@@ -60,7 +60,7 @@ func setClaimAddresses() {
 	if err != nil {
 		logrus.Panic("Error During Upgrade: ", err)
 	}
-	defer db.CloseRows(rows)
+	defer util.CloseRows(rows)
 
 	var slice []claimForClaimAddress
 	for rows.Next() {
@@ -90,6 +90,10 @@ func setClaimAddresses() {
 			} else if lbrycrd.IsClaimSupportScript(scriptBytes) {
 				_, _, pkscript, err = lbrycrd.ParseClaimSupportScript(scriptBytes)
 			} else {
+				continue
+			}
+			if err != nil {
+				logrus.Error("Error Parsing claim script: ", err)
 				continue
 			}
 			pksAddress := lbrycrd.GetAddressFromPublicKeyScript(pkscript)
