@@ -273,7 +273,6 @@ func updateSpentClaims() error {
 	if err != nil {
 		return err
 	}
-	println("NrOfClaims: ", len(claims))
 	for _, claim := range claims {
 		claim.BidState = "Spent"
 		claim.Modified = time.Now()
