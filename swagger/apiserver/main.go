@@ -10,12 +10,14 @@ package swagger
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/lbryio/chainquery/config"
 	"github.com/lbryio/chainquery/db"
 	sw "github.com/lbryio/chainquery/swagger/apiserver/go"
-
 	"github.com/lbryio/lbry.go/api"
+
+	"github.com/fatih/color"
 	"github.com/sirupsen/logrus"
 )
 
@@ -29,8 +31,11 @@ func InitApiServer(hostAndPort string) {
 	hs["Server"] = "lbry.io"
 	hs["Access-Control-Allow-Origin"] = "*"
 	api.HeaderSettings = hs
-	api.LogError = func(err error) { logrus.Error(err) }
-	api.LogInfo = func(info string) { logrus.Info(info) }
+	api.LogError = func(request *http.Request, response *api.Response, err error) { logrus.Error(err) }
+	api.LogInfo = func(request *http.Request, response *api.Response) {
+		consoleText := request.RemoteAddr + " [" + strconv.Itoa(response.Status) + "]: " + request.Method + " " + request.URL.Path
+		logrus.Info(color.GreenString(consoleText))
+	}
 	//API Chainquery DB connection
 	chainqueryInstance, err := db.InitAPIQuery(config.GetAPIMySQLDSN(), false)
 	if err != nil {
