@@ -33,7 +33,7 @@ func GetTableStatus() (*g.TableStatus, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer closeRows(rows)
+	defer CloseRows(rows)
 	var statrows []g.TableSize
 	for rows.Next() {
 		var stat g.TableSize
@@ -80,7 +80,8 @@ func APIQuery(query string, args ...interface{}) (interface{}, error) {
 
 }
 
-func closeRows(rows *sql.Rows) {
+//CloseRows Closes SQL Rows for custom SQL queries.
+func CloseRows(rows *sql.Rows) {
 	if err := rows.Close(); err != nil {
 		logrus.Error("Closing rows error: ", err)
 	}
