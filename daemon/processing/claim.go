@@ -73,6 +73,7 @@ func processClaimNameScript(script *[]byte, vout model.Output, tx model.Transact
 	claim.ClaimID = claimid
 	claim.Name = name
 	claim.TransactionTime = tx.TransactionTime
+	claim.ClaimAddress = lbrycrd.GetAddressFromPublicKeyScript(pkscript)
 	err = datastore.PutClaim(claim)
 
 	return name, claimid, pkscript, err
@@ -115,7 +116,7 @@ func processClaimUpdateScript(script *[]byte, vout model.Output, tx model.Transa
 			logrus.Debug("ClaimUpdate for non-existent claim! ", claimID, " ", tx.Hash, " ", vout.Vout)
 			return name, claimID, pubkeyscript, err
 		}
-		//logrus.Info("ClaimId: ", claim.ClaimID, " PublishId ", claim.PublisherID.String, " ", claim.PublisherID.Valid, " TxID ", claim.TransactionByHashID)
+		claim.ClaimAddress = lbrycrd.GetAddressFromPublicKeyScript(pubkeyscript)
 		if err := datastore.PutClaim(claim); err != nil {
 			logrus.Debug("Claim updates to invalid certificate claim. ", claim.PublisherID)
 			if logrus.GetLevel() == logrus.DebugLevel {
