@@ -60,6 +60,12 @@ func ClaimTrieSync() {
 		if err := setControllingClaimForNames(updatedClaims); err != nil {
 			saveJobError(jobStatus, err)
 		}
+
+		//For Updating claims that are spent ( no longer in claimtrie )
+		if err := updateSpentClaims(); err != nil {
+			saveJobError(jobStatus, err)
+		}
+
 		jobStatus.LastSync = started
 		if err := jobStatus.UpdateG(); err != nil {
 			panic(err)
@@ -197,7 +203,7 @@ func getClaimStatus(claim *model.Claim) string {
 	transaction := claim.TransactionByHashG().OneP()
 	output := transaction.OutputsG(qm.Where(model.OutputColumns.Vout+"=?", claim.Vout)).OneP()
 	if output.IsSpent {
-		status = "Spent"
+		status = "Spent" //Should be unreachable because claim would be out of claimtrie if spent.
 	}
 	height := claim.Height
 	if height+blocksToExpiration > uint(blockHeight) {
@@ -221,7 +227,7 @@ func getUpdatedClaims(jobStatus *model.JobStatus) (model.ClaimSlice, error) {
 	lastsync := jobStatus.LastSync.Format(sqlFormat)
 	lastSyncStr := "'" + lastsync + "'"
 	clause := qm.SQL(`
-		SELECT 
+		SELECT 	
 					` + claimIDCol + `, 
 					` + claimNameCol + `
 		FROM 		` + model.TableNames.Claim + ` 
@@ -233,6 +239,49 @@ func getUpdatedClaims(jobStatus *model.JobStatus) (model.ClaimSlice, error) {
 
 	return model.ClaimsG(clause).All()
 
+}
+
+func getSpentClaimsToUpdate() (model.ClaimSlice, error) {
+
+	claim := model.TableNames.Claim
+
+	claimID := claim + "." + model.ClaimColumns.ID
+	claimClaimID := claim + "." + model.ClaimColumns.ClaimID
+	claimTxByHash := claim + "." + model.ClaimColumns.TransactionByHashID
+	claimVout := claim + "." + model.ClaimColumns.Vout
+	claimBidState := claim + "." + model.ClaimColumns.BidState
+
+	output := model.TableNames.Output
+	outputTxHash := output + "." + model.OutputColumns.TransactionHash
+	outputVout := output + "." + model.OutputColumns.Vout
+	outputIsSpent := output + "." + model.OutputColumns.IsSpent
+
+	clause := qm.SQL(`
+		SELECT `+claimClaimID+`,`+claimID+` 
+		FROM `+claim+` 
+		INNER JOIN `+output+` 
+			ON `+outputTxHash+` = `+claimTxByHash+` 
+				AND `+outputVout+` = `+claimVout+` 
+				AND `+outputIsSpent+` = ? 
+		WHERE `+claimBidState+` != ? `, 1, "Spent")
+
+	return model.ClaimsG(clause).All()
+}
+
+func updateSpentClaims() error {
+	claims, err := getSpentClaimsToUpdate()
+	if err != nil {
+		return err
+	}
+	println("NrOfClaims: ", len(claims))
+	for _, claim := range claims {
+		claim.BidState = "Spent"
+		claim.Modified = time.Now()
+		if err := claim.UpdateG(model.ClaimColumns.BidState, model.ClaimColumns.Modified); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func getClaimTrieSyncJobStatus() (*model.JobStatus, error) {
