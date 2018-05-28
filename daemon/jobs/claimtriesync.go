@@ -27,7 +27,6 @@ func ClaimTrieSync() {
 	if !claimTrieSyncRunning {
 		claimTrieSyncRunning = true
 		//defer util.TimeTrack(time.Now(), "ClaimTrieSync", "always")
-		started := time.Now()
 		logrus.Debug("ClaimTrieSync: started... ")
 		jobStatus, err := getClaimTrieSyncJobStatus()
 		if err != nil {
@@ -65,7 +64,7 @@ func ClaimTrieSync() {
 		if err := updateSpentClaims(); err != nil {
 			saveJobError(jobStatus, err)
 		}
-
+		started := time.Now()
 		jobStatus.LastSync = started
 		if err := jobStatus.UpdateG(); err != nil {
 			panic(err)
@@ -232,7 +231,7 @@ func getUpdatedClaims(jobStatus *model.JobStatus) (model.ClaimSlice, error) {
 					` + claimNameCol + `
 		FROM 		` + model.TableNames.Claim + ` 
 		LEFT JOIN 	` + model.TableNames.Support + `  
-			ON 		` + supportedIDCol + "=" + claimIDCol + `  
+			ON 		` + supportedIDCol + "=" + claimIDCol + ` 
 		WHERE 		` + supportModifiedCol + ">=" + lastSyncStr + ` 
 		OR 			` + claimModifiedCol + ">=" + lastSyncStr + `  
 		GROUP BY 	` + claimIDCol + `,` + claimNameCol)
