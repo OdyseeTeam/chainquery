@@ -142,4 +142,4 @@ Our PGP key is [here](https://keybase.io/lbry/key.asc) if you need it.
 
 ## Contact
 
-The primary contact for this project is [@tiger5226](https://github.com/tiger5226)
+The primary contact for this project is [@tiger5226](https://github.com/tiger5226) (beamer@lbry.io)
