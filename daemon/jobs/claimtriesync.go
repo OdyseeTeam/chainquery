@@ -122,6 +122,7 @@ func setControllingClaimForNames(claims model.ClaimSlice) error {
 func setControllingClaimForName(name string) {
 	claim, _ := model.ClaimsG(
 		qm.Where(model.ClaimColumns.Name+"=?", name),
+		qm.Where(model.ClaimColumns.BidState+"!=?", "Spent"),
 		qm.OrderBy(model.ClaimColumns.ValidAtHeight+" DESC")).One()
 
 	if claim != nil {
