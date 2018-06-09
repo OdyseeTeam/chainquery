@@ -18,13 +18,22 @@ import (
 // RunBlockProcessing runs the processing of a block at a specific height. While any height can be passed in it is
 // important to note that if the previous block is not processed it will panic to prevent corruption because blocks
 // must be processed in order.
-func RunBlockProcessing(height *uint64) {
+func RunBlockProcessing(height *uint64) (lastProcessedHeight uint64) {
 	defer util.TimeTrack(time.Now(), "runBlockProcessing", "daemonprofile")
 	jsonBlock, err := getBlockToProcess(height)
 	if err != nil {
 		logrus.Error("Get Block Error: ", err)
 		return
 	}
+
+	reorgHeight, err := checkHandleReorg(*height, jsonBlock.PreviousHash)
+	if err != nil {
+		logrus.Error("Reorge Handling Error: ", err)
+	}
+	if reorgHeight != *height {
+		return reorgHeight
+	}
+
 	block := &model.Block{}
 	foundBlock, _ := model.BlocksG(qm.Where(model.BlockColumns.Hash+"=?", jsonBlock.Hash)).One()
 	if foundBlock != nil {
@@ -56,6 +65,7 @@ func RunBlockProcessing(height *uint64) {
 
 	txs := jsonBlock.Tx
 	syncTransactionsOfBlock(txs, block.BlockTime)
+	return *height
 }
 
 func syncTransactionsOfBlock(txs []string, blockTime uint64) {
@@ -84,7 +94,7 @@ func syncTransactionsOfBlock(txs []string, blockTime uint64) {
 		for i := 0; i < cnt; i++ {
 			txError := <-errorchan
 			if txError.failcount > 1000 {
-				logrus.Panic(errors.Base("transaction " + txError.tx.Txid + " failed more than 1000 times!"))
+				logrus.Panic(errors.Prefix("transaction "+txError.tx.Txid+" failed more than 1000 times!", txError.err))
 			}
 			if txError.err != nil {
 				go func() {
@@ -110,4 +120,43 @@ func getBlockToProcess(height *uint64) (*lbrycrd.GetBlockResponse, error) {
 		return nil, errors.Prefix("GetBlock Error("+*hash+"): ", err)
 	}
 	return jsonBlock, nil
+}
+
+func checkHandleReorg(height uint64, chainPrevHash string) (uint64, error) {
+	prevHeight := height - 1
+	depth := 0
+	if height > 0 {
+		prevBlock, err := model.BlocksG(qm.Where(model.BlockColumns.Height+"=?", prevHeight)).One()
+		if err != nil {
+			return height, err
+		}
+		//Recursively delete blocks until they match or a reorg of depth 100 == failure of logic.
+		for prevBlock.Hash != chainPrevHash && depth < 100 {
+			// Delete because it needs to be reprocessed due to reorg
+			err = prevBlock.DeleteG()
+			if err != nil {
+				return height, err
+			}
+			depth++
+
+			// Set chainPrevHash to new previous blocks prevhash to check next depth
+			jsonBlock, err := getBlockToProcess(&prevHeight)
+			if err != nil {
+				return height, err
+			}
+			chainPrevHash = jsonBlock.PreviousHash
+
+			// Decrement height and set prevBlock to the new previous
+			prevHeight--
+			prevBlock, err = model.BlocksG(qm.Where(model.BlockColumns.Height+"=?", prevHeight)).One()
+			if err != nil {
+				return height, err
+			}
+		}
+		if depth > 0 {
+			logrus.Warning("Reorg detected of depth ", depth, " at height ", height, ", handling reorg processing!")
+			return prevHeight, nil
+		}
+	}
+	return height, nil
 }

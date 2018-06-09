@@ -41,6 +41,7 @@ var blockWorkers uint64 = 1       //ToDo Should be configurable
 var iteration int64
 
 var blockQueue = make(chan uint64)
+var blockProcessedChan = make(chan uint64)
 
 //DoYourThing kicks off the daemon and jobs
 func DoYourThing() {
@@ -95,12 +96,14 @@ func daemonIteration() {
 	blockHeight = *height - blockConfirmationBuffer
 	if lastHeightProcessed == uint64(0) {
 		blockQueue <- lastHeightProcessed
+		lastHeightProcessed = <-blockProcessedChan
 	}
 	for {
 		next := lastHeightProcessed + 1
 		if blockHeight >= next {
 			blockQueue <- next
-			lastHeightProcessed = next
+			//Forces single threaded block processing
+			lastHeightProcessed = <-blockProcessedChan
 		}
 		if next%50 == 0 {
 			log.Info("running iteration at block height ", next, runtime.NumGoroutine(), " go routines")
@@ -142,6 +145,6 @@ func initBlockWorkers(nrWorkers int, jobs <-chan uint64) {
 // the block height
 func BlockProcessor(blocks <-chan uint64) {
 	for block := range blocks {
-		processing.RunBlockProcessing(&block)
+		blockProcessedChan <- processing.RunBlockProcessing(&block)
 	}
 }
