@@ -34,7 +34,7 @@ func InitApiServer(hostAndPort string) {
 	api.LogError = func(request *http.Request, response *api.Response, err error) { logrus.Error(err) }
 	api.LogInfo = func(request *http.Request, response *api.Response) {
 		consoleText := request.RemoteAddr + " [" + strconv.Itoa(response.Status) + "]: " + request.Method + " " + request.URL.Path
-		logrus.Info(color.GreenString(consoleText))
+		logrus.Debug(color.GreenString(consoleText))
 	}
 	//API Chainquery DB connection
 	chainqueryInstance, err := db.InitAPIQuery(config.GetAPIMySQLDSN(), false)
