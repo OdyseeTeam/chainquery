@@ -1,7 +1,10 @@
 package daemon
 
 import (
+	"os"
+	"os/signal"
 	"runtime"
+	"syscall"
 	"time"
 
 	"github.com/lbryio/chainquery/daemon/jobs"
@@ -10,6 +13,7 @@ import (
 	"github.com/lbryio/chainquery/global"
 	"github.com/lbryio/chainquery/lbrycrd"
 	"github.com/lbryio/chainquery/model"
+	"github.com/lbryio/lbry.go/stopOnce"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/boil"
@@ -27,11 +31,10 @@ const (
 )
 
 var lastHeightProcessed uint64 // Around 165,000 is when protobuf takes affect.
+var lastHeightLogged uint64
 var blockHeight uint64
 var running = false
 var reindex = false
-
-var blockConfirmationBuffer uint64 = 6 //Block is accepted at 6 confirmations
 
 //Configuration
 var processingMode int            //Set by `applySettings`
@@ -42,12 +45,19 @@ var iteration int64
 
 var blockQueue = make(chan uint64)
 var blockProcessedChan = make(chan uint64)
+var stop = stopOnce.New()
 
 //DoYourThing kicks off the daemon and jobs
 func DoYourThing() {
-	go initJobs()
+
 	upgrademanager.RunUpgradesForVersion()
-	runDaemon()
+	asyncStoppable(initJobs)
+	asyncStoppable(runDaemon)
+
+	interruptChan := make(chan os.Signal, 1)
+	signal.Notify(interruptChan, os.Interrupt, syscall.SIGTERM)
+	<-interruptChan
+	shutdownDaemon()
 }
 
 func initJobs() {
@@ -57,13 +67,25 @@ func initJobs() {
 	//scheduleJob(jobs.CheckDHTHealth, 6*time.Hour)//Temporarily disabled for release.
 }
 
+func shutdownDaemon() {
+	log.Info("Shutting down daemon...") //
+	stop.StopAndWait()
+}
+
 func scheduleJob(job func(), howOften time.Duration) {
-	go job()
+	asyncStoppable(job)
+	stop.Add(1)
 	go func() {
+		defer stop.Done()
 		t := time.NewTicker(howOften)
 		for {
-			<-t.C
-			go job()
+			select {
+			case <-stop.Ch():
+				log.Info("stopping job scheduler...")
+				return
+			case <-t.C:
+				asyncStoppable(job)
+			}
 		}
 	}()
 }
@@ -71,50 +93,70 @@ func scheduleJob(job func(), howOften time.Duration) {
 func runDaemon() {
 	initBlockWorkers(int(blockWorkers), blockQueue)
 	lastBlock, _ := model.Blocks(boil.GetDB(), qm.OrderBy(model.BlockColumns.Height+" DESC"), qm.Limit(1)).One()
-	if lastBlock != nil && lastBlock.Height > 100 && !reindex {
-		//Start 2 times the parallel blocks sooner just in case something happened.
-		lastHeightProcessed = lastBlock.Height - blockWorkers*2
+	if lastBlock != nil && !reindex {
+		//Always
+		lastHeightProcessed = lastBlock.Height
 	}
 	log.Info("Daemon initialized and running")
 	for {
-		if !running {
-			running = true
-			log.Debug("Running daemon iteration ", iteration)
-			go daemonIteration()
-			iteration++
+		select {
+		case <-stop.Ch():
+			log.Info("stopping daemon...")
+			return
+		default:
+			if !running {
+				running = true
+				log.Debug("Running daemon iteration ", iteration)
+				asyncStoppable(daemonIteration)
+				iteration++
+			}
+			time.Sleep(daemonDelay)
 		}
-		time.Sleep(daemonDelay)
 	}
 }
 
-func daemonIteration() {
+func asyncStoppable(function func()) {
+	stop.Add(1)
+	go func() {
+		stop.Done()
+		function()
+	}()
+}
 
+func daemonIteration() {
 	height, err := lbrycrd.GetBlockCount()
 	if err != nil {
 		log.Error(err)
 	}
-	blockHeight = *height - blockConfirmationBuffer
+	blockHeight = *height
 	if lastHeightProcessed == uint64(0) {
 		blockQueue <- lastHeightProcessed
 		lastHeightProcessed = <-blockProcessedChan
 	}
 	for {
-		next := lastHeightProcessed + 1
-		if blockHeight >= next {
-			blockQueue <- next
-			//Forces single threaded block processing
-			lastHeightProcessed = <-blockProcessedChan
-		}
-		if next%50 == 0 {
-			log.Info("running iteration at block height ", next, runtime.NumGoroutine(), " go routines")
-		}
-		workToDo := lastHeightProcessed+uint64(1) < blockHeight && lastHeightProcessed != 0
-		if workToDo {
-			time.Sleep(processingDelay)
-			continue
-		} else if *height != 0 {
-			running = false
-			break
+		select {
+		case <-stop.Ch():
+			log.Info("stopping daemon iteration...")
+			return
+		default:
+			next := lastHeightProcessed + 1
+			if blockHeight >= next {
+				blockQueue <- next
+				//Forces single threaded block processing
+				lastHeightProcessed = <-blockProcessedChan
+			}
+			if next%50 == 0 && next != lastHeightLogged {
+				log.Info("running iteration at block height ", next, runtime.NumGoroutine(), " go routines")
+				lastHeightLogged = next
+			}
+			workToDo := lastHeightProcessed+uint64(1) < blockHeight && lastHeightProcessed != 0
+			if workToDo {
+				time.Sleep(processingDelay)
+				continue
+			} else if *height != 0 {
+				running = false
+				return
+			}
 		}
 	}
 }
@@ -137,13 +179,18 @@ func ApplySettings(settings global.DaemonSettings) {
 
 func initBlockWorkers(nrWorkers int, jobs <-chan uint64) {
 	for i := 0; i < nrWorkers; i++ {
-		go BlockProcessor(jobs)
+		stop.Add(1)
+		go func(worker int) {
+			defer stop.Done()
+			log.Info("block worker ", worker+1, " running")
+			BlockProcessor(jobs, worker)
+		}(i)
 	}
 }
 
 // BlockProcessor takes a channel of block heights to process. When a new one comes in it runs block processing for
 // the block height
-func BlockProcessor(blocks <-chan uint64) {
+func BlockProcessor(blocks <-chan uint64, worker int) {
 	for block := range blocks {
 		blockProcessedChan <- processing.RunBlockProcessing(&block)
 	}
