@@ -51,7 +51,9 @@ func RunBlockProcessing(height *uint64) (lastProcessedHeight uint64) {
 	block.NameClaimRoot = jsonBlock.NameClaimRoot
 	block.NextBlockHash.String = jsonBlock.NextHash
 	block.PreviousBlockHash.String = jsonBlock.PreviousHash
+	block.PreviousBlockHash.Valid = true
 	block.TransactionHashes.String = strings.Join(jsonBlock.Tx, ",")
+	block.TransactionHashes.Valid = true
 	block.Version = uint64(jsonBlock.Version)
 	block.VersionHex = jsonBlock.VersionHex
 	if foundBlock != nil {
