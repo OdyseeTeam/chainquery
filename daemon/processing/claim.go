@@ -158,8 +158,8 @@ func processSupport(claimID string, support *model.Support, output model.Output,
 		support = &model.Support{}
 	}
 
-	support.TransactionHash.String = tx.Hash
-	support.TransactionHash.Valid = true
+	support.TransactionHashID.String = tx.Hash
+	support.TransactionHashID.Valid = true
 	support.Vout = output.Vout
 	support.SupportAmount = output.Value.Float64
 	if claim := datastore.GetClaim(claimID); claim != nil {

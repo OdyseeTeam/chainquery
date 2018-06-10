@@ -141,7 +141,7 @@
   version = "v3.0.7"
 
 [[projects]]
-  branch = "apiserver"
+  branch = "master"
   name = "github.com/lbryio/lbry.go"
   packages = [
     "api",
@@ -150,11 +150,12 @@
     "lbrycrd",
     "null",
     "querytools",
+    "stopOnce",
     "travis",
     "util",
     "validator"
   ]
-  revision = "afffa668a92013428104172e30d805e919cc0e07"
+  revision = "681a623ddf0189e8f7fa50773c018ec3223f043d"
 
 [[projects]]
   branch = "master"
@@ -273,7 +274,6 @@
   revision = "e7201282ae8da26cd97aed2e516f75c0bd91bb93"
 
 [[projects]]
-  branch = "master"
   name = "github.com/volatiletech/sqlboiler"
   packages = [
     "boil",
@@ -281,7 +281,8 @@
     "queries/qm",
     "strmangle"
   ]
-  revision = "6b95e5d3d7840a737841e2eb446e1c82641f8393"
+  revision = "e92eb387e26dfcc2f39555a7fc96fe20b45d0a7a"
+  version = "v2.7.1"
 
 [[projects]]
   branch = "master"
@@ -382,6 +383,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "6cb592b2979088f32e1f64387240c771e197ef03f48c7ff5005bf89f95f39744"
+  inputs-digest = "5e9a3c8e296ae2cfb46e7bfdc3e38ba9a1dfc7c859bbea814fba293f695e7b12"
   solver-name = "gps-cdcl"
   solver-version = 1

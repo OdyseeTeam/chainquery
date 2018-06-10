@@ -41,7 +41,7 @@
 
 [[constraint]]
   name = "github.com/lbryio/lbry.go"
-  branch ="apiserver"
+  branch ="master"
 
 [[constraint]]
   branch = "master"

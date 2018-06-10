@@ -215,7 +215,7 @@ func PutClaim(claim *model.Claim) error {
 // GetSupport makes creating,retrieving,updating the model type simplified.
 func GetSupport(txHash string, vout uint) *model.Support {
 	defer util.TimeTrack(time.Now(), "GetSupport", "mysqlprofile")
-	txHashMatch := qm.Where(model.SupportColumns.TransactionHash+"=?", txHash)
+	txHashMatch := qm.Where(model.SupportColumns.TransactionHashID+"=?", txHash)
 	voutMatch := qm.Where(model.SupportColumns.Vout+"=?", vout)
 
 	if model.SupportsG(txHashMatch, voutMatch).ExistsP() {

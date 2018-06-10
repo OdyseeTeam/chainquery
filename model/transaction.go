@@ -82,6 +82,7 @@ type transactionR struct {
 	TransactionByHashClaims ClaimSlice
 	Inputs                  InputSlice
 	Outputs                 OutputSlice
+	TransactionHashSupports SupportSlice
 	TransactionAddresses    TransactionAddressSlice
 }
 
@@ -316,6 +317,32 @@ func (o *Transaction) Outputs(exec boil.Executor, mods ...qm.QueryMod) outputQue
 
 	if len(queries.GetSelect(query.Query)) == 0 {
 		queries.SetSelect(query.Query, []string{"`output`.*"})
+	}
+
+	return query
+}
+
+// TransactionHashSupportsG retrieves all the support's support via transaction_hash_id column.
+func (o *Transaction) TransactionHashSupportsG(mods ...qm.QueryMod) supportQuery {
+	return o.TransactionHashSupports(boil.GetDB(), mods...)
+}
+
+// TransactionHashSupports retrieves all the support's support with an executor via transaction_hash_id column.
+func (o *Transaction) TransactionHashSupports(exec boil.Executor, mods ...qm.QueryMod) supportQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("`support`.`transaction_hash_id`=?", o.Hash),
+	)
+
+	query := Supports(exec, queryMods...)
+	queries.SetFrom(query.Query, "`support`")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"`support`.*"})
 	}
 
 	return query
@@ -604,6 +631,71 @@ func (transactionL) LoadOutputs(e boil.Executor, singular bool, maybeTransaction
 		for _, local := range slice {
 			if local.ID == foreign.TransactionID {
 				local.R.Outputs = append(local.R.Outputs, foreign)
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadTransactionHashSupports allows an eager lookup of values, cached into the
+// loaded structs of the objects.
+func (transactionL) LoadTransactionHashSupports(e boil.Executor, singular bool, maybeTransaction interface{}) error {
+	var slice []*Transaction
+	var object *Transaction
+
+	count := 1
+	if singular {
+		object = maybeTransaction.(*Transaction)
+	} else {
+		slice = *maybeTransaction.(*[]*Transaction)
+		count = len(slice)
+	}
+
+	args := make([]interface{}, count)
+	if singular {
+		if object.R == nil {
+			object.R = &transactionR{}
+		}
+		args[0] = object.Hash
+	} else {
+		for i, obj := range slice {
+			if obj.R == nil {
+				obj.R = &transactionR{}
+			}
+			args[i] = obj.Hash
+		}
+	}
+
+	query := fmt.Sprintf(
+		"select * from `support` where `transaction_hash_id` in (%s)",
+		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
+	)
+	if boil.DebugMode {
+		fmt.Fprintf(boil.DebugWriter, "%s\n%v\n", query, args)
+	}
+
+	results, err := e.Query(query, args...)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load support")
+	}
+	defer results.Close()
+
+	var resultSlice []*Support
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice support")
+	}
+
+	if singular {
+		object.R.TransactionHashSupports = resultSlice
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.Hash == foreign.TransactionHashID.String {
+				local.R.TransactionHashSupports = append(local.R.TransactionHashSupports, foreign)
 				break
 			}
 		}
@@ -1200,6 +1292,227 @@ func (o *Transaction) AddOutputs(exec boil.Executor, insert bool, related ...*Ou
 			rel.R.Transaction = o
 		}
 	}
+	return nil
+}
+
+// AddTransactionHashSupportsG adds the given related objects to the existing relationships
+// of the transaction, optionally inserting them as new records.
+// Appends related to o.R.TransactionHashSupports.
+// Sets related.R.TransactionHash appropriately.
+// Uses the global database handle.
+func (o *Transaction) AddTransactionHashSupportsG(insert bool, related ...*Support) error {
+	return o.AddTransactionHashSupports(boil.GetDB(), insert, related...)
+}
+
+// AddTransactionHashSupportsP adds the given related objects to the existing relationships
+// of the transaction, optionally inserting them as new records.
+// Appends related to o.R.TransactionHashSupports.
+// Sets related.R.TransactionHash appropriately.
+// Panics on error.
+func (o *Transaction) AddTransactionHashSupportsP(exec boil.Executor, insert bool, related ...*Support) {
+	if err := o.AddTransactionHashSupports(exec, insert, related...); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// AddTransactionHashSupportsGP adds the given related objects to the existing relationships
+// of the transaction, optionally inserting them as new records.
+// Appends related to o.R.TransactionHashSupports.
+// Sets related.R.TransactionHash appropriately.
+// Uses the global database handle and panics on error.
+func (o *Transaction) AddTransactionHashSupportsGP(insert bool, related ...*Support) {
+	if err := o.AddTransactionHashSupports(boil.GetDB(), insert, related...); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// AddTransactionHashSupports adds the given related objects to the existing relationships
+// of the transaction, optionally inserting them as new records.
+// Appends related to o.R.TransactionHashSupports.
+// Sets related.R.TransactionHash appropriately.
+func (o *Transaction) AddTransactionHashSupports(exec boil.Executor, insert bool, related ...*Support) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.TransactionHashID.String = o.Hash
+			rel.TransactionHashID.Valid = true
+			if err = rel.Insert(exec); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE `support` SET %s WHERE %s",
+				strmangle.SetParamNames("`", "`", 0, []string{"transaction_hash_id"}),
+				strmangle.WhereClause("`", "`", 0, supportPrimaryKeyColumns),
+			)
+			values := []interface{}{o.Hash, rel.ID}
+
+			if boil.DebugMode {
+				fmt.Fprintln(boil.DebugWriter, updateQuery)
+				fmt.Fprintln(boil.DebugWriter, values)
+			}
+
+			if _, err = exec.Exec(updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.TransactionHashID.String = o.Hash
+			rel.TransactionHashID.Valid = true
+		}
+	}
+
+	if o.R == nil {
+		o.R = &transactionR{
+			TransactionHashSupports: related,
+		}
+	} else {
+		o.R.TransactionHashSupports = append(o.R.TransactionHashSupports, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &supportR{
+				TransactionHash: o,
+			}
+		} else {
+			rel.R.TransactionHash = o
+		}
+	}
+	return nil
+}
+
+// SetTransactionHashSupportsG removes all previously related items of the
+// transaction replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.TransactionHash's TransactionHashSupports accordingly.
+// Replaces o.R.TransactionHashSupports with related.
+// Sets related.R.TransactionHash's TransactionHashSupports accordingly.
+// Uses the global database handle.
+func (o *Transaction) SetTransactionHashSupportsG(insert bool, related ...*Support) error {
+	return o.SetTransactionHashSupports(boil.GetDB(), insert, related...)
+}
+
+// SetTransactionHashSupportsP removes all previously related items of the
+// transaction replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.TransactionHash's TransactionHashSupports accordingly.
+// Replaces o.R.TransactionHashSupports with related.
+// Sets related.R.TransactionHash's TransactionHashSupports accordingly.
+// Panics on error.
+func (o *Transaction) SetTransactionHashSupportsP(exec boil.Executor, insert bool, related ...*Support) {
+	if err := o.SetTransactionHashSupports(exec, insert, related...); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// SetTransactionHashSupportsGP removes all previously related items of the
+// transaction replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.TransactionHash's TransactionHashSupports accordingly.
+// Replaces o.R.TransactionHashSupports with related.
+// Sets related.R.TransactionHash's TransactionHashSupports accordingly.
+// Uses the global database handle and panics on error.
+func (o *Transaction) SetTransactionHashSupportsGP(insert bool, related ...*Support) {
+	if err := o.SetTransactionHashSupports(boil.GetDB(), insert, related...); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// SetTransactionHashSupports removes all previously related items of the
+// transaction replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.TransactionHash's TransactionHashSupports accordingly.
+// Replaces o.R.TransactionHashSupports with related.
+// Sets related.R.TransactionHash's TransactionHashSupports accordingly.
+func (o *Transaction) SetTransactionHashSupports(exec boil.Executor, insert bool, related ...*Support) error {
+	query := "update `support` set `transaction_hash_id` = null where `transaction_hash_id` = ?"
+	values := []interface{}{o.Hash}
+	if boil.DebugMode {
+		fmt.Fprintln(boil.DebugWriter, query)
+		fmt.Fprintln(boil.DebugWriter, values)
+	}
+
+	_, err := exec.Exec(query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.TransactionHashSupports {
+			rel.TransactionHashID.Valid = false
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.TransactionHash = nil
+		}
+
+		o.R.TransactionHashSupports = nil
+	}
+	return o.AddTransactionHashSupports(exec, insert, related...)
+}
+
+// RemoveTransactionHashSupportsG relationships from objects passed in.
+// Removes related items from R.TransactionHashSupports (uses pointer comparison, removal does not keep order)
+// Sets related.R.TransactionHash.
+// Uses the global database handle.
+func (o *Transaction) RemoveTransactionHashSupportsG(related ...*Support) error {
+	return o.RemoveTransactionHashSupports(boil.GetDB(), related...)
+}
+
+// RemoveTransactionHashSupportsP relationships from objects passed in.
+// Removes related items from R.TransactionHashSupports (uses pointer comparison, removal does not keep order)
+// Sets related.R.TransactionHash.
+// Panics on error.
+func (o *Transaction) RemoveTransactionHashSupportsP(exec boil.Executor, related ...*Support) {
+	if err := o.RemoveTransactionHashSupports(exec, related...); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// RemoveTransactionHashSupportsGP relationships from objects passed in.
+// Removes related items from R.TransactionHashSupports (uses pointer comparison, removal does not keep order)
+// Sets related.R.TransactionHash.
+// Uses the global database handle and panics on error.
+func (o *Transaction) RemoveTransactionHashSupportsGP(related ...*Support) {
+	if err := o.RemoveTransactionHashSupports(boil.GetDB(), related...); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// RemoveTransactionHashSupports relationships from objects passed in.
+// Removes related items from R.TransactionHashSupports (uses pointer comparison, removal does not keep order)
+// Sets related.R.TransactionHash.
+func (o *Transaction) RemoveTransactionHashSupports(exec boil.Executor, related ...*Support) error {
+	var err error
+	for _, rel := range related {
+		rel.TransactionHashID.Valid = false
+		if rel.R != nil {
+			rel.R.TransactionHash = nil
+		}
+		if err = rel.Update(exec, "transaction_hash_id"); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.TransactionHashSupports {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.TransactionHashSupports)
+			if ln > 1 && i < ln-1 {
+				o.R.TransactionHashSupports[i] = o.R.TransactionHashSupports[ln-1]
+			}
+			o.R.TransactionHashSupports = o.R.TransactionHashSupports[:ln-1]
+			break
+		}
+	}
+
 	return nil
 }
 

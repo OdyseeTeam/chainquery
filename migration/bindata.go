@@ -5,6 +5,7 @@
 // migration/002_decimals.sql
 // migration/003_dht_tracking.sql
 // migration/004_new_indices.sql
+// migration/005_remove_foreign_keys.sql
 // DO NOT EDIT!
 
 package migration
@@ -172,6 +173,26 @@ func migration004_new_indicesSql() (*asset, error) {
 	return a, nil
 }
 
+var _migration005_remove_foreign_keysSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xac\x92\x4f\x4f\xf3\x30\x0c\xc6\xef\xfd\x14\xbe\x6d\xd3\xbb\xbd\x62\x70\xe0\xc0\x29\x4b\xbd\x3f\x22\x24\x53\x9a\x22\x71\x8a\x42\x97\x6d\xd1\xb6\xac\x74\xe9\x81\x6f\x8f\xda\x0e\x51\x44\x01\x09\xed\x68\x3f\x4f\xfc\xb3\x63\x8f\x46\xf0\xef\xe0\x36\x85\x09\x16\xd2\x3c\x8a\xda\x71\x12\x4c\xb0\x07\xeb\xc3\xc4\x6e\x9c\x8f\x08\x53\x28\x41\x91\x09\x43\xc8\xb6\xc6\xf9\x97\xd2\x16\xaf\xff\xb3\xbd\x71\x87\x08\x20\x96\x62\x09\x53\x21\x71\x31\xe3\x70\x8f\x4f\x50\x0b\xda\x3d\xaf\x77\xfa\xfa\xae\xbb\x30\xfa\xd5\x5f\x90\xce\xe7\x65\xe8\x42\xd6\x42\x83\x1c\x5f\x16\x79\x2a\xf3\xfc\x58\x74\x42\xcf\xd2\x19\x3b\x8c\x00\xe8\x9c\xf0\x19\x02\x15\x2c\x7d\xe0\x10\x0a\xe3\x4f\x26\x0b\xee\xe8\xf5\xd6\x9c\xb6\x5f\x12\xda\xad\xe0\x91\x48\x3a\x27\xb2\x7f\x7b\x35\xa8\x9e\x4b\x42\xab\x36\x12\x54\xd0\xdb\x9b\xe0\xfc\xb8\x57\x95\x63\x44\xe1\x7b\x42\x6f\xac\xb7\x85\xd9\xeb\xcc\xf5\x80\xa7\x8c\x41\x8c\x53\x92\x32\x55\x07\x55\x1b\x24\x8e\x81\x0a\x9e\x28\x49\x16\x5c\xc1\x7a\xa7\x5b\xe4\x08\x00\x3e\x8d\xd1\xef\x68\x6b\x50\xbb\x24\x4e\x51\x22\xa7\x98\xb4\x7f\xa4\x65\x87\x7e\xe5\x6f\xcc\x00\x82\x43\x8c\x0c\x15\x02\x25\x09\x25\x31\x7e\xe4\xd3\x65\x5c\x4d\xc0\x05\x10\xaa\x16\x82\x5f\x76\x47\xc7\x32\x7c\x73\x17\x8d\xd2\x6c\xe8\x66\xf8\x9b\xe3\x87\x6b\x7d\x0b\x00\x00\xff\xff\xb3\xcf\xca\xdc\x2f\x03\x00\x00")
+
+func migration005_remove_foreign_keysSqlBytes() ([]byte, error) {
+	return bindataRead(
+		_migration005_remove_foreign_keysSql,
+		"migration/005_remove_foreign_keys.sql",
+	)
+}
+
+func migration005_remove_foreign_keysSql() (*asset, error) {
+	bytes, err := migration005_remove_foreign_keysSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "migration/005_remove_foreign_keys.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -224,11 +245,12 @@ func AssetNames() []string {
 
 // _bindata is a table, holding each asset generator, mapped to its name.
 var _bindata = map[string]func() (*asset, error){
-	"migration/000_init_schema.sql":  migration000_init_schemaSql,
-	"migration/001_supports.sql":     migration001_supportsSql,
-	"migration/002_decimals.sql":     migration002_decimalsSql,
-	"migration/003_dht_tracking.sql": migration003_dht_trackingSql,
-	"migration/004_new_indices.sql":  migration004_new_indicesSql,
+	"migration/000_init_schema.sql":         migration000_init_schemaSql,
+	"migration/001_supports.sql":            migration001_supportsSql,
+	"migration/002_decimals.sql":            migration002_decimalsSql,
+	"migration/003_dht_tracking.sql":        migration003_dht_trackingSql,
+	"migration/004_new_indices.sql":         migration004_new_indicesSql,
+	"migration/005_remove_foreign_keys.sql": migration005_remove_foreign_keysSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -273,11 +295,12 @@ type bintree struct {
 
 var _bintree = &bintree{nil, map[string]*bintree{
 	"migration": &bintree{nil, map[string]*bintree{
-		"000_init_schema.sql":  &bintree{migration000_init_schemaSql, map[string]*bintree{}},
-		"001_supports.sql":     &bintree{migration001_supportsSql, map[string]*bintree{}},
-		"002_decimals.sql":     &bintree{migration002_decimalsSql, map[string]*bintree{}},
-		"003_dht_tracking.sql": &bintree{migration003_dht_trackingSql, map[string]*bintree{}},
-		"004_new_indices.sql":  &bintree{migration004_new_indicesSql, map[string]*bintree{}},
+		"000_init_schema.sql":         &bintree{migration000_init_schemaSql, map[string]*bintree{}},
+		"001_supports.sql":            &bintree{migration001_supportsSql, map[string]*bintree{}},
+		"002_decimals.sql":            &bintree{migration002_decimalsSql, map[string]*bintree{}},
+		"003_dht_tracking.sql":        &bintree{migration003_dht_trackingSql, map[string]*bintree{}},
+		"004_new_indices.sql":         &bintree{migration004_new_indicesSql, map[string]*bintree{}},
+		"005_remove_foreign_keys.sql": &bintree{migration005_remove_foreign_keysSql, map[string]*bintree{}},
 	}},
 }}
 

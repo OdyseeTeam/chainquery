@@ -22,50 +22,50 @@ import (
 
 // Support is an object representing the database table.
 type Support struct {
-	ID               uint64      `boil:"id" json:"id" toml:"id" yaml:"id"`
-	SupportedClaimID string      `boil:"supported_claim_id" json:"supported_claim_id" toml:"supported_claim_id" yaml:"supported_claim_id"`
-	SupportAmount    float64     `boil:"support_amount" json:"support_amount" toml:"support_amount" yaml:"support_amount"`
-	BidState         string      `boil:"bid_state" json:"bid_state" toml:"bid_state" yaml:"bid_state"`
-	TransactionHash  null.String `boil:"transaction_hash" json:"transaction_hash,omitempty" toml:"transaction_hash" yaml:"transaction_hash,omitempty"`
-	Vout             uint        `boil:"vout" json:"vout" toml:"vout" yaml:"vout"`
-	Created          time.Time   `boil:"created" json:"created" toml:"created" yaml:"created"`
-	Modified         time.Time   `boil:"modified" json:"modified" toml:"modified" yaml:"modified"`
+	ID                uint64      `boil:"id" json:"id" toml:"id" yaml:"id"`
+	SupportedClaimID  string      `boil:"supported_claim_id" json:"supported_claim_id" toml:"supported_claim_id" yaml:"supported_claim_id"`
+	SupportAmount     float64     `boil:"support_amount" json:"support_amount" toml:"support_amount" yaml:"support_amount"`
+	BidState          string      `boil:"bid_state" json:"bid_state" toml:"bid_state" yaml:"bid_state"`
+	TransactionHashID null.String `boil:"transaction_hash_id" json:"transaction_hash_id,omitempty" toml:"transaction_hash_id" yaml:"transaction_hash_id,omitempty"`
+	Vout              uint        `boil:"vout" json:"vout" toml:"vout" yaml:"vout"`
+	Created           time.Time   `boil:"created" json:"created" toml:"created" yaml:"created"`
+	Modified          time.Time   `boil:"modified" json:"modified" toml:"modified" yaml:"modified"`
 
 	R *supportR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L supportL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var SupportColumns = struct {
-	ID               string
-	SupportedClaimID string
-	SupportAmount    string
-	BidState         string
-	TransactionHash  string
-	Vout             string
-	Created          string
-	Modified         string
+	ID                string
+	SupportedClaimID  string
+	SupportAmount     string
+	BidState          string
+	TransactionHashID string
+	Vout              string
+	Created           string
+	Modified          string
 }{
-	ID:               "id",
-	SupportedClaimID: "supported_claim_id",
-	SupportAmount:    "support_amount",
-	BidState:         "bid_state",
-	TransactionHash:  "transaction_hash",
-	Vout:             "vout",
-	Created:          "created",
-	Modified:         "modified",
+	ID:                "id",
+	SupportedClaimID:  "supported_claim_id",
+	SupportAmount:     "support_amount",
+	BidState:          "bid_state",
+	TransactionHashID: "transaction_hash_id",
+	Vout:              "vout",
+	Created:           "created",
+	Modified:          "modified",
 }
 
 // supportR is where relationships are stored.
 type supportR struct {
-	SupportedClaim *Claim
+	TransactionHash *Transaction
 }
 
 // supportL is where Load methods for each relationship are stored.
 type supportL struct{}
 
 var (
-	supportColumns               = []string{"id", "supported_claim_id", "support_amount", "bid_state", "transaction_hash", "vout", "created", "modified"}
-	supportColumnsWithoutDefault = []string{"supported_claim_id", "transaction_hash", "vout"}
+	supportColumns               = []string{"id", "supported_claim_id", "support_amount", "bid_state", "transaction_hash_id", "vout", "created", "modified"}
+	supportColumnsWithoutDefault = []string{"supported_claim_id", "transaction_hash_id", "vout"}
 	supportColumnsWithDefault    = []string{"id", "support_amount", "bid_state", "created", "modified"}
 	supportPrimaryKeyColumns     = []string{"id"}
 )
@@ -199,26 +199,26 @@ func (q supportQuery) Exists() (bool, error) {
 	return count > 0, nil
 }
 
-// SupportedClaimG pointed to by the foreign key.
-func (o *Support) SupportedClaimG(mods ...qm.QueryMod) claimQuery {
-	return o.SupportedClaim(boil.GetDB(), mods...)
+// TransactionHashG pointed to by the foreign key.
+func (o *Support) TransactionHashG(mods ...qm.QueryMod) transactionQuery {
+	return o.TransactionHash(boil.GetDB(), mods...)
 }
 
-// SupportedClaim pointed to by the foreign key.
-func (o *Support) SupportedClaim(exec boil.Executor, mods ...qm.QueryMod) claimQuery {
+// TransactionHash pointed to by the foreign key.
+func (o *Support) TransactionHash(exec boil.Executor, mods ...qm.QueryMod) transactionQuery {
 	queryMods := []qm.QueryMod{
-		qm.Where("claim_id=?", o.SupportedClaimID),
+		qm.Where("hash=?", o.TransactionHashID),
 	}
 
 	queryMods = append(queryMods, mods...)
 
-	query := Claims(exec, queryMods...)
-	queries.SetFrom(query.Query, "`claim`")
+	query := Transactions(exec, queryMods...)
+	queries.SetFrom(query.Query, "`transaction`")
 
 	return query
-} // LoadSupportedClaim allows an eager lookup of values, cached into the
+} // LoadTransactionHash allows an eager lookup of values, cached into the
 // loaded structs of the objects.
-func (supportL) LoadSupportedClaim(e boil.Executor, singular bool, maybeSupport interface{}) error {
+func (supportL) LoadTransactionHash(e boil.Executor, singular bool, maybeSupport interface{}) error {
 	var slice []*Support
 	var object *Support
 
@@ -235,18 +235,18 @@ func (supportL) LoadSupportedClaim(e boil.Executor, singular bool, maybeSupport 
 		if object.R == nil {
 			object.R = &supportR{}
 		}
-		args[0] = object.SupportedClaimID
+		args[0] = object.TransactionHashID
 	} else {
 		for i, obj := range slice {
 			if obj.R == nil {
 				obj.R = &supportR{}
 			}
-			args[i] = obj.SupportedClaimID
+			args[i] = obj.TransactionHashID
 		}
 	}
 
 	query := fmt.Sprintf(
-		"select * from `claim` where `claim_id` in (%s)",
+		"select * from `transaction` where `hash` in (%s)",
 		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
 	)
 
@@ -256,13 +256,13 @@ func (supportL) LoadSupportedClaim(e boil.Executor, singular bool, maybeSupport 
 
 	results, err := e.Query(query, args...)
 	if err != nil {
-		return errors.Wrap(err, "failed to eager load Claim")
+		return errors.Wrap(err, "failed to eager load Transaction")
 	}
 	defer results.Close()
 
-	var resultSlice []*Claim
+	var resultSlice []*Transaction
 	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice Claim")
+		return errors.Wrap(err, "failed to bind eager loaded slice Transaction")
 	}
 
 	if len(resultSlice) == 0 {
@@ -270,14 +270,14 @@ func (supportL) LoadSupportedClaim(e boil.Executor, singular bool, maybeSupport 
 	}
 
 	if singular {
-		object.R.SupportedClaim = resultSlice[0]
+		object.R.TransactionHash = resultSlice[0]
 		return nil
 	}
 
 	for _, local := range slice {
 		for _, foreign := range resultSlice {
-			if local.SupportedClaimID == foreign.ClaimID {
-				local.R.SupportedClaim = foreign
+			if local.TransactionHashID.String == foreign.Hash {
+				local.R.TransactionHash = foreign
 				break
 			}
 		}
@@ -286,38 +286,38 @@ func (supportL) LoadSupportedClaim(e boil.Executor, singular bool, maybeSupport 
 	return nil
 }
 
-// SetSupportedClaimG of the support to the related item.
-// Sets o.R.SupportedClaim to related.
-// Adds o to related.R.SupportedClaimSupports.
+// SetTransactionHashG of the support to the related item.
+// Sets o.R.TransactionHash to related.
+// Adds o to related.R.TransactionHashSupports.
 // Uses the global database handle.
-func (o *Support) SetSupportedClaimG(insert bool, related *Claim) error {
-	return o.SetSupportedClaim(boil.GetDB(), insert, related)
+func (o *Support) SetTransactionHashG(insert bool, related *Transaction) error {
+	return o.SetTransactionHash(boil.GetDB(), insert, related)
 }
 
-// SetSupportedClaimP of the support to the related item.
-// Sets o.R.SupportedClaim to related.
-// Adds o to related.R.SupportedClaimSupports.
+// SetTransactionHashP of the support to the related item.
+// Sets o.R.TransactionHash to related.
+// Adds o to related.R.TransactionHashSupports.
 // Panics on error.
-func (o *Support) SetSupportedClaimP(exec boil.Executor, insert bool, related *Claim) {
-	if err := o.SetSupportedClaim(exec, insert, related); err != nil {
+func (o *Support) SetTransactionHashP(exec boil.Executor, insert bool, related *Transaction) {
+	if err := o.SetTransactionHash(exec, insert, related); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
-// SetSupportedClaimGP of the support to the related item.
-// Sets o.R.SupportedClaim to related.
-// Adds o to related.R.SupportedClaimSupports.
+// SetTransactionHashGP of the support to the related item.
+// Sets o.R.TransactionHash to related.
+// Adds o to related.R.TransactionHashSupports.
 // Uses the global database handle and panics on error.
-func (o *Support) SetSupportedClaimGP(insert bool, related *Claim) {
-	if err := o.SetSupportedClaim(boil.GetDB(), insert, related); err != nil {
+func (o *Support) SetTransactionHashGP(insert bool, related *Transaction) {
+	if err := o.SetTransactionHash(boil.GetDB(), insert, related); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
-// SetSupportedClaim of the support to the related item.
-// Sets o.R.SupportedClaim to related.
-// Adds o to related.R.SupportedClaimSupports.
-func (o *Support) SetSupportedClaim(exec boil.Executor, insert bool, related *Claim) error {
+// SetTransactionHash of the support to the related item.
+// Sets o.R.TransactionHash to related.
+// Adds o to related.R.TransactionHashSupports.
+func (o *Support) SetTransactionHash(exec boil.Executor, insert bool, related *Transaction) error {
 	var err error
 	if insert {
 		if err = related.Insert(exec); err != nil {
@@ -327,10 +327,10 @@ func (o *Support) SetSupportedClaim(exec boil.Executor, insert bool, related *Cl
 
 	updateQuery := fmt.Sprintf(
 		"UPDATE `support` SET %s WHERE %s",
-		strmangle.SetParamNames("`", "`", 0, []string{"supported_claim_id"}),
+		strmangle.SetParamNames("`", "`", 0, []string{"transaction_hash_id"}),
 		strmangle.WhereClause("`", "`", 0, supportPrimaryKeyColumns),
 	)
-	values := []interface{}{related.ClaimID, o.ID}
+	values := []interface{}{related.Hash, o.ID}
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, updateQuery)
@@ -341,24 +341,85 @@ func (o *Support) SetSupportedClaim(exec boil.Executor, insert bool, related *Cl
 		return errors.Wrap(err, "failed to update local table")
 	}
 
-	o.SupportedClaimID = related.ClaimID
+	o.TransactionHashID.String = related.Hash
+	o.TransactionHashID.Valid = true
 
 	if o.R == nil {
 		o.R = &supportR{
-			SupportedClaim: related,
+			TransactionHash: related,
 		}
 	} else {
-		o.R.SupportedClaim = related
+		o.R.TransactionHash = related
 	}
 
 	if related.R == nil {
-		related.R = &claimR{
-			SupportedClaimSupports: SupportSlice{o},
+		related.R = &transactionR{
+			TransactionHashSupports: SupportSlice{o},
 		}
 	} else {
-		related.R.SupportedClaimSupports = append(related.R.SupportedClaimSupports, o)
+		related.R.TransactionHashSupports = append(related.R.TransactionHashSupports, o)
 	}
 
+	return nil
+}
+
+// RemoveTransactionHashG relationship.
+// Sets o.R.TransactionHash to nil.
+// Removes o from all passed in related items' relationships struct (Optional).
+// Uses the global database handle.
+func (o *Support) RemoveTransactionHashG(related *Transaction) error {
+	return o.RemoveTransactionHash(boil.GetDB(), related)
+}
+
+// RemoveTransactionHashP relationship.
+// Sets o.R.TransactionHash to nil.
+// Removes o from all passed in related items' relationships struct (Optional).
+// Panics on error.
+func (o *Support) RemoveTransactionHashP(exec boil.Executor, related *Transaction) {
+	if err := o.RemoveTransactionHash(exec, related); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// RemoveTransactionHashGP relationship.
+// Sets o.R.TransactionHash to nil.
+// Removes o from all passed in related items' relationships struct (Optional).
+// Uses the global database handle and panics on error.
+func (o *Support) RemoveTransactionHashGP(related *Transaction) {
+	if err := o.RemoveTransactionHash(boil.GetDB(), related); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// RemoveTransactionHash relationship.
+// Sets o.R.TransactionHash to nil.
+// Removes o from all passed in related items' relationships struct (Optional).
+func (o *Support) RemoveTransactionHash(exec boil.Executor, related *Transaction) error {
+	var err error
+
+	o.TransactionHashID.Valid = false
+	if err = o.Update(exec, "transaction_hash_id"); err != nil {
+		o.TransactionHashID.Valid = true
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	o.R.TransactionHash = nil
+	if related == nil || related.R == nil {
+		return nil
+	}
+
+	for i, ri := range related.R.TransactionHashSupports {
+		if o.TransactionHashID.String != ri.TransactionHashID.String {
+			continue
+		}
+
+		ln := len(related.R.TransactionHashSupports)
+		if ln > 1 && i < ln-1 {
+			related.R.TransactionHashSupports[i] = related.R.TransactionHashSupports[ln-1]
+		}
+		related.R.TransactionHashSupports = related.R.TransactionHashSupports[:ln-1]
+		break
+	}
 	return nil
 }
 

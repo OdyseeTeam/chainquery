@@ -115,11 +115,6 @@ func processVin(jsonVin *lbrycrd.Vin, tx *m.Transaction, txDC *txDebitCredits) e
 				if err != nil {
 					return err
 				}
-				err = vin.SetInputAddressG(false, address)
-				if err != nil {
-					logrus.Error("Failure inserting InputAddress: Vin ", vin.ID, "Address(", address.ID, ") ", address.Address)
-					logrus.Panic(err)
-				}
 			} else {
 				logrus.Error("No Address created for Vin: ", vin.ID, " of tx ", tx.ID, " vout: ", srcOutput.ID, " Address: ", addresses[0])
 				logrus.Panic(nil)
@@ -217,9 +212,8 @@ func processVout(jsonVout *lbrycrd.Vout, tx *m.Transaction, txDC *txDebitCredits
 		//Update output to link to the proper claim id
 		claim := ds.GetClaim(*claimid)
 		if claim != nil {
-			if err := vout.SetClaimG(false, claim); err != nil {
-				return err
-			}
+			vout.ClaimID.String = claim.ClaimID
+			vout.ClaimID.Valid = true
 		}
 	}
 
