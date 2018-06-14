@@ -49,6 +49,7 @@ func RunBlockProcessing(height *uint64) (lastProcessedHeight uint64) {
 	block.Difficulty = jsonBlock.Difficulty
 	block.MerkleRoot = jsonBlock.MerkleRoot
 	block.NameClaimRoot = jsonBlock.NameClaimRoot
+	block.Nonce = jsonBlock.Nonce
 	block.NextBlockHash.String = jsonBlock.NextHash
 	block.PreviousBlockHash.String = jsonBlock.PreviousHash
 	block.PreviousBlockHash.Valid = true

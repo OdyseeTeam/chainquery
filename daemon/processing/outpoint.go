@@ -162,6 +162,8 @@ func processVout(jsonVout *lbrycrd.Vout, tx *m.Transaction, txDC *txDebitCredits
 	vout.Vout = uint(jsonVout.N)
 	vout.Value.Float64 = jsonVout.Value
 	vout.Value.Valid = true
+	vout.RequiredSignatures.Uint = uint(jsonVout.ScriptPubKey.ReqSigs)
+	vout.RequiredSignatures.Valid = true
 	vout.ScriptPubKeyAsm.String = jsonVout.ScriptPubKey.Asm
 	vout.ScriptPubKeyAsm.Valid = true
 	vout.ScriptPubKeyHex.String = jsonVout.ScriptPubKey.Hex

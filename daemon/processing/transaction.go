@@ -135,7 +135,7 @@ func saveUpdateTransaction(jsonTx *lbrycrd.TxRawResult) (*model.Transaction, err
 	transaction.Version = int(jsonTx.Version)
 	transaction.BlockByHashID.String = jsonTx.BlockHash
 	transaction.BlockByHashID.Valid = true
-	transaction.CreatedTime = time.Unix(0, jsonTx.Blocktime)
+	transaction.CreatedTime = time.Unix(jsonTx.Blocktime, 0)
 	transaction.TransactionTime.Uint64 = uint64(jsonTx.Time)
 	transaction.TransactionTime.Valid = true
 	transaction.LockTime = uint(jsonTx.LockTime)
