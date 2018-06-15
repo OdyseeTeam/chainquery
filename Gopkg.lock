@@ -2,12 +2,6 @@
 
 
 [[projects]]
-  name = "cloud.google.com/go"
-  packages = ["civil"]
-  revision = "0fd7230b2a7505833d5f69b75cbd6c9582401479"
-  version = "v0.23.0"
-
-[[projects]]
   branch = "master"
   name = "github.com/btcsuite/btcd"
   packages = [
@@ -47,15 +41,6 @@
   name = "github.com/btcsuite/websocket"
   packages = ["."]
   revision = "31079b6807923eb23992c421b114992b95131b55"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/denisenkom/go-mssqldb"
-  packages = [
-    ".",
-    "internal/cp"
-  ]
-  revision = "95cbf6513ab5f7a79e04b2baba760acdd3b45dd5"
 
 [[projects]]
   name = "github.com/fatih/color"
@@ -156,12 +141,6 @@
   version = "v3.0.7"
 
 [[projects]]
-  name = "github.com/kat-co/vala"
-  packages = ["."]
-  revision = "bfe9b50e828ad56312e486cbf4165ff1ac3a9bae"
-  version = "v1"
-
-[[projects]]
   branch = "master"
   name = "github.com/lbryio/lbry.go"
   packages = [
@@ -194,15 +173,6 @@
   packages = ["."]
   revision = "d1008ad1fd04ceb5faedaf34881df0c504382706"
   version = "v3.1"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/lib/pq"
-  packages = [
-    ".",
-    "oid"
-  ]
-  revision = "90697d60dd844d5ef6ff15135d0203f65d2f53b8"
 
 [[projects]]
   name = "github.com/magiconair/properties"
@@ -252,12 +222,6 @@
     "sqlparse"
   ]
   revision = "38004e7a77f2b350ea8467038dca66073d907725"
-
-[[projects]]
-  name = "github.com/satori/go.uuid"
-  packages = ["."]
-  revision = "f58768cc1a7a7e77a3bd49e98cdd21419399b6a3"
-  version = "v1.2.0"
 
 [[projects]]
   branch = "master"
@@ -312,14 +276,10 @@
 [[projects]]
   name = "github.com/volatiletech/sqlboiler"
   packages = [
-    "bdb",
-    "bdb/drivers",
     "boil",
     "queries",
     "queries/qm",
-    "randomize",
-    "strmangle",
-    "types"
+    "strmangle"
   ]
   revision = "e92eb387e26dfcc2f39555a7fc96fe20b45d0a7a"
   version = "v2.7.1"
@@ -334,7 +294,6 @@
   branch = "master"
   name = "golang.org/x/crypto"
   packages = [
-    "md4",
     "ripemd160",
     "ssh/terminal"
   ]
@@ -424,6 +383,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "d3bb59c22bbf6df46410f55a043f584fcd3c384ffbf16e1ac30d973cde2c9445"
+  inputs-digest = "5e9a3c8e296ae2cfb46e7bfdc3e38ba9a1dfc7c859bbea814fba293f695e7b12"
   solver-name = "gps-cdcl"
   solver-version = 1
