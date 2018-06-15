@@ -32,6 +32,12 @@ func ClaimTrieSync() {
 		if err != nil {
 			logrus.Error(err)
 		}
+
+		//For Updating claims that are spent ( no longer in claimtrie )
+		if err := updateSpentClaims(); err != nil {
+			saveJobError(jobStatus, err)
+		}
+
 		updatedClaims, err := getUpdatedClaims(jobStatus)
 		if err != nil {
 			saveJobError(jobStatus, err)
@@ -60,10 +66,6 @@ func ClaimTrieSync() {
 			saveJobError(jobStatus, err)
 		}
 
-		//For Updating claims that are spent ( no longer in claimtrie )
-		if err := updateSpentClaims(); err != nil {
-			saveJobError(jobStatus, err)
-		}
 		started := time.Now()
 		jobStatus.LastSync = started
 		if err := jobStatus.UpdateG(); err != nil {
@@ -218,6 +220,7 @@ func getClaimStatus(claim *model.Claim) string {
 
 func getUpdatedClaims(jobStatus *model.JobStatus) (model.ClaimSlice, error) {
 	claimIDCol := model.TableNames.Claim + "." + model.ClaimColumns.ClaimID
+	claimBidCol := model.TableNames.Claim + "." + model.ClaimColumns.BidState
 	claimNameCol := model.TableNames.Claim + "." + model.ClaimColumns.Name
 	supportedIDCol := model.TableNames.Support + "." + model.SupportColumns.SupportedClaimID
 	supportModifiedCol := model.TableNames.Support + ".modified" //+model.SupportColumns.Modified
@@ -226,15 +229,19 @@ func getUpdatedClaims(jobStatus *model.JobStatus) (model.ClaimSlice, error) {
 	lastsync := jobStatus.LastSync.Format(sqlFormat)
 	lastSyncStr := "'" + lastsync + "'"
 	clause := qm.SQL(`
-		SELECT 	
-					` + claimIDCol + `, 
-					` + claimNameCol + `
-		FROM 		` + model.TableNames.Claim + ` 
-		LEFT JOIN 	` + model.TableNames.Support + `  
-			ON 		` + supportedIDCol + "=" + claimIDCol + ` 
-		WHERE 		` + supportModifiedCol + ">=" + lastSyncStr + ` 
-		OR 			` + claimModifiedCol + ">=" + lastSyncStr + `  
-		GROUP BY 	` + claimIDCol + `,` + claimNameCol)
+		SELECT ` + claimNameCol + `,` + claimIDCol + `
+		FROM ` + model.TableNames.Claim + `
+		WHERE ` + claimNameCol + ` IN 
+		(
+			SELECT
+				` + claimNameCol + `
+			FROM ` + model.TableNames.Claim + ` 
+			LEFT JOIN ` + model.TableNames.Support + ` 
+				ON ( ` + supportedIDCol + ` = ` + claimIDCol + ` AND ` + supportModifiedCol + ` >= ` + lastSyncStr + ` )
+			WHERE ` + claimModifiedCol + ` >= ` + lastSyncStr + ` AND ` + claimBidCol + ` NOT IN ("Spent","Expired")
+			GROUP BY  claim.name
+		)
+`)
 
 	return model.ClaimsG(clause).All()
 
