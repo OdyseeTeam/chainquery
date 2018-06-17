@@ -134,6 +134,7 @@ func daemonIteration() {
 		lastHeightProcessed = <-blockProcessedChan
 	}
 	for {
+
 		select {
 		case <-stop.Ch():
 			log.Info("stopping daemon iteration...")
@@ -149,7 +150,7 @@ func daemonIteration() {
 				log.Info("running iteration at block height ", next, runtime.NumGoroutine(), " go routines")
 				lastHeightLogged = next
 			}
-			workToDo := lastHeightProcessed+uint64(1) < blockHeight && lastHeightProcessed != 0
+			workToDo := lastHeightProcessed < blockHeight && lastHeightProcessed != 0
 			if workToDo {
 				time.Sleep(processingDelay)
 				continue

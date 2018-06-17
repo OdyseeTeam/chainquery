@@ -11,7 +11,6 @@ import (
 	"github.com/lbryio/lbry.go/errors"
 
 	"github.com/sirupsen/logrus"
-	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 type vinToProcess struct {
@@ -254,26 +253,4 @@ func processScriptForClaim(vout m.Output, tx m.Transaction) (*string, error) {
 	}
 
 	return claimid, nil
-}
-
-func fixMissingSourceOutput(txHash string) error {
-	jsonTx, err := lbrycrd.GetRawTransactionResponse(txHash)
-	if err != nil {
-		return err
-	}
-	jsonBlock, err := lbrycrd.GetBlock(jsonTx.BlockHash)
-	if err != nil {
-		return err
-	}
-	height := uint64(jsonBlock.Height)
-	dbBlock, err := m.BlocksG(qm.OrderBy(m.BlockColumns.Height + " DESC")).One()
-	if err != nil {
-		return err
-	}
-	//If
-	if dbBlock.Height > height {
-		RunBlockProcessing(&height)
-	}
-
-	return nil
 }

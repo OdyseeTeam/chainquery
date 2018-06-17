@@ -13,17 +13,18 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/queries/qm"
+	"strconv"
 )
 
 // RunBlockProcessing runs the processing of a block at a specific height. While any height can be passed in it is
 // important to note that if the previous block is not processed it will panic to prevent corruption because blocks
 // must be processed in order.
-func RunBlockProcessing(height *uint64) (lastProcessedHeight uint64) {
+func RunBlockProcessing(height *uint64) uint64 {
 	defer util.TimeTrack(time.Now(), "runBlockProcessing", "daemonprofile")
 	jsonBlock, err := getBlockToProcess(height)
 	if err != nil {
 		logrus.Error("Get Block Error: ", err)
-		return
+		return *height
 	}
 
 	reorgHeight, err := checkHandleReorg(*height, jsonBlock.PreviousHash)
@@ -131,21 +132,24 @@ func checkHandleReorg(height uint64, chainPrevHash string) (uint64, error) {
 	if height > 0 {
 		prevBlock, err := model.BlocksG(qm.Where(model.BlockColumns.Height+"=?", prevHeight)).One()
 		if err != nil {
-			return height, err
+			return height, errors.Prefix("error getting block@"+strconv.Itoa(int(prevHeight))+": ", err)
 		}
 		//Recursively delete blocks until they match or a reorg of depth 100 == failure of logic.
 		for prevBlock.Hash != chainPrevHash && depth < 100 {
 			// Delete because it needs to be reprocessed due to reorg
+			logrus.Println("block ", prevBlock.Hash, " at height ", prevBlock.Height,
+				" to be removed due to reorg. TX-> ", prevBlock.TransactionHashes)
 			err = prevBlock.DeleteG()
 			if err != nil {
-				return height, err
+				return height, errors.Prefix("error deleting block@"+strconv.Itoa(int(prevHeight))+": ", err)
 			}
+
 			depth++
 
 			// Set chainPrevHash to new previous blocks prevhash to check next depth
 			jsonBlock, err := getBlockToProcess(&prevHeight)
 			if err != nil {
-				return height, err
+				return height, errors.Prefix("error getting block@"+strconv.Itoa(int(prevHeight))+" from lbrycrd: ", err)
 			}
 			chainPrevHash = jsonBlock.PreviousHash
 
@@ -153,11 +157,12 @@ func checkHandleReorg(height uint64, chainPrevHash string) (uint64, error) {
 			prevHeight--
 			prevBlock, err = model.BlocksG(qm.Where(model.BlockColumns.Height+"=?", prevHeight)).One()
 			if err != nil {
-				return height, err
+				return height, errors.Prefix("error getting previous block@"+strconv.Itoa(int(prevHeight))+": ", err)
 			}
 		}
 		if depth > 0 {
-			logrus.Warning("Reorg detected of depth ", depth, " at height ", height, ", handling reorg processing!")
+			logrus.Warning("Reorg detected of depth ", depth, " at height ", height,
+				",(last matching height ", prevHeight, ") handling reorg processing!")
 			return prevHeight, nil
 		}
 	}
