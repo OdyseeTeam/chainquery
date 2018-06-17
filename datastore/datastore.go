@@ -32,16 +32,18 @@ func GetOutput(txHash string, vout uint) *model.Output {
 func PutOutput(output *model.Output, whitelist ...string) error {
 	defer util.TimeTrack(time.Now(), "PutOutput", "mysqlprofile")
 	if output != nil {
-		key := outputKey{txHash: output.TransactionHash, vout: output.Vout}
 		txHashMatch := qm.Where(model.OutputColumns.TransactionHash+"=?", output.TransactionHash)
 		vOutMatch := qm.And(model.OutputColumns.Vout+"=?", output.Vout)
 		var err error
-		if checkOutputCache(key) || model.OutputsG(txHashMatch, vOutMatch).ExistsP() {
+		if model.OutputsG(txHashMatch, vOutMatch).ExistsP() {
 			output.Modified = time.Now()
 			err = output.UpdateG(whitelist...)
 		} else {
 			err = output.InsertG()
-			addToOuputCache(key)
+			if err != nil {
+				output.Modified = time.Now()
+				err = output.UpdateG(whitelist...)
+			}
 		}
 		if err != nil {
 			err = errors.Prefix("Datastore(PUTOUTPUT): ", err)
@@ -203,6 +205,10 @@ func PutClaim(claim *model.Claim) error {
 			err = claim.UpdateG()
 		} else {
 			err = claim.InsertG()
+			if err != nil {
+				claim.Modified = time.Now()
+				err = claim.UpdateG()
+			}
 		}
 		if err != nil {
 			err = errors.Prefix("Datastore(PUTCLAIM): ", err)
