@@ -67,7 +67,16 @@ func createUpdateVinAddresses(tx *model.Transaction, inputs *[]lbrycrd.Vin, bloc
 			if input.Coinbase != "" {
 				continue //No addresses for coinbase inputs.
 			}
-			return nil, errors.Base("Missing source output for " + input.TxID + "-" + strconv.Itoa(int(input.Vout)))
+			logrus.Warning("Missing source output for " + input.TxID + "-" + strconv.Itoa(int(input.Vout)) + ": attempting to fix...")
+			//Attempt to fix automatically
+			err := fixMissingSourceOutput(input.TxID)
+			if err != nil {
+				return nil, errors.Prefix("could not fix missing source output for "+input.TxID+"-"+strconv.Itoa(int(input.Vout))+" due to: ", err)
+			}
+			srcOutput = datastore.GetOutput(input.TxID, uint(input.Vout))
+			if srcOutput != nil {
+				return nil, errors.Base("Missing source output for " + input.TxID + "-" + strconv.Itoa(int(input.Vout)))
+			}
 		}
 		var addresses []string
 		if !srcOutput.AddressList.Valid {

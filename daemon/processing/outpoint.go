@@ -254,3 +254,18 @@ func processScriptForClaim(vout m.Output, tx m.Transaction) (*string, error) {
 
 	return claimid, nil
 }
+
+func fixMissingSourceOutput(txHash string) error {
+	jsonTx, err := lbrycrd.GetRawTransactionResponse(txHash)
+	if err != nil {
+		return err
+	}
+	jsonBlock, err := lbrycrd.GetBlock(jsonTx.BlockHash)
+	if err != nil {
+		return err
+	}
+	height := uint64(jsonBlock.Height)
+	RunBlockProcessing(&height)
+
+	return nil
+}
