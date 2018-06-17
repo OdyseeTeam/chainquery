@@ -11,6 +11,7 @@ import (
 	"github.com/lbryio/lbry.go/errors"
 
 	"github.com/sirupsen/logrus"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 type vinToProcess struct {
@@ -265,7 +266,14 @@ func fixMissingSourceOutput(txHash string) error {
 		return err
 	}
 	height := uint64(jsonBlock.Height)
-	RunBlockProcessing(&height)
+	dbBlock, err := m.BlocksG(qm.OrderBy(m.BlockColumns.Height + " DESC")).One()
+	if err != nil {
+		return err
+	}
+	//If
+	if dbBlock.Height > height {
+		RunBlockProcessing(&height)
+	}
 
 	return nil
 }
