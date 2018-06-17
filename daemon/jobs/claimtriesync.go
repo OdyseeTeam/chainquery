@@ -201,8 +201,18 @@ func syncClaim(claimJSON *lbrycrd.Claim) {
 func getClaimStatus(claim *model.Claim) string {
 	status := "Accepted"
 	//Transaction and output should never be missing if the claim exists.
-	transaction := claim.TransactionByHashG().OneP()
-	output := transaction.OutputsG(qm.Where(model.OutputColumns.Vout+"=?", claim.Vout)).OneP()
+	transaction, err := claim.TransactionByHashG().One()
+	if err != nil {
+		logrus.Error("could not find transaction ", claim.TransactionByHashID, " : ", err)
+		return status
+	}
+
+	output, err := transaction.OutputsG(qm.Where(model.OutputColumns.Vout+"=?", claim.Vout)).One()
+	if err != nil {
+		logrus.Error("could not find output ", claim.TransactionByHashID, "-", claim.Vout, " : ", err)
+		return status
+	}
+
 	if output.IsSpent {
 		status = "Spent" //Should be unreachable because claim would be out of claimtrie if spent.
 	}
