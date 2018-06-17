@@ -39,9 +39,3 @@ func addToTxAddrCache(key txAddressKey) {
 	defer tcAddrLock.Unlock()
 	txAddrCache[key] = true
 }
-
-func addToOuputCache(key outputKey) {
-	outputLock.Lock()
-	defer outputLock.Unlock()
-	outputCache[key] = true
-}
