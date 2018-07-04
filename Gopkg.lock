@@ -43,6 +43,12 @@
   revision = "31079b6807923eb23992c421b114992b95131b55"
 
 [[projects]]
+  name = "github.com/dgrijalva/jwt-go"
+  packages = ["."]
+  revision = "06ea1031745cb8b3dab3f6a236daf2b0aa468b7e"
+  version = "v3.2.0"
+
+[[projects]]
   name = "github.com/fatih/color"
   packages = ["."]
   revision = "5b77d2a35fb0ede96d138fc9a99f5c9b6aef11b4"
@@ -92,6 +98,12 @@
   packages = ["."]
   revision = "53c1911da2b537f792e7cafcb446b05ffe33b996"
   version = "v1.6.1"
+
+[[projects]]
+  name = "github.com/gorilla/schema"
+  packages = ["."]
+  revision = "d0e4c24cff97ae983e9847e0ed5a02dc10013d41"
+  version = "v1.0.2"
 
 [[projects]]
   name = "github.com/gorilla/websocket"
@@ -225,6 +237,12 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/sfreiberg/gotwilio"
+  packages = ["."]
+  revision = "8fb7259ba8bf8c1b0e16e8568da10785ac29c79f"
+
+[[projects]]
+  branch = "master"
   name = "github.com/shopspring/decimal"
   packages = ["."]
   revision = "2df3e6ddaf6e9531dd02d7b6337f2d310f5e4f22"
@@ -281,8 +299,8 @@
     "queries/qm",
     "strmangle"
   ]
-  revision = "e92eb387e26dfcc2f39555a7fc96fe20b45d0a7a"
-  version = "v2.7.1"
+  revision = "d4bc831c7df09032b8290a3ddfb7bb41a0866934"
+  version = "v2.7.3"
 
 [[projects]]
   branch = "master"
@@ -383,6 +401,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "5e9a3c8e296ae2cfb46e7bfdc3e38ba9a1dfc7c859bbea814fba293f695e7b12"
+  inputs-digest = "fb7c8000b0364d94e44f31f67d9b3ae9ca3a4f257884182e931bcdbd4279c9e8"
   solver-name = "gps-cdcl"
   solver-version = 1
