@@ -1,19 +1,21 @@
 package processing
 
 import (
+	"fmt"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/lbryio/chainquery/lbrycrd"
 	"github.com/lbryio/chainquery/model"
+	"github.com/lbryio/chainquery/twilio"
 	"github.com/lbryio/chainquery/util"
 	"github.com/lbryio/lbry.go/errors"
 
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/queries/qm"
-	"strconv"
 )
 
 // RunBlockProcessing runs the processing of a block at a specific height. While any height can be passed in it is
@@ -161,8 +163,11 @@ func checkHandleReorg(height uint64, chainPrevHash string) (uint64, error) {
 			}
 		}
 		if depth > 0 {
-			logrus.Warning("Reorg detected of depth ", depth, " at height ", height,
-				",(last matching height ", prevHeight, ") handling reorg processing!")
+			message := fmt.Sprintf("Reorg detected of depth %d at height %d,(last matching height %d) handling reorg processing!", depth, height, prevHeight)
+			logrus.Warning(message)
+			if depth > 2 {
+				twilio.SendSMS(message)
+			}
 			return prevHeight, nil
 		}
 	}

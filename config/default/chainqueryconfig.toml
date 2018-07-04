@@ -49,3 +49,9 @@
 
 #The command that should be executed to trigger a self update of the software. For linux, for example, `<yourscript>.sh`
 #DEFAULT-autoupdatecommand=[unset]
+
+#Twilio service of chainquery to send specifically important information to key users of the Chainquery install.
+#DEFAULT-twiliosid=""
+#DEFAULT-twilioauthtoken=""
+#DEFAULT-smsrecipients=["",""]
+#DEFAULT-smsfromphonenumber=""

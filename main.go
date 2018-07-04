@@ -15,6 +15,7 @@ import (
 	"github.com/lbryio/chainquery/lbrycrd"
 	"github.com/lbryio/chainquery/meta"
 	"github.com/lbryio/chainquery/swagger/apiserver"
+	"github.com/lbryio/chainquery/twilio"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -22,6 +23,7 @@ import (
 func main() {
 	config.InitializeConfiguration()
 	config.InitSlack()
+	twilio.InitTwilio()
 	apiactions.AutoUpdateCommand = config.GetAutoUpdateCommand()
 	log.SetFormatter(&log.TextFormatter{FullTimestamp: true})
 	http.DefaultClient.Timeout = config.GetDefaultClientTimeout()

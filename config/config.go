@@ -9,6 +9,7 @@ import (
 	"github.com/lbryio/chainquery/daemon"
 	"github.com/lbryio/chainquery/global"
 	"github.com/lbryio/chainquery/lbrycrd"
+	"github.com/lbryio/chainquery/twilio"
 	"github.com/lbryio/lbry.go/errors"
 
 	"github.com/fsnotify/fsnotify"
@@ -37,6 +38,10 @@ const ( // config setting keys
 	slackchannel         = "slackchannel"
 	slackloglevel        = "slackloglevel"
 	autoupdatecommand    = "autoupdatecommand"
+	twiliosid            = "twiliosid"
+	twilioauthtoken      = "twilioauthtoken"
+	smsrecipients        = "smsrecipients"
+	smsfromphonenumber   = "smsfromphonenumber"
 )
 
 const (
@@ -100,6 +105,10 @@ func readConfig() {
 	if err != nil {             // Handle errors reading the config file
 		logrus.Warning("Error reading config file...defaults will be used: ", err)
 	}
+	twilio.RecipientList = viper.GetStringSlice(smsrecipients)
+	twilio.FromNumber = viper.GetString(smsfromphonenumber)
+	twilio.TwilioAuthToken = viper.GetString(twilioauthtoken)
+	twilio.TwilioSID = viper.GetString(twiliosid)
 }
 
 func initDefaults() {
@@ -118,6 +127,8 @@ func initDefaults() {
 	viper.SetDefault(mysqlprofile, false)
 	viper.SetDefault(apihostport, "0.0.0.0:6300")
 	viper.SetDefault(slackloglevel, 0)
+	viper.SetDefault(smsrecipients, []string{})
+	viper.SetDefault(smsfromphonenumber, "")
 }
 
 func processConfiguration() {
