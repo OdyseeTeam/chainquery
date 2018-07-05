@@ -85,8 +85,9 @@ a work in progress :) .
 ### Daemon
 
 The Daemon is responsible for updating the Chainquery database to keep it in sync with lbrycrd data. The daemon runs periodically to check if there are newly 
-confirmed(6 confirmations currently) blocks that need to be processed. The Daemon simply processes the block and its
-transactions. The entry points are [daemon iterations](/daemon/daemon.go)(`func daemonIteration()`) [block processing](/daemon/processing/block.go)(`func RunBlockProcessing(height *uint64)`), 
+created blocks that need to be processed. The Daemon simply processes the block and its
+transactions. It also handles blockchain reorganizations. It will remove the orphaned block data and processing the new blocks from that height it diverged.
+The entry points are [daemon iterations](/daemon/daemon.go)(`func daemonIteration()`) [block processing](/daemon/processing/block.go)(`func RunBlockProcessing(height *uint64)`), 
 [transaction processing](/daemon/processing/transaction.go)(`func ProcessTx(jsonTx *lbrycrd.TxRawResult, blockTime uint64)`).
 
 ### Job Scheduler
