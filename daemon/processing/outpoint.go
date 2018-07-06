@@ -20,9 +20,10 @@ type vinToProcess struct {
 }
 
 type voutToProcess struct {
-	jsonVout *lbrycrd.Vout
-	tx       *m.Transaction
-	txDC     *txDebitCredits
+	jsonVout    *lbrycrd.Vout
+	tx          *m.Transaction
+	txDC        *txDebitCredits
+	blockHeight uint64
 }
 
 func initVinWorkers(nrWorkers int, jobs <-chan vinToProcess, results chan<- error) {
@@ -45,7 +46,7 @@ func initVoutWorkers(nrWorkers int, jobs <-chan voutToProcess, results chan<- er
 
 func voutProcessor(jobs <-chan voutToProcess, results chan<- error) {
 	for job := range jobs {
-		results <- processVout(job.jsonVout, job.tx, job.txDC)
+		results <- processVout(job.jsonVout, job.tx, job.txDC, job.blockHeight)
 	}
 }
 
@@ -150,7 +151,7 @@ func processCoinBaseVin(jsonVin *lbrycrd.Vin, vin *m.Input) error {
 	return nil
 }
 
-func processVout(jsonVout *lbrycrd.Vout, tx *m.Transaction, txDC *txDebitCredits) error {
+func processVout(jsonVout *lbrycrd.Vout, tx *m.Transaction, txDC *txDebitCredits, blockHeight uint64) error {
 	vout := &m.Output{}
 	foundVout := ds.GetOutput(tx.Hash, uint(jsonVout.N))
 	if foundVout != nil {
@@ -206,7 +207,7 @@ func processVout(jsonVout *lbrycrd.Vout, tx *m.Transaction, txDC *txDebitCredits
 	}
 
 	// Process script for potential claims
-	claimid, err := processScriptForClaim(*vout, *tx)
+	claimid, err := processScriptForClaim(*vout, *tx, blockHeight)
 	if err != nil {
 		return err
 	}
@@ -235,7 +236,7 @@ func getAddressFromNonStandardVout(hexString string) (address string, err error)
 	return address, nil
 }
 
-func processScriptForClaim(vout m.Output, tx m.Transaction) (*string, error) {
+func processScriptForClaim(vout m.Output, tx m.Transaction, blockHeight uint64) (*string, error) {
 	var claimid *string
 	scriptBytes, err := hex.DecodeString(vout.ScriptPubKeyHex.String)
 	if err != nil {
@@ -244,7 +245,7 @@ func processScriptForClaim(vout m.Output, tx m.Transaction) (*string, error) {
 	isNonStandard := vout.Type.String == lbrycrd.NonStandard
 	isClaimScript := lbrycrd.IsClaimScript(scriptBytes)
 	if isNonStandard && isClaimScript {
-		_, claimid, err = processAsClaim(scriptBytes, vout, tx)
+		_, claimid, err = processAsClaim(scriptBytes, vout, tx, blockHeight)
 		if err != nil {
 			return nil, err
 		}

@@ -40,7 +40,7 @@ func processClaimOut(index int, total int, txHash string) {
 		logrus.Info("(", index, "/", total, ")", "Processing@Height ", block.Height)
 	}
 
-	err = processing.ProcessTx(txResult, block.BlockTime)
+	err = processing.ProcessTx(txResult, block.BlockTime, block.Height)
 	if err != nil {
 		logrus.Error("Reprocess Claim Error: ", err)
 	}
@@ -101,6 +101,49 @@ func setClaimAddresses() {
 			if err := claim.UpdateG(model.ClaimColumns.ClaimAddress); err != nil {
 				logrus.Error("Saving Claim Address Error: ", err)
 			}
+		}
+	}
+}
+
+func setBlockHeightOnAllClaims() {
+
+	type claimInfo struct {
+		ID       uint64 `boil:"id"`
+		claim_id string `boil:"claim_id"`
+		height   uint64 `boil:"height"`
+	}
+
+	rows, err := boil.GetDB().Query(`
+	SELECT c.id,b.height
+	FROM claim c
+	LEFT JOIN transaction t on c.transaction_by_hash_id = t.hash
+	LEFT JOIN block b on b.hash = t.block_by_hash_id
+	WHERE c.height = 0`)
+
+	if err != nil {
+		logrus.Panic("Error During Upgrade: ", err)
+	}
+	defer util.CloseRows(rows)
+
+	var slice []claimInfo
+
+	for rows.Next() {
+		var info claimInfo
+		err = rows.Scan(&info.ID, &info.height)
+		if err != nil {
+			logrus.Panic("Error During Upgrade: ", err)
+		}
+		slice = append(slice, info)
+	}
+
+	for i, info := range slice {
+		if i%1000 == 0 {
+			logrus.Info("Processing: ", "(", i, "/", len(slice), ")")
+		}
+
+		claim := model.Claim{ID: info.ID, Height: uint(info.height)}
+		if err := claim.UpdateG(model.ClaimColumns.Height); err != nil {
+			println(err)
 		}
 	}
 }

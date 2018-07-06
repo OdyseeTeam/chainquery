@@ -16,12 +16,12 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func processAsClaim(script []byte, vout model.Output, tx model.Transaction) (address *string, claimID *string, err error) {
+func processAsClaim(script []byte, vout model.Output, tx model.Transaction, blockHeight uint64) (address *string, claimID *string, err error) {
 	var pubkeyscript []byte
 	var name string
 	var claimid string
 	if lbrycrd.IsClaimNameScript(script) {
-		name, claimid, pubkeyscript, err = processClaimNameScript(&script, vout, tx)
+		name, claimid, pubkeyscript, err = processClaimNameScript(&script, vout, tx, blockHeight)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -31,7 +31,7 @@ func processAsClaim(script []byte, vout model.Output, tx model.Transaction) (add
 			return nil, nil, err
 		}
 	} else if lbrycrd.IsClaimUpdateScript(script) {
-		name, claimid, pubkeyscript, err = processClaimUpdateScript(&script, vout, tx)
+		name, claimid, pubkeyscript, err = processClaimUpdateScript(&script, vout, tx, blockHeight)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -45,7 +45,7 @@ func processAsClaim(script []byte, vout model.Output, tx model.Transaction) (add
 	return address, &claimid, nil
 }
 
-func processClaimNameScript(script *[]byte, vout model.Output, tx model.Transaction) (name string, claimid string, pkscript []byte, err error) {
+func processClaimNameScript(script *[]byte, vout model.Output, tx model.Transaction, blockHeight uint64) (name string, claimid string, pkscript []byte, err error) {
 	claimid, err = util.ClaimIDFromOutpoint(vout.TransactionHash, int(vout.Vout))
 	if err != nil {
 		return name, "", pkscript, err
@@ -74,6 +74,7 @@ func processClaimNameScript(script *[]byte, vout model.Output, tx model.Transact
 	claim.Name = name
 	claim.TransactionTime = tx.TransactionTime
 	claim.ClaimAddress = lbrycrd.GetAddressFromPublicKeyScript(pkscript)
+	claim.Height = uint(blockHeight)
 	err = datastore.PutClaim(claim)
 
 	return name, claimid, pkscript, err
@@ -94,7 +95,7 @@ func processClaimSupportScript(script *[]byte, vout model.Output, tx model.Trans
 	return name, claimid, pubkeyscript, err
 }
 
-func processClaimUpdateScript(script *[]byte, vout model.Output, tx model.Transaction) (name string, claimID string, pubkeyscript []byte, err error) {
+func processClaimUpdateScript(script *[]byte, vout model.Output, tx model.Transaction, blockHeight uint64) (name string, claimID string, pubkeyscript []byte, err error) {
 	name, claimID, value, pubkeyscript, err := lbrycrd.ParseClaimUpdateScript(*script)
 	if err != nil {
 		err := errors.Prefix("Claim update processing error: ", err)
@@ -117,6 +118,7 @@ func processClaimUpdateScript(script *[]byte, vout model.Output, tx model.Transa
 			return name, claimID, pubkeyscript, err
 		}
 		claim.ClaimAddress = lbrycrd.GetAddressFromPublicKeyScript(pubkeyscript)
+		claim.Height = uint(blockHeight)
 		if err := datastore.PutClaim(claim); err != nil {
 			logrus.Debug("Claim updates to invalid certificate claim. ", claim.PublisherID)
 			if logrus.GetLevel() == logrus.DebugLevel {

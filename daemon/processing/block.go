@@ -70,11 +70,11 @@ func RunBlockProcessing(height *uint64) uint64 {
 	}
 
 	txs := jsonBlock.Tx
-	syncTransactionsOfBlock(txs, block.BlockTime)
+	syncTransactionsOfBlock(txs, block.BlockTime, block.Height)
 	return *height
 }
 
-func syncTransactionsOfBlock(txs []string, blockTime uint64) {
+func syncTransactionsOfBlock(txs []string, blockTime uint64, blockHeight uint64) {
 	txJobs := make(chan txToProcess, 100)
 	errorchan := make(chan txProcessError, 100)
 	workers := util.Min(len(txs), runtime.NumCPU())
@@ -87,7 +87,7 @@ func syncTransactionsOfBlock(txs []string, blockTime uint64) {
 			if err != nil {
 				logrus.Error("GetRawTxError:", err)
 			} else {
-				go func() { txJobs <- txToProcess{tx: jsonTx, blockTime: blockTime} }()
+				go func() { txJobs <- txToProcess{tx: jsonTx, blockTime: blockTime, blockHeight: blockHeight} }()
 			}
 		}(i)
 	}

@@ -6,6 +6,7 @@
 // migration/003_dht_tracking.sql
 // migration/004_new_indices.sql
 // migration/005_remove_foreign_keys.sql
+// migration/006_add_height_index.sql
 // DO NOT EDIT!
 
 package migration
@@ -193,6 +194,26 @@ func migration005_remove_foreign_keysSql() (*asset, error) {
 	return a, nil
 }
 
+var _migration006_add_height_indexSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xd2\xd5\x55\xd0\xce\xcd\x4c\x2f\x4a\x2c\x49\x55\x08\x2d\xe0\xe2\x42\xe6\x07\x97\x24\x96\xa4\xe6\xa6\xe6\x95\x38\xa5\xa6\x67\xe6\x71\x39\xfa\x84\xb8\x06\x29\x84\x38\x3a\xf9\xb8\x2a\x24\x24\xe7\x24\x66\xe6\x26\x28\x38\xba\xb8\x28\x78\xfa\xb9\xb8\x46\x28\x24\x78\xa6\x54\xc4\x7b\xa4\x66\xa6\x67\x94\x24\x28\x68\x24\x64\x40\x59\x8e\xc1\xce\x9a\xd6\xd8\x4d\x75\xcd\x4b\x01\x04\x00\x00\xff\xff\xd4\x45\xc4\xac\x7e\x00\x00\x00")
+
+func migration006_add_height_indexSqlBytes() ([]byte, error) {
+	return bindataRead(
+		_migration006_add_height_indexSql,
+		"migration/006_add_height_index.sql",
+	)
+}
+
+func migration006_add_height_indexSql() (*asset, error) {
+	bytes, err := migration006_add_height_indexSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "migration/006_add_height_index.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -251,6 +272,7 @@ var _bindata = map[string]func() (*asset, error){
 	"migration/003_dht_tracking.sql":        migration003_dht_trackingSql,
 	"migration/004_new_indices.sql":         migration004_new_indicesSql,
 	"migration/005_remove_foreign_keys.sql": migration005_remove_foreign_keysSql,
+	"migration/006_add_height_index.sql":    migration006_add_height_indexSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -301,6 +323,7 @@ var _bintree = &bintree{nil, map[string]*bintree{
 		"003_dht_tracking.sql":        &bintree{migration003_dht_trackingSql, map[string]*bintree{}},
 		"004_new_indices.sql":         &bintree{migration004_new_indicesSql, map[string]*bintree{}},
 		"005_remove_foreign_keys.sql": &bintree{migration005_remove_foreign_keysSql, map[string]*bintree{}},
+		"006_add_height_index.sql":    &bintree{migration006_add_height_indexSql, map[string]*bintree{}},
 	}},
 }}
 

@@ -16,16 +16,18 @@ import (
 )
 
 type txToProcess struct {
-	tx        *lbrycrd.TxRawResult
-	blockTime uint64
-	failcount int
+	tx          *lbrycrd.TxRawResult
+	blockTime   uint64
+	blockHeight uint64
+	failcount   int
 }
 
 type txProcessError struct {
-	tx        *lbrycrd.TxRawResult
-	blockTime uint64
-	err       error
-	failcount int
+	tx          *lbrycrd.TxRawResult
+	blockTime   uint64
+	blockHeight uint64
+	err         error
+	failcount   int
 }
 
 func initTxWorkers(nrWorkers int, jobs <-chan txToProcess, results chan<- txProcessError) {
@@ -36,8 +38,13 @@ func initTxWorkers(nrWorkers int, jobs <-chan txToProcess, results chan<- txProc
 
 func txProcessor(jobs <-chan txToProcess, results chan<- txProcessError) {
 	for job := range jobs {
-		err := ProcessTx(job.tx, job.blockTime)
-		results <- txProcessError{tx: job.tx, blockTime: job.blockTime, err: err, failcount: job.failcount + 1}
+		err := ProcessTx(job.tx, job.blockTime, job.blockHeight)
+		results <- txProcessError{
+			tx:          job.tx,
+			blockTime:   job.blockTime,
+			blockHeight: job.blockHeight,
+			err:         err,
+			failcount:   job.failcount + 1}
 	}
 }
 
@@ -90,7 +97,7 @@ func (txDC *txDebitCredits) add(address string, value float64) {
 }
 
 // ProcessTx processes an individual transaction from a block.
-func ProcessTx(jsonTx *lbrycrd.TxRawResult, blockTime uint64) error {
+func ProcessTx(jsonTx *lbrycrd.TxRawResult, blockTime uint64, blockHeight uint64) error {
 	defer util.TimeTrack(time.Now(), "processTx "+jsonTx.Txid+" -- ", "daemonprofile")
 
 	//Save transaction before the id is used any where else otherwise it will be 0
@@ -116,7 +123,7 @@ func ProcessTx(jsonTx *lbrycrd.TxRawResult, blockTime uint64) error {
 	saveUpdateInputs(transaction, jsonTx, txDbCrAddrMap)
 
 	// Process the outputs of the transaction
-	saveUpdateOutputs(transaction, jsonTx, txDbCrAddrMap)
+	saveUpdateOutputs(transaction, jsonTx, txDbCrAddrMap, blockHeight)
 
 	//Set the send and receive values for the transaction
 	setSendReceive(transaction, txDbCrAddrMap)
@@ -178,7 +185,7 @@ func saveUpdateInputs(transaction *model.Transaction, jsonTx *lbrycrd.TxRawResul
 	close(errorchan)
 }
 
-func saveUpdateOutputs(transaction *model.Transaction, jsonTx *lbrycrd.TxRawResult, txDbCrAddrMap *txDebitCredits) {
+func saveUpdateOutputs(transaction *model.Transaction, jsonTx *lbrycrd.TxRawResult, txDbCrAddrMap *txDebitCredits, blockHeight uint64) {
 	vouts := jsonTx.Vout
 	voutjobs := make(chan voutToProcess, len(vouts))
 	errorchan := make(chan error, len(vouts))
@@ -186,7 +193,7 @@ func saveUpdateOutputs(transaction *model.Transaction, jsonTx *lbrycrd.TxRawResu
 	initVoutWorkers(workers, voutjobs, errorchan)
 	for i := range vouts {
 		index := i
-		voutjobs <- voutToProcess{jsonVout: &vouts[index], tx: transaction, txDC: txDbCrAddrMap}
+		voutjobs <- voutToProcess{jsonVout: &vouts[index], tx: transaction, txDC: txDbCrAddrMap, blockHeight: blockHeight}
 	}
 	close(voutjobs)
 	for i := 0; i < len(vouts); i++ {
