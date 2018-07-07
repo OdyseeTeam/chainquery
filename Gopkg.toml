@@ -57,7 +57,7 @@
 
 [[constraint]]
   name = "github.com/sirupsen/logrus"
-  revision = "f006c2ac4710855cf0f916dd6b77acf6b048dc6e"
+  branch = "master"
 
 [[constraint]]
   name = "github.com/johntdyer/slackrus"

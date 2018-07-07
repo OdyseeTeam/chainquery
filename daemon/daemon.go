@@ -13,7 +13,7 @@ import (
 	"github.com/lbryio/chainquery/global"
 	"github.com/lbryio/chainquery/lbrycrd"
 	"github.com/lbryio/chainquery/model"
-	"github.com/lbryio/lbry.go/stopOnce"
+	"github.com/lbryio/lbry.go/stop"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/boil"
@@ -45,7 +45,7 @@ var iteration int64
 
 var blockQueue = make(chan uint64)
 var blockProcessedChan = make(chan uint64)
-var stop = stopOnce.New()
+var stopper = stop.New()
 
 //DoYourThing kicks off the daemon and jobs
 func DoYourThing() {
@@ -69,18 +69,18 @@ func initJobs() {
 
 func shutdownDaemon() {
 	log.Info("Shutting down daemon...") //
-	stop.StopAndWait()
+	stopper.StopAndWait()
 }
 
 func scheduleJob(job func(), howOften time.Duration) {
 	asyncStoppable(job)
-	stop.Add(1)
+	stopper.Add(1)
 	go func() {
-		defer stop.Done()
+		defer stopper.Done()
 		t := time.NewTicker(howOften)
 		for {
 			select {
-			case <-stop.Ch():
+			case <-stopper.Ch():
 				log.Info("stopping job scheduler...")
 				return
 			case <-t.C:
@@ -100,7 +100,7 @@ func runDaemon() {
 	log.Info("Daemon initialized and running")
 	for {
 		select {
-		case <-stop.Ch():
+		case <-stopper.Ch():
 			log.Info("stopping daemon...")
 			return
 		default:
@@ -116,9 +116,9 @@ func runDaemon() {
 }
 
 func asyncStoppable(function func()) {
-	stop.Add(1)
+	stopper.Add(1)
 	go func() {
-		stop.Done()
+		stopper.Done()
 		function()
 	}()
 }
@@ -136,7 +136,7 @@ func daemonIteration() {
 	for {
 
 		select {
-		case <-stop.Ch():
+		case <-stopper.Ch():
 			log.Info("stopping daemon iteration...")
 			return
 		default:
@@ -180,9 +180,9 @@ func ApplySettings(settings global.DaemonSettings) {
 
 func initBlockWorkers(nrWorkers int, jobs <-chan uint64) {
 	for i := 0; i < nrWorkers; i++ {
-		stop.Add(1)
+		stopper.Add(1)
 		go func(worker int) {
-			defer stop.Done()
+			defer stopper.Done()
 			log.Info("block worker ", worker+1, " running")
 			BlockProcessor(jobs, worker)
 		}(i)
