@@ -186,7 +186,7 @@ func syncClaim(claimJSON *lbrycrd.Claim) {
 	hasChanges := false
 	claim := datastore.GetClaim(claimJSON.ClaimID)
 	if claim == nil {
-		unknown, _ := model.UnknownClaimsG(qm.Where(model.UnknownClaimColumns.ClaimID+"=?", claimJSON.ClaimID)).One()
+		unknown, _ := model.AbnormalClaimsG(qm.Where(model.AbnormalClaimColumns.ClaimID+"=?", claimJSON.ClaimID)).One()
 		if unknown == nil {
 			logrus.Debug("ClaimTrieSync: Missing Claim ", claimJSON.ClaimID, " ", claimJSON.TxID, " ", claimJSON.N)
 		}
@@ -211,15 +211,15 @@ func syncClaim(claimJSON *lbrycrd.Claim) {
 func getClaimStatus(claim *model.Claim) string {
 	status := "Accepted"
 	//Transaction and output should never be missing if the claim exists.
-	transaction, err := claim.TransactionByHashG().One()
+	transaction, err := claim.TransactionHashG().One()
 	if err != nil {
-		logrus.Error("could not find transaction ", claim.TransactionByHashID, " : ", err)
+		logrus.Error("could not find transaction ", claim.TransactionHashID, " : ", err)
 		return status
 	}
 
 	output, err := transaction.OutputsG(qm.Where(model.OutputColumns.Vout+"=?", claim.Vout)).One()
 	if err != nil {
-		logrus.Error("could not find output ", claim.TransactionByHashID, "-", claim.Vout, " : ", err)
+		logrus.Error("could not find output ", claim.TransactionHashID, "-", claim.Vout, " : ", err)
 		return status
 	}
 
@@ -250,8 +250,8 @@ func getUpdatedClaims(jobStatus *model.JobStatus) (model.ClaimSlice, error) {
 	claimIDCol := model.TableNames.Claim + "." + model.ClaimColumns.ClaimID
 	claimNameCol := model.TableNames.Claim + "." + model.ClaimColumns.Name
 	supportedIDCol := model.TableNames.Support + "." + model.SupportColumns.SupportedClaimID
-	supportModifiedCol := model.TableNames.Support + ".modified" //+model.SupportColumns.Modified
-	claimModifiedCol := model.TableNames.Claim + "." + model.ClaimColumns.Modified
+	supportModifiedCol := model.TableNames.Support + "." + model.SupportColumns.ModifiedAt
+	claimModifiedCol := model.TableNames.Claim + "." + model.ClaimColumns.ModifiedAt
 	sqlFormat := "2006-01-02 15:04:05"
 	lastsync := jobStatus.LastSync.Format(sqlFormat)
 	lastSyncStr := "'" + lastsync + "'"
@@ -266,7 +266,7 @@ func getUpdatedClaims(jobStatus *model.JobStatus) (model.ClaimSlice, error) {
 			LEFT JOIN ` + model.TableNames.Support + ` 
 				ON ( ` + supportedIDCol + ` = ` + claimIDCol + ` AND ` + supportModifiedCol + ` >= ` + lastSyncStr + ` )
 			WHERE ` + claimModifiedCol + ` >= ` + lastSyncStr + ` OR ` + supportedIDCol + ` IS NOT NULL
-			GROUP BY  claim.name
+			GROUP BY  ` + claimNameCol + `
 		)
 `
 	logrus.Debug("Query: ", query)
@@ -280,7 +280,7 @@ func getSpentClaimsToUpdate() (model.ClaimSlice, error) {
 
 	claimID := claim + "." + model.ClaimColumns.ID
 	claimClaimID := claim + "." + model.ClaimColumns.ClaimID
-	claimTxByHash := claim + "." + model.ClaimColumns.TransactionByHashID
+	claimTxByHash := claim + "." + model.ClaimColumns.TransactionHashID
 	claimVout := claim + "." + model.ClaimColumns.Vout
 	claimBidState := claim + "." + model.ClaimColumns.BidState
 
@@ -308,8 +308,8 @@ func updateSpentClaims() error {
 	}
 	for _, claim := range claims {
 		claim.BidState = "Spent"
-		claim.Modified = time.Now()
-		if err := claim.UpdateG(model.ClaimColumns.BidState, model.ClaimColumns.Modified); err != nil {
+		claim.ModifiedAt = time.Now()
+		if err := claim.UpdateG(model.ClaimColumns.BidState, model.ClaimColumns.ModifiedAt); err != nil {
 			return err
 		}
 	}

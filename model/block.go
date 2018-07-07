@@ -29,21 +29,19 @@ type Block struct {
 	Difficulty            float64     `boil:"difficulty" json:"difficulty" toml:"difficulty" yaml:"difficulty"`
 	Hash                  string      `boil:"hash" json:"hash" toml:"hash" yaml:"hash"`
 	Height                uint64      `boil:"height" json:"height" toml:"height" yaml:"height"`
-	MedianTime            uint64      `boil:"median_time" json:"median_time" toml:"median_time" yaml:"median_time"`
 	MerkleRoot            string      `boil:"merkle_root" json:"merkle_root" toml:"merkle_root" yaml:"merkle_root"`
 	NameClaimRoot         string      `boil:"name_claim_root" json:"name_claim_root" toml:"name_claim_root" yaml:"name_claim_root"`
 	Nonce                 uint64      `boil:"nonce" json:"nonce" toml:"nonce" yaml:"nonce"`
 	PreviousBlockHash     null.String `boil:"previous_block_hash" json:"previous_block_hash,omitempty" toml:"previous_block_hash" yaml:"previous_block_hash,omitempty"`
 	NextBlockHash         null.String `boil:"next_block_hash" json:"next_block_hash,omitempty" toml:"next_block_hash" yaml:"next_block_hash,omitempty"`
 	BlockSize             uint64      `boil:"block_size" json:"block_size" toml:"block_size" yaml:"block_size"`
-	Target                string      `boil:"target" json:"target" toml:"target" yaml:"target"`
 	BlockTime             uint64      `boil:"block_time" json:"block_time" toml:"block_time" yaml:"block_time"`
 	Version               uint64      `boil:"version" json:"version" toml:"version" yaml:"version"`
 	VersionHex            string      `boil:"version_hex" json:"version_hex" toml:"version_hex" yaml:"version_hex"`
 	TransactionHashes     null.String `boil:"transaction_hashes" json:"transaction_hashes,omitempty" toml:"transaction_hashes" yaml:"transaction_hashes,omitempty"`
 	TransactionsProcessed bool        `boil:"transactions_processed" json:"transactions_processed" toml:"transactions_processed" yaml:"transactions_processed"`
-	Created               time.Time   `boil:"created" json:"created" toml:"created" yaml:"created"`
-	Modified              time.Time   `boil:"modified" json:"modified" toml:"modified" yaml:"modified"`
+	CreatedAt             time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	ModifiedAt            time.Time   `boil:"modified_at" json:"modified_at" toml:"modified_at" yaml:"modified_at"`
 
 	R *blockR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L blockL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -57,21 +55,19 @@ var BlockColumns = struct {
 	Difficulty            string
 	Hash                  string
 	Height                string
-	MedianTime            string
 	MerkleRoot            string
 	NameClaimRoot         string
 	Nonce                 string
 	PreviousBlockHash     string
 	NextBlockHash         string
 	BlockSize             string
-	Target                string
 	BlockTime             string
 	Version               string
 	VersionHex            string
 	TransactionHashes     string
 	TransactionsProcessed string
-	Created               string
-	Modified              string
+	CreatedAt             string
+	ModifiedAt            string
 }{
 	ID:                    "id",
 	Bits:                  "bits",
@@ -80,35 +76,33 @@ var BlockColumns = struct {
 	Difficulty:            "difficulty",
 	Hash:                  "hash",
 	Height:                "height",
-	MedianTime:            "median_time",
 	MerkleRoot:            "merkle_root",
 	NameClaimRoot:         "name_claim_root",
 	Nonce:                 "nonce",
 	PreviousBlockHash:     "previous_block_hash",
 	NextBlockHash:         "next_block_hash",
 	BlockSize:             "block_size",
-	Target:                "target",
 	BlockTime:             "block_time",
 	Version:               "version",
 	VersionHex:            "version_hex",
 	TransactionHashes:     "transaction_hashes",
 	TransactionsProcessed: "transactions_processed",
-	Created:               "created",
-	Modified:              "modified",
+	CreatedAt:             "created_at",
+	ModifiedAt:            "modified_at",
 }
 
 // blockR is where relationships are stored.
 type blockR struct {
-	BlockByHashTransactions TransactionSlice
+	BlockHashTransactions TransactionSlice
 }
 
 // blockL is where Load methods for each relationship are stored.
 type blockL struct{}
 
 var (
-	blockColumns               = []string{"id", "bits", "chainwork", "confirmations", "difficulty", "hash", "height", "median_time", "merkle_root", "name_claim_root", "nonce", "previous_block_hash", "next_block_hash", "block_size", "target", "block_time", "version", "version_hex", "transaction_hashes", "transactions_processed", "created", "modified"}
-	blockColumnsWithoutDefault = []string{"bits", "chainwork", "confirmations", "difficulty", "hash", "height", "median_time", "merkle_root", "name_claim_root", "nonce", "previous_block_hash", "next_block_hash", "block_size", "target", "block_time", "version", "version_hex", "transaction_hashes"}
-	blockColumnsWithDefault    = []string{"id", "transactions_processed", "created", "modified"}
+	blockColumns               = []string{"id", "bits", "chainwork", "confirmations", "difficulty", "hash", "height", "merkle_root", "name_claim_root", "nonce", "previous_block_hash", "next_block_hash", "block_size", "block_time", "version", "version_hex", "transaction_hashes", "transactions_processed", "created_at", "modified_at"}
+	blockColumnsWithoutDefault = []string{"bits", "chainwork", "confirmations", "difficulty", "hash", "height", "merkle_root", "name_claim_root", "nonce", "previous_block_hash", "next_block_hash", "block_size", "block_time", "version", "version_hex", "transaction_hashes"}
+	blockColumnsWithDefault    = []string{"id", "transactions_processed", "created_at", "modified_at"}
 	blockPrimaryKeyColumns     = []string{"id"}
 )
 
@@ -241,20 +235,20 @@ func (q blockQuery) Exists() (bool, error) {
 	return count > 0, nil
 }
 
-// BlockByHashTransactionsG retrieves all the transaction's transaction via block_by_hash_id column.
-func (o *Block) BlockByHashTransactionsG(mods ...qm.QueryMod) transactionQuery {
-	return o.BlockByHashTransactions(boil.GetDB(), mods...)
+// BlockHashTransactionsG retrieves all the transaction's transaction via block_hash_id column.
+func (o *Block) BlockHashTransactionsG(mods ...qm.QueryMod) transactionQuery {
+	return o.BlockHashTransactions(boil.GetDB(), mods...)
 }
 
-// BlockByHashTransactions retrieves all the transaction's transaction with an executor via block_by_hash_id column.
-func (o *Block) BlockByHashTransactions(exec boil.Executor, mods ...qm.QueryMod) transactionQuery {
+// BlockHashTransactions retrieves all the transaction's transaction with an executor via block_hash_id column.
+func (o *Block) BlockHashTransactions(exec boil.Executor, mods ...qm.QueryMod) transactionQuery {
 	var queryMods []qm.QueryMod
 	if len(mods) != 0 {
 		queryMods = append(queryMods, mods...)
 	}
 
 	queryMods = append(queryMods,
-		qm.Where("`transaction`.`block_by_hash_id`=?", o.Hash),
+		qm.Where("`transaction`.`block_hash_id`=?", o.Hash),
 	)
 
 	query := Transactions(exec, queryMods...)
@@ -267,9 +261,9 @@ func (o *Block) BlockByHashTransactions(exec boil.Executor, mods ...qm.QueryMod)
 	return query
 }
 
-// LoadBlockByHashTransactions allows an eager lookup of values, cached into the
+// LoadBlockHashTransactions allows an eager lookup of values, cached into the
 // loaded structs of the objects.
-func (blockL) LoadBlockByHashTransactions(e boil.Executor, singular bool, maybeBlock interface{}) error {
+func (blockL) LoadBlockHashTransactions(e boil.Executor, singular bool, maybeBlock interface{}) error {
 	var slice []*Block
 	var object *Block
 
@@ -297,7 +291,7 @@ func (blockL) LoadBlockByHashTransactions(e boil.Executor, singular bool, maybeB
 	}
 
 	query := fmt.Sprintf(
-		"select * from `transaction` where `block_by_hash_id` in (%s)",
+		"select * from `transaction` where `block_hash_id` in (%s)",
 		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
 	)
 	if boil.DebugMode {
@@ -316,14 +310,14 @@ func (blockL) LoadBlockByHashTransactions(e boil.Executor, singular bool, maybeB
 	}
 
 	if singular {
-		object.R.BlockByHashTransactions = resultSlice
+		object.R.BlockHashTransactions = resultSlice
 		return nil
 	}
 
 	for _, foreign := range resultSlice {
 		for _, local := range slice {
-			if local.Hash == foreign.BlockByHashID.String {
-				local.R.BlockByHashTransactions = append(local.R.BlockByHashTransactions, foreign)
+			if local.Hash == foreign.BlockHashID.String {
+				local.R.BlockHashTransactions = append(local.R.BlockHashTransactions, foreign)
 				break
 			}
 		}
@@ -332,54 +326,54 @@ func (blockL) LoadBlockByHashTransactions(e boil.Executor, singular bool, maybeB
 	return nil
 }
 
-// AddBlockByHashTransactionsG adds the given related objects to the existing relationships
+// AddBlockHashTransactionsG adds the given related objects to the existing relationships
 // of the block, optionally inserting them as new records.
-// Appends related to o.R.BlockByHashTransactions.
-// Sets related.R.BlockByHash appropriately.
+// Appends related to o.R.BlockHashTransactions.
+// Sets related.R.BlockHash appropriately.
 // Uses the global database handle.
-func (o *Block) AddBlockByHashTransactionsG(insert bool, related ...*Transaction) error {
-	return o.AddBlockByHashTransactions(boil.GetDB(), insert, related...)
+func (o *Block) AddBlockHashTransactionsG(insert bool, related ...*Transaction) error {
+	return o.AddBlockHashTransactions(boil.GetDB(), insert, related...)
 }
 
-// AddBlockByHashTransactionsP adds the given related objects to the existing relationships
+// AddBlockHashTransactionsP adds the given related objects to the existing relationships
 // of the block, optionally inserting them as new records.
-// Appends related to o.R.BlockByHashTransactions.
-// Sets related.R.BlockByHash appropriately.
+// Appends related to o.R.BlockHashTransactions.
+// Sets related.R.BlockHash appropriately.
 // Panics on error.
-func (o *Block) AddBlockByHashTransactionsP(exec boil.Executor, insert bool, related ...*Transaction) {
-	if err := o.AddBlockByHashTransactions(exec, insert, related...); err != nil {
+func (o *Block) AddBlockHashTransactionsP(exec boil.Executor, insert bool, related ...*Transaction) {
+	if err := o.AddBlockHashTransactions(exec, insert, related...); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
-// AddBlockByHashTransactionsGP adds the given related objects to the existing relationships
+// AddBlockHashTransactionsGP adds the given related objects to the existing relationships
 // of the block, optionally inserting them as new records.
-// Appends related to o.R.BlockByHashTransactions.
-// Sets related.R.BlockByHash appropriately.
+// Appends related to o.R.BlockHashTransactions.
+// Sets related.R.BlockHash appropriately.
 // Uses the global database handle and panics on error.
-func (o *Block) AddBlockByHashTransactionsGP(insert bool, related ...*Transaction) {
-	if err := o.AddBlockByHashTransactions(boil.GetDB(), insert, related...); err != nil {
+func (o *Block) AddBlockHashTransactionsGP(insert bool, related ...*Transaction) {
+	if err := o.AddBlockHashTransactions(boil.GetDB(), insert, related...); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
-// AddBlockByHashTransactions adds the given related objects to the existing relationships
+// AddBlockHashTransactions adds the given related objects to the existing relationships
 // of the block, optionally inserting them as new records.
-// Appends related to o.R.BlockByHashTransactions.
-// Sets related.R.BlockByHash appropriately.
-func (o *Block) AddBlockByHashTransactions(exec boil.Executor, insert bool, related ...*Transaction) error {
+// Appends related to o.R.BlockHashTransactions.
+// Sets related.R.BlockHash appropriately.
+func (o *Block) AddBlockHashTransactions(exec boil.Executor, insert bool, related ...*Transaction) error {
 	var err error
 	for _, rel := range related {
 		if insert {
-			rel.BlockByHashID.String = o.Hash
-			rel.BlockByHashID.Valid = true
+			rel.BlockHashID.String = o.Hash
+			rel.BlockHashID.Valid = true
 			if err = rel.Insert(exec); err != nil {
 				return errors.Wrap(err, "failed to insert into foreign table")
 			}
 		} else {
 			updateQuery := fmt.Sprintf(
 				"UPDATE `transaction` SET %s WHERE %s",
-				strmangle.SetParamNames("`", "`", 0, []string{"block_by_hash_id"}),
+				strmangle.SetParamNames("`", "`", 0, []string{"block_hash_id"}),
 				strmangle.WhereClause("`", "`", 0, transactionPrimaryKeyColumns),
 			)
 			values := []interface{}{o.Hash, rel.ID}
@@ -393,76 +387,76 @@ func (o *Block) AddBlockByHashTransactions(exec boil.Executor, insert bool, rela
 				return errors.Wrap(err, "failed to update foreign table")
 			}
 
-			rel.BlockByHashID.String = o.Hash
-			rel.BlockByHashID.Valid = true
+			rel.BlockHashID.String = o.Hash
+			rel.BlockHashID.Valid = true
 		}
 	}
 
 	if o.R == nil {
 		o.R = &blockR{
-			BlockByHashTransactions: related,
+			BlockHashTransactions: related,
 		}
 	} else {
-		o.R.BlockByHashTransactions = append(o.R.BlockByHashTransactions, related...)
+		o.R.BlockHashTransactions = append(o.R.BlockHashTransactions, related...)
 	}
 
 	for _, rel := range related {
 		if rel.R == nil {
 			rel.R = &transactionR{
-				BlockByHash: o,
+				BlockHash: o,
 			}
 		} else {
-			rel.R.BlockByHash = o
+			rel.R.BlockHash = o
 		}
 	}
 	return nil
 }
 
-// SetBlockByHashTransactionsG removes all previously related items of the
+// SetBlockHashTransactionsG removes all previously related items of the
 // block replacing them completely with the passed
 // in related items, optionally inserting them as new records.
-// Sets o.R.BlockByHash's BlockByHashTransactions accordingly.
-// Replaces o.R.BlockByHashTransactions with related.
-// Sets related.R.BlockByHash's BlockByHashTransactions accordingly.
+// Sets o.R.BlockHash's BlockHashTransactions accordingly.
+// Replaces o.R.BlockHashTransactions with related.
+// Sets related.R.BlockHash's BlockHashTransactions accordingly.
 // Uses the global database handle.
-func (o *Block) SetBlockByHashTransactionsG(insert bool, related ...*Transaction) error {
-	return o.SetBlockByHashTransactions(boil.GetDB(), insert, related...)
+func (o *Block) SetBlockHashTransactionsG(insert bool, related ...*Transaction) error {
+	return o.SetBlockHashTransactions(boil.GetDB(), insert, related...)
 }
 
-// SetBlockByHashTransactionsP removes all previously related items of the
+// SetBlockHashTransactionsP removes all previously related items of the
 // block replacing them completely with the passed
 // in related items, optionally inserting them as new records.
-// Sets o.R.BlockByHash's BlockByHashTransactions accordingly.
-// Replaces o.R.BlockByHashTransactions with related.
-// Sets related.R.BlockByHash's BlockByHashTransactions accordingly.
+// Sets o.R.BlockHash's BlockHashTransactions accordingly.
+// Replaces o.R.BlockHashTransactions with related.
+// Sets related.R.BlockHash's BlockHashTransactions accordingly.
 // Panics on error.
-func (o *Block) SetBlockByHashTransactionsP(exec boil.Executor, insert bool, related ...*Transaction) {
-	if err := o.SetBlockByHashTransactions(exec, insert, related...); err != nil {
+func (o *Block) SetBlockHashTransactionsP(exec boil.Executor, insert bool, related ...*Transaction) {
+	if err := o.SetBlockHashTransactions(exec, insert, related...); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
-// SetBlockByHashTransactionsGP removes all previously related items of the
+// SetBlockHashTransactionsGP removes all previously related items of the
 // block replacing them completely with the passed
 // in related items, optionally inserting them as new records.
-// Sets o.R.BlockByHash's BlockByHashTransactions accordingly.
-// Replaces o.R.BlockByHashTransactions with related.
-// Sets related.R.BlockByHash's BlockByHashTransactions accordingly.
+// Sets o.R.BlockHash's BlockHashTransactions accordingly.
+// Replaces o.R.BlockHashTransactions with related.
+// Sets related.R.BlockHash's BlockHashTransactions accordingly.
 // Uses the global database handle and panics on error.
-func (o *Block) SetBlockByHashTransactionsGP(insert bool, related ...*Transaction) {
-	if err := o.SetBlockByHashTransactions(boil.GetDB(), insert, related...); err != nil {
+func (o *Block) SetBlockHashTransactionsGP(insert bool, related ...*Transaction) {
+	if err := o.SetBlockHashTransactions(boil.GetDB(), insert, related...); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
-// SetBlockByHashTransactions removes all previously related items of the
+// SetBlockHashTransactions removes all previously related items of the
 // block replacing them completely with the passed
 // in related items, optionally inserting them as new records.
-// Sets o.R.BlockByHash's BlockByHashTransactions accordingly.
-// Replaces o.R.BlockByHashTransactions with related.
-// Sets related.R.BlockByHash's BlockByHashTransactions accordingly.
-func (o *Block) SetBlockByHashTransactions(exec boil.Executor, insert bool, related ...*Transaction) error {
-	query := "update `transaction` set `block_by_hash_id` = null where `block_by_hash_id` = ?"
+// Sets o.R.BlockHash's BlockHashTransactions accordingly.
+// Replaces o.R.BlockHashTransactions with related.
+// Sets related.R.BlockHash's BlockHashTransactions accordingly.
+func (o *Block) SetBlockHashTransactions(exec boil.Executor, insert bool, related ...*Transaction) error {
+	query := "update `transaction` set `block_hash_id` = null where `block_hash_id` = ?"
 	values := []interface{}{o.Hash}
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, query)
@@ -475,59 +469,59 @@ func (o *Block) SetBlockByHashTransactions(exec boil.Executor, insert bool, rela
 	}
 
 	if o.R != nil {
-		for _, rel := range o.R.BlockByHashTransactions {
-			rel.BlockByHashID.Valid = false
+		for _, rel := range o.R.BlockHashTransactions {
+			rel.BlockHashID.Valid = false
 			if rel.R == nil {
 				continue
 			}
 
-			rel.R.BlockByHash = nil
+			rel.R.BlockHash = nil
 		}
 
-		o.R.BlockByHashTransactions = nil
+		o.R.BlockHashTransactions = nil
 	}
-	return o.AddBlockByHashTransactions(exec, insert, related...)
+	return o.AddBlockHashTransactions(exec, insert, related...)
 }
 
-// RemoveBlockByHashTransactionsG relationships from objects passed in.
-// Removes related items from R.BlockByHashTransactions (uses pointer comparison, removal does not keep order)
-// Sets related.R.BlockByHash.
+// RemoveBlockHashTransactionsG relationships from objects passed in.
+// Removes related items from R.BlockHashTransactions (uses pointer comparison, removal does not keep order)
+// Sets related.R.BlockHash.
 // Uses the global database handle.
-func (o *Block) RemoveBlockByHashTransactionsG(related ...*Transaction) error {
-	return o.RemoveBlockByHashTransactions(boil.GetDB(), related...)
+func (o *Block) RemoveBlockHashTransactionsG(related ...*Transaction) error {
+	return o.RemoveBlockHashTransactions(boil.GetDB(), related...)
 }
 
-// RemoveBlockByHashTransactionsP relationships from objects passed in.
-// Removes related items from R.BlockByHashTransactions (uses pointer comparison, removal does not keep order)
-// Sets related.R.BlockByHash.
+// RemoveBlockHashTransactionsP relationships from objects passed in.
+// Removes related items from R.BlockHashTransactions (uses pointer comparison, removal does not keep order)
+// Sets related.R.BlockHash.
 // Panics on error.
-func (o *Block) RemoveBlockByHashTransactionsP(exec boil.Executor, related ...*Transaction) {
-	if err := o.RemoveBlockByHashTransactions(exec, related...); err != nil {
+func (o *Block) RemoveBlockHashTransactionsP(exec boil.Executor, related ...*Transaction) {
+	if err := o.RemoveBlockHashTransactions(exec, related...); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
-// RemoveBlockByHashTransactionsGP relationships from objects passed in.
-// Removes related items from R.BlockByHashTransactions (uses pointer comparison, removal does not keep order)
-// Sets related.R.BlockByHash.
+// RemoveBlockHashTransactionsGP relationships from objects passed in.
+// Removes related items from R.BlockHashTransactions (uses pointer comparison, removal does not keep order)
+// Sets related.R.BlockHash.
 // Uses the global database handle and panics on error.
-func (o *Block) RemoveBlockByHashTransactionsGP(related ...*Transaction) {
-	if err := o.RemoveBlockByHashTransactions(boil.GetDB(), related...); err != nil {
+func (o *Block) RemoveBlockHashTransactionsGP(related ...*Transaction) {
+	if err := o.RemoveBlockHashTransactions(boil.GetDB(), related...); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
-// RemoveBlockByHashTransactions relationships from objects passed in.
-// Removes related items from R.BlockByHashTransactions (uses pointer comparison, removal does not keep order)
-// Sets related.R.BlockByHash.
-func (o *Block) RemoveBlockByHashTransactions(exec boil.Executor, related ...*Transaction) error {
+// RemoveBlockHashTransactions relationships from objects passed in.
+// Removes related items from R.BlockHashTransactions (uses pointer comparison, removal does not keep order)
+// Sets related.R.BlockHash.
+func (o *Block) RemoveBlockHashTransactions(exec boil.Executor, related ...*Transaction) error {
 	var err error
 	for _, rel := range related {
-		rel.BlockByHashID.Valid = false
+		rel.BlockHashID.Valid = false
 		if rel.R != nil {
-			rel.R.BlockByHash = nil
+			rel.R.BlockHash = nil
 		}
-		if err = rel.Update(exec, "block_by_hash_id"); err != nil {
+		if err = rel.Update(exec, "block_hash_id"); err != nil {
 			return err
 		}
 	}
@@ -536,16 +530,16 @@ func (o *Block) RemoveBlockByHashTransactions(exec boil.Executor, related ...*Tr
 	}
 
 	for _, rel := range related {
-		for i, ri := range o.R.BlockByHashTransactions {
+		for i, ri := range o.R.BlockHashTransactions {
 			if rel != ri {
 				continue
 			}
 
-			ln := len(o.R.BlockByHashTransactions)
+			ln := len(o.R.BlockHashTransactions)
 			if ln > 1 && i < ln-1 {
-				o.R.BlockByHashTransactions[i] = o.R.BlockByHashTransactions[ln-1]
+				o.R.BlockHashTransactions[i] = o.R.BlockHashTransactions[ln-1]
 			}
-			o.R.BlockByHashTransactions = o.R.BlockByHashTransactions[:ln-1]
+			o.R.BlockHashTransactions = o.R.BlockHashTransactions[:ln-1]
 			break
 		}
 	}

@@ -20,8 +20,8 @@ import (
 	"gopkg.in/volatiletech/null.v6"
 )
 
-// UnknownClaim is an object representing the database table.
-type UnknownClaim struct {
+// AbnormalClaim is an object representing the database table.
+type AbnormalClaim struct {
 	ID              uint64      `boil:"id" json:"id" toml:"id" yaml:"id"`
 	Name            string      `boil:"name" json:"name" toml:"name" yaml:"name"`
 	ClaimID         string      `boil:"claim_id" json:"claim_id" toml:"claim_id" yaml:"claim_id"`
@@ -32,12 +32,14 @@ type UnknownClaim struct {
 	OutputID        uint64      `boil:"output_id" json:"output_id" toml:"output_id" yaml:"output_id"`
 	ValueAsHex      string      `boil:"value_as_hex" json:"value_as_hex" toml:"value_as_hex" yaml:"value_as_hex"`
 	ValueAsJSON     null.String `boil:"value_as_json" json:"value_as_json,omitempty" toml:"value_as_json" yaml:"value_as_json,omitempty"`
+	CreatedAt       time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	ModifiedAt      time.Time   `boil:"modified_at" json:"modified_at" toml:"modified_at" yaml:"modified_at"`
 
-	R *unknownClaimR `boil:"-" json:"-" toml:"-" yaml:"-"`
-	L unknownClaimL  `boil:"-" json:"-" toml:"-" yaml:"-"`
+	R *abnormalClaimR `boil:"-" json:"-" toml:"-" yaml:"-"`
+	L abnormalClaimL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
-var UnknownClaimColumns = struct {
+var AbnormalClaimColumns = struct {
 	ID              string
 	Name            string
 	ClaimID         string
@@ -48,6 +50,8 @@ var UnknownClaimColumns = struct {
 	OutputID        string
 	ValueAsHex      string
 	ValueAsJSON     string
+	CreatedAt       string
+	ModifiedAt      string
 }{
 	ID:              "id",
 	Name:            "name",
@@ -59,44 +63,46 @@ var UnknownClaimColumns = struct {
 	OutputID:        "output_id",
 	ValueAsHex:      "value_as_hex",
 	ValueAsJSON:     "value_as_json",
+	CreatedAt:       "created_at",
+	ModifiedAt:      "modified_at",
 }
 
-// unknownClaimR is where relationships are stored.
-type unknownClaimR struct {
+// abnormalClaimR is where relationships are stored.
+type abnormalClaimR struct {
 	Output *Output
 }
 
-// unknownClaimL is where Load methods for each relationship are stored.
-type unknownClaimL struct{}
+// abnormalClaimL is where Load methods for each relationship are stored.
+type abnormalClaimL struct{}
 
 var (
-	unknownClaimColumns               = []string{"id", "name", "claim_id", "is_update", "block_hash", "transaction_hash", "vout", "output_id", "value_as_hex", "value_as_json"}
-	unknownClaimColumnsWithoutDefault = []string{"name", "claim_id", "block_hash", "transaction_hash", "vout", "output_id", "value_as_hex", "value_as_json"}
-	unknownClaimColumnsWithDefault    = []string{"id", "is_update"}
-	unknownClaimPrimaryKeyColumns     = []string{"id"}
+	abnormalClaimColumns               = []string{"id", "name", "claim_id", "is_update", "block_hash", "transaction_hash", "vout", "output_id", "value_as_hex", "value_as_json", "created_at", "modified_at"}
+	abnormalClaimColumnsWithoutDefault = []string{"name", "claim_id", "block_hash", "transaction_hash", "vout", "output_id", "value_as_hex", "value_as_json"}
+	abnormalClaimColumnsWithDefault    = []string{"id", "is_update", "created_at", "modified_at"}
+	abnormalClaimPrimaryKeyColumns     = []string{"id"}
 )
 
 type (
-	// UnknownClaimSlice is an alias for a slice of pointers to UnknownClaim.
-	// This should generally be used opposed to []UnknownClaim.
-	UnknownClaimSlice []*UnknownClaim
+	// AbnormalClaimSlice is an alias for a slice of pointers to AbnormalClaim.
+	// This should generally be used opposed to []AbnormalClaim.
+	AbnormalClaimSlice []*AbnormalClaim
 
-	unknownClaimQuery struct {
+	abnormalClaimQuery struct {
 		*queries.Query
 	}
 )
 
 // Cache for insert, update and upsert
 var (
-	unknownClaimType                 = reflect.TypeOf(&UnknownClaim{})
-	unknownClaimMapping              = queries.MakeStructMapping(unknownClaimType)
-	unknownClaimPrimaryKeyMapping, _ = queries.BindMapping(unknownClaimType, unknownClaimMapping, unknownClaimPrimaryKeyColumns)
-	unknownClaimInsertCacheMut       sync.RWMutex
-	unknownClaimInsertCache          = make(map[string]insertCache)
-	unknownClaimUpdateCacheMut       sync.RWMutex
-	unknownClaimUpdateCache          = make(map[string]updateCache)
-	unknownClaimUpsertCacheMut       sync.RWMutex
-	unknownClaimUpsertCache          = make(map[string]insertCache)
+	abnormalClaimType                 = reflect.TypeOf(&AbnormalClaim{})
+	abnormalClaimMapping              = queries.MakeStructMapping(abnormalClaimType)
+	abnormalClaimPrimaryKeyMapping, _ = queries.BindMapping(abnormalClaimType, abnormalClaimMapping, abnormalClaimPrimaryKeyColumns)
+	abnormalClaimInsertCacheMut       sync.RWMutex
+	abnormalClaimInsertCache          = make(map[string]insertCache)
+	abnormalClaimUpdateCacheMut       sync.RWMutex
+	abnormalClaimUpdateCache          = make(map[string]updateCache)
+	abnormalClaimUpsertCacheMut       sync.RWMutex
+	abnormalClaimUpsertCache          = make(map[string]insertCache)
 )
 
 var (
@@ -106,8 +112,8 @@ var (
 	_ = bytes.MinRead
 )
 
-// OneP returns a single unknownClaim record from the query, and panics on error.
-func (q unknownClaimQuery) OneP() *UnknownClaim {
+// OneP returns a single abnormalClaim record from the query, and panics on error.
+func (q abnormalClaimQuery) OneP() *AbnormalClaim {
 	o, err := q.One()
 	if err != nil {
 		panic(boil.WrapErr(err))
@@ -116,9 +122,9 @@ func (q unknownClaimQuery) OneP() *UnknownClaim {
 	return o
 }
 
-// One returns a single unknownClaim record from the query.
-func (q unknownClaimQuery) One() (*UnknownClaim, error) {
-	o := &UnknownClaim{}
+// One returns a single abnormalClaim record from the query.
+func (q abnormalClaimQuery) One() (*AbnormalClaim, error) {
+	o := &AbnormalClaim{}
 
 	queries.SetLimit(q.Query, 1)
 
@@ -127,14 +133,14 @@ func (q unknownClaimQuery) One() (*UnknownClaim, error) {
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "model: failed to execute a one query for unknown_claim")
+		return nil, errors.Wrap(err, "model: failed to execute a one query for abnormal_claim")
 	}
 
 	return o, nil
 }
 
-// AllP returns all UnknownClaim records from the query, and panics on error.
-func (q unknownClaimQuery) AllP() UnknownClaimSlice {
+// AllP returns all AbnormalClaim records from the query, and panics on error.
+func (q abnormalClaimQuery) AllP() AbnormalClaimSlice {
 	o, err := q.All()
 	if err != nil {
 		panic(boil.WrapErr(err))
@@ -143,20 +149,20 @@ func (q unknownClaimQuery) AllP() UnknownClaimSlice {
 	return o
 }
 
-// All returns all UnknownClaim records from the query.
-func (q unknownClaimQuery) All() (UnknownClaimSlice, error) {
-	var o []*UnknownClaim
+// All returns all AbnormalClaim records from the query.
+func (q abnormalClaimQuery) All() (AbnormalClaimSlice, error) {
+	var o []*AbnormalClaim
 
 	err := q.Bind(&o)
 	if err != nil {
-		return nil, errors.Wrap(err, "model: failed to assign all query results to UnknownClaim slice")
+		return nil, errors.Wrap(err, "model: failed to assign all query results to AbnormalClaim slice")
 	}
 
 	return o, nil
 }
 
-// CountP returns the count of all UnknownClaim records in the query, and panics on error.
-func (q unknownClaimQuery) CountP() int64 {
+// CountP returns the count of all AbnormalClaim records in the query, and panics on error.
+func (q abnormalClaimQuery) CountP() int64 {
 	c, err := q.Count()
 	if err != nil {
 		panic(boil.WrapErr(err))
@@ -165,8 +171,8 @@ func (q unknownClaimQuery) CountP() int64 {
 	return c
 }
 
-// Count returns the count of all UnknownClaim records in the query.
-func (q unknownClaimQuery) Count() (int64, error) {
+// Count returns the count of all AbnormalClaim records in the query.
+func (q abnormalClaimQuery) Count() (int64, error) {
 	var count int64
 
 	queries.SetSelect(q.Query, nil)
@@ -174,14 +180,14 @@ func (q unknownClaimQuery) Count() (int64, error) {
 
 	err := q.Query.QueryRow().Scan(&count)
 	if err != nil {
-		return 0, errors.Wrap(err, "model: failed to count unknown_claim rows")
+		return 0, errors.Wrap(err, "model: failed to count abnormal_claim rows")
 	}
 
 	return count, nil
 }
 
 // Exists checks if the row exists in the table, and panics on error.
-func (q unknownClaimQuery) ExistsP() bool {
+func (q abnormalClaimQuery) ExistsP() bool {
 	e, err := q.Exists()
 	if err != nil {
 		panic(boil.WrapErr(err))
@@ -191,7 +197,7 @@ func (q unknownClaimQuery) ExistsP() bool {
 }
 
 // Exists checks if the row exists in the table.
-func (q unknownClaimQuery) Exists() (bool, error) {
+func (q abnormalClaimQuery) Exists() (bool, error) {
 	var count int64
 
 	queries.SetCount(q.Query)
@@ -199,19 +205,19 @@ func (q unknownClaimQuery) Exists() (bool, error) {
 
 	err := q.Query.QueryRow().Scan(&count)
 	if err != nil {
-		return false, errors.Wrap(err, "model: failed to check if unknown_claim exists")
+		return false, errors.Wrap(err, "model: failed to check if abnormal_claim exists")
 	}
 
 	return count > 0, nil
 }
 
 // OutputG pointed to by the foreign key.
-func (o *UnknownClaim) OutputG(mods ...qm.QueryMod) outputQuery {
+func (o *AbnormalClaim) OutputG(mods ...qm.QueryMod) outputQuery {
 	return o.Output(boil.GetDB(), mods...)
 }
 
 // Output pointed to by the foreign key.
-func (o *UnknownClaim) Output(exec boil.Executor, mods ...qm.QueryMod) outputQuery {
+func (o *AbnormalClaim) Output(exec boil.Executor, mods ...qm.QueryMod) outputQuery {
 	queryMods := []qm.QueryMod{
 		qm.Where("id=?", o.OutputID),
 	}
@@ -224,28 +230,28 @@ func (o *UnknownClaim) Output(exec boil.Executor, mods ...qm.QueryMod) outputQue
 	return query
 } // LoadOutput allows an eager lookup of values, cached into the
 // loaded structs of the objects.
-func (unknownClaimL) LoadOutput(e boil.Executor, singular bool, maybeUnknownClaim interface{}) error {
-	var slice []*UnknownClaim
-	var object *UnknownClaim
+func (abnormalClaimL) LoadOutput(e boil.Executor, singular bool, maybeAbnormalClaim interface{}) error {
+	var slice []*AbnormalClaim
+	var object *AbnormalClaim
 
 	count := 1
 	if singular {
-		object = maybeUnknownClaim.(*UnknownClaim)
+		object = maybeAbnormalClaim.(*AbnormalClaim)
 	} else {
-		slice = *maybeUnknownClaim.(*[]*UnknownClaim)
+		slice = *maybeAbnormalClaim.(*[]*AbnormalClaim)
 		count = len(slice)
 	}
 
 	args := make([]interface{}, count)
 	if singular {
 		if object.R == nil {
-			object.R = &unknownClaimR{}
+			object.R = &abnormalClaimR{}
 		}
 		args[0] = object.OutputID
 	} else {
 		for i, obj := range slice {
 			if obj.R == nil {
-				obj.R = &unknownClaimR{}
+				obj.R = &abnormalClaimR{}
 			}
 			args[i] = obj.OutputID
 		}
@@ -292,38 +298,38 @@ func (unknownClaimL) LoadOutput(e boil.Executor, singular bool, maybeUnknownClai
 	return nil
 }
 
-// SetOutputG of the unknown_claim to the related item.
+// SetOutputG of the abnormal_claim to the related item.
 // Sets o.R.Output to related.
-// Adds o to related.R.UnknownClaims.
+// Adds o to related.R.AbnormalClaims.
 // Uses the global database handle.
-func (o *UnknownClaim) SetOutputG(insert bool, related *Output) error {
+func (o *AbnormalClaim) SetOutputG(insert bool, related *Output) error {
 	return o.SetOutput(boil.GetDB(), insert, related)
 }
 
-// SetOutputP of the unknown_claim to the related item.
+// SetOutputP of the abnormal_claim to the related item.
 // Sets o.R.Output to related.
-// Adds o to related.R.UnknownClaims.
+// Adds o to related.R.AbnormalClaims.
 // Panics on error.
-func (o *UnknownClaim) SetOutputP(exec boil.Executor, insert bool, related *Output) {
+func (o *AbnormalClaim) SetOutputP(exec boil.Executor, insert bool, related *Output) {
 	if err := o.SetOutput(exec, insert, related); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
-// SetOutputGP of the unknown_claim to the related item.
+// SetOutputGP of the abnormal_claim to the related item.
 // Sets o.R.Output to related.
-// Adds o to related.R.UnknownClaims.
+// Adds o to related.R.AbnormalClaims.
 // Uses the global database handle and panics on error.
-func (o *UnknownClaim) SetOutputGP(insert bool, related *Output) {
+func (o *AbnormalClaim) SetOutputGP(insert bool, related *Output) {
 	if err := o.SetOutput(boil.GetDB(), insert, related); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
-// SetOutput of the unknown_claim to the related item.
+// SetOutput of the abnormal_claim to the related item.
 // Sets o.R.Output to related.
-// Adds o to related.R.UnknownClaims.
-func (o *UnknownClaim) SetOutput(exec boil.Executor, insert bool, related *Output) error {
+// Adds o to related.R.AbnormalClaims.
+func (o *AbnormalClaim) SetOutput(exec boil.Executor, insert bool, related *Output) error {
 	var err error
 	if insert {
 		if err = related.Insert(exec); err != nil {
@@ -332,9 +338,9 @@ func (o *UnknownClaim) SetOutput(exec boil.Executor, insert bool, related *Outpu
 	}
 
 	updateQuery := fmt.Sprintf(
-		"UPDATE `unknown_claim` SET %s WHERE %s",
+		"UPDATE `abnormal_claim` SET %s WHERE %s",
 		strmangle.SetParamNames("`", "`", 0, []string{"output_id"}),
-		strmangle.WhereClause("`", "`", 0, unknownClaimPrimaryKeyColumns),
+		strmangle.WhereClause("`", "`", 0, abnormalClaimPrimaryKeyColumns),
 	)
 	values := []interface{}{related.ID, o.ID}
 
@@ -350,7 +356,7 @@ func (o *UnknownClaim) SetOutput(exec boil.Executor, insert bool, related *Outpu
 	o.OutputID = related.ID
 
 	if o.R == nil {
-		o.R = &unknownClaimR{
+		o.R = &abnormalClaimR{
 			Output: related,
 		}
 	} else {
@@ -359,34 +365,34 @@ func (o *UnknownClaim) SetOutput(exec boil.Executor, insert bool, related *Outpu
 
 	if related.R == nil {
 		related.R = &outputR{
-			UnknownClaims: UnknownClaimSlice{o},
+			AbnormalClaims: AbnormalClaimSlice{o},
 		}
 	} else {
-		related.R.UnknownClaims = append(related.R.UnknownClaims, o)
+		related.R.AbnormalClaims = append(related.R.AbnormalClaims, o)
 	}
 
 	return nil
 }
 
-// UnknownClaimsG retrieves all records.
-func UnknownClaimsG(mods ...qm.QueryMod) unknownClaimQuery {
-	return UnknownClaims(boil.GetDB(), mods...)
+// AbnormalClaimsG retrieves all records.
+func AbnormalClaimsG(mods ...qm.QueryMod) abnormalClaimQuery {
+	return AbnormalClaims(boil.GetDB(), mods...)
 }
 
-// UnknownClaims retrieves all the records using an executor.
-func UnknownClaims(exec boil.Executor, mods ...qm.QueryMod) unknownClaimQuery {
-	mods = append(mods, qm.From("`unknown_claim`"))
-	return unknownClaimQuery{NewQuery(exec, mods...)}
+// AbnormalClaims retrieves all the records using an executor.
+func AbnormalClaims(exec boil.Executor, mods ...qm.QueryMod) abnormalClaimQuery {
+	mods = append(mods, qm.From("`abnormal_claim`"))
+	return abnormalClaimQuery{NewQuery(exec, mods...)}
 }
 
-// FindUnknownClaimG retrieves a single record by ID.
-func FindUnknownClaimG(id uint64, selectCols ...string) (*UnknownClaim, error) {
-	return FindUnknownClaim(boil.GetDB(), id, selectCols...)
+// FindAbnormalClaimG retrieves a single record by ID.
+func FindAbnormalClaimG(id uint64, selectCols ...string) (*AbnormalClaim, error) {
+	return FindAbnormalClaim(boil.GetDB(), id, selectCols...)
 }
 
-// FindUnknownClaimGP retrieves a single record by ID, and panics on error.
-func FindUnknownClaimGP(id uint64, selectCols ...string) *UnknownClaim {
-	retobj, err := FindUnknownClaim(boil.GetDB(), id, selectCols...)
+// FindAbnormalClaimGP retrieves a single record by ID, and panics on error.
+func FindAbnormalClaimGP(id uint64, selectCols ...string) *AbnormalClaim {
+	retobj, err := FindAbnormalClaim(boil.GetDB(), id, selectCols...)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -394,35 +400,35 @@ func FindUnknownClaimGP(id uint64, selectCols ...string) *UnknownClaim {
 	return retobj
 }
 
-// FindUnknownClaim retrieves a single record by ID with an executor.
+// FindAbnormalClaim retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindUnknownClaim(exec boil.Executor, id uint64, selectCols ...string) (*UnknownClaim, error) {
-	unknownClaimObj := &UnknownClaim{}
+func FindAbnormalClaim(exec boil.Executor, id uint64, selectCols ...string) (*AbnormalClaim, error) {
+	abnormalClaimObj := &AbnormalClaim{}
 
 	sel := "*"
 	if len(selectCols) > 0 {
 		sel = strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, selectCols), ",")
 	}
 	query := fmt.Sprintf(
-		"select %s from `unknown_claim` where `id`=?", sel,
+		"select %s from `abnormal_claim` where `id`=?", sel,
 	)
 
 	q := queries.Raw(exec, query, id)
 
-	err := q.Bind(unknownClaimObj)
+	err := q.Bind(abnormalClaimObj)
 	if err != nil {
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "model: unable to select from unknown_claim")
+		return nil, errors.Wrap(err, "model: unable to select from abnormal_claim")
 	}
 
-	return unknownClaimObj, nil
+	return abnormalClaimObj, nil
 }
 
-// FindUnknownClaimP retrieves a single record by ID with an executor, and panics on error.
-func FindUnknownClaimP(exec boil.Executor, id uint64, selectCols ...string) *UnknownClaim {
-	retobj, err := FindUnknownClaim(exec, id, selectCols...)
+// FindAbnormalClaimP retrieves a single record by ID with an executor, and panics on error.
+func FindAbnormalClaimP(exec boil.Executor, id uint64, selectCols ...string) *AbnormalClaim {
+	retobj, err := FindAbnormalClaim(exec, id, selectCols...)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -431,13 +437,13 @@ func FindUnknownClaimP(exec boil.Executor, id uint64, selectCols ...string) *Unk
 }
 
 // InsertG a single record. See Insert for whitelist behavior description.
-func (o *UnknownClaim) InsertG(whitelist ...string) error {
+func (o *AbnormalClaim) InsertG(whitelist ...string) error {
 	return o.Insert(boil.GetDB(), whitelist...)
 }
 
 // InsertGP a single record, and panics on error. See Insert for whitelist
 // behavior description.
-func (o *UnknownClaim) InsertGP(whitelist ...string) {
+func (o *AbnormalClaim) InsertGP(whitelist ...string) {
 	if err := o.Insert(boil.GetDB(), whitelist...); err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -445,7 +451,7 @@ func (o *UnknownClaim) InsertGP(whitelist ...string) {
 
 // InsertP a single record using an executor, and panics on error. See Insert
 // for whitelist behavior description.
-func (o *UnknownClaim) InsertP(exec boil.Executor, whitelist ...string) {
+func (o *AbnormalClaim) InsertP(exec boil.Executor, whitelist ...string) {
 	if err := o.Insert(exec, whitelist...); err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -456,47 +462,47 @@ func (o *UnknownClaim) InsertP(exec boil.Executor, whitelist ...string) {
 // No whitelist behavior: Without a whitelist, columns are inferred by the following rules:
 // - All columns without a default value are included (i.e. name, age)
 // - All columns with a default, but non-zero are included (i.e. health = 75)
-func (o *UnknownClaim) Insert(exec boil.Executor, whitelist ...string) error {
+func (o *AbnormalClaim) Insert(exec boil.Executor, whitelist ...string) error {
 	if o == nil {
-		return errors.New("model: no unknown_claim provided for insertion")
+		return errors.New("model: no abnormal_claim provided for insertion")
 	}
 
 	var err error
 
-	nzDefaults := queries.NonZeroDefaultSet(unknownClaimColumnsWithDefault, o)
+	nzDefaults := queries.NonZeroDefaultSet(abnormalClaimColumnsWithDefault, o)
 
 	key := makeCacheKey(whitelist, nzDefaults)
-	unknownClaimInsertCacheMut.RLock()
-	cache, cached := unknownClaimInsertCache[key]
-	unknownClaimInsertCacheMut.RUnlock()
+	abnormalClaimInsertCacheMut.RLock()
+	cache, cached := abnormalClaimInsertCache[key]
+	abnormalClaimInsertCacheMut.RUnlock()
 
 	if !cached {
 		wl, returnColumns := strmangle.InsertColumnSet(
-			unknownClaimColumns,
-			unknownClaimColumnsWithDefault,
-			unknownClaimColumnsWithoutDefault,
+			abnormalClaimColumns,
+			abnormalClaimColumnsWithDefault,
+			abnormalClaimColumnsWithoutDefault,
 			nzDefaults,
 			whitelist,
 		)
 
-		cache.valueMapping, err = queries.BindMapping(unknownClaimType, unknownClaimMapping, wl)
+		cache.valueMapping, err = queries.BindMapping(abnormalClaimType, abnormalClaimMapping, wl)
 		if err != nil {
 			return err
 		}
-		cache.retMapping, err = queries.BindMapping(unknownClaimType, unknownClaimMapping, returnColumns)
+		cache.retMapping, err = queries.BindMapping(abnormalClaimType, abnormalClaimMapping, returnColumns)
 		if err != nil {
 			return err
 		}
 		if len(wl) != 0 {
-			cache.query = fmt.Sprintf("INSERT INTO `unknown_claim` (`%s`) %%sVALUES (%s)%%s", strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.IndexPlaceholders, len(wl), 1, 1))
+			cache.query = fmt.Sprintf("INSERT INTO `abnormal_claim` (`%s`) %%sVALUES (%s)%%s", strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.IndexPlaceholders, len(wl), 1, 1))
 		} else {
-			cache.query = "INSERT INTO `unknown_claim` () VALUES ()"
+			cache.query = "INSERT INTO `abnormal_claim` () VALUES ()"
 		}
 
 		var queryOutput, queryReturning string
 
 		if len(cache.retMapping) != 0 {
-			cache.retQuery = fmt.Sprintf("SELECT `%s` FROM `unknown_claim` WHERE %s", strings.Join(returnColumns, "`,`"), strmangle.WhereClause("`", "`", 0, unknownClaimPrimaryKeyColumns))
+			cache.retQuery = fmt.Sprintf("SELECT `%s` FROM `abnormal_claim` WHERE %s", strings.Join(returnColumns, "`,`"), strmangle.WhereClause("`", "`", 0, abnormalClaimPrimaryKeyColumns))
 		}
 
 		if len(wl) != 0 {
@@ -515,7 +521,7 @@ func (o *UnknownClaim) Insert(exec boil.Executor, whitelist ...string) error {
 	result, err := exec.Exec(cache.query, vals...)
 
 	if err != nil {
-		return errors.Wrap(err, "model: unable to insert into unknown_claim")
+		return errors.Wrap(err, "model: unable to insert into abnormal_claim")
 	}
 
 	var lastID int64
@@ -531,7 +537,7 @@ func (o *UnknownClaim) Insert(exec boil.Executor, whitelist ...string) error {
 	}
 
 	o.ID = uint64(lastID)
-	if lastID != 0 && len(cache.retMapping) == 1 && cache.retMapping[0] == unknownClaimMapping["ID"] {
+	if lastID != 0 && len(cache.retMapping) == 1 && cache.retMapping[0] == abnormalClaimMapping["ID"] {
 		goto CacheNoHooks
 	}
 
@@ -546,73 +552,73 @@ func (o *UnknownClaim) Insert(exec boil.Executor, whitelist ...string) error {
 
 	err = exec.QueryRow(cache.retQuery, identifierCols...).Scan(queries.PtrsFromMapping(value, cache.retMapping)...)
 	if err != nil {
-		return errors.Wrap(err, "model: unable to populate default values for unknown_claim")
+		return errors.Wrap(err, "model: unable to populate default values for abnormal_claim")
 	}
 
 CacheNoHooks:
 	if !cached {
-		unknownClaimInsertCacheMut.Lock()
-		unknownClaimInsertCache[key] = cache
-		unknownClaimInsertCacheMut.Unlock()
+		abnormalClaimInsertCacheMut.Lock()
+		abnormalClaimInsertCache[key] = cache
+		abnormalClaimInsertCacheMut.Unlock()
 	}
 
 	return nil
 }
 
-// UpdateG a single UnknownClaim record. See Update for
+// UpdateG a single AbnormalClaim record. See Update for
 // whitelist behavior description.
-func (o *UnknownClaim) UpdateG(whitelist ...string) error {
+func (o *AbnormalClaim) UpdateG(whitelist ...string) error {
 	return o.Update(boil.GetDB(), whitelist...)
 }
 
-// UpdateGP a single UnknownClaim record.
+// UpdateGP a single AbnormalClaim record.
 // UpdateGP takes a whitelist of column names that should be updated.
 // Panics on error. See Update for whitelist behavior description.
-func (o *UnknownClaim) UpdateGP(whitelist ...string) {
+func (o *AbnormalClaim) UpdateGP(whitelist ...string) {
 	if err := o.Update(boil.GetDB(), whitelist...); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
-// UpdateP uses an executor to update the UnknownClaim, and panics on error.
+// UpdateP uses an executor to update the AbnormalClaim, and panics on error.
 // See Update for whitelist behavior description.
-func (o *UnknownClaim) UpdateP(exec boil.Executor, whitelist ...string) {
+func (o *AbnormalClaim) UpdateP(exec boil.Executor, whitelist ...string) {
 	err := o.Update(exec, whitelist...)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
-// Update uses an executor to update the UnknownClaim.
+// Update uses an executor to update the AbnormalClaim.
 // Whitelist behavior: If a whitelist is provided, only the columns given are updated.
 // No whitelist behavior: Without a whitelist, columns are inferred by the following rules:
 // - All columns are inferred to start with
 // - All primary keys are subtracted from this set
 // Update does not automatically update the record in case of default values. Use .Reload()
 // to refresh the records.
-func (o *UnknownClaim) Update(exec boil.Executor, whitelist ...string) error {
+func (o *AbnormalClaim) Update(exec boil.Executor, whitelist ...string) error {
 	var err error
 	key := makeCacheKey(whitelist, nil)
-	unknownClaimUpdateCacheMut.RLock()
-	cache, cached := unknownClaimUpdateCache[key]
-	unknownClaimUpdateCacheMut.RUnlock()
+	abnormalClaimUpdateCacheMut.RLock()
+	cache, cached := abnormalClaimUpdateCache[key]
+	abnormalClaimUpdateCacheMut.RUnlock()
 
 	if !cached {
 		wl := strmangle.UpdateColumnSet(
-			unknownClaimColumns,
-			unknownClaimPrimaryKeyColumns,
+			abnormalClaimColumns,
+			abnormalClaimPrimaryKeyColumns,
 			whitelist,
 		)
 
 		if len(wl) == 0 {
-			return errors.New("model: unable to update unknown_claim, could not build whitelist")
+			return errors.New("model: unable to update abnormal_claim, could not build whitelist")
 		}
 
-		cache.query = fmt.Sprintf("UPDATE `unknown_claim` SET %s WHERE %s",
+		cache.query = fmt.Sprintf("UPDATE `abnormal_claim` SET %s WHERE %s",
 			strmangle.SetParamNames("`", "`", 0, wl),
-			strmangle.WhereClause("`", "`", 0, unknownClaimPrimaryKeyColumns),
+			strmangle.WhereClause("`", "`", 0, abnormalClaimPrimaryKeyColumns),
 		)
-		cache.valueMapping, err = queries.BindMapping(unknownClaimType, unknownClaimMapping, append(wl, unknownClaimPrimaryKeyColumns...))
+		cache.valueMapping, err = queries.BindMapping(abnormalClaimType, abnormalClaimMapping, append(wl, abnormalClaimPrimaryKeyColumns...))
 		if err != nil {
 			return err
 		}
@@ -627,58 +633,58 @@ func (o *UnknownClaim) Update(exec boil.Executor, whitelist ...string) error {
 
 	_, err = exec.Exec(cache.query, values...)
 	if err != nil {
-		return errors.Wrap(err, "model: unable to update unknown_claim row")
+		return errors.Wrap(err, "model: unable to update abnormal_claim row")
 	}
 
 	if !cached {
-		unknownClaimUpdateCacheMut.Lock()
-		unknownClaimUpdateCache[key] = cache
-		unknownClaimUpdateCacheMut.Unlock()
+		abnormalClaimUpdateCacheMut.Lock()
+		abnormalClaimUpdateCache[key] = cache
+		abnormalClaimUpdateCacheMut.Unlock()
 	}
 
 	return nil
 }
 
 // UpdateAllP updates all rows with matching column names, and panics on error.
-func (q unknownClaimQuery) UpdateAllP(cols M) {
+func (q abnormalClaimQuery) UpdateAllP(cols M) {
 	if err := q.UpdateAll(cols); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // UpdateAll updates all rows with the specified column values.
-func (q unknownClaimQuery) UpdateAll(cols M) error {
+func (q abnormalClaimQuery) UpdateAll(cols M) error {
 	queries.SetUpdate(q.Query, cols)
 
 	_, err := q.Query.Exec()
 	if err != nil {
-		return errors.Wrap(err, "model: unable to update all for unknown_claim")
+		return errors.Wrap(err, "model: unable to update all for abnormal_claim")
 	}
 
 	return nil
 }
 
 // UpdateAllG updates all rows with the specified column values.
-func (o UnknownClaimSlice) UpdateAllG(cols M) error {
+func (o AbnormalClaimSlice) UpdateAllG(cols M) error {
 	return o.UpdateAll(boil.GetDB(), cols)
 }
 
 // UpdateAllGP updates all rows with the specified column values, and panics on error.
-func (o UnknownClaimSlice) UpdateAllGP(cols M) {
+func (o AbnormalClaimSlice) UpdateAllGP(cols M) {
 	if err := o.UpdateAll(boil.GetDB(), cols); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // UpdateAllP updates all rows with the specified column values, and panics on error.
-func (o UnknownClaimSlice) UpdateAllP(exec boil.Executor, cols M) {
+func (o AbnormalClaimSlice) UpdateAllP(exec boil.Executor, cols M) {
 	if err := o.UpdateAll(exec, cols); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // UpdateAll updates all rows with the specified column values, using an executor.
-func (o UnknownClaimSlice) UpdateAll(exec boil.Executor, cols M) error {
+func (o AbnormalClaimSlice) UpdateAll(exec boil.Executor, cols M) error {
 	ln := int64(len(o))
 	if ln == 0 {
 		return nil
@@ -700,13 +706,13 @@ func (o UnknownClaimSlice) UpdateAll(exec boil.Executor, cols M) error {
 
 	// Append all of the primary key values for each column
 	for _, obj := range o {
-		pkeyArgs := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(obj)), unknownClaimPrimaryKeyMapping)
+		pkeyArgs := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(obj)), abnormalClaimPrimaryKeyMapping)
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := fmt.Sprintf("UPDATE `unknown_claim` SET %s WHERE %s",
+	sql := fmt.Sprintf("UPDATE `abnormal_claim` SET %s WHERE %s",
 		strmangle.SetParamNames("`", "`", 0, colNames),
-		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, unknownClaimPrimaryKeyColumns, len(o)))
+		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, abnormalClaimPrimaryKeyColumns, len(o)))
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, sql)
@@ -715,19 +721,19 @@ func (o UnknownClaimSlice) UpdateAll(exec boil.Executor, cols M) error {
 
 	_, err := exec.Exec(sql, args...)
 	if err != nil {
-		return errors.Wrap(err, "model: unable to update all in unknownClaim slice")
+		return errors.Wrap(err, "model: unable to update all in abnormalClaim slice")
 	}
 
 	return nil
 }
 
 // UpsertG attempts an insert, and does an update or ignore on conflict.
-func (o *UnknownClaim) UpsertG(updateColumns []string, whitelist ...string) error {
+func (o *AbnormalClaim) UpsertG(updateColumns []string, whitelist ...string) error {
 	return o.Upsert(boil.GetDB(), updateColumns, whitelist...)
 }
 
 // UpsertGP attempts an insert, and does an update or ignore on conflict. Panics on error.
-func (o *UnknownClaim) UpsertGP(updateColumns []string, whitelist ...string) {
+func (o *AbnormalClaim) UpsertGP(updateColumns []string, whitelist ...string) {
 	if err := o.Upsert(boil.GetDB(), updateColumns, whitelist...); err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -735,19 +741,19 @@ func (o *UnknownClaim) UpsertGP(updateColumns []string, whitelist ...string) {
 
 // UpsertP attempts an insert using an executor, and does an update or ignore on conflict.
 // UpsertP panics on error.
-func (o *UnknownClaim) UpsertP(exec boil.Executor, updateColumns []string, whitelist ...string) {
+func (o *AbnormalClaim) UpsertP(exec boil.Executor, updateColumns []string, whitelist ...string) {
 	if err := o.Upsert(exec, updateColumns, whitelist...); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // Upsert attempts an insert using an executor, and does an update or ignore on conflict.
-func (o *UnknownClaim) Upsert(exec boil.Executor, updateColumns []string, whitelist ...string) error {
+func (o *AbnormalClaim) Upsert(exec boil.Executor, updateColumns []string, whitelist ...string) error {
 	if o == nil {
-		return errors.New("model: no unknown_claim provided for upsert")
+		return errors.New("model: no abnormal_claim provided for upsert")
 	}
 
-	nzDefaults := queries.NonZeroDefaultSet(unknownClaimColumnsWithDefault, o)
+	nzDefaults := queries.NonZeroDefaultSet(abnormalClaimColumnsWithDefault, o)
 
 	// Build cache key in-line uglily - mysql vs postgres problems
 	buf := strmangle.GetBuffer()
@@ -765,42 +771,42 @@ func (o *UnknownClaim) Upsert(exec boil.Executor, updateColumns []string, whitel
 	key := buf.String()
 	strmangle.PutBuffer(buf)
 
-	unknownClaimUpsertCacheMut.RLock()
-	cache, cached := unknownClaimUpsertCache[key]
-	unknownClaimUpsertCacheMut.RUnlock()
+	abnormalClaimUpsertCacheMut.RLock()
+	cache, cached := abnormalClaimUpsertCache[key]
+	abnormalClaimUpsertCacheMut.RUnlock()
 
 	var err error
 
 	if !cached {
 		insert, ret := strmangle.InsertColumnSet(
-			unknownClaimColumns,
-			unknownClaimColumnsWithDefault,
-			unknownClaimColumnsWithoutDefault,
+			abnormalClaimColumns,
+			abnormalClaimColumnsWithDefault,
+			abnormalClaimColumnsWithoutDefault,
 			nzDefaults,
 			whitelist,
 		)
 
 		update := strmangle.UpdateColumnSet(
-			unknownClaimColumns,
-			unknownClaimPrimaryKeyColumns,
+			abnormalClaimColumns,
+			abnormalClaimPrimaryKeyColumns,
 			updateColumns,
 		)
 		if len(update) == 0 {
-			return errors.New("model: unable to upsert unknown_claim, could not build update column list")
+			return errors.New("model: unable to upsert abnormal_claim, could not build update column list")
 		}
 
-		cache.query = queries.BuildUpsertQueryMySQL(dialect, "unknown_claim", update, insert)
+		cache.query = queries.BuildUpsertQueryMySQL(dialect, "abnormal_claim", update, insert)
 		cache.retQuery = fmt.Sprintf(
-			"SELECT %s FROM `unknown_claim` WHERE `id`=?",
+			"SELECT %s FROM `abnormal_claim` WHERE `id`=?",
 			strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, ret), ","),
 		)
 
-		cache.valueMapping, err = queries.BindMapping(unknownClaimType, unknownClaimMapping, insert)
+		cache.valueMapping, err = queries.BindMapping(abnormalClaimType, abnormalClaimMapping, insert)
 		if err != nil {
 			return err
 		}
 		if len(ret) != 0 {
-			cache.retMapping, err = queries.BindMapping(unknownClaimType, unknownClaimMapping, ret)
+			cache.retMapping, err = queries.BindMapping(abnormalClaimType, abnormalClaimMapping, ret)
 			if err != nil {
 				return err
 			}
@@ -822,7 +828,7 @@ func (o *UnknownClaim) Upsert(exec boil.Executor, updateColumns []string, whitel
 	result, err := exec.Exec(cache.query, vals...)
 
 	if err != nil {
-		return errors.Wrap(err, "model: unable to upsert for unknown_claim")
+		return errors.Wrap(err, "model: unable to upsert for abnormal_claim")
 	}
 
 	var lastID int64
@@ -838,7 +844,7 @@ func (o *UnknownClaim) Upsert(exec boil.Executor, updateColumns []string, whitel
 	}
 
 	o.ID = uint64(lastID)
-	if lastID != 0 && len(cache.retMapping) == 1 && cache.retMapping[0] == unknownClaimMapping["ID"] {
+	if lastID != 0 && len(cache.retMapping) == 1 && cache.retMapping[0] == abnormalClaimMapping["ID"] {
 		goto CacheNoHooks
 	}
 
@@ -853,56 +859,56 @@ func (o *UnknownClaim) Upsert(exec boil.Executor, updateColumns []string, whitel
 
 	err = exec.QueryRow(cache.retQuery, identifierCols...).Scan(returns...)
 	if err != nil {
-		return errors.Wrap(err, "model: unable to populate default values for unknown_claim")
+		return errors.Wrap(err, "model: unable to populate default values for abnormal_claim")
 	}
 
 CacheNoHooks:
 	if !cached {
-		unknownClaimUpsertCacheMut.Lock()
-		unknownClaimUpsertCache[key] = cache
-		unknownClaimUpsertCacheMut.Unlock()
+		abnormalClaimUpsertCacheMut.Lock()
+		abnormalClaimUpsertCache[key] = cache
+		abnormalClaimUpsertCacheMut.Unlock()
 	}
 
 	return nil
 }
 
-// DeleteP deletes a single UnknownClaim record with an executor.
+// DeleteP deletes a single AbnormalClaim record with an executor.
 // DeleteP will match against the primary key column to find the record to delete.
 // Panics on error.
-func (o *UnknownClaim) DeleteP(exec boil.Executor) {
+func (o *AbnormalClaim) DeleteP(exec boil.Executor) {
 	if err := o.Delete(exec); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
-// DeleteG deletes a single UnknownClaim record.
+// DeleteG deletes a single AbnormalClaim record.
 // DeleteG will match against the primary key column to find the record to delete.
-func (o *UnknownClaim) DeleteG() error {
+func (o *AbnormalClaim) DeleteG() error {
 	if o == nil {
-		return errors.New("model: no UnknownClaim provided for deletion")
+		return errors.New("model: no AbnormalClaim provided for deletion")
 	}
 
 	return o.Delete(boil.GetDB())
 }
 
-// DeleteGP deletes a single UnknownClaim record.
+// DeleteGP deletes a single AbnormalClaim record.
 // DeleteGP will match against the primary key column to find the record to delete.
 // Panics on error.
-func (o *UnknownClaim) DeleteGP() {
+func (o *AbnormalClaim) DeleteGP() {
 	if err := o.DeleteG(); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
-// Delete deletes a single UnknownClaim record with an executor.
+// Delete deletes a single AbnormalClaim record with an executor.
 // Delete will match against the primary key column to find the record to delete.
-func (o *UnknownClaim) Delete(exec boil.Executor) error {
+func (o *AbnormalClaim) Delete(exec boil.Executor) error {
 	if o == nil {
-		return errors.New("model: no UnknownClaim provided for delete")
+		return errors.New("model: no AbnormalClaim provided for delete")
 	}
 
-	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), unknownClaimPrimaryKeyMapping)
-	sql := "DELETE FROM `unknown_claim` WHERE `id`=?"
+	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), abnormalClaimPrimaryKeyMapping)
+	sql := "DELETE FROM `abnormal_claim` WHERE `id`=?"
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, sql)
@@ -911,61 +917,61 @@ func (o *UnknownClaim) Delete(exec boil.Executor) error {
 
 	_, err := exec.Exec(sql, args...)
 	if err != nil {
-		return errors.Wrap(err, "model: unable to delete from unknown_claim")
+		return errors.Wrap(err, "model: unable to delete from abnormal_claim")
 	}
 
 	return nil
 }
 
 // DeleteAllP deletes all rows, and panics on error.
-func (q unknownClaimQuery) DeleteAllP() {
+func (q abnormalClaimQuery) DeleteAllP() {
 	if err := q.DeleteAll(); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // DeleteAll deletes all matching rows.
-func (q unknownClaimQuery) DeleteAll() error {
+func (q abnormalClaimQuery) DeleteAll() error {
 	if q.Query == nil {
-		return errors.New("model: no unknownClaimQuery provided for delete all")
+		return errors.New("model: no abnormalClaimQuery provided for delete all")
 	}
 
 	queries.SetDelete(q.Query)
 
 	_, err := q.Query.Exec()
 	if err != nil {
-		return errors.Wrap(err, "model: unable to delete all from unknown_claim")
+		return errors.Wrap(err, "model: unable to delete all from abnormal_claim")
 	}
 
 	return nil
 }
 
 // DeleteAllGP deletes all rows in the slice, and panics on error.
-func (o UnknownClaimSlice) DeleteAllGP() {
+func (o AbnormalClaimSlice) DeleteAllGP() {
 	if err := o.DeleteAllG(); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // DeleteAllG deletes all rows in the slice.
-func (o UnknownClaimSlice) DeleteAllG() error {
+func (o AbnormalClaimSlice) DeleteAllG() error {
 	if o == nil {
-		return errors.New("model: no UnknownClaim slice provided for delete all")
+		return errors.New("model: no AbnormalClaim slice provided for delete all")
 	}
 	return o.DeleteAll(boil.GetDB())
 }
 
 // DeleteAllP deletes all rows in the slice, using an executor, and panics on error.
-func (o UnknownClaimSlice) DeleteAllP(exec boil.Executor) {
+func (o AbnormalClaimSlice) DeleteAllP(exec boil.Executor) {
 	if err := o.DeleteAll(exec); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // DeleteAll deletes all rows in the slice, using an executor.
-func (o UnknownClaimSlice) DeleteAll(exec boil.Executor) error {
+func (o AbnormalClaimSlice) DeleteAll(exec boil.Executor) error {
 	if o == nil {
-		return errors.New("model: no UnknownClaim slice provided for delete all")
+		return errors.New("model: no AbnormalClaim slice provided for delete all")
 	}
 
 	if len(o) == 0 {
@@ -974,12 +980,12 @@ func (o UnknownClaimSlice) DeleteAll(exec boil.Executor) error {
 
 	var args []interface{}
 	for _, obj := range o {
-		pkeyArgs := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(obj)), unknownClaimPrimaryKeyMapping)
+		pkeyArgs := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(obj)), abnormalClaimPrimaryKeyMapping)
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := "DELETE FROM `unknown_claim` WHERE " +
-		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, unknownClaimPrimaryKeyColumns, len(o))
+	sql := "DELETE FROM `abnormal_claim` WHERE " +
+		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, abnormalClaimPrimaryKeyColumns, len(o))
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, sql)
@@ -988,30 +994,30 @@ func (o UnknownClaimSlice) DeleteAll(exec boil.Executor) error {
 
 	_, err := exec.Exec(sql, args...)
 	if err != nil {
-		return errors.Wrap(err, "model: unable to delete all from unknownClaim slice")
+		return errors.Wrap(err, "model: unable to delete all from abnormalClaim slice")
 	}
 
 	return nil
 }
 
 // ReloadGP refetches the object from the database and panics on error.
-func (o *UnknownClaim) ReloadGP() {
+func (o *AbnormalClaim) ReloadGP() {
 	if err := o.ReloadG(); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // ReloadP refetches the object from the database with an executor. Panics on error.
-func (o *UnknownClaim) ReloadP(exec boil.Executor) {
+func (o *AbnormalClaim) ReloadP(exec boil.Executor) {
 	if err := o.Reload(exec); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // ReloadG refetches the object from the database using the primary keys.
-func (o *UnknownClaim) ReloadG() error {
+func (o *AbnormalClaim) ReloadG() error {
 	if o == nil {
-		return errors.New("model: no UnknownClaim provided for reload")
+		return errors.New("model: no AbnormalClaim provided for reload")
 	}
 
 	return o.Reload(boil.GetDB())
@@ -1019,8 +1025,8 @@ func (o *UnknownClaim) ReloadG() error {
 
 // Reload refetches the object from the database
 // using the primary keys with an executor.
-func (o *UnknownClaim) Reload(exec boil.Executor) error {
-	ret, err := FindUnknownClaim(exec, o.ID)
+func (o *AbnormalClaim) Reload(exec boil.Executor) error {
+	ret, err := FindAbnormalClaim(exec, o.ID)
 	if err != nil {
 		return err
 	}
@@ -1032,7 +1038,7 @@ func (o *UnknownClaim) Reload(exec boil.Executor) error {
 // ReloadAllGP refetches every row with matching primary key column values
 // and overwrites the original object slice with the newly updated slice.
 // Panics on error.
-func (o *UnknownClaimSlice) ReloadAllGP() {
+func (o *AbnormalClaimSlice) ReloadAllGP() {
 	if err := o.ReloadAllG(); err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -1041,7 +1047,7 @@ func (o *UnknownClaimSlice) ReloadAllGP() {
 // ReloadAllP refetches every row with matching primary key column values
 // and overwrites the original object slice with the newly updated slice.
 // Panics on error.
-func (o *UnknownClaimSlice) ReloadAllP(exec boil.Executor) {
+func (o *AbnormalClaimSlice) ReloadAllP(exec boil.Executor) {
 	if err := o.ReloadAll(exec); err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -1049,9 +1055,9 @@ func (o *UnknownClaimSlice) ReloadAllP(exec boil.Executor) {
 
 // ReloadAllG refetches every row with matching primary key column values
 // and overwrites the original object slice with the newly updated slice.
-func (o *UnknownClaimSlice) ReloadAllG() error {
+func (o *AbnormalClaimSlice) ReloadAllG() error {
 	if o == nil {
-		return errors.New("model: empty UnknownClaimSlice provided for reload all")
+		return errors.New("model: empty AbnormalClaimSlice provided for reload all")
 	}
 
 	return o.ReloadAll(boil.GetDB())
@@ -1059,37 +1065,37 @@ func (o *UnknownClaimSlice) ReloadAllG() error {
 
 // ReloadAll refetches every row with matching primary key column values
 // and overwrites the original object slice with the newly updated slice.
-func (o *UnknownClaimSlice) ReloadAll(exec boil.Executor) error {
+func (o *AbnormalClaimSlice) ReloadAll(exec boil.Executor) error {
 	if o == nil || len(*o) == 0 {
 		return nil
 	}
 
-	unknownClaims := UnknownClaimSlice{}
+	abnormalClaims := AbnormalClaimSlice{}
 	var args []interface{}
 	for _, obj := range *o {
-		pkeyArgs := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(obj)), unknownClaimPrimaryKeyMapping)
+		pkeyArgs := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(obj)), abnormalClaimPrimaryKeyMapping)
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := "SELECT `unknown_claim`.* FROM `unknown_claim` WHERE " +
-		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, unknownClaimPrimaryKeyColumns, len(*o))
+	sql := "SELECT `abnormal_claim`.* FROM `abnormal_claim` WHERE " +
+		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, abnormalClaimPrimaryKeyColumns, len(*o))
 
 	q := queries.Raw(exec, sql, args...)
 
-	err := q.Bind(&unknownClaims)
+	err := q.Bind(&abnormalClaims)
 	if err != nil {
-		return errors.Wrap(err, "model: unable to reload all in UnknownClaimSlice")
+		return errors.Wrap(err, "model: unable to reload all in AbnormalClaimSlice")
 	}
 
-	*o = unknownClaims
+	*o = abnormalClaims
 
 	return nil
 }
 
-// UnknownClaimExists checks if the UnknownClaim row exists.
-func UnknownClaimExists(exec boil.Executor, id uint64) (bool, error) {
+// AbnormalClaimExists checks if the AbnormalClaim row exists.
+func AbnormalClaimExists(exec boil.Executor, id uint64) (bool, error) {
 	var exists bool
-	sql := "select exists(select 1 from `unknown_claim` where `id`=? limit 1)"
+	sql := "select exists(select 1 from `abnormal_claim` where `id`=? limit 1)"
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, sql)
@@ -1100,20 +1106,20 @@ func UnknownClaimExists(exec boil.Executor, id uint64) (bool, error) {
 
 	err := row.Scan(&exists)
 	if err != nil {
-		return false, errors.Wrap(err, "model: unable to check if unknown_claim exists")
+		return false, errors.Wrap(err, "model: unable to check if abnormal_claim exists")
 	}
 
 	return exists, nil
 }
 
-// UnknownClaimExistsG checks if the UnknownClaim row exists.
-func UnknownClaimExistsG(id uint64) (bool, error) {
-	return UnknownClaimExists(boil.GetDB(), id)
+// AbnormalClaimExistsG checks if the AbnormalClaim row exists.
+func AbnormalClaimExistsG(id uint64) (bool, error) {
+	return AbnormalClaimExists(boil.GetDB(), id)
 }
 
-// UnknownClaimExistsGP checks if the UnknownClaim row exists. Panics on error.
-func UnknownClaimExistsGP(id uint64) bool {
-	e, err := UnknownClaimExists(boil.GetDB(), id)
+// AbnormalClaimExistsGP checks if the AbnormalClaim row exists. Panics on error.
+func AbnormalClaimExistsGP(id uint64) bool {
+	e, err := AbnormalClaimExists(boil.GetDB(), id)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -1121,9 +1127,9 @@ func UnknownClaimExistsGP(id uint64) bool {
 	return e
 }
 
-// UnknownClaimExistsP checks if the UnknownClaim row exists. Panics on error.
-func UnknownClaimExistsP(exec boil.Executor, id uint64) bool {
-	e, err := UnknownClaimExists(exec, id)
+// AbnormalClaimExistsP checks if the AbnormalClaim row exists. Panics on error.
+func AbnormalClaimExistsP(exec boil.Executor, id uint64) bool {
+	e, err := AbnormalClaimExists(exec, id)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}

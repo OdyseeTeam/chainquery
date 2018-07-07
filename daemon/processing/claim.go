@@ -137,8 +137,8 @@ func processClaim(pbClaim *pb.Claim, claim *model.Claim, value []byte, output mo
 	if claim == nil {
 		claim = &model.Claim{}
 	}
-	claim.TransactionByHashID.String = tx.Hash
-	claim.TransactionByHashID.Valid = true
+	claim.TransactionHashID.String = tx.Hash
+	claim.TransactionHashID.Valid = true
 	claim.Vout = output.Vout
 	claim.Version = pbClaim.GetVersion().String()
 	claim.ValueAsHex = hex.EncodeToString(value)
@@ -275,24 +275,24 @@ func setSourceInfo(claim *model.Claim, pbClaim *pb.Claim) {
 }
 
 func saveUnknownClaim(name string, claimid string, isUpdate bool, value []byte, vout model.Output, tx model.Transaction) {
-	unknownClaim := model.UnknownClaim{}
-	unknownClaim.Vout = vout.Vout
-	unknownClaim.Name = name
-	unknownClaim.ClaimID = claimid
-	unknownClaim.IsUpdate = isUpdate
-	unknownClaim.TransactionHash.String = vout.TransactionHash
-	unknownClaim.TransactionHash.Valid = true
-	unknownClaim.ValueAsHex = hex.EncodeToString(value)
-	unknownClaim.BlockHash = tx.BlockByHashID
+	abnormalClaim := model.AbnormalClaim{}
+	abnormalClaim.Vout = vout.Vout
+	abnormalClaim.Name = name
+	abnormalClaim.ClaimID = claimid
+	abnormalClaim.IsUpdate = isUpdate
+	abnormalClaim.TransactionHash.String = vout.TransactionHash
+	abnormalClaim.TransactionHash.Valid = true
+	abnormalClaim.ValueAsHex = hex.EncodeToString(value)
+	abnormalClaim.BlockHash = tx.BlockHashID
 
 	var js map[string]interface{} //JSON Map
 	if json.Unmarshal(value, &js) == nil {
-		unknownClaim.ValueAsJSON.String = string(value)
-		unknownClaim.ValueAsJSON.Valid = true
+		abnormalClaim.ValueAsJSON.String = string(value)
+		abnormalClaim.ValueAsJSON.Valid = true
 	}
 
-	unknownClaim.OutputID = vout.ID
-	if err := unknownClaim.InsertG(); err != nil {
+	abnormalClaim.OutputID = vout.ID
+	if err := abnormalClaim.InsertG(); err != nil {
 		logrus.Error("UnknownClaim Saving Error: ", err)
 	}
 

@@ -28,8 +28,8 @@ type Support struct {
 	BidState          string      `boil:"bid_state" json:"bid_state" toml:"bid_state" yaml:"bid_state"`
 	TransactionHashID null.String `boil:"transaction_hash_id" json:"transaction_hash_id,omitempty" toml:"transaction_hash_id" yaml:"transaction_hash_id,omitempty"`
 	Vout              uint        `boil:"vout" json:"vout" toml:"vout" yaml:"vout"`
-	Created           time.Time   `boil:"created" json:"created" toml:"created" yaml:"created"`
-	Modified          time.Time   `boil:"modified" json:"modified" toml:"modified" yaml:"modified"`
+	CreatedAt         time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	ModifiedAt        time.Time   `boil:"modified_at" json:"modified_at" toml:"modified_at" yaml:"modified_at"`
 
 	R *supportR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L supportL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -42,8 +42,8 @@ var SupportColumns = struct {
 	BidState          string
 	TransactionHashID string
 	Vout              string
-	Created           string
-	Modified          string
+	CreatedAt         string
+	ModifiedAt        string
 }{
 	ID:                "id",
 	SupportedClaimID:  "supported_claim_id",
@@ -51,8 +51,8 @@ var SupportColumns = struct {
 	BidState:          "bid_state",
 	TransactionHashID: "transaction_hash_id",
 	Vout:              "vout",
-	Created:           "created",
-	Modified:          "modified",
+	CreatedAt:         "created_at",
+	ModifiedAt:        "modified_at",
 }
 
 // supportR is where relationships are stored.
@@ -64,9 +64,9 @@ type supportR struct {
 type supportL struct{}
 
 var (
-	supportColumns               = []string{"id", "supported_claim_id", "support_amount", "bid_state", "transaction_hash_id", "vout", "created", "modified"}
+	supportColumns               = []string{"id", "supported_claim_id", "support_amount", "bid_state", "transaction_hash_id", "vout", "created_at", "modified_at"}
 	supportColumnsWithoutDefault = []string{"supported_claim_id", "transaction_hash_id", "vout"}
-	supportColumnsWithDefault    = []string{"id", "support_amount", "bid_state", "created", "modified"}
+	supportColumnsWithDefault    = []string{"id", "support_amount", "bid_state", "created_at", "modified_at"}
 	supportPrimaryKeyColumns     = []string{"id"}
 )
 

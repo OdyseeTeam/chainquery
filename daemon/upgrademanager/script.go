@@ -23,7 +23,7 @@ func reProcessAllClaims() {
 
 func processClaimOut(index int, total int, txHash string) {
 	tx, err := model.TransactionsG(qm.Where(model.TransactionColumns.Hash+"=?", txHash),
-		qm.Select(model.TransactionColumns.Hash, model.TransactionColumns.BlockByHashID)).One()
+		qm.Select(model.TransactionColumns.Hash, model.TransactionColumns.BlockHashID)).One()
 	if err != nil {
 		logrus.Panic(err)
 	}
@@ -54,7 +54,7 @@ func setClaimAddresses() {
 	}
 	rows, err := boil.GetDB().Query(`
 		SELECT claim.id,output.script_pub_key_hex FROM claim
-		LEFT JOIN output ON output.transaction_hash = claim.transaction_by_hash_id AND output.vout = claim.vout
+		LEFT JOIN output ON output.transaction_hash = claim.transaction_hash_id AND output.vout = claim.vout
 		WHERE claim_address = ''`)
 
 	if err != nil {
@@ -115,8 +115,8 @@ func setBlockHeightOnAllClaims() {
 	rows, err := boil.GetDB().Query(`
 	SELECT c.id,b.height
 	FROM claim c
-	LEFT JOIN transaction t on c.transaction_by_hash_id = t.hash
-	LEFT JOIN block b on b.hash = t.block_by_hash_id
+	LEFT JOIN transaction t on c.transaction_hash_id = t.hash
+	LEFT JOIN block b on b.hash = t.block_hash_id
 	WHERE c.height = 0`)
 
 	if err != nil {
