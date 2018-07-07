@@ -108,9 +108,8 @@ func setClaimAddresses() {
 func setBlockHeightOnAllClaims() {
 
 	type claimInfo struct {
-		ID       uint64 `boil:"id"`
-		claim_id string `boil:"claim_id"`
-		height   uint64 `boil:"height"`
+		ID     uint64 `boil:"id"`
+		height uint64 `boil:"height"`
 	}
 
 	rows, err := boil.GetDB().Query(`
