@@ -146,3 +146,23 @@ func setBlockHeightOnAllClaims() {
 		}
 	}
 }
+
+func reProcessAllClaimsFromHeight(height uint) {
+	transaction := model.TableNames.Transaction
+	txHash := transaction + "." + model.TransactionColumns.Hash
+	outputTxHash := model.TableNames.Output + "." + model.OutputColumns.TransactionHash
+	block := model.TableNames.Block
+	blockHash := block + "." + model.BlockColumns.Hash
+	blockHeight := block + "." + model.BlockColumns.Height
+	txBlockHash := transaction + "." + model.TransactionColumns.BlockByHashID
+	outputs := model.OutputsG(
+		qm.Select(model.OutputColumns.TransactionHash, model.BlockColumns.Height),
+		qm.InnerJoin(transaction+" on "+txHash+" = "+outputTxHash),
+		qm.InnerJoin(block+" on "+txBlockHash+" = "+blockHash),
+		qm.Where(model.OutputColumns.Type+" =?", lbrycrd.NonStandard),
+		qm.And(blockHeight+" >= ?", height),
+	).AllP()
+	for i, output := range outputs {
+		processClaimOut(i, len(outputs), output.TransactionHash)
+	}
+}

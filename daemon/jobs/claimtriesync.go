@@ -17,6 +17,8 @@ import (
 
 const claimTrieSyncJob = "claimtriesyncjob"
 
+var expirationHardForkHeight uint = 400155    // https://github.com/lbryio/lbrycrd/pull/137
+var hardForkBlocksToExpiration uint = 2102400 // https://github.com/lbryio/lbrycrd/pull/137
 var blockHeight uint64
 var blocksToExpiration uint = 262974 //Hardcoded! https://lbry.io/faq/claimtrie-implementation
 // ClaimTrieSyncRunning is a variable used to show whether or not the job is running already.
@@ -217,9 +219,17 @@ func getClaimStatus(claim *model.Claim) string {
 		status = "Spent" //Should be unreachable because claim would be out of claimtrie if spent.
 	}
 	height := claim.Height
-	if height+blocksToExpiration > uint(blockHeight) {
-		status = "Expired"
+	if height >= expirationHardForkHeight {
+		// https://github.com/lbryio/lbrycrd/pull/137 - HardFork extends claim expiration.
+		if height+hardForkBlocksToExpiration > uint(blockHeight) {
+			status = "Expired"
+		}
+	} else {
+		if height+blocksToExpiration > uint(blockHeight) {
+			status = "Expired"
+		}
 	}
+
 	//Neither Spent or Expired = Active
 	if status == "Accepted" {
 		status = "Active"

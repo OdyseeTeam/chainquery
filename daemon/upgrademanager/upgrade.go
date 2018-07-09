@@ -8,9 +8,9 @@ import (
 )
 
 const (
-	appVersion  = 7
-	apiVersion  = 7
-	dataVersion = 7
+	appVersion  = 8
+	apiVersion  = 8
+	dataVersion = 8
 )
 
 // RunUpgradesForVersion - Migrations are for structure of the data. Upgrade Manager scripts are for the data itself.
@@ -114,5 +114,20 @@ func upgradeFrom6(version int) {
 	if version < 7 {
 		logrus.Info("Setting the height of all claims")
 		setBlockHeightOnAllClaims()
+	}
+}
+
+func upgradeFrom7(version int) {
+	if version < 8 {
+		block, err := model.BlocksG(qm.OrderBy(model.BlockColumns.Height+" DESC"), qm.Limit(1)).One()
+		if err != nil {
+			logrus.Error(err)
+			return
+		}
+		if block != nil && block.Height < 400155 {
+			logrus.Info("Reprocessing all claims equal to or above height 400155")
+			reProcessAllClaimsFromHeight(400155) // https://github.com/lbryio/lbrycrd/pull/137 - expiration hardfork.
+		}
+
 	}
 }
