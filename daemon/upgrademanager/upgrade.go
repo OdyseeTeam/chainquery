@@ -40,6 +40,7 @@ func RunUpgradesForVersion() {
 		upgradeFrom4(appStatus.AppVersion)
 		upgradeFrom5(appStatus.AppVersion)
 		upgradeFrom6(appStatus.AppVersion)
+		upgradeFrom7(appStatus.AppVersion)
 		////Increment and save
 		//
 		logrus.Debug("Upgrading app status version to App-", appVersion, " Data-", dataVersion, " Api-", apiVersion)
