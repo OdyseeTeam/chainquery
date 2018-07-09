@@ -7,11 +7,12 @@ import (
 	"time"
 
 	"github.com/lbryio/chainquery/db"
+	"github.com/lbryio/chainquery/meta"
 	"github.com/lbryio/lbry.go/api"
 	"github.com/lbryio/lbry.go/errors"
 	"github.com/lbryio/lbry.go/travis"
-	v "github.com/lbryio/ozzo-validation"
 
+	v "github.com/lbryio/ozzo-validation"
 	"github.com/sirupsen/logrus"
 )
 
@@ -75,7 +76,7 @@ func AutoUpdateAction(r *http.Request) api.Response {
 	if err != nil {
 		return api.Response{Error: err}
 	}
-	shouldUpdate := webHook.Status == 0 && !webHook.PullRequest && webHook.Tag != ""
+	shouldUpdate := webHook.Status == 0 && !webHook.PullRequest && webHook.Tag != "" && webHook.Tag != meta.GetVersion()
 	if shouldUpdate { // webHook.ShouldDeploy() doesn't work for chainquery autoupdate.
 		if AutoUpdateCommand == "" {
 			err := errors.Base("auto-update triggered, but no auto-update command configured")
