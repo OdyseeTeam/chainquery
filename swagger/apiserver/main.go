@@ -30,7 +30,7 @@ func InitApiServer(hostAndPort string) {
 	hs["Content-Security-Policy"] = "default-src 'none'"
 	hs["Server"] = "lbry.io"
 	hs["Access-Control-Allow-Origin"] = "*"
-	api.HeaderSettings = hs
+	api.ResponseHeaders = hs
 	api.LogError = func(request *http.Request, response *api.Response, err error) { logrus.Error(err) }
 	api.LogInfo = func(request *http.Request, response *api.Response) {
 		consoleText := request.RemoteAddr + " [" + strconv.Itoa(response.Status) + "]: " + request.Method + " " + request.URL.Path

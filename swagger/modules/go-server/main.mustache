@@ -20,7 +20,7 @@ func InitApiServer(hostAndPort string) {
     hs["Content-Security-Policy"] = "default-src 'none'"
     hs["Server"] = "lbry.io"
     hs["Access-Control-Allow-Origin"] = "*"
-    api.HeaderSettings = &hs
+    api.ResponseHeaders = &hs
     //API Chainquery DB connection
     chainqueryInstance, err := db.InitAPIQuery(config.GetAPIMySQLDSN(), false)
     if err != nil {
