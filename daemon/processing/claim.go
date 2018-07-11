@@ -117,8 +117,12 @@ func processClaimUpdateScript(script *[]byte, vout model.Output, tx model.Transa
 			logrus.Debug("ClaimUpdate for non-existent claim! ", claimID, " ", tx.Hash, " ", vout.Vout)
 			return name, claimID, pubkeyscript, err
 		}
+		claim.TransactionTime = tx.TransactionTime
 		claim.ClaimAddress = lbrycrd.GetAddressFromPublicKeyScript(pubkeyscript)
 		claim.Height = uint(blockHeight)
+		claim.TransactionByHashID.String = tx.Hash
+		claim.TransactionByHashID.Valid = true
+		claim.Vout = vout.Vout
 		if err := datastore.PutClaim(claim); err != nil {
 			logrus.Debug("Claim updates to invalid certificate claim. ", claim.PublisherID)
 			if logrus.GetLevel() == logrus.DebugLevel {
@@ -150,6 +154,7 @@ func processClaim(pbClaim *pb.Claim, claim *model.Claim, value []byte, output mo
 
 	setSourceInfo(claim, pbClaim)
 	setMetaDataInfo(claim, pbClaim)
+	setPublisherInfo(claim, pbClaim)
 	setCertificateInfo(claim, pbClaim)
 
 	return claim, nil
