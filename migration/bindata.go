@@ -7,6 +7,7 @@
 // migration/004_new_indices.sql
 // migration/005_remove_foreign_keys.sql
 // migration/006_add_height_index.sql
+// migration/007_more_decimals.sql
 // DO NOT EDIT!
 
 package migration
@@ -214,6 +215,26 @@ func migration006_add_height_indexSql() (*asset, error) {
 	return a, nil
 }
 
+var _migration007_more_decimalsSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xd2\xd5\x55\xd0\xce\xcd\x4c\x2f\x4a\x2c\x49\x55\x08\x2d\xe0\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\xca\xc9\x4f\xce\x56\x70\xf6\x70\xf4\x73\x77\x55\x70\xf6\xf7\x09\xf5\xf5\x53\x48\xc9\x4c\x4b\xcb\x4c\x2e\xcd\x29\xa9\x44\x66\xba\xf8\x87\x3a\xf9\xb8\x6a\x98\x1a\xe8\x58\x68\x2a\xf8\xf9\x87\x28\xf8\x85\xfa\xf8\x28\x58\x03\x02\x00\x00\xff\xff\x9f\xa4\x9c\x44\x5c\x00\x00\x00")
+
+func migration007_more_decimalsSqlBytes() ([]byte, error) {
+	return bindataRead(
+		_migration007_more_decimalsSql,
+		"migration/007_more_decimals.sql",
+	)
+}
+
+func migration007_more_decimalsSql() (*asset, error) {
+	bytes, err := migration007_more_decimalsSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "migration/007_more_decimals.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -273,6 +294,7 @@ var _bindata = map[string]func() (*asset, error){
 	"migration/004_new_indices.sql":         migration004_new_indicesSql,
 	"migration/005_remove_foreign_keys.sql": migration005_remove_foreign_keysSql,
 	"migration/006_add_height_index.sql":    migration006_add_height_indexSql,
+	"migration/007_more_decimals.sql":       migration007_more_decimalsSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -324,6 +346,7 @@ var _bintree = &bintree{nil, map[string]*bintree{
 		"004_new_indices.sql":         &bintree{migration004_new_indicesSql, map[string]*bintree{}},
 		"005_remove_foreign_keys.sql": &bintree{migration005_remove_foreign_keysSql, map[string]*bintree{}},
 		"006_add_height_index.sql":    &bintree{migration006_add_height_indexSql, map[string]*bintree{}},
+		"007_more_decimals.sql":       &bintree{migration007_more_decimalsSql, map[string]*bintree{}},
 	}},
 }}
 
