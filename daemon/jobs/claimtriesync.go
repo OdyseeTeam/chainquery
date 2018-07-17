@@ -37,11 +37,15 @@ func ClaimTrieSync() {
 
 		//For Updating claims that are spent ( no longer in claimtrie )
 		if err := updateSpentClaims(); err != nil {
+			logrus.Error("ClaimTrieSync:", err)
 			saveJobError(jobStatus, err)
 		}
 
+		started := time.Now()
+
 		updatedClaims, err := getUpdatedClaims(jobStatus)
 		if err != nil {
+			logrus.Error("ClaimTrieSync:", err)
 			saveJobError(jobStatus, err)
 			panic(err)
 		}
@@ -60,15 +64,16 @@ func ClaimTrieSync() {
 
 		//For syncing the claims
 		if err := syncClaims(updatedClaims); err != nil {
+			logrus.Error("ClaimTrieSync:", err)
 			saveJobError(jobStatus, err)
 		}
 
 		//For Setting Controlling Claims
 		if err := setControllingClaimForNames(updatedClaims); err != nil {
+			logrus.Error("ClaimTrieSync:", err)
 			saveJobError(jobStatus, err)
 		}
 
-		started := time.Now()
 		jobStatus.LastSync = started
 		if err := jobStatus.UpdateG(); err != nil {
 			panic(err)
@@ -221,11 +226,11 @@ func getClaimStatus(claim *model.Claim) string {
 	height := claim.Height
 	if height >= expirationHardForkHeight {
 		// https://github.com/lbryio/lbrycrd/pull/137 - HardFork extends claim expiration.
-		if height+hardForkBlocksToExpiration > uint(blockHeight) {
+		if height+hardForkBlocksToExpiration < uint(blockHeight) {
 			status = "Expired"
 		}
 	} else {
-		if height+blocksToExpiration > uint(blockHeight) {
+		if height+blocksToExpiration < uint(blockHeight) {
 			status = "Expired"
 		}
 	}
@@ -240,7 +245,6 @@ func getClaimStatus(claim *model.Claim) string {
 
 func getUpdatedClaims(jobStatus *model.JobStatus) (model.ClaimSlice, error) {
 	claimIDCol := model.TableNames.Claim + "." + model.ClaimColumns.ClaimID
-	claimBidCol := model.TableNames.Claim + "." + model.ClaimColumns.BidState
 	claimNameCol := model.TableNames.Claim + "." + model.ClaimColumns.Name
 	supportedIDCol := model.TableNames.Support + "." + model.SupportColumns.SupportedClaimID
 	supportModifiedCol := model.TableNames.Support + ".modified" //+model.SupportColumns.Modified
@@ -248,7 +252,7 @@ func getUpdatedClaims(jobStatus *model.JobStatus) (model.ClaimSlice, error) {
 	sqlFormat := "2006-01-02 15:04:05"
 	lastsync := jobStatus.LastSync.Format(sqlFormat)
 	lastSyncStr := "'" + lastsync + "'"
-	clause := qm.SQL(`
+	query := `
 		SELECT ` + claimNameCol + `,` + claimIDCol + `
 		FROM ` + model.TableNames.Claim + `
 		WHERE ` + claimNameCol + ` IN 
@@ -258,12 +262,11 @@ func getUpdatedClaims(jobStatus *model.JobStatus) (model.ClaimSlice, error) {
 			FROM ` + model.TableNames.Claim + ` 
 			LEFT JOIN ` + model.TableNames.Support + ` 
 				ON ( ` + supportedIDCol + ` = ` + claimIDCol + ` AND ` + supportModifiedCol + ` >= ` + lastSyncStr + ` )
-			WHERE ` + claimModifiedCol + ` >= ` + lastSyncStr + ` AND ` + claimBidCol + ` NOT IN ("Spent","Expired")
+			WHERE ` + claimModifiedCol + ` >= ` + lastSyncStr + `
 			GROUP BY  claim.name
 		)
-`)
-
-	return model.ClaimsG(clause).All()
+`
+	return model.ClaimsG(qm.SQL(query)).All()
 
 }
 
