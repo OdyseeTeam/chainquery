@@ -303,7 +303,6 @@ func getSpentClaimsToUpdate() (model.ClaimSlice, error) {
 
 func updateSpentClaims() error {
 	claims, err := getSpentClaimsToUpdate()
-	logrus.Info("Found ", len(claims), " to be marked as spent")
 	if err != nil {
 		return err
 	}
