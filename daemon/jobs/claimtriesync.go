@@ -49,10 +49,6 @@ func ClaimTrieSync() {
 			saveJobError(jobStatus, err)
 			panic(err)
 		}
-		if len(updatedClaims) == 0 {
-			logrus.Debug("ClaimTrieSync: All claims are up to date :)")
-			return
-		}
 		logrus.Debug("ClaimTrieSync: Claims to update " + strconv.Itoa(len(updatedClaims)))
 
 		//Get blockheight for calculating expired status
@@ -75,6 +71,7 @@ func ClaimTrieSync() {
 		}
 
 		jobStatus.LastSync = started
+		jobStatus.IsSuccess = true
 		if err := jobStatus.UpdateG(); err != nil {
 			panic(err)
 		}
@@ -109,7 +106,7 @@ func syncProcessor(jobs <-chan lbrycrd.Claim, wg *sync.WaitGroup) {
 func controllingProcessor(names <-chan string, wg *sync.WaitGroup) {
 	defer wg.Done()
 	for name := range names {
-		setControllingClaimForName(name)
+		setBidStateOfClaimsForName(name)
 	}
 }
 
@@ -128,21 +125,32 @@ func setControllingClaimForNames(claims model.ClaimSlice) error {
 	return nil
 }
 
-func setControllingClaimForName(name string) {
-	claim, _ := model.ClaimsG(
+func setBidStateOfClaimsForName(name string) {
+	claims, _ := model.ClaimsG(
 		qm.Where(model.ClaimColumns.Name+"=?", name),
 		qm.Where(model.ClaimColumns.BidState+"!=?", "Spent"),
 		qm.Where(model.ClaimColumns.ValidAtHeight+"<=?", blockHeight),
-		qm.OrderBy(model.ClaimColumns.ValidAtHeight+" DESC")).One()
+		qm.OrderBy(model.ClaimColumns.ValidAtHeight+" DESC")).All()
 
-	if claim != nil {
-		if claim.BidState != "Controlling" {
-
-			claim.BidState = "Controlling"
-
-			err := datastore.PutClaim(claim)
-			if err != nil {
-				panic(err)
+	foundControlling := false
+	for _, claim := range claims {
+		if !foundControlling && getClaimStatus(claim) == "Active" {
+			if claim.BidState != "Controlling" {
+				claim.BidState = "Controlling"
+				err := datastore.PutClaim(claim)
+				if err != nil {
+					panic(err)
+				}
+			}
+			foundControlling = true
+		} else {
+			status := getClaimStatus(claim)
+			if status != claim.BidState {
+				claim.BidState = status
+				err := datastore.PutClaim(claim)
+				if err != nil {
+					panic(err)
+				}
 			}
 		}
 	}
@@ -190,12 +198,6 @@ func syncClaim(claimJSON *lbrycrd.Claim) {
 	}
 	if claim.EffectiveAmount != claimJSON.EffectiveAmount {
 		claim.EffectiveAmount = claimJSON.EffectiveAmount
-		hasChanges = true
-
-	}
-	status := getClaimStatus(claim)
-	if claim.BidState != status {
-		claim.BidState = getClaimStatus(claim)
 		hasChanges = true
 	}
 	if hasChanges {
@@ -263,10 +265,11 @@ func getUpdatedClaims(jobStatus *model.JobStatus) (model.ClaimSlice, error) {
 			FROM ` + model.TableNames.Claim + ` 
 			LEFT JOIN ` + model.TableNames.Support + ` 
 				ON ( ` + supportedIDCol + ` = ` + claimIDCol + ` AND ` + supportModifiedCol + ` >= ` + lastSyncStr + ` )
-			WHERE ` + claimModifiedCol + ` >= ` + lastSyncStr + `
+			WHERE ` + claimModifiedCol + ` >= ` + lastSyncStr + ` OR ` + supportedIDCol + ` IS NOT NULL
 			GROUP BY  claim.name
 		)
 `
+	logrus.Debug("Query: ", query)
 	return model.ClaimsG(qm.SQL(query)).All()
 
 }
@@ -300,6 +303,7 @@ func getSpentClaimsToUpdate() (model.ClaimSlice, error) {
 
 func updateSpentClaims() error {
 	claims, err := getSpentClaimsToUpdate()
+	logrus.Info("Found ", len(claims), " to be marked as spent")
 	if err != nil {
 		return err
 	}
