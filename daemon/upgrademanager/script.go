@@ -154,7 +154,7 @@ func reProcessAllClaimsFromHeight(height uint) {
 	block := model.TableNames.Block
 	blockHash := block + "." + model.BlockColumns.Hash
 	blockHeight := block + "." + model.BlockColumns.Height
-	txBlockHash := transaction + "." + model.TransactionColumns.BlockByHashID
+	txBlockHash := transaction + "." + model.TransactionColumns.BlockHashID
 	outputs := model.OutputsG(
 		qm.Select(model.OutputColumns.TransactionHash, model.BlockColumns.Height),
 		qm.InnerJoin(transaction+" on "+txHash+" = "+outputTxHash),

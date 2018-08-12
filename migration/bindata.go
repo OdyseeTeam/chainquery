@@ -245,7 +245,7 @@ func migration008_schema_fixSqlBytes() ([]byte, error) {
 	)
 }
 
-func migration007_schema_fixSql() (*asset, error) {
+func migration008_schema_fixSql() (*asset, error) {
 	bytes, err := migration008_schema_fixSqlBytes()
 	if err != nil {
 		return nil, err
@@ -368,6 +368,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 		"004_new_indices.sql":         &bintree{migration004_new_indicesSql, map[string]*bintree{}},
 		"005_remove_foreign_keys.sql": &bintree{migration005_remove_foreign_keysSql, map[string]*bintree{}},
 		"006_add_height_index.sql":    &bintree{migration006_add_height_indexSql, map[string]*bintree{}},
+		"007_more_decimals.sql":       &bintree{migration007_more_decimalsSql, map[string]*bintree{}},
+		"008_schema_fix.sql":          &bintree{migration008_schema_fixSql, map[string]*bintree{}},
 	}},
 }}
 

@@ -202,7 +202,6 @@
   packages = [
     "api",
     "errors",
-    "jsonrpc",
     "lbrycrd",
     "null",
     "querytools",
@@ -390,14 +389,6 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:22d3674d44ee93f52a9c0b6a22d1f736a0ad9ac3f9d2c1ca8648f3c9ce9910bd"
-  name = "github.com/ybbus/jsonrpc"
-  packages = ["."]
-  pruneopts = ""
-  revision = "2a548b7d822dd62717337a6b1e817fae1b14660a"
-
-[[projects]]
-  branch = "master"
   digest = "1:e79c3d6b195477b429f017aaa02af135249bbdff31c9acbd8a93bb37a4ef7d3b"
   name = "golang.org/x/crypto"
   packages = [
@@ -523,7 +514,6 @@
     "github.com/jteeuwen/go-bindata",
     "github.com/lbryio/lbry.go/api",
     "github.com/lbryio/lbry.go/errors",
-    "github.com/lbryio/lbry.go/jsonrpc",
     "github.com/lbryio/lbry.go/lbrycrd",
     "github.com/lbryio/lbry.go/querytools",
     "github.com/lbryio/lbry.go/stop",

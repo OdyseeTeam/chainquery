@@ -120,8 +120,7 @@ func processClaimUpdateScript(script *[]byte, vout model.Output, tx model.Transa
 		claim.TransactionTime = tx.TransactionTime
 		claim.ClaimAddress = lbrycrd.GetAddressFromPublicKeyScript(pubkeyscript)
 		claim.Height = uint(blockHeight)
-		claim.TransactionByHashID.String = tx.Hash
-		claim.TransactionByHashID.Valid = true
+		claim.TransactionHashID.SetValid(tx.Hash)
 		claim.Vout = vout.Vout
 		if err := datastore.PutClaim(claim); err != nil {
 			logrus.Debug("Claim updates to invalid certificate claim. ", claim.PublisherID)
