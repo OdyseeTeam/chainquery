@@ -97,7 +97,6 @@ func createTxAddressIfNotExist(txID uint64, addressID uint64) {
 		txAddress := model.TransactionAddress{}
 		txAddress.TransactionID = txID
 		txAddress.AddressID = addressID
-		txAddress.LatestTransactionTime = time.Now()
 		if err := datastore.PutTxAddress(&txAddress); err != nil {
 			panic(err) //Should never happen.
 		}

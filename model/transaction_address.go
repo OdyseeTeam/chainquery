@@ -21,28 +21,25 @@ import (
 
 // TransactionAddress is an object representing the database table.
 type TransactionAddress struct {
-	TransactionID         uint64    `boil:"transaction_id" json:"transaction_id" toml:"transaction_id" yaml:"transaction_id"`
-	AddressID             uint64    `boil:"address_id" json:"address_id" toml:"address_id" yaml:"address_id"`
-	DebitAmount           float64   `boil:"debit_amount" json:"debit_amount" toml:"debit_amount" yaml:"debit_amount"`
-	CreditAmount          float64   `boil:"credit_amount" json:"credit_amount" toml:"credit_amount" yaml:"credit_amount"`
-	LatestTransactionTime time.Time `boil:"latest_transaction_time" json:"latest_transaction_time" toml:"latest_transaction_time" yaml:"latest_transaction_time"`
+	TransactionID uint64  `boil:"transaction_id" json:"transaction_id" toml:"transaction_id" yaml:"transaction_id"`
+	AddressID     uint64  `boil:"address_id" json:"address_id" toml:"address_id" yaml:"address_id"`
+	DebitAmount   float64 `boil:"debit_amount" json:"debit_amount" toml:"debit_amount" yaml:"debit_amount"`
+	CreditAmount  float64 `boil:"credit_amount" json:"credit_amount" toml:"credit_amount" yaml:"credit_amount"`
 
 	R *transactionAddressR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L transactionAddressL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var TransactionAddressColumns = struct {
-	TransactionID         string
-	AddressID             string
-	DebitAmount           string
-	CreditAmount          string
-	LatestTransactionTime string
+	TransactionID string
+	AddressID     string
+	DebitAmount   string
+	CreditAmount  string
 }{
-	TransactionID:         "transaction_id",
-	AddressID:             "address_id",
-	DebitAmount:           "debit_amount",
-	CreditAmount:          "credit_amount",
-	LatestTransactionTime: "latest_transaction_time",
+	TransactionID: "transaction_id",
+	AddressID:     "address_id",
+	DebitAmount:   "debit_amount",
+	CreditAmount:  "credit_amount",
 }
 
 // transactionAddressR is where relationships are stored.
@@ -55,9 +52,9 @@ type transactionAddressR struct {
 type transactionAddressL struct{}
 
 var (
-	transactionAddressColumns               = []string{"transaction_id", "address_id", "debit_amount", "credit_amount", "latest_transaction_time"}
+	transactionAddressColumns               = []string{"transaction_id", "address_id", "debit_amount", "credit_amount"}
 	transactionAddressColumnsWithoutDefault = []string{"transaction_id", "address_id"}
-	transactionAddressColumnsWithDefault    = []string{"debit_amount", "credit_amount", "latest_transaction_time"}
+	transactionAddressColumnsWithDefault    = []string{"debit_amount", "credit_amount"}
 	transactionAddressPrimaryKeyColumns     = []string{"transaction_id", "address_id"}
 )
 

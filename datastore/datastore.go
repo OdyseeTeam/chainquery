@@ -36,12 +36,12 @@ func PutOutput(output *model.Output, whitelist ...string) error {
 		vOutMatch := qm.And(model.OutputColumns.Vout+"=?", output.Vout)
 		var err error
 		if model.OutputsG(txHashMatch, vOutMatch).ExistsP() {
-			output.Modified = time.Now()
+			output.ModifiedAt = time.Now()
 			err = output.UpdateG(whitelist...)
 		} else {
 			err = output.InsertG()
 			if err != nil {
-				output.Modified = time.Now()
+				output.ModifiedAt = time.Now()
 				err = output.UpdateG(whitelist...)
 			}
 		}
@@ -125,7 +125,7 @@ func PutAddress(address *model.Address) error {
 
 		var err error
 		if model.AddressExistsGP(address.ID) {
-			address.Modified = time.Now()
+			address.ModifiedAt = time.Now()
 			err = address.UpdateG()
 		} else {
 			err = address.InsertG()
@@ -201,12 +201,12 @@ func PutClaim(claim *model.Claim) error {
 
 		var err error
 		if model.ClaimExistsGP(claim.ID) {
-			claim.Modified = time.Now()
+			claim.ModifiedAt = time.Now()
 			err = claim.UpdateG()
 		} else {
 			err = claim.InsertG()
 			if err != nil {
-				claim.Modified = time.Now()
+				claim.ModifiedAt = time.Now()
 				err = claim.UpdateG()
 			}
 		}
@@ -242,7 +242,7 @@ func PutSupport(support *model.Support) error {
 
 		var err error
 		if model.ClaimExistsGP(support.ID) {
-			support.Modified = time.Now()
+			support.ModifiedAt = time.Now()
 			err = support.UpdateG()
 		} else {
 			err = support.InsertG()

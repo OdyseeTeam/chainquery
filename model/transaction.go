@@ -23,10 +23,9 @@ import (
 // Transaction is an object representing the database table.
 type Transaction struct {
 	ID              uint64      `boil:"id" json:"id" toml:"id" yaml:"id"`
-	BlockByHashID   null.String `boil:"block_by_hash_id" json:"block_by_hash_id,omitempty" toml:"block_by_hash_id" yaml:"block_by_hash_id,omitempty"`
+	BlockHashID     null.String `boil:"block_hash_id" json:"block_hash_id,omitempty" toml:"block_hash_id" yaml:"block_hash_id,omitempty"`
 	InputCount      uint        `boil:"input_count" json:"input_count" toml:"input_count" yaml:"input_count"`
 	OutputCount     uint        `boil:"output_count" json:"output_count" toml:"output_count" yaml:"output_count"`
-	Value           float64     `boil:"value" json:"value" toml:"value" yaml:"value"`
 	Fee             float64     `boil:"fee" json:"fee" toml:"fee" yaml:"fee"`
 	TransactionTime null.Uint64 `boil:"transaction_time" json:"transaction_time,omitempty" toml:"transaction_time" yaml:"transaction_time,omitempty"`
 	TransactionSize uint64      `boil:"transaction_size" json:"transaction_size" toml:"transaction_size" yaml:"transaction_size"`
@@ -34,8 +33,8 @@ type Transaction struct {
 	Version         int         `boil:"version" json:"version" toml:"version" yaml:"version"`
 	LockTime        uint        `boil:"lock_time" json:"lock_time" toml:"lock_time" yaml:"lock_time"`
 	Raw             null.String `boil:"raw" json:"raw,omitempty" toml:"raw" yaml:"raw,omitempty"`
-	Created         time.Time   `boil:"created" json:"created" toml:"created" yaml:"created"`
-	Modified        time.Time   `boil:"modified" json:"modified" toml:"modified" yaml:"modified"`
+	CreatedAt       time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	ModifiedAt      time.Time   `boil:"modified_at" json:"modified_at" toml:"modified_at" yaml:"modified_at"`
 	CreatedTime     time.Time   `boil:"created_time" json:"created_time" toml:"created_time" yaml:"created_time"`
 
 	R *transactionR `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -44,10 +43,9 @@ type Transaction struct {
 
 var TransactionColumns = struct {
 	ID              string
-	BlockByHashID   string
+	BlockHashID     string
 	InputCount      string
 	OutputCount     string
-	Value           string
 	Fee             string
 	TransactionTime string
 	TransactionSize string
@@ -55,15 +53,14 @@ var TransactionColumns = struct {
 	Version         string
 	LockTime        string
 	Raw             string
-	Created         string
-	Modified        string
+	CreatedAt       string
+	ModifiedAt      string
 	CreatedTime     string
 }{
 	ID:              "id",
-	BlockByHashID:   "block_by_hash_id",
+	BlockHashID:     "block_hash_id",
 	InputCount:      "input_count",
 	OutputCount:     "output_count",
-	Value:           "value",
 	Fee:             "fee",
 	TransactionTime: "transaction_time",
 	TransactionSize: "transaction_size",
@@ -71,15 +68,15 @@ var TransactionColumns = struct {
 	Version:         "version",
 	LockTime:        "lock_time",
 	Raw:             "raw",
-	Created:         "created",
-	Modified:        "modified",
+	CreatedAt:       "created_at",
+	ModifiedAt:      "modified_at",
 	CreatedTime:     "created_time",
 }
 
 // transactionR is where relationships are stored.
 type transactionR struct {
-	BlockByHash             *Block
-	TransactionByHashClaims ClaimSlice
+	BlockHash               *Block
+	TransactionHashClaims   ClaimSlice
 	Inputs                  InputSlice
 	Outputs                 OutputSlice
 	TransactionHashSupports SupportSlice
@@ -90,9 +87,9 @@ type transactionR struct {
 type transactionL struct{}
 
 var (
-	transactionColumns               = []string{"id", "block_by_hash_id", "input_count", "output_count", "value", "fee", "transaction_time", "transaction_size", "hash", "version", "lock_time", "raw", "created", "modified", "created_time"}
-	transactionColumnsWithoutDefault = []string{"block_by_hash_id", "input_count", "output_count", "value", "transaction_time", "transaction_size", "hash", "version", "lock_time", "raw"}
-	transactionColumnsWithDefault    = []string{"id", "fee", "created", "modified", "created_time"}
+	transactionColumns               = []string{"id", "block_hash_id", "input_count", "output_count", "fee", "transaction_time", "transaction_size", "hash", "version", "lock_time", "raw", "created_at", "modified_at", "created_time"}
+	transactionColumnsWithoutDefault = []string{"block_hash_id", "input_count", "output_count", "transaction_time", "transaction_size", "hash", "version", "lock_time", "raw"}
+	transactionColumnsWithDefault    = []string{"id", "fee", "created_at", "modified_at", "created_time"}
 	transactionPrimaryKeyColumns     = []string{"id"}
 )
 
@@ -225,15 +222,15 @@ func (q transactionQuery) Exists() (bool, error) {
 	return count > 0, nil
 }
 
-// BlockByHashG pointed to by the foreign key.
-func (o *Transaction) BlockByHashG(mods ...qm.QueryMod) blockQuery {
-	return o.BlockByHash(boil.GetDB(), mods...)
+// BlockHashG pointed to by the foreign key.
+func (o *Transaction) BlockHashG(mods ...qm.QueryMod) blockQuery {
+	return o.BlockHash(boil.GetDB(), mods...)
 }
 
-// BlockByHash pointed to by the foreign key.
-func (o *Transaction) BlockByHash(exec boil.Executor, mods ...qm.QueryMod) blockQuery {
+// BlockHash pointed to by the foreign key.
+func (o *Transaction) BlockHash(exec boil.Executor, mods ...qm.QueryMod) blockQuery {
 	queryMods := []qm.QueryMod{
-		qm.Where("hash=?", o.BlockByHashID),
+		qm.Where("hash=?", o.BlockHashID),
 	}
 
 	queryMods = append(queryMods, mods...)
@@ -244,20 +241,20 @@ func (o *Transaction) BlockByHash(exec boil.Executor, mods ...qm.QueryMod) block
 	return query
 }
 
-// TransactionByHashClaimsG retrieves all the claim's claim via transaction_by_hash_id column.
-func (o *Transaction) TransactionByHashClaimsG(mods ...qm.QueryMod) claimQuery {
-	return o.TransactionByHashClaims(boil.GetDB(), mods...)
+// TransactionHashClaimsG retrieves all the claim's claim via transaction_hash_id column.
+func (o *Transaction) TransactionHashClaimsG(mods ...qm.QueryMod) claimQuery {
+	return o.TransactionHashClaims(boil.GetDB(), mods...)
 }
 
-// TransactionByHashClaims retrieves all the claim's claim with an executor via transaction_by_hash_id column.
-func (o *Transaction) TransactionByHashClaims(exec boil.Executor, mods ...qm.QueryMod) claimQuery {
+// TransactionHashClaims retrieves all the claim's claim with an executor via transaction_hash_id column.
+func (o *Transaction) TransactionHashClaims(exec boil.Executor, mods ...qm.QueryMod) claimQuery {
 	var queryMods []qm.QueryMod
 	if len(mods) != 0 {
 		queryMods = append(queryMods, mods...)
 	}
 
 	queryMods = append(queryMods,
-		qm.Where("`claim`.`transaction_by_hash_id`=?", o.Hash),
+		qm.Where("`claim`.`transaction_hash_id`=?", o.Hash),
 	)
 
 	query := Claims(exec, queryMods...)
@@ -374,9 +371,9 @@ func (o *Transaction) TransactionAddresses(exec boil.Executor, mods ...qm.QueryM
 	return query
 }
 
-// LoadBlockByHash allows an eager lookup of values, cached into the
+// LoadBlockHash allows an eager lookup of values, cached into the
 // loaded structs of the objects.
-func (transactionL) LoadBlockByHash(e boil.Executor, singular bool, maybeTransaction interface{}) error {
+func (transactionL) LoadBlockHash(e boil.Executor, singular bool, maybeTransaction interface{}) error {
 	var slice []*Transaction
 	var object *Transaction
 
@@ -393,13 +390,13 @@ func (transactionL) LoadBlockByHash(e boil.Executor, singular bool, maybeTransac
 		if object.R == nil {
 			object.R = &transactionR{}
 		}
-		args[0] = object.BlockByHashID
+		args[0] = object.BlockHashID
 	} else {
 		for i, obj := range slice {
 			if obj.R == nil {
 				obj.R = &transactionR{}
 			}
-			args[i] = obj.BlockByHashID
+			args[i] = obj.BlockHashID
 		}
 	}
 
@@ -428,14 +425,14 @@ func (transactionL) LoadBlockByHash(e boil.Executor, singular bool, maybeTransac
 	}
 
 	if singular {
-		object.R.BlockByHash = resultSlice[0]
+		object.R.BlockHash = resultSlice[0]
 		return nil
 	}
 
 	for _, local := range slice {
 		for _, foreign := range resultSlice {
-			if local.BlockByHashID.String == foreign.Hash {
-				local.R.BlockByHash = foreign
+			if local.BlockHashID.String == foreign.Hash {
+				local.R.BlockHash = foreign
 				break
 			}
 		}
@@ -444,9 +441,9 @@ func (transactionL) LoadBlockByHash(e boil.Executor, singular bool, maybeTransac
 	return nil
 }
 
-// LoadTransactionByHashClaims allows an eager lookup of values, cached into the
+// LoadTransactionHashClaims allows an eager lookup of values, cached into the
 // loaded structs of the objects.
-func (transactionL) LoadTransactionByHashClaims(e boil.Executor, singular bool, maybeTransaction interface{}) error {
+func (transactionL) LoadTransactionHashClaims(e boil.Executor, singular bool, maybeTransaction interface{}) error {
 	var slice []*Transaction
 	var object *Transaction
 
@@ -474,7 +471,7 @@ func (transactionL) LoadTransactionByHashClaims(e boil.Executor, singular bool, 
 	}
 
 	query := fmt.Sprintf(
-		"select * from `claim` where `transaction_by_hash_id` in (%s)",
+		"select * from `claim` where `transaction_hash_id` in (%s)",
 		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
 	)
 	if boil.DebugMode {
@@ -493,14 +490,14 @@ func (transactionL) LoadTransactionByHashClaims(e boil.Executor, singular bool, 
 	}
 
 	if singular {
-		object.R.TransactionByHashClaims = resultSlice
+		object.R.TransactionHashClaims = resultSlice
 		return nil
 	}
 
 	for _, foreign := range resultSlice {
 		for _, local := range slice {
-			if local.Hash == foreign.TransactionByHashID.String {
-				local.R.TransactionByHashClaims = append(local.R.TransactionByHashClaims, foreign)
+			if local.Hash == foreign.TransactionHashID.String {
+				local.R.TransactionHashClaims = append(local.R.TransactionHashClaims, foreign)
 				break
 			}
 		}
@@ -769,38 +766,38 @@ func (transactionL) LoadTransactionAddresses(e boil.Executor, singular bool, may
 	return nil
 }
 
-// SetBlockByHashG of the transaction to the related item.
-// Sets o.R.BlockByHash to related.
-// Adds o to related.R.BlockByHashTransactions.
+// SetBlockHashG of the transaction to the related item.
+// Sets o.R.BlockHash to related.
+// Adds o to related.R.BlockHashTransactions.
 // Uses the global database handle.
-func (o *Transaction) SetBlockByHashG(insert bool, related *Block) error {
-	return o.SetBlockByHash(boil.GetDB(), insert, related)
+func (o *Transaction) SetBlockHashG(insert bool, related *Block) error {
+	return o.SetBlockHash(boil.GetDB(), insert, related)
 }
 
-// SetBlockByHashP of the transaction to the related item.
-// Sets o.R.BlockByHash to related.
-// Adds o to related.R.BlockByHashTransactions.
+// SetBlockHashP of the transaction to the related item.
+// Sets o.R.BlockHash to related.
+// Adds o to related.R.BlockHashTransactions.
 // Panics on error.
-func (o *Transaction) SetBlockByHashP(exec boil.Executor, insert bool, related *Block) {
-	if err := o.SetBlockByHash(exec, insert, related); err != nil {
+func (o *Transaction) SetBlockHashP(exec boil.Executor, insert bool, related *Block) {
+	if err := o.SetBlockHash(exec, insert, related); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
-// SetBlockByHashGP of the transaction to the related item.
-// Sets o.R.BlockByHash to related.
-// Adds o to related.R.BlockByHashTransactions.
+// SetBlockHashGP of the transaction to the related item.
+// Sets o.R.BlockHash to related.
+// Adds o to related.R.BlockHashTransactions.
 // Uses the global database handle and panics on error.
-func (o *Transaction) SetBlockByHashGP(insert bool, related *Block) {
-	if err := o.SetBlockByHash(boil.GetDB(), insert, related); err != nil {
+func (o *Transaction) SetBlockHashGP(insert bool, related *Block) {
+	if err := o.SetBlockHash(boil.GetDB(), insert, related); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
-// SetBlockByHash of the transaction to the related item.
-// Sets o.R.BlockByHash to related.
-// Adds o to related.R.BlockByHashTransactions.
-func (o *Transaction) SetBlockByHash(exec boil.Executor, insert bool, related *Block) error {
+// SetBlockHash of the transaction to the related item.
+// Sets o.R.BlockHash to related.
+// Adds o to related.R.BlockHashTransactions.
+func (o *Transaction) SetBlockHash(exec boil.Executor, insert bool, related *Block) error {
 	var err error
 	if insert {
 		if err = related.Insert(exec); err != nil {
@@ -810,7 +807,7 @@ func (o *Transaction) SetBlockByHash(exec boil.Executor, insert bool, related *B
 
 	updateQuery := fmt.Sprintf(
 		"UPDATE `transaction` SET %s WHERE %s",
-		strmangle.SetParamNames("`", "`", 0, []string{"block_by_hash_id"}),
+		strmangle.SetParamNames("`", "`", 0, []string{"block_hash_id"}),
 		strmangle.WhereClause("`", "`", 0, transactionPrimaryKeyColumns),
 	)
 	values := []interface{}{related.Hash, o.ID}
@@ -824,136 +821,136 @@ func (o *Transaction) SetBlockByHash(exec boil.Executor, insert bool, related *B
 		return errors.Wrap(err, "failed to update local table")
 	}
 
-	o.BlockByHashID.String = related.Hash
-	o.BlockByHashID.Valid = true
+	o.BlockHashID.String = related.Hash
+	o.BlockHashID.Valid = true
 
 	if o.R == nil {
 		o.R = &transactionR{
-			BlockByHash: related,
+			BlockHash: related,
 		}
 	} else {
-		o.R.BlockByHash = related
+		o.R.BlockHash = related
 	}
 
 	if related.R == nil {
 		related.R = &blockR{
-			BlockByHashTransactions: TransactionSlice{o},
+			BlockHashTransactions: TransactionSlice{o},
 		}
 	} else {
-		related.R.BlockByHashTransactions = append(related.R.BlockByHashTransactions, o)
+		related.R.BlockHashTransactions = append(related.R.BlockHashTransactions, o)
 	}
 
 	return nil
 }
 
-// RemoveBlockByHashG relationship.
-// Sets o.R.BlockByHash to nil.
+// RemoveBlockHashG relationship.
+// Sets o.R.BlockHash to nil.
 // Removes o from all passed in related items' relationships struct (Optional).
 // Uses the global database handle.
-func (o *Transaction) RemoveBlockByHashG(related *Block) error {
-	return o.RemoveBlockByHash(boil.GetDB(), related)
+func (o *Transaction) RemoveBlockHashG(related *Block) error {
+	return o.RemoveBlockHash(boil.GetDB(), related)
 }
 
-// RemoveBlockByHashP relationship.
-// Sets o.R.BlockByHash to nil.
+// RemoveBlockHashP relationship.
+// Sets o.R.BlockHash to nil.
 // Removes o from all passed in related items' relationships struct (Optional).
 // Panics on error.
-func (o *Transaction) RemoveBlockByHashP(exec boil.Executor, related *Block) {
-	if err := o.RemoveBlockByHash(exec, related); err != nil {
+func (o *Transaction) RemoveBlockHashP(exec boil.Executor, related *Block) {
+	if err := o.RemoveBlockHash(exec, related); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
-// RemoveBlockByHashGP relationship.
-// Sets o.R.BlockByHash to nil.
+// RemoveBlockHashGP relationship.
+// Sets o.R.BlockHash to nil.
 // Removes o from all passed in related items' relationships struct (Optional).
 // Uses the global database handle and panics on error.
-func (o *Transaction) RemoveBlockByHashGP(related *Block) {
-	if err := o.RemoveBlockByHash(boil.GetDB(), related); err != nil {
+func (o *Transaction) RemoveBlockHashGP(related *Block) {
+	if err := o.RemoveBlockHash(boil.GetDB(), related); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
-// RemoveBlockByHash relationship.
-// Sets o.R.BlockByHash to nil.
+// RemoveBlockHash relationship.
+// Sets o.R.BlockHash to nil.
 // Removes o from all passed in related items' relationships struct (Optional).
-func (o *Transaction) RemoveBlockByHash(exec boil.Executor, related *Block) error {
+func (o *Transaction) RemoveBlockHash(exec boil.Executor, related *Block) error {
 	var err error
 
-	o.BlockByHashID.Valid = false
-	if err = o.Update(exec, "block_by_hash_id"); err != nil {
-		o.BlockByHashID.Valid = true
+	o.BlockHashID.Valid = false
+	if err = o.Update(exec, "block_hash_id"); err != nil {
+		o.BlockHashID.Valid = true
 		return errors.Wrap(err, "failed to update local table")
 	}
 
-	o.R.BlockByHash = nil
+	o.R.BlockHash = nil
 	if related == nil || related.R == nil {
 		return nil
 	}
 
-	for i, ri := range related.R.BlockByHashTransactions {
-		if o.BlockByHashID.String != ri.BlockByHashID.String {
+	for i, ri := range related.R.BlockHashTransactions {
+		if o.BlockHashID.String != ri.BlockHashID.String {
 			continue
 		}
 
-		ln := len(related.R.BlockByHashTransactions)
+		ln := len(related.R.BlockHashTransactions)
 		if ln > 1 && i < ln-1 {
-			related.R.BlockByHashTransactions[i] = related.R.BlockByHashTransactions[ln-1]
+			related.R.BlockHashTransactions[i] = related.R.BlockHashTransactions[ln-1]
 		}
-		related.R.BlockByHashTransactions = related.R.BlockByHashTransactions[:ln-1]
+		related.R.BlockHashTransactions = related.R.BlockHashTransactions[:ln-1]
 		break
 	}
 	return nil
 }
 
-// AddTransactionByHashClaimsG adds the given related objects to the existing relationships
+// AddTransactionHashClaimsG adds the given related objects to the existing relationships
 // of the transaction, optionally inserting them as new records.
-// Appends related to o.R.TransactionByHashClaims.
-// Sets related.R.TransactionByHash appropriately.
+// Appends related to o.R.TransactionHashClaims.
+// Sets related.R.TransactionHash appropriately.
 // Uses the global database handle.
-func (o *Transaction) AddTransactionByHashClaimsG(insert bool, related ...*Claim) error {
-	return o.AddTransactionByHashClaims(boil.GetDB(), insert, related...)
+func (o *Transaction) AddTransactionHashClaimsG(insert bool, related ...*Claim) error {
+	return o.AddTransactionHashClaims(boil.GetDB(), insert, related...)
 }
 
-// AddTransactionByHashClaimsP adds the given related objects to the existing relationships
+// AddTransactionHashClaimsP adds the given related objects to the existing relationships
 // of the transaction, optionally inserting them as new records.
-// Appends related to o.R.TransactionByHashClaims.
-// Sets related.R.TransactionByHash appropriately.
+// Appends related to o.R.TransactionHashClaims.
+// Sets related.R.TransactionHash appropriately.
 // Panics on error.
-func (o *Transaction) AddTransactionByHashClaimsP(exec boil.Executor, insert bool, related ...*Claim) {
-	if err := o.AddTransactionByHashClaims(exec, insert, related...); err != nil {
+func (o *Transaction) AddTransactionHashClaimsP(exec boil.Executor, insert bool, related ...*Claim) {
+	if err := o.AddTransactionHashClaims(exec, insert, related...); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
-// AddTransactionByHashClaimsGP adds the given related objects to the existing relationships
+// AddTransactionHashClaimsGP adds the given related objects to the existing relationships
 // of the transaction, optionally inserting them as new records.
-// Appends related to o.R.TransactionByHashClaims.
-// Sets related.R.TransactionByHash appropriately.
+// Appends related to o.R.TransactionHashClaims.
+// Sets related.R.TransactionHash appropriately.
 // Uses the global database handle and panics on error.
-func (o *Transaction) AddTransactionByHashClaimsGP(insert bool, related ...*Claim) {
-	if err := o.AddTransactionByHashClaims(boil.GetDB(), insert, related...); err != nil {
+func (o *Transaction) AddTransactionHashClaimsGP(insert bool, related ...*Claim) {
+	if err := o.AddTransactionHashClaims(boil.GetDB(), insert, related...); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
-// AddTransactionByHashClaims adds the given related objects to the existing relationships
+// AddTransactionHashClaims adds the given related objects to the existing relationships
 // of the transaction, optionally inserting them as new records.
-// Appends related to o.R.TransactionByHashClaims.
-// Sets related.R.TransactionByHash appropriately.
-func (o *Transaction) AddTransactionByHashClaims(exec boil.Executor, insert bool, related ...*Claim) error {
+// Appends related to o.R.TransactionHashClaims.
+// Sets related.R.TransactionHash appropriately.
+func (o *Transaction) AddTransactionHashClaims(exec boil.Executor, insert bool, related ...*Claim) error {
 	var err error
 	for _, rel := range related {
 		if insert {
-			rel.TransactionByHashID.String = o.Hash
-			rel.TransactionByHashID.Valid = true
+			rel.TransactionHashID.String = o.Hash
+			rel.TransactionHashID.Valid = true
 			if err = rel.Insert(exec); err != nil {
 				return errors.Wrap(err, "failed to insert into foreign table")
 			}
 		} else {
 			updateQuery := fmt.Sprintf(
 				"UPDATE `claim` SET %s WHERE %s",
-				strmangle.SetParamNames("`", "`", 0, []string{"transaction_by_hash_id"}),
+				strmangle.SetParamNames("`", "`", 0, []string{"transaction_hash_id"}),
 				strmangle.WhereClause("`", "`", 0, claimPrimaryKeyColumns),
 			)
 			values := []interface{}{o.Hash, rel.ID}
@@ -967,76 +964,76 @@ func (o *Transaction) AddTransactionByHashClaims(exec boil.Executor, insert bool
 				return errors.Wrap(err, "failed to update foreign table")
 			}
 
-			rel.TransactionByHashID.String = o.Hash
-			rel.TransactionByHashID.Valid = true
+			rel.TransactionHashID.String = o.Hash
+			rel.TransactionHashID.Valid = true
 		}
 	}
 
 	if o.R == nil {
 		o.R = &transactionR{
-			TransactionByHashClaims: related,
+			TransactionHashClaims: related,
 		}
 	} else {
-		o.R.TransactionByHashClaims = append(o.R.TransactionByHashClaims, related...)
+		o.R.TransactionHashClaims = append(o.R.TransactionHashClaims, related...)
 	}
 
 	for _, rel := range related {
 		if rel.R == nil {
 			rel.R = &claimR{
-				TransactionByHash: o,
+				TransactionHash: o,
 			}
 		} else {
-			rel.R.TransactionByHash = o
+			rel.R.TransactionHash = o
 		}
 	}
 	return nil
 }
 
-// SetTransactionByHashClaimsG removes all previously related items of the
+// SetTransactionHashClaimsG removes all previously related items of the
 // transaction replacing them completely with the passed
 // in related items, optionally inserting them as new records.
-// Sets o.R.TransactionByHash's TransactionByHashClaims accordingly.
-// Replaces o.R.TransactionByHashClaims with related.
-// Sets related.R.TransactionByHash's TransactionByHashClaims accordingly.
+// Sets o.R.TransactionHash's TransactionHashClaims accordingly.
+// Replaces o.R.TransactionHashClaims with related.
+// Sets related.R.TransactionHash's TransactionHashClaims accordingly.
 // Uses the global database handle.
-func (o *Transaction) SetTransactionByHashClaimsG(insert bool, related ...*Claim) error {
-	return o.SetTransactionByHashClaims(boil.GetDB(), insert, related...)
+func (o *Transaction) SetTransactionHashClaimsG(insert bool, related ...*Claim) error {
+	return o.SetTransactionHashClaims(boil.GetDB(), insert, related...)
 }
 
-// SetTransactionByHashClaimsP removes all previously related items of the
+// SetTransactionHashClaimsP removes all previously related items of the
 // transaction replacing them completely with the passed
 // in related items, optionally inserting them as new records.
-// Sets o.R.TransactionByHash's TransactionByHashClaims accordingly.
-// Replaces o.R.TransactionByHashClaims with related.
-// Sets related.R.TransactionByHash's TransactionByHashClaims accordingly.
+// Sets o.R.TransactionHash's TransactionHashClaims accordingly.
+// Replaces o.R.TransactionHashClaims with related.
+// Sets related.R.TransactionHash's TransactionHashClaims accordingly.
 // Panics on error.
-func (o *Transaction) SetTransactionByHashClaimsP(exec boil.Executor, insert bool, related ...*Claim) {
-	if err := o.SetTransactionByHashClaims(exec, insert, related...); err != nil {
+func (o *Transaction) SetTransactionHashClaimsP(exec boil.Executor, insert bool, related ...*Claim) {
+	if err := o.SetTransactionHashClaims(exec, insert, related...); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
-// SetTransactionByHashClaimsGP removes all previously related items of the
+// SetTransactionHashClaimsGP removes all previously related items of the
 // transaction replacing them completely with the passed
 // in related items, optionally inserting them as new records.
-// Sets o.R.TransactionByHash's TransactionByHashClaims accordingly.
-// Replaces o.R.TransactionByHashClaims with related.
-// Sets related.R.TransactionByHash's TransactionByHashClaims accordingly.
+// Sets o.R.TransactionHash's TransactionHashClaims accordingly.
+// Replaces o.R.TransactionHashClaims with related.
+// Sets related.R.TransactionHash's TransactionHashClaims accordingly.
 // Uses the global database handle and panics on error.
-func (o *Transaction) SetTransactionByHashClaimsGP(insert bool, related ...*Claim) {
-	if err := o.SetTransactionByHashClaims(boil.GetDB(), insert, related...); err != nil {
+func (o *Transaction) SetTransactionHashClaimsGP(insert bool, related ...*Claim) {
+	if err := o.SetTransactionHashClaims(boil.GetDB(), insert, related...); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
-// SetTransactionByHashClaims removes all previously related items of the
+// SetTransactionHashClaims removes all previously related items of the
 // transaction replacing them completely with the passed
 // in related items, optionally inserting them as new records.
-// Sets o.R.TransactionByHash's TransactionByHashClaims accordingly.
-// Replaces o.R.TransactionByHashClaims with related.
-// Sets related.R.TransactionByHash's TransactionByHashClaims accordingly.
-func (o *Transaction) SetTransactionByHashClaims(exec boil.Executor, insert bool, related ...*Claim) error {
-	query := "update `claim` set `transaction_by_hash_id` = null where `transaction_by_hash_id` = ?"
+// Sets o.R.TransactionHash's TransactionHashClaims accordingly.
+// Replaces o.R.TransactionHashClaims with related.
+// Sets related.R.TransactionHash's TransactionHashClaims accordingly.
+func (o *Transaction) SetTransactionHashClaims(exec boil.Executor, insert bool, related ...*Claim) error {
+	query := "update `claim` set `transaction_hash_id` = null where `transaction_hash_id` = ?"
 	values := []interface{}{o.Hash}
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, query)
@@ -1049,59 +1046,59 @@ func (o *Transaction) SetTransactionByHashClaims(exec boil.Executor, insert bool
 	}
 
 	if o.R != nil {
-		for _, rel := range o.R.TransactionByHashClaims {
-			rel.TransactionByHashID.Valid = false
+		for _, rel := range o.R.TransactionHashClaims {
+			rel.TransactionHashID.Valid = false
 			if rel.R == nil {
 				continue
 			}
 
-			rel.R.TransactionByHash = nil
+			rel.R.TransactionHash = nil
 		}
 
-		o.R.TransactionByHashClaims = nil
+		o.R.TransactionHashClaims = nil
 	}
-	return o.AddTransactionByHashClaims(exec, insert, related...)
+	return o.AddTransactionHashClaims(exec, insert, related...)
 }
 
-// RemoveTransactionByHashClaimsG relationships from objects passed in.
-// Removes related items from R.TransactionByHashClaims (uses pointer comparison, removal does not keep order)
-// Sets related.R.TransactionByHash.
+// RemoveTransactionHashClaimsG relationships from objects passed in.
+// Removes related items from R.TransactionHashClaims (uses pointer comparison, removal does not keep order)
+// Sets related.R.TransactionHash.
 // Uses the global database handle.
-func (o *Transaction) RemoveTransactionByHashClaimsG(related ...*Claim) error {
-	return o.RemoveTransactionByHashClaims(boil.GetDB(), related...)
+func (o *Transaction) RemoveTransactionHashClaimsG(related ...*Claim) error {
+	return o.RemoveTransactionHashClaims(boil.GetDB(), related...)
 }
 
-// RemoveTransactionByHashClaimsP relationships from objects passed in.
-// Removes related items from R.TransactionByHashClaims (uses pointer comparison, removal does not keep order)
-// Sets related.R.TransactionByHash.
+// RemoveTransactionHashClaimsP relationships from objects passed in.
+// Removes related items from R.TransactionHashClaims (uses pointer comparison, removal does not keep order)
+// Sets related.R.TransactionHash.
 // Panics on error.
-func (o *Transaction) RemoveTransactionByHashClaimsP(exec boil.Executor, related ...*Claim) {
-	if err := o.RemoveTransactionByHashClaims(exec, related...); err != nil {
+func (o *Transaction) RemoveTransactionHashClaimsP(exec boil.Executor, related ...*Claim) {
+	if err := o.RemoveTransactionHashClaims(exec, related...); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
-// RemoveTransactionByHashClaimsGP relationships from objects passed in.
-// Removes related items from R.TransactionByHashClaims (uses pointer comparison, removal does not keep order)
-// Sets related.R.TransactionByHash.
+// RemoveTransactionHashClaimsGP relationships from objects passed in.
+// Removes related items from R.TransactionHashClaims (uses pointer comparison, removal does not keep order)
+// Sets related.R.TransactionHash.
 // Uses the global database handle and panics on error.
-func (o *Transaction) RemoveTransactionByHashClaimsGP(related ...*Claim) {
-	if err := o.RemoveTransactionByHashClaims(boil.GetDB(), related...); err != nil {
+func (o *Transaction) RemoveTransactionHashClaimsGP(related ...*Claim) {
+	if err := o.RemoveTransactionHashClaims(boil.GetDB(), related...); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
-// RemoveTransactionByHashClaims relationships from objects passed in.
-// Removes related items from R.TransactionByHashClaims (uses pointer comparison, removal does not keep order)
-// Sets related.R.TransactionByHash.
-func (o *Transaction) RemoveTransactionByHashClaims(exec boil.Executor, related ...*Claim) error {
+// RemoveTransactionHashClaims relationships from objects passed in.
+// Removes related items from R.TransactionHashClaims (uses pointer comparison, removal does not keep order)
+// Sets related.R.TransactionHash.
+func (o *Transaction) RemoveTransactionHashClaims(exec boil.Executor, related ...*Claim) error {
 	var err error
 	for _, rel := range related {
-		rel.TransactionByHashID.Valid = false
+		rel.TransactionHashID.Valid = false
 		if rel.R != nil {
-			rel.R.TransactionByHash = nil
+			rel.R.TransactionHash = nil
 		}
-		if err = rel.Update(exec, "transaction_by_hash_id"); err != nil {
+		if err = rel.Update(exec, "transaction_hash_id"); err != nil {
 			return err
 		}
 	}
@@ -1110,16 +1107,16 @@ func (o *Transaction) RemoveTransactionByHashClaims(exec boil.Executor, related 
 	}
 
 	for _, rel := range related {
-		for i, ri := range o.R.TransactionByHashClaims {
+		for i, ri := range o.R.TransactionHashClaims {
 			if rel != ri {
 				continue
 			}
 
-			ln := len(o.R.TransactionByHashClaims)
+			ln := len(o.R.TransactionHashClaims)
 			if ln > 1 && i < ln-1 {
-				o.R.TransactionByHashClaims[i] = o.R.TransactionByHashClaims[ln-1]
+				o.R.TransactionHashClaims[i] = o.R.TransactionHashClaims[ln-1]
 			}
-			o.R.TransactionByHashClaims = o.R.TransactionByHashClaims[:ln-1]
+			o.R.TransactionHashClaims = o.R.TransactionHashClaims[:ln-1]
 			break
 		}
 	}

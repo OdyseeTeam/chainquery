@@ -22,123 +22,123 @@ import (
 
 // Claim is an object representing the database table.
 type Claim struct {
-	ID                  uint64      `boil:"id" json:"id" toml:"id" yaml:"id"`
-	TransactionByHashID null.String `boil:"transaction_by_hash_id" json:"transaction_by_hash_id,omitempty" toml:"transaction_by_hash_id" yaml:"transaction_by_hash_id,omitempty"`
-	Vout                uint        `boil:"vout" json:"vout" toml:"vout" yaml:"vout"`
-	Name                string      `boil:"name" json:"name" toml:"name" yaml:"name"`
-	ClaimID             string      `boil:"claim_id" json:"claim_id" toml:"claim_id" yaml:"claim_id"`
-	ClaimType           int8        `boil:"claim_type" json:"claim_type" toml:"claim_type" yaml:"claim_type"`
-	PublisherID         null.String `boil:"publisher_id" json:"publisher_id,omitempty" toml:"publisher_id" yaml:"publisher_id,omitempty"`
-	PublisherSig        null.String `boil:"publisher_sig" json:"publisher_sig,omitempty" toml:"publisher_sig" yaml:"publisher_sig,omitempty"`
-	Certificate         null.String `boil:"certificate" json:"certificate,omitempty" toml:"certificate" yaml:"certificate,omitempty"`
-	SDHash              null.String `boil:"sd_hash" json:"sd_hash,omitempty" toml:"sd_hash" yaml:"sd_hash,omitempty"`
-	TransactionTime     null.Uint64 `boil:"transaction_time" json:"transaction_time,omitempty" toml:"transaction_time" yaml:"transaction_time,omitempty"`
-	Version             string      `boil:"version" json:"version" toml:"version" yaml:"version"`
-	ValueAsHex          string      `boil:"value_as_hex" json:"value_as_hex" toml:"value_as_hex" yaml:"value_as_hex"`
-	ValueAsJSON         null.String `boil:"value_as_json" json:"value_as_json,omitempty" toml:"value_as_json" yaml:"value_as_json,omitempty"`
-	ValidAtHeight       uint        `boil:"valid_at_height" json:"valid_at_height" toml:"valid_at_height" yaml:"valid_at_height"`
-	Height              uint        `boil:"height" json:"height" toml:"height" yaml:"height"`
-	EffectiveAmount     uint64      `boil:"effective_amount" json:"effective_amount" toml:"effective_amount" yaml:"effective_amount"`
-	Author              null.String `boil:"author" json:"author,omitempty" toml:"author" yaml:"author,omitempty"`
-	Description         null.String `boil:"description" json:"description,omitempty" toml:"description" yaml:"description,omitempty"`
-	ContentType         null.String `boil:"content_type" json:"content_type,omitempty" toml:"content_type" yaml:"content_type,omitempty"`
-	IsNSFW              bool        `boil:"is_n_s_f_w" json:"is_n_s_f_w" toml:"is_n_s_f_w" yaml:"is_n_s_f_w"`
-	Language            null.String `boil:"language" json:"language,omitempty" toml:"language" yaml:"language,omitempty"`
-	ThumbnailURL        null.String `boil:"thumbnail_url" json:"thumbnail_url,omitempty" toml:"thumbnail_url" yaml:"thumbnail_url,omitempty"`
-	Title               null.String `boil:"title" json:"title,omitempty" toml:"title" yaml:"title,omitempty"`
-	Fee                 float64     `boil:"fee" json:"fee" toml:"fee" yaml:"fee"`
-	FeeCurrency         null.String `boil:"fee_currency" json:"fee_currency,omitempty" toml:"fee_currency" yaml:"fee_currency,omitempty"`
-	IsFiltered          bool        `boil:"is_filtered" json:"is_filtered" toml:"is_filtered" yaml:"is_filtered"`
-	BidState            string      `boil:"bid_state" json:"bid_state" toml:"bid_state" yaml:"bid_state"`
-	Created             time.Time   `boil:"created" json:"created" toml:"created" yaml:"created"`
-	Modified            time.Time   `boil:"modified" json:"modified" toml:"modified" yaml:"modified"`
-	FeeAddress          string      `boil:"fee_address" json:"fee_address" toml:"fee_address" yaml:"fee_address"`
-	ClaimAddress        string      `boil:"claim_address" json:"claim_address" toml:"claim_address" yaml:"claim_address"`
+	ID                uint64      `boil:"id" json:"id" toml:"id" yaml:"id"`
+	TransactionHashID null.String `boil:"transaction_hash_id" json:"transaction_hash_id,omitempty" toml:"transaction_hash_id" yaml:"transaction_hash_id,omitempty"`
+	Vout              uint        `boil:"vout" json:"vout" toml:"vout" yaml:"vout"`
+	Name              string      `boil:"name" json:"name" toml:"name" yaml:"name"`
+	ClaimID           string      `boil:"claim_id" json:"claim_id" toml:"claim_id" yaml:"claim_id"`
+	ClaimType         int8        `boil:"claim_type" json:"claim_type" toml:"claim_type" yaml:"claim_type"`
+	PublisherID       null.String `boil:"publisher_id" json:"publisher_id,omitempty" toml:"publisher_id" yaml:"publisher_id,omitempty"`
+	PublisherSig      null.String `boil:"publisher_sig" json:"publisher_sig,omitempty" toml:"publisher_sig" yaml:"publisher_sig,omitempty"`
+	Certificate       null.String `boil:"certificate" json:"certificate,omitempty" toml:"certificate" yaml:"certificate,omitempty"`
+	SDHash            null.String `boil:"sd_hash" json:"sd_hash,omitempty" toml:"sd_hash" yaml:"sd_hash,omitempty"`
+	TransactionTime   null.Uint64 `boil:"transaction_time" json:"transaction_time,omitempty" toml:"transaction_time" yaml:"transaction_time,omitempty"`
+	Version           string      `boil:"version" json:"version" toml:"version" yaml:"version"`
+	ValueAsHex        string      `boil:"value_as_hex" json:"value_as_hex" toml:"value_as_hex" yaml:"value_as_hex"`
+	ValueAsJSON       null.String `boil:"value_as_json" json:"value_as_json,omitempty" toml:"value_as_json" yaml:"value_as_json,omitempty"`
+	ValidAtHeight     uint        `boil:"valid_at_height" json:"valid_at_height" toml:"valid_at_height" yaml:"valid_at_height"`
+	Height            uint        `boil:"height" json:"height" toml:"height" yaml:"height"`
+	EffectiveAmount   uint64      `boil:"effective_amount" json:"effective_amount" toml:"effective_amount" yaml:"effective_amount"`
+	Author            null.String `boil:"author" json:"author,omitempty" toml:"author" yaml:"author,omitempty"`
+	Description       null.String `boil:"description" json:"description,omitempty" toml:"description" yaml:"description,omitempty"`
+	ContentType       null.String `boil:"content_type" json:"content_type,omitempty" toml:"content_type" yaml:"content_type,omitempty"`
+	IsNSFW            bool        `boil:"is_nsfw" json:"is_nsfw" toml:"is_nsfw" yaml:"is_nsfw"`
+	Language          null.String `boil:"language" json:"language,omitempty" toml:"language" yaml:"language,omitempty"`
+	ThumbnailURL      null.String `boil:"thumbnail_url" json:"thumbnail_url,omitempty" toml:"thumbnail_url" yaml:"thumbnail_url,omitempty"`
+	Title             null.String `boil:"title" json:"title,omitempty" toml:"title" yaml:"title,omitempty"`
+	Fee               float64     `boil:"fee" json:"fee" toml:"fee" yaml:"fee"`
+	FeeCurrency       null.String `boil:"fee_currency" json:"fee_currency,omitempty" toml:"fee_currency" yaml:"fee_currency,omitempty"`
+	FeeAddress        string      `boil:"fee_address" json:"fee_address" toml:"fee_address" yaml:"fee_address"`
+	IsFiltered        bool        `boil:"is_filtered" json:"is_filtered" toml:"is_filtered" yaml:"is_filtered"`
+	BidState          string      `boil:"bid_state" json:"bid_state" toml:"bid_state" yaml:"bid_state"`
+	CreatedAt         time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	ModifiedAt        time.Time   `boil:"modified_at" json:"modified_at" toml:"modified_at" yaml:"modified_at"`
+	ClaimAddress      string      `boil:"claim_address" json:"claim_address" toml:"claim_address" yaml:"claim_address"`
 
 	R *claimR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L claimL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var ClaimColumns = struct {
-	ID                  string
-	TransactionByHashID string
-	Vout                string
-	Name                string
-	ClaimID             string
-	ClaimType           string
-	PublisherID         string
-	PublisherSig        string
-	Certificate         string
-	SDHash              string
-	TransactionTime     string
-	Version             string
-	ValueAsHex          string
-	ValueAsJSON         string
-	ValidAtHeight       string
-	Height              string
-	EffectiveAmount     string
-	Author              string
-	Description         string
-	ContentType         string
-	IsNSFW              string
-	Language            string
-	ThumbnailURL        string
-	Title               string
-	Fee                 string
-	FeeCurrency         string
-	IsFiltered          string
-	BidState            string
-	Created             string
-	Modified            string
-	FeeAddress          string
-	ClaimAddress        string
+	ID                string
+	TransactionHashID string
+	Vout              string
+	Name              string
+	ClaimID           string
+	ClaimType         string
+	PublisherID       string
+	PublisherSig      string
+	Certificate       string
+	SDHash            string
+	TransactionTime   string
+	Version           string
+	ValueAsHex        string
+	ValueAsJSON       string
+	ValidAtHeight     string
+	Height            string
+	EffectiveAmount   string
+	Author            string
+	Description       string
+	ContentType       string
+	IsNSFW            string
+	Language          string
+	ThumbnailURL      string
+	Title             string
+	Fee               string
+	FeeCurrency       string
+	FeeAddress        string
+	IsFiltered        string
+	BidState          string
+	CreatedAt         string
+	ModifiedAt        string
+	ClaimAddress      string
 }{
-	ID:                  "id",
-	TransactionByHashID: "transaction_by_hash_id",
-	Vout:                "vout",
-	Name:                "name",
-	ClaimID:             "claim_id",
-	ClaimType:           "claim_type",
-	PublisherID:         "publisher_id",
-	PublisherSig:        "publisher_sig",
-	Certificate:         "certificate",
-	SDHash:              "sd_hash",
-	TransactionTime:     "transaction_time",
-	Version:             "version",
-	ValueAsHex:          "value_as_hex",
-	ValueAsJSON:         "value_as_json",
-	ValidAtHeight:       "valid_at_height",
-	Height:              "height",
-	EffectiveAmount:     "effective_amount",
-	Author:              "author",
-	Description:         "description",
-	ContentType:         "content_type",
-	IsNSFW:              "is_n_s_f_w",
-	Language:            "language",
-	ThumbnailURL:        "thumbnail_url",
-	Title:               "title",
-	Fee:                 "fee",
-	FeeCurrency:         "fee_currency",
-	IsFiltered:          "is_filtered",
-	BidState:            "bid_state",
-	Created:             "created",
-	Modified:            "modified",
-	FeeAddress:          "fee_address",
-	ClaimAddress:        "claim_address",
+	ID:                "id",
+	TransactionHashID: "transaction_hash_id",
+	Vout:              "vout",
+	Name:              "name",
+	ClaimID:           "claim_id",
+	ClaimType:         "claim_type",
+	PublisherID:       "publisher_id",
+	PublisherSig:      "publisher_sig",
+	Certificate:       "certificate",
+	SDHash:            "sd_hash",
+	TransactionTime:   "transaction_time",
+	Version:           "version",
+	ValueAsHex:        "value_as_hex",
+	ValueAsJSON:       "value_as_json",
+	ValidAtHeight:     "valid_at_height",
+	Height:            "height",
+	EffectiveAmount:   "effective_amount",
+	Author:            "author",
+	Description:       "description",
+	ContentType:       "content_type",
+	IsNSFW:            "is_nsfw",
+	Language:          "language",
+	ThumbnailURL:      "thumbnail_url",
+	Title:             "title",
+	Fee:               "fee",
+	FeeCurrency:       "fee_currency",
+	FeeAddress:        "fee_address",
+	IsFiltered:        "is_filtered",
+	BidState:          "bid_state",
+	CreatedAt:         "created_at",
+	ModifiedAt:        "modified_at",
+	ClaimAddress:      "claim_address",
 }
 
 // claimR is where relationships are stored.
 type claimR struct {
-	TransactionByHash *Transaction
+	TransactionHash *Transaction
 }
 
 // claimL is where Load methods for each relationship are stored.
 type claimL struct{}
 
 var (
-	claimColumns               = []string{"id", "transaction_by_hash_id", "vout", "name", "claim_id", "claim_type", "publisher_id", "publisher_sig", "certificate", "sd_hash", "transaction_time", "version", "value_as_hex", "value_as_json", "valid_at_height", "height", "effective_amount", "author", "description", "content_type", "is_n_s_f_w", "language", "thumbnail_url", "title", "fee", "fee_currency", "is_filtered", "bid_state", "created", "modified", "fee_address", "claim_address"}
-	claimColumnsWithoutDefault = []string{"transaction_by_hash_id", "vout", "name", "claim_id", "claim_type", "publisher_id", "publisher_sig", "certificate", "sd_hash", "transaction_time", "version", "value_as_hex", "value_as_json", "valid_at_height", "height", "author", "description", "content_type", "language", "thumbnail_url", "title", "fee_currency", "fee_address", "claim_address"}
-	claimColumnsWithDefault    = []string{"id", "effective_amount", "is_n_s_f_w", "fee", "is_filtered", "bid_state", "created", "modified"}
+	claimColumns               = []string{"id", "transaction_hash_id", "vout", "name", "claim_id", "claim_type", "publisher_id", "publisher_sig", "certificate", "sd_hash", "transaction_time", "version", "value_as_hex", "value_as_json", "valid_at_height", "height", "effective_amount", "author", "description", "content_type", "is_nsfw", "language", "thumbnail_url", "title", "fee", "fee_currency", "fee_address", "is_filtered", "bid_state", "created_at", "modified_at", "claim_address"}
+	claimColumnsWithoutDefault = []string{"transaction_hash_id", "vout", "name", "claim_id", "claim_type", "publisher_id", "publisher_sig", "certificate", "sd_hash", "transaction_time", "version", "value_as_hex", "value_as_json", "valid_at_height", "height", "author", "description", "content_type", "language", "thumbnail_url", "title", "fee_currency", "fee_address", "claim_address"}
+	claimColumnsWithDefault    = []string{"id", "effective_amount", "is_nsfw", "fee", "is_filtered", "bid_state", "created_at", "modified_at"}
 	claimPrimaryKeyColumns     = []string{"id"}
 )
 
@@ -271,15 +271,15 @@ func (q claimQuery) Exists() (bool, error) {
 	return count > 0, nil
 }
 
-// TransactionByHashG pointed to by the foreign key.
-func (o *Claim) TransactionByHashG(mods ...qm.QueryMod) transactionQuery {
-	return o.TransactionByHash(boil.GetDB(), mods...)
+// TransactionHashG pointed to by the foreign key.
+func (o *Claim) TransactionHashG(mods ...qm.QueryMod) transactionQuery {
+	return o.TransactionHash(boil.GetDB(), mods...)
 }
 
-// TransactionByHash pointed to by the foreign key.
-func (o *Claim) TransactionByHash(exec boil.Executor, mods ...qm.QueryMod) transactionQuery {
+// TransactionHash pointed to by the foreign key.
+func (o *Claim) TransactionHash(exec boil.Executor, mods ...qm.QueryMod) transactionQuery {
 	queryMods := []qm.QueryMod{
-		qm.Where("hash=?", o.TransactionByHashID),
+		qm.Where("hash=?", o.TransactionHashID),
 	}
 
 	queryMods = append(queryMods, mods...)
@@ -288,9 +288,9 @@ func (o *Claim) TransactionByHash(exec boil.Executor, mods ...qm.QueryMod) trans
 	queries.SetFrom(query.Query, "`transaction`")
 
 	return query
-} // LoadTransactionByHash allows an eager lookup of values, cached into the
+} // LoadTransactionHash allows an eager lookup of values, cached into the
 // loaded structs of the objects.
-func (claimL) LoadTransactionByHash(e boil.Executor, singular bool, maybeClaim interface{}) error {
+func (claimL) LoadTransactionHash(e boil.Executor, singular bool, maybeClaim interface{}) error {
 	var slice []*Claim
 	var object *Claim
 
@@ -307,13 +307,13 @@ func (claimL) LoadTransactionByHash(e boil.Executor, singular bool, maybeClaim i
 		if object.R == nil {
 			object.R = &claimR{}
 		}
-		args[0] = object.TransactionByHashID
+		args[0] = object.TransactionHashID
 	} else {
 		for i, obj := range slice {
 			if obj.R == nil {
 				obj.R = &claimR{}
 			}
-			args[i] = obj.TransactionByHashID
+			args[i] = obj.TransactionHashID
 		}
 	}
 
@@ -342,14 +342,14 @@ func (claimL) LoadTransactionByHash(e boil.Executor, singular bool, maybeClaim i
 	}
 
 	if singular {
-		object.R.TransactionByHash = resultSlice[0]
+		object.R.TransactionHash = resultSlice[0]
 		return nil
 	}
 
 	for _, local := range slice {
 		for _, foreign := range resultSlice {
-			if local.TransactionByHashID.String == foreign.Hash {
-				local.R.TransactionByHash = foreign
+			if local.TransactionHashID.String == foreign.Hash {
+				local.R.TransactionHash = foreign
 				break
 			}
 		}
@@ -358,38 +358,38 @@ func (claimL) LoadTransactionByHash(e boil.Executor, singular bool, maybeClaim i
 	return nil
 }
 
-// SetTransactionByHashG of the claim to the related item.
-// Sets o.R.TransactionByHash to related.
-// Adds o to related.R.TransactionByHashClaims.
+// SetTransactionHashG of the claim to the related item.
+// Sets o.R.TransactionHash to related.
+// Adds o to related.R.TransactionHashClaims.
 // Uses the global database handle.
-func (o *Claim) SetTransactionByHashG(insert bool, related *Transaction) error {
-	return o.SetTransactionByHash(boil.GetDB(), insert, related)
+func (o *Claim) SetTransactionHashG(insert bool, related *Transaction) error {
+	return o.SetTransactionHash(boil.GetDB(), insert, related)
 }
 
-// SetTransactionByHashP of the claim to the related item.
-// Sets o.R.TransactionByHash to related.
-// Adds o to related.R.TransactionByHashClaims.
+// SetTransactionHashP of the claim to the related item.
+// Sets o.R.TransactionHash to related.
+// Adds o to related.R.TransactionHashClaims.
 // Panics on error.
-func (o *Claim) SetTransactionByHashP(exec boil.Executor, insert bool, related *Transaction) {
-	if err := o.SetTransactionByHash(exec, insert, related); err != nil {
+func (o *Claim) SetTransactionHashP(exec boil.Executor, insert bool, related *Transaction) {
+	if err := o.SetTransactionHash(exec, insert, related); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
-// SetTransactionByHashGP of the claim to the related item.
-// Sets o.R.TransactionByHash to related.
-// Adds o to related.R.TransactionByHashClaims.
+// SetTransactionHashGP of the claim to the related item.
+// Sets o.R.TransactionHash to related.
+// Adds o to related.R.TransactionHashClaims.
 // Uses the global database handle and panics on error.
-func (o *Claim) SetTransactionByHashGP(insert bool, related *Transaction) {
-	if err := o.SetTransactionByHash(boil.GetDB(), insert, related); err != nil {
+func (o *Claim) SetTransactionHashGP(insert bool, related *Transaction) {
+	if err := o.SetTransactionHash(boil.GetDB(), insert, related); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
-// SetTransactionByHash of the claim to the related item.
-// Sets o.R.TransactionByHash to related.
-// Adds o to related.R.TransactionByHashClaims.
-func (o *Claim) SetTransactionByHash(exec boil.Executor, insert bool, related *Transaction) error {
+// SetTransactionHash of the claim to the related item.
+// Sets o.R.TransactionHash to related.
+// Adds o to related.R.TransactionHashClaims.
+func (o *Claim) SetTransactionHash(exec boil.Executor, insert bool, related *Transaction) error {
 	var err error
 	if insert {
 		if err = related.Insert(exec); err != nil {
@@ -399,7 +399,7 @@ func (o *Claim) SetTransactionByHash(exec boil.Executor, insert bool, related *T
 
 	updateQuery := fmt.Sprintf(
 		"UPDATE `claim` SET %s WHERE %s",
-		strmangle.SetParamNames("`", "`", 0, []string{"transaction_by_hash_id"}),
+		strmangle.SetParamNames("`", "`", 0, []string{"transaction_hash_id"}),
 		strmangle.WhereClause("`", "`", 0, claimPrimaryKeyColumns),
 	)
 	values := []interface{}{related.Hash, o.ID}
@@ -413,83 +413,83 @@ func (o *Claim) SetTransactionByHash(exec boil.Executor, insert bool, related *T
 		return errors.Wrap(err, "failed to update local table")
 	}
 
-	o.TransactionByHashID.String = related.Hash
-	o.TransactionByHashID.Valid = true
+	o.TransactionHashID.String = related.Hash
+	o.TransactionHashID.Valid = true
 
 	if o.R == nil {
 		o.R = &claimR{
-			TransactionByHash: related,
+			TransactionHash: related,
 		}
 	} else {
-		o.R.TransactionByHash = related
+		o.R.TransactionHash = related
 	}
 
 	if related.R == nil {
 		related.R = &transactionR{
-			TransactionByHashClaims: ClaimSlice{o},
+			TransactionHashClaims: ClaimSlice{o},
 		}
 	} else {
-		related.R.TransactionByHashClaims = append(related.R.TransactionByHashClaims, o)
+		related.R.TransactionHashClaims = append(related.R.TransactionHashClaims, o)
 	}
 
 	return nil
 }
 
-// RemoveTransactionByHashG relationship.
-// Sets o.R.TransactionByHash to nil.
+// RemoveTransactionHashG relationship.
+// Sets o.R.TransactionHash to nil.
 // Removes o from all passed in related items' relationships struct (Optional).
 // Uses the global database handle.
-func (o *Claim) RemoveTransactionByHashG(related *Transaction) error {
-	return o.RemoveTransactionByHash(boil.GetDB(), related)
+func (o *Claim) RemoveTransactionHashG(related *Transaction) error {
+	return o.RemoveTransactionHash(boil.GetDB(), related)
 }
 
-// RemoveTransactionByHashP relationship.
-// Sets o.R.TransactionByHash to nil.
+// RemoveTransactionHashP relationship.
+// Sets o.R.TransactionHash to nil.
 // Removes o from all passed in related items' relationships struct (Optional).
 // Panics on error.
-func (o *Claim) RemoveTransactionByHashP(exec boil.Executor, related *Transaction) {
-	if err := o.RemoveTransactionByHash(exec, related); err != nil {
+func (o *Claim) RemoveTransactionHashP(exec boil.Executor, related *Transaction) {
+	if err := o.RemoveTransactionHash(exec, related); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
-// RemoveTransactionByHashGP relationship.
-// Sets o.R.TransactionByHash to nil.
+// RemoveTransactionHashGP relationship.
+// Sets o.R.TransactionHash to nil.
 // Removes o from all passed in related items' relationships struct (Optional).
 // Uses the global database handle and panics on error.
-func (o *Claim) RemoveTransactionByHashGP(related *Transaction) {
-	if err := o.RemoveTransactionByHash(boil.GetDB(), related); err != nil {
+func (o *Claim) RemoveTransactionHashGP(related *Transaction) {
+	if err := o.RemoveTransactionHash(boil.GetDB(), related); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
-// RemoveTransactionByHash relationship.
-// Sets o.R.TransactionByHash to nil.
+// RemoveTransactionHash relationship.
+// Sets o.R.TransactionHash to nil.
 // Removes o from all passed in related items' relationships struct (Optional).
-func (o *Claim) RemoveTransactionByHash(exec boil.Executor, related *Transaction) error {
+func (o *Claim) RemoveTransactionHash(exec boil.Executor, related *Transaction) error {
 	var err error
 
-	o.TransactionByHashID.Valid = false
-	if err = o.Update(exec, "transaction_by_hash_id"); err != nil {
-		o.TransactionByHashID.Valid = true
+	o.TransactionHashID.Valid = false
+	if err = o.Update(exec, "transaction_hash_id"); err != nil {
+		o.TransactionHashID.Valid = true
 		return errors.Wrap(err, "failed to update local table")
 	}
 
-	o.R.TransactionByHash = nil
+	o.R.TransactionHash = nil
 	if related == nil || related.R == nil {
 		return nil
 	}
 
-	for i, ri := range related.R.TransactionByHashClaims {
-		if o.TransactionByHashID.String != ri.TransactionByHashID.String {
+	for i, ri := range related.R.TransactionHashClaims {
+		if o.TransactionHashID.String != ri.TransactionHashID.String {
 			continue
 		}
 
-		ln := len(related.R.TransactionByHashClaims)
+		ln := len(related.R.TransactionHashClaims)
 		if ln > 1 && i < ln-1 {
-			related.R.TransactionByHashClaims[i] = related.R.TransactionByHashClaims[ln-1]
+			related.R.TransactionHashClaims[i] = related.R.TransactionHashClaims[ln-1]
 		}
-		related.R.TransactionByHashClaims = related.R.TransactionByHashClaims[:ln-1]
+		related.R.TransactionHashClaims = related.R.TransactionHashClaims[:ln-1]
 		break
 	}
 	return nil
