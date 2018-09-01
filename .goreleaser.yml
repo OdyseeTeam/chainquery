@@ -5,9 +5,9 @@ builds:
   - CGO_ENABLED=0
 archive:
   replacements:
-    darwin: Darwin
-    linux: Linux
     windows: Windows
+    linux: Linux
+    darwin: Darwin
   format: zip
 checksum:
   name_template: 'checksums.txt'
