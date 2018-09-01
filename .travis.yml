@@ -9,7 +9,7 @@ language: go
 # in the next version of Go. Don't worry! Later we declare that test runs
 # are allowed to fail on Go tip.
 go:
-  - 1.10.2
+  - 1.10.3
   - master
 
 # Skip the install step. Don't `go get` dependencies. Only build with the
@@ -25,8 +25,8 @@ matrix:
   fast_finish: true
 
 # Don't email me the results of the test runs.
-notifications:
-  email: false
+  notifications:
+    email: false
 
 # Anything in before_script that returns a nonzero exit code will
 # flunk the build and immediately stop. It's sorta like having

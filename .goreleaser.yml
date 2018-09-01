@@ -7,6 +7,7 @@ archive:
   replacements:
     darwin: Darwin
     linux: Linux
+    windows: Windows
   format: zip
 checksum:
   name_template: 'checksums.txt'

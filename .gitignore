@@ -8,3 +8,4 @@ cover.out
 .DS_Store
 swagger/.DSStore
 swagger/apiserver/go/*_api.go
+chainquery.log
