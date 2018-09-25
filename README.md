@@ -47,7 +47,7 @@ Make sure you have Go 1.10+ (required for [go-releaser](https://goreleaser.com/)
 
   ```
   mkdir -p ~/.lbrycrd
-  echo -e "rpcuser=lbryrpc\nrpcpassword=$(env LC_CTYPE=C LC_ALL=C tr -dc A-Za-z0-9 < /dev/urandom | head -c 16 | xargs)" > ~/.lbrycrd/lbrycrd.conf
+  echo -e "rpcuser=lbryrpc\nrpcpassword=$(env LC_CTYPE=C LC_ALL=C tr -dc A-Za-z0-9 < /dev/urandom | head -c 16 | xargs)" >> ~/.lbrycrd/lbrycrd.conf
   ```
 
 - Run `./lbrycrdd -server -daemon -txindex -conf=$HOME/.lbrycrd/lbrycrd.conf`. If you get an error about indexing, add the `-reindex` flag for one run. You will only need to
