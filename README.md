@@ -29,8 +29,10 @@
 
 Make sure you have Go 1.10+ (required for [go-releaser](https://goreleaser.com/))
 
-- Ubuntu: https://launchpad.net/~longsleep/+archive/ubuntu/golang-backports or https://github.com/golang/go/wiki/Ubuntu
-- OSX: `brew install go`
+- Ubuntu: https://launchpad.net/~longsleep/+archive/ubuntu/golang-backports or https://github.com/golang/go/wiki/Ubuntu [Easier but maybe older] **(recommended)**
+- Linux: [GoLang official install guide](https://golang.org/doc/install#tarball) [Harder but up to date] 
+- OSX: [GoLang official install guide](https://golang.org/doc/install#macos)
+- Windows: [GoLang official install guide](https://golang.org/doc/install#windows)
 
 ### MySQL
 
@@ -39,7 +41,6 @@ Make sure you have Go 1.10+ (required for [go-releaser](https://goreleaser.com/)
 - Create user `lbry` with password `lbry` and grant it all permissions on `chainquery` db.
 
 ### Lbrycrd
-
 
 - Install lbrycrdd (https://github.com/lbryio/lbrycrd/releases)
 - Ensure `~/.lbrycrd/lbrycrd.conf` file exists with username and password.
@@ -63,6 +64,47 @@ Chainquery can be [configured](/config/default/chainqueryconfig.toml) via toml f
 go get -u github.com/lbryio/chainquery
 cd "$(go env GOPATH)/src/github.com/lbryio/chainquery"
 ./dev.sh
+```
+## Running from Release
+
+This will likely eventually be the main supported method of running Chainquery in your environment but this sections documentation is a WIP so YMMV
+
+Get a download link for your operating system specific release from [the releases page](https://github.com/lbryio/chainquery/releases) then use the following command with your download link.
+
+```
+  wget -O ~/chainquery.zip https://example.com/path/to/your/release.zip
+  Example:
+  wget -O ~/chainquery.zip https://github.com/lbryio/chainquery/releases/download/v1.1.2/chainquery_1.1.2_Linux_x86_64.zip
+```
+
+Unzip the package you just downloaded with the following.
+
+```
+cd ~/
+unzip ~/chainquery.zip
+```
+Your console should show you something similar to the following.
+```
+root@8fe4046b6d46:~# unzip chainquery.zip
+Archive:  chainquery.zip
+  inflating: LICENSE
+  inflating: README.md
+  inflating: chainquery
+  ```
+Of course you don't have to extract all of this stuff to your machines home directory `~/` you must use whatever paths you prefer.  One that could be beneficial is adding these executables into your systems `$PATH` this is out of the scope of this README.
+
+The main Chainquery binary should be marked as Executable by default but if not you can run the following.
+```
+chmod +x ~/chainquery
+```
+Finally running chainquery should be as simple as.
+```
+~/chainquery serve
+```
+
+You can obtain information on the flags in Chainqueries main binary by running the following.
+```
+~/chainquery -help
 ```
 
 ## The Model 
