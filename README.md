@@ -99,7 +99,7 @@ chmod +x ~/chainquery
 ```
 Finally running chainquery should be as simple as.
 ```
-~/chainquery
+~/chainquery serve
 ```
 
 You can obtain information on the flags in Chainqueries main binary by running the following.
