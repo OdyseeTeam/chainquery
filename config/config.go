@@ -76,7 +76,7 @@ func InitSlack() {
 			AcceptedLevels: slackrus.LevelThreshold(logrus.Level(slackLogLevel)),
 			Channel:        slackChannel,
 			IconEmoji:      ":golang:",
-			Username:       "ChainQuery",
+			Username:       "Chainquery",
 		})
 	}
 }
