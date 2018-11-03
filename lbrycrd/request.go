@@ -84,6 +84,7 @@ func GetClaimsForName(name string) (ClaimsForNameResult, error) {
 	return *response, call(&response, "getclaimsforname", name)
 }
 
+// RawMempoolVerboseResponse models the object of mempool results
 type RawMempoolVerboseResponse map[string]GetRawMempoolVerboseResult
 
 // GetRawMempool gets all the transactions in the mempool

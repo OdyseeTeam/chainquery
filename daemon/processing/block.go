@@ -18,6 +18,7 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
+// BlockLock is used to lock block processing to a single parent thread.
 var BlockLock = sync.Mutex{}
 
 // RunBlockProcessing runs the processing of a block at a specific height. While any height can be passed in it is
