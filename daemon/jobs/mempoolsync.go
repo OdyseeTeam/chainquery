@@ -90,7 +90,7 @@ func getMempoolBlock() *model.Block {
 func processMempoolTx(txid string, block model.Block) error {
 	txjson, err := lbrycrd.GetRawTransactionResponse(txid)
 	if err != nil {
-		return errors.Prefix("Mempool:", err)
+		return errors.Prefix("Mempool:", errors.Err(err))
 	}
 	txjson.BlockHash = block.Hash
 	return errors.Err(processing.ProcessTx(txjson, block.BlockTime, block.Height))

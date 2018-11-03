@@ -27,8 +27,7 @@ func Init(dsn string, debug bool) (*QueryLogger, error) {
 
 	logWrapper := &QueryLogger{DB: dbConn}
 	if debug {
-		logWrapper.Logger = log.StandardLogger()
-		boil.DebugMode = true // this just prints everything twice
+		boil.DebugMode = true
 	}
 
 	boil.SetDB(logWrapper)
