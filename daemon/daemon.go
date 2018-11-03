@@ -63,6 +63,7 @@ func DoYourThing() {
 func initJobs() {
 	//ClaimTrieSync
 	scheduleJob(jobs.ClaimTrieSync, 15*time.Minute)
+	scheduleJob(jobs.MempoolSync, 1*time.Second)
 }
 
 func shutdownDaemon() {

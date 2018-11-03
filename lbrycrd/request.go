@@ -83,3 +83,13 @@ func GetClaimsForName(name string) (ClaimsForNameResult, error) {
 
 	return *response, call(&response, "getclaimsforname", name)
 }
+
+type RawMempoolVerboseResponse map[string]GetRawMempoolVerboseResult
+
+// GetRawMempool gets all the transactions in the mempool
+func GetRawMempool() (RawMempoolVerboseResponse, error) {
+	defer util.TimeTrack(time.Now(), "getrawmempool", "lbrycrdprofile")
+	response := new(RawMempoolVerboseResponse)
+
+	return *response, call(&response, "getrawmempool", true)
+}
