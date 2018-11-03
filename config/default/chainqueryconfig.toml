@@ -1,6 +1,9 @@
 #Debug mode outputs specific information to the console
 #DEFAULT-debugmode=false
 
+#DebugQueryMode outputs SQL Boiler queries to the console.
+#DEFAULT-debugquerymode=false
+
 #LBRYcrd URL is required for chainquery to query the blockchain
 #DEFAULT-lbrycrdurl="rpc://lbry:lbry@localhost:9245"
 

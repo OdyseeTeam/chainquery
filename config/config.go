@@ -18,10 +18,12 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
+	"github.com/volatiletech/sqlboiler/boil"
 )
 
 const ( // config setting keys
 	debugmode            = "debugmode"
+	debugquerymode       = "debugquerymode"
 	mysqldsn             = "mysqldsn"
 	apimysqldsn          = "apimysqldsn"
 	lbrycrdurl           = "lbrycrdurl"
@@ -114,6 +116,7 @@ func readConfig() {
 func initDefaults() {
 	//Setting viper defaults in the event there are not settings set in the config file.
 	viper.SetDefault(debugmode, false)
+	viper.SetDefault(debugquerymode, false)
 	viper.SetDefault(mysqldsn, "lbry:lbry@tcp(localhost:3306)/chainquery")
 	viper.SetDefault(apimysqldsn, "lbry:lbry@tcp(localhost:3306)/chainquery")
 	viper.SetDefault(lbrycrdurl, "rpc://lbry:lbry@localhost:9245")
@@ -136,10 +139,15 @@ func processConfiguration() {
 	// to be set here.
 	isdebug := viper.GetBool(debugmode)
 	if isdebug {
-		logrus.Info("Setting DebugMode=true")
+		logrus.Info("SETTINGS: debug mode turned on")
 		logrus.SetLevel(logrus.DebugLevel)
 	} else {
 		logrus.SetLevel(logrus.InfoLevel)
+	}
+
+	if boil.DebugMode != viper.GetBool(debugquerymode) {
+		logrus.Info("SETTINGS: changing query debug mode to ", viper.GetBool(debugquerymode))
+		boil.DebugMode = viper.GetBool(debugquerymode)
 	}
 
 	settings := global.DaemonSettings{

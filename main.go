@@ -41,7 +41,7 @@ func main() {
 		println("Version(long): " + meta.GetVersionLong())
 	case "serve":
 		//Main Chainquery DB connection
-		dbInstance, err := db.Init(config.GetMySQLDSN(), config.GetDebugMode())
+		dbInstance, err := db.Init(config.GetMySQLDSN(), config.GetDebugQueryMode())
 		if err != nil {
 			log.Panic(err)
 		}

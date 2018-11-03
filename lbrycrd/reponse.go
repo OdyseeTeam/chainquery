@@ -140,3 +140,17 @@ type Support struct {
 	ValidAtHeight int32   `json:"nValidAtHeight"`
 	Amount        float64 `json:"nAmount"`
 }
+
+// GetRawMempoolVerboseResult models the data returned from the getrawmempool
+// command when the verbose flag is set.  When the verbose flag is not set,
+// getrawmempool returns an array of transaction hashes.
+type GetRawMempoolVerboseResult struct {
+	Size             int32    `json:"size"`
+	Vsize            int32    `json:"vsize"`
+	Fee              float64  `json:"fee"`
+	Time             int64    `json:"time"`
+	Height           int64    `json:"height"`
+	StartingPriority float64  `json:"startingpriority"`
+	CurrentPriority  float64  `json:"currentpriority"`
+	Depends          []string `json:"depends"`
+}

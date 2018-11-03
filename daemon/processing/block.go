@@ -18,6 +18,9 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
+// BlockLock is used to lock block processing to a single parent thread.
+var BlockLock = sync.Mutex{}
+
 // RunBlockProcessing runs the processing of a block at a specific height. While any height can be passed in it is
 // important to note that if the previous block is not processed it will panic to prevent corruption because blocks
 // must be processed in order.
@@ -36,6 +39,9 @@ func RunBlockProcessing(height *uint64) uint64 {
 	if reorgHeight != *height {
 		return reorgHeight
 	}
+
+	BlockLock.Lock()
+	defer BlockLock.Unlock()
 
 	block := &model.Block{}
 	foundBlock, _ := model.BlocksG(qm.Where(model.BlockColumns.Hash+"=?", jsonBlock.Hash)).One()

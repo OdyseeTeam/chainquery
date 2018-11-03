@@ -62,7 +62,8 @@ func DoYourThing() {
 
 func initJobs() {
 	//ClaimTrieSync
-	scheduleJob(jobs.ClaimTrieSync, 15*time.Minute)
+	scheduleJob(jobs.ClaimTrieSync, "Claimtrie Sync", 15*time.Minute)
+	scheduleJob(jobs.MempoolSync, "Mempool Sync", 1*time.Second)
 }
 
 func shutdownDaemon() {
@@ -70,7 +71,7 @@ func shutdownDaemon() {
 	stopper.StopAndWait()
 }
 
-func scheduleJob(job func(), howOften time.Duration) {
+func scheduleJob(job func(), name string, howOften time.Duration) {
 	asyncStoppable(job)
 	stopper.Add(1)
 	go func() {
@@ -79,7 +80,7 @@ func scheduleJob(job func(), howOften time.Duration) {
 		for {
 			select {
 			case <-stopper.Ch():
-				log.Info("stopping job scheduler...")
+				log.Info("stopping scheduled job: ", name)
 				return
 			case <-t.C:
 				asyncStoppable(job)
@@ -116,7 +117,7 @@ func runDaemon() {
 func asyncStoppable(function func()) {
 	stopper.Add(1)
 	go func() {
-		stopper.Done()
+		defer stopper.Done()
 		function()
 	}()
 }
