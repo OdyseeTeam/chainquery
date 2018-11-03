@@ -10,6 +10,8 @@ builds:
   goarch:
     - 386
     - amd64
+  ldflags:
+  - -X "{{.Env.IMPORTPATH}}/meta.version={{.Env.VERSIONSHORT}}" -X "{{.Env.IMPORTPATH}}/meta.versionLong={{.Env.VERSIONLONG}}" -X "{{.Env.IMPORTPATH}}/meta.commitMsg={{.Env.COMMITMSG}}"
 archive:
   replacements:
     darwin: Darwin

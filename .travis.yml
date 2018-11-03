@@ -48,7 +48,7 @@ before_script:
 # script always run to completion (set +e). All of these code checks are must haves
 # in a modern Go project.
 script:
-  # Build Chainquery sucessfully
+  # Build Chainquery successfully
   - ./scripts/build.sh
   # Fail if a .go file hasn't been formatted with gofmt
   - test -z $(gofmt -s -l $GO_FILES)
@@ -76,7 +76,7 @@ script:
 deploy:
   provider: script
   skip_cleanup: true
-  script: curl -sL https://git.io/goreleaser | bash
+  script: ./scripts/deploy.sh
   on:
     tags: true
     condition: $TRAVIS_OS_NAME = linux
