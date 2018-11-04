@@ -45,7 +45,7 @@ func GetTableStatus() (*g.TableStatus, error) {
 
 	stats.Status = statrows
 	stats.VersionShort = meta.GetVersion()
-	stats.VersionLong = meta.GetVersion()
+	stats.VersionLong = meta.GetVersionLong()
 	stats.CommitMessage = meta.GetCommitMessage()
 
 	return &stats, nil
