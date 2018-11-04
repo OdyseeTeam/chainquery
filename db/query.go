@@ -4,6 +4,7 @@ import (
 	g "github.com/lbryio/chainquery/swagger/clients/goclient"
 	"github.com/lbryio/chainquery/util"
 
+	"github.com/lbryio/chainquery/meta"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 )
@@ -43,6 +44,9 @@ func GetTableStatus() (*g.TableStatus, error) {
 	}
 
 	stats.Status = statrows
+	stats.VersionShort = meta.GetVersion()
+	stats.VersionLong = meta.GetVersion()
+	stats.CommitMessage = meta.GetCommitMessage()
 
 	return &stats, nil
 }

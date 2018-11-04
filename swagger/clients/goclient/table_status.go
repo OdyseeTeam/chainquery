@@ -11,6 +11,8 @@ package swagger
 
 // Contains an array of tables and their row count.
 type TableStatus struct {
-
-	Status []TableSize `json:"Status,omitempty"`
+	Status        []TableSize `json:"Status,omitempty"`
+	VersionShort  string
+	VersionLong   string
+	CommitMessage string
 }
