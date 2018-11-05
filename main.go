@@ -37,6 +37,7 @@ func main() {
 	default:
 		log.Errorf("Invalid command: '%s'\n", command)
 	case "version":
+		println("Semantic Version: ", meta.GetSemVersion())
 		println("Version: " + meta.GetVersion())
 		println("Version(long): " + meta.GetVersionLong())
 	case "serve":

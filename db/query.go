@@ -19,9 +19,8 @@ type AddressSummary struct {
 }
 
 // GetTableStatus provides size information for the tables in the chainquery database
-func GetTableStatus() (*g.TableStatus, error) {
-	println("here2")
-	stats := g.TableStatus{}
+func GetTableStatus() (*g.ChainqueryStatus, error) {
+	stats := g.ChainqueryStatus{}
 	rows, err := boil.GetDB().Query(
 		`SELECT TABLE_NAME as "table",` +
 			`SUM(TABLE_ROWS) as "rows" ` +
@@ -43,7 +42,8 @@ func GetTableStatus() (*g.TableStatus, error) {
 		statrows = append(statrows, stat)
 	}
 
-	stats.Status = statrows
+	stats.TableStatus = statrows
+	stats.SemVersion = meta.GetSemVersion()
 	stats.VersionShort = meta.GetVersion()
 	stats.VersionLong = meta.GetVersionLong()
 	stats.CommitMessage = meta.GetCommitMessage()

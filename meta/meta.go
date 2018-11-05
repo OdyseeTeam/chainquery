@@ -1,6 +1,7 @@
 package meta
 
 // version and commitMsg get filled in using -ldflags when the binary gets built with /scripts/build.sh
+var semVersion string
 var version string
 var versionLong string
 var commitMsg string
@@ -20,6 +21,14 @@ func GetVersion() string {
 func GetVersionLong() string {
 	if versionLong != "" {
 		return versionLong
+	}
+
+	return "unknown"
+}
+
+func GetSemVersion() string {
+	if semVersion != "" {
+		return semVersion
 	}
 
 	return "unknown"

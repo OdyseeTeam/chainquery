@@ -90,14 +90,14 @@ func (a *StatApiService) AddressSummary(ctx context.Context, lbryAddress string)
 
 /* StatApiService Returns important status information about Chain Query
  * @param ctx context.Context for authentication, logging, tracing, etc.
- @return TableStatus*/
-func (a *StatApiService) ChainQueryStatus(ctx context.Context) (TableStatus, *http.Response, error) {
+ @return ChainqueryStatus*/
+func (a *StatApiService) ChainQueryStatus(ctx context.Context) (ChainqueryStatus, *http.Response, error) {
 	var (
 		localVarHttpMethod = strings.ToUpper("Get")
 		localVarPostBody   interface{}
 		localVarFileName   string
 		localVarFileBytes  []byte
-		successPayload     TableStatus
+		successPayload     ChainqueryStatus
 	)
 
 	// create path and map variables
