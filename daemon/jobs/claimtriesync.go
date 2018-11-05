@@ -130,7 +130,7 @@ func setBidStateOfClaimsForName(name string) {
 		qm.Where(model.ClaimColumns.Name+"=?", name),
 		qm.Where(model.ClaimColumns.BidState+"!=?", "Spent"),
 		qm.Where(model.ClaimColumns.ValidAtHeight+"<=?", blockHeight),
-		qm.OrderBy(model.ClaimColumns.ValidAtHeight+" DESC")).All()
+		qm.OrderBy(model.ClaimColumns.EffectiveAmount+" DESC")).All()
 
 	foundControlling := false
 	for _, claim := range claims {

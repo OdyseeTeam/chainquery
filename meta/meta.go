@@ -26,6 +26,8 @@ func GetVersionLong() string {
 	return "unknown"
 }
 
+// GetSemVersion returns the Semantic Version of the Chainquery Application. This field is set on deployment
+// with the tag vx.x.x
 func GetSemVersion() string {
 	if semVersion != "" {
 		return semVersion
