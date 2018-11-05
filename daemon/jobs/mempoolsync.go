@@ -42,12 +42,6 @@ func MempoolSync() {
 			shouldProcessMempoolTransaction := lastBlock.Height+10 > uint64(txDetails.Height)
 			if shouldProcessMempoolTransaction {
 				for _, dependentTxID := range txDetails.Depends {
-					// Need to lock block processing to avoid race condition where we are saving a mempool transaction after a block
-					// has already started processing transactions. The mempool transaction could overwrite the block transaction
-					// incorrectly.
-					processing.BlockLock.Lock()
-					defer processing.BlockLock.Unlock()
-
 					err := processMempoolTx(dependentTxID, *mempoolBlock)
 					if err != nil {
 						logrus.Error("MempoolSync:", errors.Err(err))
@@ -101,6 +95,11 @@ func getMempoolBlock() *model.Block {
 }
 
 func processMempoolTx(txid string, block model.Block) error {
+	// Need to lock block processing to avoid race condition where we are saving a mempool transaction after a block
+	// has already started processing transactions. The mempool transaction could overwrite the block transaction
+	// incorrectly.
+	processing.BlockLock.Lock()
+	defer processing.BlockLock.Unlock()
 	exists, err := model.TransactionsG(qm.Where(model.TransactionColumns.Hash+"=?", txid)).Exists()
 	if err != nil {
 		logrus.Error("MempoolSync:", err)
