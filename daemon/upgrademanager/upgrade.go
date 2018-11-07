@@ -20,7 +20,7 @@ func RunUpgradesForVersion() {
 	var appStatus *model.ApplicationStatus
 	var err error
 	if !model.ApplicationStatusExistsGP(1) {
-		appStatus = &model.ApplicationStatus{AppVersion: 1, APIVersion: 1, DataVersion: 1}
+		appStatus = &model.ApplicationStatus{AppVersion: appVersion, APIVersion: apiVersion, DataVersion: dataVersion}
 		if err := appStatus.InsertG(); err != nil {
 			err := errors.Prefix("App Status Error: ", err)
 			panic(err)
