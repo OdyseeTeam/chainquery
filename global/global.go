@@ -9,3 +9,6 @@ type DaemonSettings struct {
 	DaemonDelay     time.Duration
 	IsReIndex       bool
 }
+
+//BlockChainName is the name of the blockchain. It is used to decode protobuf claims.
+const BlockChainName = "lbrycrd_main"

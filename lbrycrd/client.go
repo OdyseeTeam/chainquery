@@ -8,7 +8,7 @@ import (
 
 	"github.com/lbryio/lbry.go/errors"
 	upstream "github.com/lbryio/lbry.go/lbrycrd"
-	lbryschema "github.com/lbryio/lbryschema.go/pb"
+	lbryschema "github.com/lbryio/types/go"
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/shopspring/decimal"

@@ -8,11 +8,12 @@ import (
 	"github.com/lbryio/chainquery/lbrycrd"
 	"github.com/lbryio/chainquery/model"
 	"github.com/lbryio/lbry.go/errors"
-	"github.com/lbryio/lbry.go/util"
+	util "github.com/lbryio/lbry.go/lbrycrd"
 	"github.com/lbryio/lbryschema.go/address/base58"
 	c "github.com/lbryio/lbryschema.go/claim"
-	"github.com/lbryio/lbryschema.go/pb"
+	"github.com/lbryio/types/go"
 
+	"github.com/lbryio/chainquery/global"
 	"github.com/sirupsen/logrus"
 )
 
@@ -55,18 +56,18 @@ func processClaimNameScript(script *[]byte, vout model.Output, tx model.Transact
 		err := errors.Prefix("Claim name script parsing error: ", err)
 		return name, claimid, pkscript, err
 	}
-	pbClaim, err := DecodeClaimValue(name, value)
+	helper, err := c.DecodeClaimBytes(value, global.BlockChainName)
 	if err != nil {
 		logrus.Debug("saving non-conforming claim - Name: ", name, " ClaimID: ", claimid)
 		saveUnknownClaim(name, claimid, false, value, vout, tx)
 		return name, claimid, pkscript, nil
 	}
-	if pbClaim == nil {
+	if helper.Claim == nil {
 		err := errors.Base("Produced null pbClaim-> " + name + " " + claimid)
 		return name, claimid, pkscript, err
 	}
 	claim := datastore.GetClaim(claimid)
-	claim, err = processClaim(pbClaim, claim, value, vout, tx)
+	claim, err = processClaim(helper.Claim, claim, value, vout, tx)
 	if err != nil {
 		return name, claimid, pkscript, err
 	}
@@ -101,15 +102,15 @@ func processClaimUpdateScript(script *[]byte, vout model.Output, tx model.Transa
 		err := errors.Prefix("Claim update processing error: ", err)
 		return name, claimID, pubkeyscript, err
 	}
-	pbClaim, err := DecodeClaimValue(name, value)
+	helper, err := c.DecodeClaimBytes(value, global.BlockChainName)
 	if err != nil {
 		logrus.Debug("saving non-conforming claim - Update: ", name, " ClaimID: ", claimID)
 		saveUnknownClaim(name, claimID, true, value, vout, tx)
 		return name, claimID, pubkeyscript, nil
 	}
-	if pbClaim != nil && err == nil {
+	if helper.Claim != nil && err == nil {
 		claim := datastore.GetClaim(claimID)
-		claim, err := processUpdateClaim(pbClaim, claim, value)
+		claim, err := processUpdateClaim(helper.Claim, claim, value)
 		if err != nil {
 			return name, claimID, pubkeyscript, err
 		}
@@ -144,7 +145,7 @@ func processClaim(pbClaim *pb.Claim, claim *model.Claim, value []byte, output mo
 	claim.ClaimType = int8(pb.Claim_ClaimType_value[pbClaim.GetClaimType().String()])
 
 	// pbClaim JSON
-	if claimHelper, err := c.DecodeClaimHex(claim.ValueAsHex, "lbrycrd_main"); err == nil {
+	if claimHelper, err := c.DecodeClaimHex(claim.ValueAsHex, global.BlockChainName); err == nil {
 		if jsonvalue, err := claimHelper.RenderJSON(); err == nil {
 			claim.ValueAsJSON.String = jsonvalue
 			claim.ValueAsJSON.Valid = true

@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/lbryio/lbry.go/errors"
-	"github.com/lbryio/lbry.go/querytools"
+	querytools "github.com/lbryio/lbry.go/query"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/jteeuwen/go-bindata" // so it's detected by `dep ensure`
