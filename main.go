@@ -53,5 +53,14 @@ func main() {
 
 		go swagger.InitApiServer(config.GetAPIHostAndPort())
 		daemon.DoYourThing()
+	case "api":
+		//Main Chainquery DB connection
+		dbInstance, err := db.Init(config.GetMySQLDSN(), config.GetDebugQueryMode())
+		if err != nil {
+			log.Panic(err)
+		}
+		defer db.CloseDB(dbInstance)
+
+		swagger.InitApiServer(config.GetAPIHostAndPort())
 	}
 }

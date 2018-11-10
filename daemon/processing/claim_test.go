@@ -1,7 +1,7 @@
 package processing
 
 import (
-	"github.com/lbryio/lbry.go/util"
+	util "github.com/lbryio/lbry.go/lbrycrd"
 	"testing"
 )
 

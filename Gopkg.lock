@@ -197,34 +197,33 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:a45b9707528ec305afd1ac111339d6fc103772ec80bf0646931ec9ea28cd9917"
+  digest = "1:b606706bcfe0f589e965cb3d3afad200ca78333e03a4e1aa915187dc5aeabf01"
   name = "github.com/lbryio/lbry.go"
   packages = [
     "api",
     "errors",
     "lbrycrd",
     "null",
-    "querytools",
+    "query",
     "stop",
     "travis",
     "util",
     "validator",
   ]
   pruneopts = ""
-  revision = "06a20b7d5e14992d2297c9b9454312236a0d6204"
+  revision = "7c3d1d062af46c7357cbc6a7b61f40df358365e8"
 
 [[projects]]
   branch = "master"
-  digest = "1:d261f80387a38eeddc1d819ee9ee56d37ca10fc02e6e09ff400fb0ce146e13dc"
+  digest = "1:4d3420863858044c445e5877b0bab49e5dbce55be3555c3222bd60a18fa0fc88"
   name = "github.com/lbryio/lbryschema.go"
   packages = [
     "address",
     "address/base58",
     "claim",
-    "pb",
   ]
   pruneopts = ""
-  revision = "185433f2fd0c732547654749b98b37e56223dd22"
+  revision = "50996a6b0d9bfa3db414b5ede55b78cc402c93bc"
 
 [[projects]]
   digest = "1:5e30b8342813a6a85a647f9277e34ffcd5872dc57ab590dd9b251b145b6ec88f"
@@ -233,6 +232,14 @@
   pruneopts = ""
   revision = "d1008ad1fd04ceb5faedaf34881df0c504382706"
   version = "v3.1"
+
+[[projects]]
+  branch = "master"
+  digest = "1:349bf8c6b66272abd25af9538be35071991811b6ba3e5c849515c0bfcf3f2bd0"
+  name = "github.com/lbryio/types"
+  packages = ["go"]
+  pruneopts = ""
+  revision = "594241d24e0025d769d2cb58168536b6963d51cf"
 
 [[projects]]
   digest = "1:961dc3b1d11f969370533390fdf203813162980c858e1dabe827b60940c909a5"
@@ -503,7 +510,6 @@
   input-imports = [
     "github.com/btcsuite/btcd/chaincfg",
     "github.com/btcsuite/btcutil",
-    "github.com/btcsuite/btcutil/base58",
     "github.com/fatih/color",
     "github.com/fsnotify/fsnotify",
     "github.com/go-ini/ini",
@@ -515,14 +521,13 @@
     "github.com/lbryio/lbry.go/api",
     "github.com/lbryio/lbry.go/errors",
     "github.com/lbryio/lbry.go/lbrycrd",
-    "github.com/lbryio/lbry.go/querytools",
+    "github.com/lbryio/lbry.go/query",
     "github.com/lbryio/lbry.go/stop",
     "github.com/lbryio/lbry.go/travis",
-    "github.com/lbryio/lbry.go/util",
     "github.com/lbryio/lbryschema.go/address/base58",
     "github.com/lbryio/lbryschema.go/claim",
-    "github.com/lbryio/lbryschema.go/pb",
     "github.com/lbryio/ozzo-validation",
+    "github.com/lbryio/types/go",
     "github.com/mitchellh/mapstructure",
     "github.com/pkg/errors",
     "github.com/rubenv/sql-migrate",
