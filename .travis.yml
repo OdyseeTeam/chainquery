@@ -28,6 +28,16 @@ matrix:
   notifications:
     email: false
 
+services:
+- mysql
+
+before_install:
+- mysql -u root -e 'CREATE DATABASE IF NOT EXISTS chainquery;'
+- mysql -u root -e "CREATE USER 'lbry'@'localhost' IDENTIFIED BY 'lbry';"
+- mysql -u root -e "GRANT ALL ON chainquery.* TO 'lbry'@'localhost';"
+- sudo service mysql restart
+
+
 # Anything in before_script that returns a nonzero exit code will
 # flunk the build and immediately stop. It's sorta like having
 # set -e enabled in bash.
@@ -71,6 +81,12 @@ script:
   - unconvert -v $(go list ./... | grep -v /vendor/ | grep -v /model | grep -v /swagger/ | grep -v /migration )
   # one last linter - ignore autogen code
   - golint -set_exit_status $(go list ./... | grep -v /vendor/ | grep -v /model/ | grep -v /swagger/ | grep -v /migration )
+  # start up chainquery
+  - ./bin/chainquery api &
+  - sleep 10s
+  - "curl -i -H 'Accept: application/json' -H 'Content-Type: application/json' http://localhost:6300/api/status"
+  # ToDo need to wait until the SQLBoiler issues are resolved. - ./app/gen_models.sh
+  - git diff --exit-code
 
 # calls goreleaser
 deploy:
