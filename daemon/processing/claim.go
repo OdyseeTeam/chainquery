@@ -202,7 +202,10 @@ func processUpdateClaim(pbClaim *pb.Claim, claim *model.Claim, value []byte) (*m
 }
 
 func setPublisherInfo(claim *model.Claim, pbClaim *pb.Claim) {
+	claim.IsCertProcessed = true
+	claim.IsCertValid = false
 	if pbClaim.GetPublisherSignature() != nil {
+		claim.IsCertProcessed = false
 		publisherClaimID := hex.EncodeToString(pbClaim.GetPublisherSignature().GetCertificateId())
 		claim.PublisherID.String = publisherClaimID
 		claim.PublisherID.Valid = true
@@ -214,6 +217,7 @@ func setPublisherInfo(claim *model.Claim, pbClaim *pb.Claim) {
 func setCertificateInfo(claim *model.Claim, pbClaim *pb.Claim) {
 
 	if pbClaim.GetClaimType() == pb.Claim_certificateType {
+		claim.IsCertProcessed = true
 		certificate := pbClaim.GetCertificate()
 		certBytes, err := json.Marshal(certificate)
 		if err != nil {
