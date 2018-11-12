@@ -3,12 +3,14 @@ package processing
 import (
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"strconv"
 
 	ds "github.com/lbryio/chainquery/datastore"
 	"github.com/lbryio/chainquery/lbrycrd"
 	m "github.com/lbryio/chainquery/model"
 	"github.com/lbryio/lbry.go/errors"
+	"github.com/lbryio/lbry.go/stop"
 
 	"github.com/sirupsen/logrus"
 )
@@ -26,28 +28,42 @@ type voutToProcess struct {
 	blockHeight uint64
 }
 
-func initVinWorkers(nrWorkers int, jobs <-chan vinToProcess, results chan<- error) {
+func initVinWorkers(s *stop.Group, nrWorkers int, jobs <-chan vinToProcess, results chan<- error) {
 	for i := 0; i < nrWorkers; i++ {
-		go vinProcessor(jobs, results)
+		s.Add(1)
+		go func(worker int) {
+			defer s.Done()
+			vinProcessor(worker, jobs, results)
+		}(i)
 	}
 }
 
-func vinProcessor(jobs <-chan vinToProcess, results chan<- error) {
+func vinProcessor(worker int, jobs <-chan vinToProcess, results chan<- error) {
 	for job := range jobs {
-		results <- processVin(job.jsonVin, job.tx, job.txDC)
+		q(strconv.Itoa(worker) + " - WORKER VIN start new job " + strconv.Itoa(int(job.jsonVin.Sequence)))
+		result := processVin(job.jsonVin, job.tx, job.txDC)
+		q(strconv.Itoa(worker) + " - WORKER VIN passing result " + strconv.Itoa(int(job.jsonVin.Sequence)))
+		results <- result
+		q(strconv.Itoa(worker) + " - WORKER VIN passed result " + strconv.Itoa(int(job.jsonVin.Sequence)))
 	}
+	q(strconv.Itoa(worker) + " - WORKER VIN finished all jobs")
 }
 
-func initVoutWorkers(nrWorkers int, jobs <-chan voutToProcess, results chan<- error) {
+func initVoutWorkers(s *stop.Group, nrWorkers int, jobs <-chan voutToProcess, results chan<- error) {
 	for i := 0; i < nrWorkers; i++ {
-		go voutProcessor(jobs, results)
+		s.Add(1)
+		go func(worker int) {
+			defer s.Done()
+			voutProcessor(worker, jobs, results)
+		}(i)
 	}
 }
 
-func voutProcessor(jobs <-chan voutToProcess, results chan<- error) {
+func voutProcessor(worker int, jobs <-chan voutToProcess, results chan<- error) {
 	for job := range jobs {
 		results <- processVout(job.jsonVout, job.tx, job.txDC, job.blockHeight)
 	}
+	q(strconv.Itoa(worker) + " - WORKER VOUT finished all jobs")
 }
 
 func processVin(jsonVin *lbrycrd.Vin, tx *m.Transaction, txDC *txDebitCredits) error {
@@ -83,12 +99,11 @@ func processVin(jsonVin *lbrycrd.Vin, tx *m.Transaction, txDC *txDebitCredits) e
 			return err
 		}
 		if srcOutput != nil {
-
 			vin.Value = srcOutput.Value
 			var addresses []string
 			if srcOutput.AddressList.Valid {
 				if err := json.Unmarshal([]byte(srcOutput.AddressList.String), &addresses); err != nil {
-					logrus.Error("Error unmarshalling source output address list: ", err)
+					return errors.Err("Error unmarshalling source output address list: ", err)
 				}
 			}
 			var address *m.Address
@@ -102,8 +117,7 @@ func processVin(jsonVin *lbrycrd.Vin, tx *m.Transaction, txDC *txDebitCredits) e
 				}
 				address = ds.GetAddress(jsonAddress)
 				if address == nil {
-					logrus.Error("No addresses for vout address list! ", srcOutput.ID, " -> ", srcOutput.AddressList.String)
-					logrus.Panic(nil)
+					logrus.Panic("No addresses for vout address list! ", srcOutput.ID, " -> ", srcOutput.AddressList.String)
 				}
 
 			}
@@ -117,8 +131,8 @@ func processVin(jsonVin *lbrycrd.Vin, tx *m.Transaction, txDC *txDebitCredits) e
 					return err
 				}
 			} else {
-				logrus.Error("No Address created for Vin: ", vin.ID, " of tx ", tx.ID, " vout: ", srcOutput.ID, " Address: ", addresses[0])
-				logrus.Panic(nil)
+				errMessage := fmt.Sprintf("No Address created for Vin: %d of tx %d vout: %d Address: %s", vin.ID, tx.ID, srcOutput.ID, addresses[0])
+				logrus.Panic(errMessage)
 			}
 			// Update the srcOutput spent if successful
 			srcOutput.IsSpent = true
@@ -133,7 +147,7 @@ func processVin(jsonVin *lbrycrd.Vin, tx *m.Transaction, txDC *txDebitCredits) e
 			//Make sure there is a transaction address
 
 			if ds.GetTxAddress(tx.ID, vin.InputAddressID.Uint64) == nil {
-				return errors.Base("Missing txAddress for Tx" + strconv.Itoa(int(tx.ID)) + "- Addr:" + strconv.Itoa(int(vin.InputAddressID.Uint64)))
+				return errors.Err("Missing txAddress for Tx: " + strconv.Itoa(int(tx.ID)) + " - Addr: " + strconv.Itoa(int(vin.InputAddressID.Uint64)) + "[" + address.Address + "]")
 			}
 		}
 	}
