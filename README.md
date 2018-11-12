@@ -27,7 +27,7 @@
 
 ### Go
 
-Make sure you have Go 1.10+ (required for [go-releaser](https://goreleaser.com/))
+Make sure you have Go 1.11+ (required for [go-releaser](https://goreleaser.com/))
 
 - Ubuntu: https://launchpad.net/~longsleep/+archive/ubuntu/golang-backports or https://github.com/golang/go/wiki/Ubuntu [Easier but maybe older] **(recommended)**
 - Linux: [GoLang official install guide](https://golang.org/doc/install#tarball) [Harder but up to date] 
