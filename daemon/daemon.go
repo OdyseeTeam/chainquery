@@ -127,6 +127,7 @@ func daemonIteration() {
 	height, err := lbrycrd.GetBlockCount()
 	if err != nil {
 		log.Error(errors.Prefix("Could not get block height:", err))
+		running = false
 		return
 	}
 	blockHeight = *height
