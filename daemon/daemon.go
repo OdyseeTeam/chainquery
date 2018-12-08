@@ -13,6 +13,7 @@ import (
 	"github.com/lbryio/chainquery/global"
 	"github.com/lbryio/chainquery/lbrycrd"
 	"github.com/lbryio/chainquery/model"
+	"github.com/lbryio/lbry.go/errors"
 	"github.com/lbryio/lbry.go/stop"
 
 	log "github.com/sirupsen/logrus"
@@ -125,7 +126,8 @@ func asyncStoppable(function func()) {
 func daemonIteration() {
 	height, err := lbrycrd.GetBlockCount()
 	if err != nil {
-		log.Error(err)
+		log.Error(errors.Prefix("Could not get block height:", err))
+		return
 	}
 	blockHeight = *height
 	if lastHeightProcessed == uint64(0) {
