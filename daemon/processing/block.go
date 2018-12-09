@@ -44,6 +44,8 @@ func RunBlockProcessing(height uint64) uint64 {
 		return reorgHeight
 	}
 
+	//This is an important lock to make sure we don't concurrently save transaction inputs/outputs accidentally via the
+	// mempool sync.
 	BlockLock.Lock()
 	defer BlockLock.Unlock()
 
@@ -52,24 +54,10 @@ func RunBlockProcessing(height uint64) uint64 {
 	if foundBlock != nil {
 		block = foundBlock
 	}
+
 	block.Height = height
-	block.Confirmations = uint(jsonBlock.Confirmations)
-	block.Hash = jsonBlock.Hash
-	block.BlockTime = uint64(jsonBlock.Time)
-	block.Bits = jsonBlock.Bits
-	block.BlockSize = uint64(jsonBlock.Size)
-	block.Chainwork = jsonBlock.ChainWork
-	block.Difficulty = jsonBlock.Difficulty
-	block.MerkleRoot = jsonBlock.MerkleRoot
-	block.NameClaimRoot = jsonBlock.NameClaimRoot
-	block.Nonce = jsonBlock.Nonce
-	block.NextBlockHash.String = jsonBlock.NextHash
-	block.PreviousBlockHash.String = jsonBlock.PreviousHash
-	block.PreviousBlockHash.Valid = true
-	block.TransactionHashes.String = strings.Join(jsonBlock.Tx, ",")
-	block.TransactionHashes.Valid = true
-	block.Version = uint64(jsonBlock.Version)
-	block.VersionHex = jsonBlock.VersionHex
+	updateBlockInfo(block, jsonBlock)
+
 	if foundBlock != nil {
 		err = block.UpdateG()
 	} else {
@@ -93,62 +81,94 @@ func RunBlockProcessing(height uint64) uint64 {
 	return height
 }
 
+func updateBlockInfo(block *model.Block, jsonBlock *lbrycrd.GetBlockResponse) {
+	block.Confirmations = uint(jsonBlock.Confirmations)
+	block.Hash = jsonBlock.Hash
+	block.BlockTime = uint64(jsonBlock.Time)
+	block.Bits = jsonBlock.Bits
+	block.BlockSize = uint64(jsonBlock.Size)
+	block.Chainwork = jsonBlock.ChainWork
+	block.Difficulty = jsonBlock.Difficulty
+	block.MerkleRoot = jsonBlock.MerkleRoot
+	block.NameClaimRoot = jsonBlock.NameClaimRoot
+	block.Nonce = jsonBlock.Nonce
+	block.NextBlockHash.String = jsonBlock.NextHash
+	block.PreviousBlockHash.String = jsonBlock.PreviousHash
+	block.PreviousBlockHash.Valid = true
+	block.TransactionHashes.String = strings.Join(jsonBlock.Tx, ",")
+	block.TransactionHashes.Valid = true
+	block.Version = uint64(jsonBlock.Version)
+	block.VersionHex = jsonBlock.VersionHex
+}
+
+type txSyncManager struct {
+	queueStopper  *stop.Group
+	syncStopper   *stop.Group
+	workerStopper *stop.Group
+	resultsCh     chan txProcessResult
+	redoJobsCh    chan txToProcess
+	jobsCh        chan txToProcess
+	errorsCh      chan error
+}
+
 func syncTransactionsOfBlock(txs []string, blockTime uint64, blockHeight uint64) error {
-	q("SYNC started - " + strconv.Itoa(int(blockHeight)))
+	q("SYNC: started - " + strconv.Itoa(int(blockHeight)))
 	// Initialization
 	const maxErrorsPerBlockSync = 2
 	// Error handling logic can be tested by decreasing the number of times a transaction can fail to 0.
-	errorCh := make(chan error, maxErrorsPerBlockSync)
+	manager := txSyncManager{
+		queueStopper:  stop.New(nil),
+		syncStopper:   stop.New(nil),
+		workerStopper: stop.New(nil),
+		errorsCh:      make(chan error, maxErrorsPerBlockSync),
+		resultsCh:     make(chan txProcessResult),
+		redoJobsCh:    make(chan txToProcess, 1000),
+		jobsCh:        make(chan txToProcess),
+	}
 	workers := util.Min(len(txs), runtime.NumCPU())
-	txJobsCh := make(chan txToProcess)
-	txRedoJobsCh := make(chan txToProcess, 1000)
-	resultCh := make(chan txProcessResult)
-	queueStopper := stop.New(nil)
-	syncStopper := stop.New(nil)
-	workerStopper := stop.New(nil)
-	initTxWorkers(workerStopper, workers, txJobsCh, resultCh)
+	initTxWorkers(manager.workerStopper, workers, manager.jobsCh, manager.resultsCh)
 	// Queue up n threads of transactions
-	queueStopper.Add(1)
-	go queueTx(queueStopper, txs, blockTime, blockHeight, txJobsCh, errorCh)
-	q("SYNC launched queueing")
+	manager.queueStopper.Add(1)
+	go queueTx(txs, blockTime, blockHeight, &manager)
+	q("SYNC: launched queueing")
 	//Setup reprocessing queue
-	syncStopper.Add(1)
-	go reprocessQueue(syncStopper, txRedoJobsCh, txJobsCh)
+	manager.syncStopper.Add(1)
+	go reprocessQueue(&manager)
 	// Handle the results
-	syncStopper.Add(1)
-	go handleTxResults(syncStopper, queueStopper, workerStopper, len(txs), resultCh, txRedoJobsCh, errorCh)
-	q("SYNC launched handling")
+	manager.syncStopper.Add(1)
+	go handleTxResults(len(txs), &manager)
+	q("SYNC: launched handling")
 	// Check for queueing errors ( ie. lbrycrd fetch)
-	err := <-errorCh
+	err := <-manager.errorsCh
 	if err != nil {
 		return errors.Err(err)
 	}
-	q("SYNC received 1st on errorCh")
+	q("SYNC: received 1st on errorCh")
 
 	// Wait for first handling error/nil
-	err = <-errorCh
-	q("SYNC received 2nd on errorCh")
+	err = <-manager.errorsCh
+	q("SYNC: received 2nd on errorCh")
 	if err != nil {
 		logrus.Error(err)
 	}
-	q("SYNC stop workers...")
-	workerStopper.Stop()
-	q("SYNC stop sync...")
-	syncStopper.Stop()
-	q("SYNC wait for workers... - " + strconv.Itoa(int(blockHeight)))
-	workerStopper.StopAndWait()
-	q("SYNC wait for sync - " + strconv.Itoa(int(blockHeight)))
-	syncStopper.StopAndWait()
-	q("SYNC stopped - " + strconv.Itoa(int(blockHeight)))
-	q("SYNC closing redo channel")
-	close(txRedoJobsCh)
-	q("SYNC closing result channel")
-	close(resultCh)
-	q("SYNC closing error channel")
-	close(errorCh)
-	q("SYNC closing jobs channel")
-	close(txJobsCh)
-	q("SYNC finished - " + strconv.Itoa(int(blockHeight)))
+	q("SYNC: stop workers...")
+	manager.workerStopper.Stop()
+	q("SYNC: stop sync...")
+	manager.syncStopper.Stop()
+	q("SYNC: wait for workers... - " + strconv.Itoa(int(blockHeight)))
+	manager.workerStopper.StopAndWait()
+	q("SYNC: wait for sync - " + strconv.Itoa(int(blockHeight)))
+	manager.syncStopper.StopAndWait()
+	q("SYNC: stopped - " + strconv.Itoa(int(blockHeight)))
+	q("SYNC: closing redo channel")
+	close(manager.redoJobsCh)
+	q("SYNC: closing result channel")
+	close(manager.resultsCh)
+	q("SYNC: closing error channel")
+	close(manager.errorsCh)
+	q("SYNC: closing jobs channel")
+	close(manager.jobsCh)
+	q("SYNC: finished - " + strconv.Itoa(int(blockHeight)))
 	return err
 }
 
@@ -163,34 +183,34 @@ func q(a string) {
 
 const maxFailures = 1000
 
-func handleTxResults(sync *stop.Group, queue *stop.Group, workers *stop.Group, nrToHandle int, resultCh <-chan txProcessResult, txJobsCh chan<- txToProcess, errorCh chan<- error) {
-	defer sync.Done()
+func handleTxResults(nrToHandle int, manager *txSyncManager) {
+	defer manager.syncStopper.Done()
 	q("HANDLE: start handling")
 	leftToProcess := nrToHandle
 	for {
 		q("HANDLE: waiting for next result...")
 		select {
-		case <-sync.Ch():
+		case <-manager.syncStopper.Ch():
 			q("HANDLE: stopping handling...")
 			return
-		case txResult := <-resultCh:
+		case txResult := <-manager.resultsCh:
 			q("HANDLE: start handling new result.." + txResult.tx.Txid)
 			leftToProcess--
 			if txResult.failcount > maxFailures {
-				handleFailure(txResult, queue, workers, resultCh, errorCh)
+				handleFailure(txResult, manager.queueStopper, manager.workerStopper, manager.resultsCh, manager.errorsCh)
 				continue
 			}
 			if txResult.err != nil { // Try again if fails this time.
 				leftToProcess++
 				q("HANDLE: start sending to worker..." + txResult.tx.Txid)
-				txJobsCh <- txToProcess{tx: txResult.tx, blockTime: txResult.blockTime, failcount: txResult.failcount}
+				manager.redoJobsCh <- txToProcess{tx: txResult.tx, blockTime: txResult.blockTime, failcount: txResult.failcount}
 				q("HANDLE: end sending to worker..." + txResult.tx.Txid)
 				q("HANDLE: finish handling new result.." + txResult.tx.Txid)
 				//continue
 			}
 			if leftToProcess == 0 {
 				q("HANDLE: start passing done..")
-				errorCh <- nil
+				manager.errorsCh <- nil
 				q("HANDLE: end passing done..")
 				q("HANDLE: end handling..")
 				return
@@ -201,28 +221,22 @@ func handleTxResults(sync *stop.Group, queue *stop.Group, workers *stop.Group, n
 	}
 }
 
-//flush is a helper function for handling the results.
-func flush(channel <-chan txProcessResult) {
-	for range channel {
-	}
-}
-
-func queueTx(s *stop.Group, txs []string, blockTime uint64, blockHeight uint64, txJobsCh chan<- txToProcess, errorCh chan error) {
-	defer s.Done()
-	q("QUEUE start of queuing")
+func queueTx(txs []string, blockTime uint64, blockHeight uint64, manager *txSyncManager) {
+	defer manager.queueStopper.Done()
+	q("QUEUE: start of queuing")
 	txRawMap := make(map[string]*lbrycrd.TxRawResult)
 	depthMap := make(map[string]int, len(txs))
 	for i := range txs {
 		select {
-		case <-s.Ch():
+		case <-manager.queueStopper.Ch():
 			q("QUEUE: stopping lbrycrd getting...")
-			errorCh <- nil
+			manager.errorsCh <- nil
 			return
 		default:
 			q("QUEUE:  start getting lbrycrd transaction..." + txs[i])
 			jsonTx, err := lbrycrd.GetRawTransactionResponse(txs[i])
 			if err != nil {
-				errorCh <- errors.Prefix("GetRawTxError:"+txs[i], err)
+				manager.errorsCh <- errors.Prefix("GetRawTxError:"+txs[i], err)
 				return
 			}
 			txRawMap[jsonTx.Txid] = jsonTx
@@ -231,22 +245,28 @@ func queueTx(s *stop.Group, txs []string, blockTime uint64, blockHeight uint64, 
 		}
 	}
 	txSet := optimizeOrderToProcess(txRawMap, depthMap)
-	q("QUEUE start interation of " + strconv.Itoa(len(txSet)) + " transactions")
+	q("QUEUE: start interation of " + strconv.Itoa(len(txSet)) + " transactions")
 	for _, jsonTx := range txSet {
 		select {
-		case <-s.Ch():
+		case <-manager.queueStopper.Ch():
 			q("QUEUE:  stopping processing " + jsonTx.Txid)
-			errorCh <- nil
+			manager.errorsCh <- nil
 			return
 		default:
 			q("QUEUE: start processing..." + jsonTx.Txid)
-			txJobsCh <- txToProcess{tx: jsonTx, blockTime: blockTime, blockHeight: blockHeight}
+			manager.jobsCh <- txToProcess{tx: jsonTx, blockTime: blockTime, blockHeight: blockHeight}
 			q("QUEUE: end processing..." + jsonTx.Txid)
 		}
 	}
-	q("QUEUE end of queuing")
-	errorCh <- nil
-	q("QUEUE end of queuing...passed nil to errorCh")
+	q("QUEUE: end of queuing")
+	manager.errorsCh <- nil
+	q("QUEUE: end of queuing...passed nil to errorCh")
+}
+
+//flush is a helper function for handling the results.
+func flush(channel <-chan txProcessResult) {
+	for range channel {
+	}
 }
 
 func handleFailure(txResult txProcessResult, queue *stop.Group, workers *stop.Group, resultCh <-chan txProcessResult, errorCh chan<- error) {
@@ -324,17 +344,17 @@ func checkHandleReorg(height uint64, chainPrevHash string) (uint64, error) {
 	return height, nil
 }
 
-func reprocessQueue(s *stop.Group, redoJobs <-chan txToProcess, jobs chan<- txToProcess) {
-	defer s.Done()
+func reprocessQueue(manager *txSyncManager) {
+	defer manager.syncStopper.Done()
 	for {
 		select {
-		case <-s.Ch():
-			q("REDO stopping redo jobs")
+		case <-manager.syncStopper.Ch():
+			q("REDO: stopping redo jobs")
 			return
-		case redoJob := <-redoJobs:
-			q("REDO start send new redo job - " + redoJob.tx.Txid)
-			jobs <- redoJob
-			q("REDO end send new redo job - " + redoJob.tx.Txid)
+		case redoJob := <-manager.redoJobsCh:
+			q("REDO: start send new redo job - " + redoJob.tx.Txid)
+			manager.jobsCh <- redoJob
+			q("REDO: end send new redo job - " + redoJob.tx.Txid)
 		}
 	}
 }
