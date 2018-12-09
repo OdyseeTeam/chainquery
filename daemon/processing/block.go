@@ -49,23 +49,7 @@ func RunBlockProcessing(height uint64) uint64 {
 	BlockLock.Lock()
 	defer BlockLock.Unlock()
 
-	block := &model.Block{}
-	foundBlock, _ := model.BlocksG(qm.Where(model.BlockColumns.Hash+"=?", jsonBlock.Hash)).One()
-	if foundBlock != nil {
-		block = foundBlock
-	}
-
-	block.Height = height
-	updateBlockInfo(block, jsonBlock)
-
-	if foundBlock != nil {
-		err = block.UpdateG()
-	} else {
-		err = block.InsertG()
-	}
-	if err != nil {
-		logrus.Panic(err)
-	}
+	block := parseBlockInfo(height, jsonBlock)
 
 	txs := jsonBlock.Tx
 	err = syncTransactionsOfBlock(txs, block.BlockTime, block.Height)
@@ -75,13 +59,22 @@ func RunBlockProcessing(height uint64) uint64 {
 			logrus.Panicf("Could not delete block with bad data. Data corruption imminent at height %d. The block must be remove manually to continue. Reason: ", height)
 		}
 		logrus.Warning("Ran into transaction sync error at height", height, ". Rolling block back to height", height-1, " with error: ", err)
+		//ToDo - Should just return error...that is for another day
 		return height - 1
 	}
 
 	return height
 }
 
-func updateBlockInfo(block *model.Block, jsonBlock *lbrycrd.GetBlockResponse) {
+func parseBlockInfo(blockHeight uint64, jsonBlock *lbrycrd.GetBlockResponse) (block *model.Block) {
+
+	block = &model.Block{}
+	foundBlock, _ := model.BlocksG(qm.Where(model.BlockColumns.Hash+"=?", jsonBlock.Hash)).One()
+	if foundBlock != nil {
+		block = foundBlock
+	}
+
+	block.Height = blockHeight
 	block.Confirmations = uint(jsonBlock.Confirmations)
 	block.Hash = jsonBlock.Hash
 	block.BlockTime = uint64(jsonBlock.Time)
@@ -99,6 +92,18 @@ func updateBlockInfo(block *model.Block, jsonBlock *lbrycrd.GetBlockResponse) {
 	block.TransactionHashes.Valid = true
 	block.Version = uint64(jsonBlock.Version)
 	block.VersionHex = jsonBlock.VersionHex
+
+	var err error
+	if foundBlock != nil {
+		err = block.UpdateG()
+	} else {
+		err = block.InsertG()
+	}
+	if err != nil {
+		logrus.Panic(err)
+	}
+
+	return block
 }
 
 type txSyncManager struct {
@@ -197,7 +202,7 @@ func handleTxResults(nrToHandle int, manager *txSyncManager) {
 			q("HANDLE: start handling new result.." + txResult.tx.Txid)
 			leftToProcess--
 			if txResult.failcount > maxFailures {
-				handleFailure(txResult, manager.queueStopper, manager.workerStopper, manager.resultsCh, manager.errorsCh)
+				handleFailure(txResult, manager)
 				continue
 			}
 			if txResult.err != nil { // Try again if fails this time.
@@ -269,20 +274,20 @@ func flush(channel <-chan txProcessResult) {
 	}
 }
 
-func handleFailure(txResult txProcessResult, queue *stop.Group, workers *stop.Group, resultCh <-chan txProcessResult, errorCh chan<- error) {
+func handleFailure(txResult txProcessResult, manager *txSyncManager) {
 	q("HANDLE: start passing error.." + txResult.tx.Txid)
-	queue.Stop()
+	manager.queueStopper.Stop()
 	q("HANDLE: flushing channel...")
 	//Clears queue if any additional finished jobs come in at this point.
 	// It also stops blocking during stopping.
-	go flush(resultCh)
+	go flush(manager.resultsCh)
 	q("HANDLE: stopping queue...")
-	queue.StopAndWait()
+	manager.queueStopper.StopAndWait()
 	q("HANDLE: stopped queue...")
 	q("HANDLE: stopping workers...")
-	workers.Stop()
+	manager.workerStopper.Stop()
 	q("HANDLE: stopped workers...")
-	errorCh <- errors.Prefix("transaction "+txResult.tx.Txid+" failed more than "+strconv.Itoa(maxFailures)+" times!", txResult.err)
+	manager.errorsCh <- errors.Prefix("transaction "+txResult.tx.Txid+" failed more than "+strconv.Itoa(maxFailures)+" times!", txResult.err)
 	q("HANDLE: finish passing error.." + txResult.tx.Txid)
 }
 
@@ -295,6 +300,7 @@ func getBlockToProcess(height *uint64) (*lbrycrd.GetBlockResponse, error) {
 	if err != nil {
 		return nil, errors.Prefix("GetBlock Error("+*hash+"): ", err)
 	}
+
 	return jsonBlock, nil
 }
 
