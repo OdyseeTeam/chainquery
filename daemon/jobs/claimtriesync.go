@@ -4,6 +4,7 @@ import (
 	"runtime"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/lbryio/chainquery/datastore"
 	"github.com/lbryio/chainquery/lbrycrd"
@@ -12,7 +13,6 @@ import (
 	"github.com/lbryio/lbry.go/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/queries/qm"
-	"time"
 )
 
 const claimTrieSyncJob = "claimtriesyncjob"
@@ -28,56 +28,62 @@ var claimTrieSyncRunning = false
 func ClaimTrieSync() {
 	if !claimTrieSyncRunning {
 		claimTrieSyncRunning = true
-		//defer util.TimeTrack(time.Now(), "ClaimTrieSync", "always")
-		logrus.Debug("ClaimTrieSync: started... ")
-		jobStatus, err := getClaimTrieSyncJobStatus()
-		if err != nil {
-			logrus.Error(err)
-		}
-
-		//For Updating claims that are spent ( no longer in claimtrie )
-		if err := updateSpentClaims(); err != nil {
-			logrus.Error("ClaimTrieSync:", err)
-			saveJobError(jobStatus, err)
-		}
-
-		started := time.Now()
-
-		updatedClaims, err := getUpdatedClaims(jobStatus)
-		if err != nil {
-			logrus.Error("ClaimTrieSync:", err)
-			saveJobError(jobStatus, err)
-			panic(err)
-		}
-		logrus.Debug("ClaimTrieSync: Claims to update " + strconv.Itoa(len(updatedClaims)))
-
-		//Get blockheight for calculating expired status
-		count, err := lbrycrd.GetBlockCount()
-		if err != nil {
-			panic(err)
-		}
-		blockHeight = *count
-
-		//For syncing the claims
-		if err := syncClaims(updatedClaims); err != nil {
-			logrus.Error("ClaimTrieSync:", err)
-			saveJobError(jobStatus, err)
-		}
-
-		//For Setting Controlling Claims
-		if err := setControllingClaimForNames(updatedClaims); err != nil {
-			logrus.Error("ClaimTrieSync:", err)
-			saveJobError(jobStatus, err)
-		}
-
-		jobStatus.LastSync = started
-		jobStatus.IsSuccess = true
-		if err := jobStatus.UpdateG(); err != nil {
-			panic(err)
-		}
-		logrus.Debug("ClaimTrieSync: Processed " + strconv.Itoa(len(updatedClaims)) + " claims.")
-		claimTrieSyncRunning = false
+		//Run in background so the application can shutdown properly.
+		go claimTrieSync()
 	}
+}
+
+func claimTrieSync() {
+	//defer util.TimeTrack(time.Now(), "ClaimTrieSync", "always")
+	logrus.Debug("ClaimTrieSync: started... ")
+	jobStatus, err := getClaimTrieSyncJobStatus()
+	if err != nil {
+		logrus.Error(err)
+	}
+
+	//For Updating claims that are spent ( no longer in claimtrie )
+	if err := updateSpentClaims(); err != nil {
+		logrus.Error("ClaimTrieSync:", err)
+		saveJobError(jobStatus, err)
+	}
+
+	started := time.Now()
+
+	updatedClaims, err := getUpdatedClaims(jobStatus)
+	if err != nil {
+		logrus.Error("ClaimTrieSync:", err)
+		saveJobError(jobStatus, err)
+		panic(err)
+	}
+	logrus.Debug("ClaimTrieSync: Claims to update " + strconv.Itoa(len(updatedClaims)))
+
+	//Get blockheight for calculating expired status
+	count, err := lbrycrd.GetBlockCount()
+	if err != nil {
+		logrus.Error("ClaimTrieSync: Error getting block height", err)
+		return
+	}
+	blockHeight = *count
+
+	//For syncing the claims
+	if err := syncClaims(updatedClaims); err != nil {
+		logrus.Error("ClaimTrieSync:", err)
+		saveJobError(jobStatus, err)
+	}
+
+	//For Setting Controlling Claims
+	if err := setControllingClaimForNames(updatedClaims); err != nil {
+		logrus.Error("ClaimTrieSync:", err)
+		saveJobError(jobStatus, err)
+	}
+
+	jobStatus.LastSync = started
+	jobStatus.IsSuccess = true
+	if err := jobStatus.UpdateG(); err != nil {
+		logrus.Panic(err)
+	}
+	logrus.Debug("ClaimTrieSync: Processed " + strconv.Itoa(len(updatedClaims)) + " claims.")
+	claimTrieSyncRunning = false
 }
 
 func initSyncWorkers(nrWorkers int, jobs <-chan lbrycrd.Claim, wg *sync.WaitGroup) {

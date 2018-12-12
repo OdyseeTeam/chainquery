@@ -98,19 +98,20 @@ func runDaemon() {
 		lastHeightProcessed = lastBlock.Height
 	}
 	log.Info("Daemon initialized and running")
+	t := time.NewTicker(daemonDelay)
 	for {
 		select {
 		case <-stopper.Ch():
+			close(blockQueue)
 			log.Info("stopping daemon...")
 			return
-		default:
+		case <-t.C:
 			if !running {
 				running = true
 				log.Debug("Running daemon iteration ", iteration)
 				asyncStoppable(daemonIteration)
 				iteration++
 			}
-			time.Sleep(daemonDelay)
 		}
 	}
 }
@@ -139,6 +140,8 @@ func daemonIteration() {
 
 		select {
 		case <-stopper.Ch():
+			close(blockQueue)
+			close(blockProcessedChan)
 			log.Info("stopping daemon iteration...")
 			return
 		default:
