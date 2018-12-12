@@ -102,7 +102,6 @@ func runDaemon() {
 	for {
 		select {
 		case <-stopper.Ch():
-			close(blockQueue)
 			log.Info("stopping daemon...")
 			return
 		case <-t.C:
@@ -137,12 +136,11 @@ func daemonIteration() {
 		lastHeightProcessed = <-blockProcessedChan
 	}
 	for {
-
 		select {
 		case <-stopper.Ch():
 			close(blockQueue)
-			close(blockProcessedChan)
 			log.Info("stopping daemon iteration...")
+			close(blockProcessedChan)
 			return
 		default:
 			next := lastHeightProcessed + 1
@@ -197,7 +195,12 @@ func initBlockWorkers(nrWorkers int, jobs <-chan uint64) {
 // BlockProcessor takes a channel of block heights to process. When a new one comes in it runs block processing for
 // the block height
 func BlockProcessor(blocks <-chan uint64, worker int) {
-	for block := range blocks {
-		blockProcessedChan <- processing.RunBlockProcessing(&block)
+	for {
+		select {
+		case <-stopper.Ch():
+			return
+		case block := <-blocks:
+			blockProcessedChan <- processing.RunBlockProcessing(&block)
+		}
 	}
 }
