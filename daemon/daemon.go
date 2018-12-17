@@ -200,7 +200,7 @@ func BlockProcessor(blocks <-chan uint64, worker int) {
 		case <-stopper.Ch():
 			return
 		case block := <-blocks:
-			blockProcessedChan <- processing.RunBlockProcessing(&block)
+			blockProcessedChan <- processing.RunBlockProcessing(block)
 		}
 	}
 }
