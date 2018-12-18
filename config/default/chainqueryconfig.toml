@@ -1,30 +1,32 @@
 #Debug mode outputs specific information to the console
 #DEFAULT: false
-debugmode=false
+#debugmode=
 
 #DebugQueryMode outputs SQL Boiler queries to the console.
 #DEFAULT: false
-debugquerymode=false
+#debugquerymode=
 
 #LBRYcrd URL is required for chainquery to query the blockchain
 #DEFAULT: "rpc://lbry:lbry@localhost:9245"
-lbrycrdurl="rpc://lbry:lbry@localhost:9245"
+#lbrycrdurl=
 
 #MySQL DSN is required for chainquery to store information.
 #DEFAULT: "lbry:lbry@tcp(localhost:3306)/chainquery"
-mysqldsn="lbry:lbry@tcp(localhost:3306)/chainquery"
+#SUGGESTED: "lbry:lbry@unix(/var/run/mysqld/mysqld.sock)/chainquery"
+#mysqldsn=
 
 #API MySQL DSN is required for chainquery to expose a SQL query service
 #DEFAULT: "lbry:lbry@tcp(localhost:3306)/chainquery"
-apimysqldsn="lbry:lbry@tcp(localhost:3306)/chainquery"
+#SUGGESTED: "lbry:lbry@unix(/var/run/mysqld/mysqld.sock)/chainquery"
+#apimysqldsn=
 
 #API Host and Port is required for the API Server to bind and listen on.
 #DEFAULT: "0.0.0.0:6300"
-apihostport="0.0.0.0:6300"
+#apihostport=
 
 #Profile mode enables and disables the reporting of a profile for chainquery
 #DEFAULT: false
-profilemode=false
+#profilemode=
 
 #Daemon mode tells chainquery how hard it should work catch up processing the blockchain
 #deamonmode=0 #BeastMode it continuously process block after block until caughtup.
@@ -32,43 +34,43 @@ profilemode=false
 #daemonmode=2 #DelayMode it will process a block with a configured delay frequency (set via 'processingdelay')
 #daemonmode=3 #DaemonMode it will process a block every iteration of the daemon.
 #DEFAULT: 0
-deamonmode=0
+#deamonmode=
 
 #Default client timeout is for communication with the api of chainquery
 #DEFAULT: 20 #Measured in seconds
-defaultclienttimeout=20
+#defaultclienttimeout=
 
 #Processing delay is used to determine how frequently chainquery should process a block
 # It is only used if Daemon mode is set to delay mode
 #DEFAULT: 100 #Measured in milliseconds
-processingdelay=100
+#processingdelay=
 
 #Daemon delay is the frequency at which chainquery checks for work to do.
 #DEFAULT: 1 #Measured in seconds
-daemondelay=1
+#daemondelay=
 
 #Profiling options - will output the time take for certain opertions related to the below category
 #DEFAULT: false (for all 3 params)
-daemonprofile=false
-lbrycrdprofile=false
-mysqlprofile=false
+#daemonprofile=
+#lbrycrdprofile=
+#mysqlprofile=
 
 #Slack Hook URL allows slack integration. All logging info level and above is posted to a slack channel.
-#DEFAULT: [] #unset
-slackhookurl=[]
+#DEFAULT: ""
+#slackhookurl=
 
 #Slack Channel is the channel that you want the messages to appear. Works together with the hook url.
-#DEFAULT: [] #unset
-slackchannel=[]
+#DEFAULT: ""
+#slackchannel=
 
 #Slack Log Level tells chainquery what level of logging will be sent to the slack channel. It will log all levels below
 # it as well. Panic=0,Fatal=1,Error=2,Warning=3,Info=4,Debug=5
 #DEFAULT: 0
-slackloglevel=0
+#slackloglevel=
 
 #The command that should be executed to trigger a self update of the software. For linux, for example, `<yourscript>.sh`
-#DEFAULT: [] #unset
-autoupdatecommand=[]
+#DEFAULT: ""
+#autoupdatecommand=
 
 #Twilio service of chainquery to send specifically important information to key users of the Chainquery install.
 #DEFAULT:
@@ -76,7 +78,7 @@ autoupdatecommand=[]
 ##twilioauthtoken=""
 ##smsrecipients=["",""]
 ##smsfromphonenumber=""
-twiliosid=""
-twilioauthtoken=""
-smsrecipients=["",""]
-smsfromphonenumber=""
+#twiliosid=
+#twilioauthtoken=
+#smsrecipients=
+#smsfromphonenumber=
