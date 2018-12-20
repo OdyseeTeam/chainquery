@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"time"
 
+	"github.com/lbryio/lbry.go/errors"
+
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
@@ -43,6 +45,6 @@ func Min(x, y int) int {
 //CloseRows Closes SQL Rows for custom SQL queries.
 func CloseRows(rows *sql.Rows) {
 	if err := rows.Close(); err != nil {
-		logrus.Error("Closing rows error: ", err)
+		logrus.Error("Closing rows error: ", errors.Err(err))
 	}
 }

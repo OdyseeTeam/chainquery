@@ -77,7 +77,7 @@ func APIQuery(query string, args ...interface{}) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	util.CloseRows(rows)
 	return jsonify(rows), nil
 
 }
