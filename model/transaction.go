@@ -4,20 +4,20 @@
 package model
 
 import (
-	"bytes"
 	"database/sql"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"github.com/volatiletech/sqlboiler/strmangle"
-	"gopkg.in/volatiletech/null.v6"
 )
 
 // Transaction is an object representing the database table.
@@ -73,6 +73,23 @@ var TransactionColumns = struct {
 	CreatedTime:     "created_time",
 }
 
+// TransactionRels is where relationship names are stored.
+var TransactionRels = struct {
+	BlockHash               string
+	TransactionHashClaims   string
+	Inputs                  string
+	Outputs                 string
+	TransactionHashSupports string
+	TransactionAddresses    string
+}{
+	BlockHash:               "BlockHash",
+	TransactionHashClaims:   "TransactionHashClaims",
+	Inputs:                  "Inputs",
+	Outputs:                 "Outputs",
+	TransactionHashSupports: "TransactionHashSupports",
+	TransactionAddresses:    "TransactionAddresses",
+}
+
 // transactionR is where relationships are stored.
 type transactionR struct {
 	BlockHash               *Block
@@ -81,6 +98,11 @@ type transactionR struct {
 	Outputs                 OutputSlice
 	TransactionHashSupports SupportSlice
 	TransactionAddresses    TransactionAddressSlice
+}
+
+// NewStruct creates a new relationship struct
+func (*transactionR) NewStruct() *transactionR {
+	return &transactionR{}
 }
 
 // transactionL is where Load methods for each relationship are stored.
@@ -119,13 +141,26 @@ var (
 var (
 	// Force time package dependency for automated UpdatedAt/CreatedAt.
 	_ = time.Second
-	// Force bytes in case of primary key column that uses []byte (for relationship compares)
-	_ = bytes.MinRead
 )
 
+// OneG returns a single transaction record from the query using the global executor.
+func (q transactionQuery) OneG() (*Transaction, error) {
+	return q.One(boil.GetDB())
+}
+
+// OneGP returns a single transaction record from the query using the global executor, and panics on error.
+func (q transactionQuery) OneGP() *Transaction {
+	o, err := q.One(boil.GetDB())
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return o
+}
+
 // OneP returns a single transaction record from the query, and panics on error.
-func (q transactionQuery) OneP() *Transaction {
-	o, err := q.One()
+func (q transactionQuery) OneP(exec boil.Executor) *Transaction {
+	o, err := q.One(exec)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -134,12 +169,12 @@ func (q transactionQuery) OneP() *Transaction {
 }
 
 // One returns a single transaction record from the query.
-func (q transactionQuery) One() (*Transaction, error) {
+func (q transactionQuery) One(exec boil.Executor) (*Transaction, error) {
 	o := &Transaction{}
 
 	queries.SetLimit(q.Query, 1)
 
-	err := q.Bind(o)
+	err := q.Bind(nil, exec, o)
 	if err != nil {
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
@@ -150,9 +185,24 @@ func (q transactionQuery) One() (*Transaction, error) {
 	return o, nil
 }
 
+// AllG returns all Transaction records from the query using the global executor.
+func (q transactionQuery) AllG() (TransactionSlice, error) {
+	return q.All(boil.GetDB())
+}
+
+// AllGP returns all Transaction records from the query using the global executor, and panics on error.
+func (q transactionQuery) AllGP() TransactionSlice {
+	o, err := q.All(boil.GetDB())
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return o
+}
+
 // AllP returns all Transaction records from the query, and panics on error.
-func (q transactionQuery) AllP() TransactionSlice {
-	o, err := q.All()
+func (q transactionQuery) AllP(exec boil.Executor) TransactionSlice {
+	o, err := q.All(exec)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -161,10 +211,10 @@ func (q transactionQuery) AllP() TransactionSlice {
 }
 
 // All returns all Transaction records from the query.
-func (q transactionQuery) All() (TransactionSlice, error) {
+func (q transactionQuery) All(exec boil.Executor) (TransactionSlice, error) {
 	var o []*Transaction
 
-	err := q.Bind(&o)
+	err := q.Bind(nil, exec, &o)
 	if err != nil {
 		return nil, errors.Wrap(err, "model: failed to assign all query results to Transaction slice")
 	}
@@ -172,9 +222,24 @@ func (q transactionQuery) All() (TransactionSlice, error) {
 	return o, nil
 }
 
+// CountG returns the count of all Transaction records in the query, and panics on error.
+func (q transactionQuery) CountG() (int64, error) {
+	return q.Count(boil.GetDB())
+}
+
+// CountGP returns the count of all Transaction records in the query using the global executor, and panics on error.
+func (q transactionQuery) CountGP() int64 {
+	c, err := q.Count(boil.GetDB())
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return c
+}
+
 // CountP returns the count of all Transaction records in the query, and panics on error.
-func (q transactionQuery) CountP() int64 {
-	c, err := q.Count()
+func (q transactionQuery) CountP(exec boil.Executor) int64 {
+	c, err := q.Count(exec)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -183,13 +248,13 @@ func (q transactionQuery) CountP() int64 {
 }
 
 // Count returns the count of all Transaction records in the query.
-func (q transactionQuery) Count() (int64, error) {
+func (q transactionQuery) Count(exec boil.Executor) (int64, error) {
 	var count int64
 
 	queries.SetSelect(q.Query, nil)
 	queries.SetCount(q.Query)
 
-	err := q.Query.QueryRow().Scan(&count)
+	err := q.Query.QueryRow(exec).Scan(&count)
 	if err != nil {
 		return 0, errors.Wrap(err, "model: failed to count transaction rows")
 	}
@@ -197,9 +262,24 @@ func (q transactionQuery) Count() (int64, error) {
 	return count, nil
 }
 
-// Exists checks if the row exists in the table, and panics on error.
-func (q transactionQuery) ExistsP() bool {
-	e, err := q.Exists()
+// ExistsG checks if the row exists in the table, and panics on error.
+func (q transactionQuery) ExistsG() (bool, error) {
+	return q.Exists(boil.GetDB())
+}
+
+// ExistsGP checks if the row exists in the table using the global executor, and panics on error.
+func (q transactionQuery) ExistsGP() bool {
+	e, err := q.Exists(boil.GetDB())
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return e
+}
+
+// ExistsP checks if the row exists in the table, and panics on error.
+func (q transactionQuery) ExistsP(exec boil.Executor) bool {
+	e, err := q.Exists(exec)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -208,13 +288,14 @@ func (q transactionQuery) ExistsP() bool {
 }
 
 // Exists checks if the row exists in the table.
-func (q transactionQuery) Exists() (bool, error) {
+func (q transactionQuery) Exists(exec boil.Executor) (bool, error) {
 	var count int64
 
+	queries.SetSelect(q.Query, nil)
 	queries.SetCount(q.Query)
 	queries.SetLimit(q.Query, 1)
 
-	err := q.Query.QueryRow().Scan(&count)
+	err := q.Query.QueryRow(exec).Scan(&count)
 	if err != nil {
 		return false, errors.Wrap(err, "model: failed to check if transaction exists")
 	}
@@ -222,32 +303,22 @@ func (q transactionQuery) Exists() (bool, error) {
 	return count > 0, nil
 }
 
-// BlockHashG pointed to by the foreign key.
-func (o *Transaction) BlockHashG(mods ...qm.QueryMod) blockQuery {
-	return o.BlockHash(boil.GetDB(), mods...)
-}
-
 // BlockHash pointed to by the foreign key.
-func (o *Transaction) BlockHash(exec boil.Executor, mods ...qm.QueryMod) blockQuery {
+func (o *Transaction) BlockHash(mods ...qm.QueryMod) blockQuery {
 	queryMods := []qm.QueryMod{
 		qm.Where("hash=?", o.BlockHashID),
 	}
 
 	queryMods = append(queryMods, mods...)
 
-	query := Blocks(exec, queryMods...)
+	query := Blocks(queryMods...)
 	queries.SetFrom(query.Query, "`block`")
 
 	return query
 }
 
-// TransactionHashClaimsG retrieves all the claim's claim via transaction_hash_id column.
-func (o *Transaction) TransactionHashClaimsG(mods ...qm.QueryMod) claimQuery {
-	return o.TransactionHashClaims(boil.GetDB(), mods...)
-}
-
-// TransactionHashClaims retrieves all the claim's claim with an executor via transaction_hash_id column.
-func (o *Transaction) TransactionHashClaims(exec boil.Executor, mods ...qm.QueryMod) claimQuery {
+// TransactionHashClaims retrieves all the claim's Claims with an executor via transaction_hash_id column.
+func (o *Transaction) TransactionHashClaims(mods ...qm.QueryMod) claimQuery {
 	var queryMods []qm.QueryMod
 	if len(mods) != 0 {
 		queryMods = append(queryMods, mods...)
@@ -257,7 +328,7 @@ func (o *Transaction) TransactionHashClaims(exec boil.Executor, mods ...qm.Query
 		qm.Where("`claim`.`transaction_hash_id`=?", o.Hash),
 	)
 
-	query := Claims(exec, queryMods...)
+	query := Claims(queryMods...)
 	queries.SetFrom(query.Query, "`claim`")
 
 	if len(queries.GetSelect(query.Query)) == 0 {
@@ -267,13 +338,8 @@ func (o *Transaction) TransactionHashClaims(exec boil.Executor, mods ...qm.Query
 	return query
 }
 
-// InputsG retrieves all the input's input.
-func (o *Transaction) InputsG(mods ...qm.QueryMod) inputQuery {
-	return o.Inputs(boil.GetDB(), mods...)
-}
-
-// Inputs retrieves all the input's input with an executor.
-func (o *Transaction) Inputs(exec boil.Executor, mods ...qm.QueryMod) inputQuery {
+// Inputs retrieves all the input's Inputs with an executor.
+func (o *Transaction) Inputs(mods ...qm.QueryMod) inputQuery {
 	var queryMods []qm.QueryMod
 	if len(mods) != 0 {
 		queryMods = append(queryMods, mods...)
@@ -283,7 +349,7 @@ func (o *Transaction) Inputs(exec boil.Executor, mods ...qm.QueryMod) inputQuery
 		qm.Where("`input`.`transaction_id`=?", o.ID),
 	)
 
-	query := Inputs(exec, queryMods...)
+	query := Inputs(queryMods...)
 	queries.SetFrom(query.Query, "`input`")
 
 	if len(queries.GetSelect(query.Query)) == 0 {
@@ -293,13 +359,8 @@ func (o *Transaction) Inputs(exec boil.Executor, mods ...qm.QueryMod) inputQuery
 	return query
 }
 
-// OutputsG retrieves all the output's output.
-func (o *Transaction) OutputsG(mods ...qm.QueryMod) outputQuery {
-	return o.Outputs(boil.GetDB(), mods...)
-}
-
-// Outputs retrieves all the output's output with an executor.
-func (o *Transaction) Outputs(exec boil.Executor, mods ...qm.QueryMod) outputQuery {
+// Outputs retrieves all the output's Outputs with an executor.
+func (o *Transaction) Outputs(mods ...qm.QueryMod) outputQuery {
 	var queryMods []qm.QueryMod
 	if len(mods) != 0 {
 		queryMods = append(queryMods, mods...)
@@ -309,7 +370,7 @@ func (o *Transaction) Outputs(exec boil.Executor, mods ...qm.QueryMod) outputQue
 		qm.Where("`output`.`transaction_id`=?", o.ID),
 	)
 
-	query := Outputs(exec, queryMods...)
+	query := Outputs(queryMods...)
 	queries.SetFrom(query.Query, "`output`")
 
 	if len(queries.GetSelect(query.Query)) == 0 {
@@ -319,13 +380,8 @@ func (o *Transaction) Outputs(exec boil.Executor, mods ...qm.QueryMod) outputQue
 	return query
 }
 
-// TransactionHashSupportsG retrieves all the support's support via transaction_hash_id column.
-func (o *Transaction) TransactionHashSupportsG(mods ...qm.QueryMod) supportQuery {
-	return o.TransactionHashSupports(boil.GetDB(), mods...)
-}
-
-// TransactionHashSupports retrieves all the support's support with an executor via transaction_hash_id column.
-func (o *Transaction) TransactionHashSupports(exec boil.Executor, mods ...qm.QueryMod) supportQuery {
+// TransactionHashSupports retrieves all the support's Supports with an executor via transaction_hash_id column.
+func (o *Transaction) TransactionHashSupports(mods ...qm.QueryMod) supportQuery {
 	var queryMods []qm.QueryMod
 	if len(mods) != 0 {
 		queryMods = append(queryMods, mods...)
@@ -335,7 +391,7 @@ func (o *Transaction) TransactionHashSupports(exec boil.Executor, mods ...qm.Que
 		qm.Where("`support`.`transaction_hash_id`=?", o.Hash),
 	)
 
-	query := Supports(exec, queryMods...)
+	query := Supports(queryMods...)
 	queries.SetFrom(query.Query, "`support`")
 
 	if len(queries.GetSelect(query.Query)) == 0 {
@@ -345,13 +401,8 @@ func (o *Transaction) TransactionHashSupports(exec boil.Executor, mods ...qm.Que
 	return query
 }
 
-// TransactionAddressesG retrieves all the transaction_address's transaction address.
-func (o *Transaction) TransactionAddressesG(mods ...qm.QueryMod) transactionAddressQuery {
-	return o.TransactionAddresses(boil.GetDB(), mods...)
-}
-
-// TransactionAddresses retrieves all the transaction_address's transaction address with an executor.
-func (o *Transaction) TransactionAddresses(exec boil.Executor, mods ...qm.QueryMod) transactionAddressQuery {
+// TransactionAddresses retrieves all the transaction_address's TransactionAddresses with an executor.
+func (o *Transaction) TransactionAddresses(mods ...qm.QueryMod) transactionAddressQuery {
 	var queryMods []qm.QueryMod
 	if len(mods) != 0 {
 		queryMods = append(queryMods, mods...)
@@ -361,7 +412,7 @@ func (o *Transaction) TransactionAddresses(exec boil.Executor, mods ...qm.QueryM
 		qm.Where("`transaction_address`.`transaction_id`=?", o.ID),
 	)
 
-	query := TransactionAddresses(exec, queryMods...)
+	query := TransactionAddresses(queryMods...)
 	queries.SetFrom(query.Query, "`transaction_address`")
 
 	if len(queries.GetSelect(query.Query)) == 0 {
@@ -372,52 +423,66 @@ func (o *Transaction) TransactionAddresses(exec boil.Executor, mods ...qm.QueryM
 }
 
 // LoadBlockHash allows an eager lookup of values, cached into the
-// loaded structs of the objects.
-func (transactionL) LoadBlockHash(e boil.Executor, singular bool, maybeTransaction interface{}) error {
+// loaded structs of the objects. This is for an N-1 relationship.
+func (transactionL) LoadBlockHash(e boil.Executor, singular bool, maybeTransaction interface{}, mods queries.Applicator) error {
 	var slice []*Transaction
 	var object *Transaction
 
-	count := 1
 	if singular {
 		object = maybeTransaction.(*Transaction)
 	} else {
 		slice = *maybeTransaction.(*[]*Transaction)
-		count = len(slice)
 	}
 
-	args := make([]interface{}, count)
+	args := make([]interface{}, 0, 1)
 	if singular {
 		if object.R == nil {
 			object.R = &transactionR{}
 		}
-		args[0] = object.BlockHashID
+		if !queries.IsNil(object.BlockHashID) {
+			args = append(args, object.BlockHashID)
+		}
+
 	} else {
-		for i, obj := range slice {
+	Outer:
+		for _, obj := range slice {
 			if obj.R == nil {
 				obj.R = &transactionR{}
 			}
-			args[i] = obj.BlockHashID
+
+			for _, a := range args {
+				if queries.Equal(a, obj.BlockHashID) {
+					continue Outer
+				}
+			}
+
+			if !queries.IsNil(obj.BlockHashID) {
+				args = append(args, obj.BlockHashID)
+			}
+
 		}
 	}
 
-	query := fmt.Sprintf(
-		"select * from `block` where `hash` in (%s)",
-		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
-	)
-
-	if boil.DebugMode {
-		fmt.Fprintf(boil.DebugWriter, "%s\n%v\n", query, args)
+	query := NewQuery(qm.From(`block`), qm.WhereIn(`hash in ?`, args...))
+	if mods != nil {
+		mods.Apply(query)
 	}
 
-	results, err := e.Query(query, args...)
+	results, err := query.Query(e)
 	if err != nil {
 		return errors.Wrap(err, "failed to eager load Block")
 	}
-	defer results.Close()
 
 	var resultSlice []*Block
 	if err = queries.Bind(results, &resultSlice); err != nil {
 		return errors.Wrap(err, "failed to bind eager loaded slice Block")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results of eager load for block")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for block")
 	}
 
 	if len(resultSlice) == 0 {
@@ -425,14 +490,23 @@ func (transactionL) LoadBlockHash(e boil.Executor, singular bool, maybeTransacti
 	}
 
 	if singular {
-		object.R.BlockHash = resultSlice[0]
+		foreign := resultSlice[0]
+		object.R.BlockHash = foreign
+		if foreign.R == nil {
+			foreign.R = &blockR{}
+		}
+		foreign.R.BlockHashTransactions = append(foreign.R.BlockHashTransactions, object)
 		return nil
 	}
 
 	for _, local := range slice {
 		for _, foreign := range resultSlice {
-			if local.BlockHashID.String == foreign.Hash {
+			if queries.Equal(local.BlockHashID, foreign.Hash) {
 				local.R.BlockHash = foreign
+				if foreign.R == nil {
+					foreign.R = &blockR{}
+				}
+				foreign.R.BlockHashTransactions = append(foreign.R.BlockHashTransactions, local)
 				break
 			}
 		}
@@ -442,62 +516,81 @@ func (transactionL) LoadBlockHash(e boil.Executor, singular bool, maybeTransacti
 }
 
 // LoadTransactionHashClaims allows an eager lookup of values, cached into the
-// loaded structs of the objects.
-func (transactionL) LoadTransactionHashClaims(e boil.Executor, singular bool, maybeTransaction interface{}) error {
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (transactionL) LoadTransactionHashClaims(e boil.Executor, singular bool, maybeTransaction interface{}, mods queries.Applicator) error {
 	var slice []*Transaction
 	var object *Transaction
 
-	count := 1
 	if singular {
 		object = maybeTransaction.(*Transaction)
 	} else {
 		slice = *maybeTransaction.(*[]*Transaction)
-		count = len(slice)
 	}
 
-	args := make([]interface{}, count)
+	args := make([]interface{}, 0, 1)
 	if singular {
 		if object.R == nil {
 			object.R = &transactionR{}
 		}
-		args[0] = object.Hash
+		args = append(args, object.Hash)
 	} else {
-		for i, obj := range slice {
+	Outer:
+		for _, obj := range slice {
 			if obj.R == nil {
 				obj.R = &transactionR{}
 			}
-			args[i] = obj.Hash
+
+			for _, a := range args {
+				if queries.Equal(a, obj.Hash) {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.Hash)
 		}
 	}
 
-	query := fmt.Sprintf(
-		"select * from `claim` where `transaction_hash_id` in (%s)",
-		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
-	)
-	if boil.DebugMode {
-		fmt.Fprintf(boil.DebugWriter, "%s\n%v\n", query, args)
+	query := NewQuery(qm.From(`claim`), qm.WhereIn(`transaction_hash_id in ?`, args...))
+	if mods != nil {
+		mods.Apply(query)
 	}
 
-	results, err := e.Query(query, args...)
+	results, err := query.Query(e)
 	if err != nil {
 		return errors.Wrap(err, "failed to eager load claim")
 	}
-	defer results.Close()
 
 	var resultSlice []*Claim
 	if err = queries.Bind(results, &resultSlice); err != nil {
 		return errors.Wrap(err, "failed to bind eager loaded slice claim")
 	}
 
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on claim")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for claim")
+	}
+
 	if singular {
 		object.R.TransactionHashClaims = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &claimR{}
+			}
+			foreign.R.TransactionHash = object
+		}
 		return nil
 	}
 
 	for _, foreign := range resultSlice {
 		for _, local := range slice {
-			if local.Hash == foreign.TransactionHashID.String {
+			if queries.Equal(local.Hash, foreign.TransactionHashID) {
 				local.R.TransactionHashClaims = append(local.R.TransactionHashClaims, foreign)
+				if foreign.R == nil {
+					foreign.R = &claimR{}
+				}
+				foreign.R.TransactionHash = local
 				break
 			}
 		}
@@ -507,55 +600,70 @@ func (transactionL) LoadTransactionHashClaims(e boil.Executor, singular bool, ma
 }
 
 // LoadInputs allows an eager lookup of values, cached into the
-// loaded structs of the objects.
-func (transactionL) LoadInputs(e boil.Executor, singular bool, maybeTransaction interface{}) error {
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (transactionL) LoadInputs(e boil.Executor, singular bool, maybeTransaction interface{}, mods queries.Applicator) error {
 	var slice []*Transaction
 	var object *Transaction
 
-	count := 1
 	if singular {
 		object = maybeTransaction.(*Transaction)
 	} else {
 		slice = *maybeTransaction.(*[]*Transaction)
-		count = len(slice)
 	}
 
-	args := make([]interface{}, count)
+	args := make([]interface{}, 0, 1)
 	if singular {
 		if object.R == nil {
 			object.R = &transactionR{}
 		}
-		args[0] = object.ID
+		args = append(args, object.ID)
 	} else {
-		for i, obj := range slice {
+	Outer:
+		for _, obj := range slice {
 			if obj.R == nil {
 				obj.R = &transactionR{}
 			}
-			args[i] = obj.ID
+
+			for _, a := range args {
+				if a == obj.ID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
 		}
 	}
 
-	query := fmt.Sprintf(
-		"select * from `input` where `transaction_id` in (%s)",
-		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
-	)
-	if boil.DebugMode {
-		fmt.Fprintf(boil.DebugWriter, "%s\n%v\n", query, args)
+	query := NewQuery(qm.From(`input`), qm.WhereIn(`transaction_id in ?`, args...))
+	if mods != nil {
+		mods.Apply(query)
 	}
 
-	results, err := e.Query(query, args...)
+	results, err := query.Query(e)
 	if err != nil {
 		return errors.Wrap(err, "failed to eager load input")
 	}
-	defer results.Close()
 
 	var resultSlice []*Input
 	if err = queries.Bind(results, &resultSlice); err != nil {
 		return errors.Wrap(err, "failed to bind eager loaded slice input")
 	}
 
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on input")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for input")
+	}
+
 	if singular {
 		object.R.Inputs = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &inputR{}
+			}
+			foreign.R.Transaction = object
+		}
 		return nil
 	}
 
@@ -563,6 +671,10 @@ func (transactionL) LoadInputs(e boil.Executor, singular bool, maybeTransaction 
 		for _, local := range slice {
 			if local.ID == foreign.TransactionID {
 				local.R.Inputs = append(local.R.Inputs, foreign)
+				if foreign.R == nil {
+					foreign.R = &inputR{}
+				}
+				foreign.R.Transaction = local
 				break
 			}
 		}
@@ -572,55 +684,70 @@ func (transactionL) LoadInputs(e boil.Executor, singular bool, maybeTransaction 
 }
 
 // LoadOutputs allows an eager lookup of values, cached into the
-// loaded structs of the objects.
-func (transactionL) LoadOutputs(e boil.Executor, singular bool, maybeTransaction interface{}) error {
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (transactionL) LoadOutputs(e boil.Executor, singular bool, maybeTransaction interface{}, mods queries.Applicator) error {
 	var slice []*Transaction
 	var object *Transaction
 
-	count := 1
 	if singular {
 		object = maybeTransaction.(*Transaction)
 	} else {
 		slice = *maybeTransaction.(*[]*Transaction)
-		count = len(slice)
 	}
 
-	args := make([]interface{}, count)
+	args := make([]interface{}, 0, 1)
 	if singular {
 		if object.R == nil {
 			object.R = &transactionR{}
 		}
-		args[0] = object.ID
+		args = append(args, object.ID)
 	} else {
-		for i, obj := range slice {
+	Outer:
+		for _, obj := range slice {
 			if obj.R == nil {
 				obj.R = &transactionR{}
 			}
-			args[i] = obj.ID
+
+			for _, a := range args {
+				if a == obj.ID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
 		}
 	}
 
-	query := fmt.Sprintf(
-		"select * from `output` where `transaction_id` in (%s)",
-		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
-	)
-	if boil.DebugMode {
-		fmt.Fprintf(boil.DebugWriter, "%s\n%v\n", query, args)
+	query := NewQuery(qm.From(`output`), qm.WhereIn(`transaction_id in ?`, args...))
+	if mods != nil {
+		mods.Apply(query)
 	}
 
-	results, err := e.Query(query, args...)
+	results, err := query.Query(e)
 	if err != nil {
 		return errors.Wrap(err, "failed to eager load output")
 	}
-	defer results.Close()
 
 	var resultSlice []*Output
 	if err = queries.Bind(results, &resultSlice); err != nil {
 		return errors.Wrap(err, "failed to bind eager loaded slice output")
 	}
 
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on output")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for output")
+	}
+
 	if singular {
 		object.R.Outputs = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &outputR{}
+			}
+			foreign.R.Transaction = object
+		}
 		return nil
 	}
 
@@ -628,6 +755,10 @@ func (transactionL) LoadOutputs(e boil.Executor, singular bool, maybeTransaction
 		for _, local := range slice {
 			if local.ID == foreign.TransactionID {
 				local.R.Outputs = append(local.R.Outputs, foreign)
+				if foreign.R == nil {
+					foreign.R = &outputR{}
+				}
+				foreign.R.Transaction = local
 				break
 			}
 		}
@@ -637,62 +768,81 @@ func (transactionL) LoadOutputs(e boil.Executor, singular bool, maybeTransaction
 }
 
 // LoadTransactionHashSupports allows an eager lookup of values, cached into the
-// loaded structs of the objects.
-func (transactionL) LoadTransactionHashSupports(e boil.Executor, singular bool, maybeTransaction interface{}) error {
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (transactionL) LoadTransactionHashSupports(e boil.Executor, singular bool, maybeTransaction interface{}, mods queries.Applicator) error {
 	var slice []*Transaction
 	var object *Transaction
 
-	count := 1
 	if singular {
 		object = maybeTransaction.(*Transaction)
 	} else {
 		slice = *maybeTransaction.(*[]*Transaction)
-		count = len(slice)
 	}
 
-	args := make([]interface{}, count)
+	args := make([]interface{}, 0, 1)
 	if singular {
 		if object.R == nil {
 			object.R = &transactionR{}
 		}
-		args[0] = object.Hash
+		args = append(args, object.Hash)
 	} else {
-		for i, obj := range slice {
+	Outer:
+		for _, obj := range slice {
 			if obj.R == nil {
 				obj.R = &transactionR{}
 			}
-			args[i] = obj.Hash
+
+			for _, a := range args {
+				if queries.Equal(a, obj.Hash) {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.Hash)
 		}
 	}
 
-	query := fmt.Sprintf(
-		"select * from `support` where `transaction_hash_id` in (%s)",
-		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
-	)
-	if boil.DebugMode {
-		fmt.Fprintf(boil.DebugWriter, "%s\n%v\n", query, args)
+	query := NewQuery(qm.From(`support`), qm.WhereIn(`transaction_hash_id in ?`, args...))
+	if mods != nil {
+		mods.Apply(query)
 	}
 
-	results, err := e.Query(query, args...)
+	results, err := query.Query(e)
 	if err != nil {
 		return errors.Wrap(err, "failed to eager load support")
 	}
-	defer results.Close()
 
 	var resultSlice []*Support
 	if err = queries.Bind(results, &resultSlice); err != nil {
 		return errors.Wrap(err, "failed to bind eager loaded slice support")
 	}
 
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on support")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for support")
+	}
+
 	if singular {
 		object.R.TransactionHashSupports = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &supportR{}
+			}
+			foreign.R.TransactionHash = object
+		}
 		return nil
 	}
 
 	for _, foreign := range resultSlice {
 		for _, local := range slice {
-			if local.Hash == foreign.TransactionHashID.String {
+			if queries.Equal(local.Hash, foreign.TransactionHashID) {
 				local.R.TransactionHashSupports = append(local.R.TransactionHashSupports, foreign)
+				if foreign.R == nil {
+					foreign.R = &supportR{}
+				}
+				foreign.R.TransactionHash = local
 				break
 			}
 		}
@@ -702,55 +852,70 @@ func (transactionL) LoadTransactionHashSupports(e boil.Executor, singular bool, 
 }
 
 // LoadTransactionAddresses allows an eager lookup of values, cached into the
-// loaded structs of the objects.
-func (transactionL) LoadTransactionAddresses(e boil.Executor, singular bool, maybeTransaction interface{}) error {
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (transactionL) LoadTransactionAddresses(e boil.Executor, singular bool, maybeTransaction interface{}, mods queries.Applicator) error {
 	var slice []*Transaction
 	var object *Transaction
 
-	count := 1
 	if singular {
 		object = maybeTransaction.(*Transaction)
 	} else {
 		slice = *maybeTransaction.(*[]*Transaction)
-		count = len(slice)
 	}
 
-	args := make([]interface{}, count)
+	args := make([]interface{}, 0, 1)
 	if singular {
 		if object.R == nil {
 			object.R = &transactionR{}
 		}
-		args[0] = object.ID
+		args = append(args, object.ID)
 	} else {
-		for i, obj := range slice {
+	Outer:
+		for _, obj := range slice {
 			if obj.R == nil {
 				obj.R = &transactionR{}
 			}
-			args[i] = obj.ID
+
+			for _, a := range args {
+				if a == obj.ID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
 		}
 	}
 
-	query := fmt.Sprintf(
-		"select * from `transaction_address` where `transaction_id` in (%s)",
-		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
-	)
-	if boil.DebugMode {
-		fmt.Fprintf(boil.DebugWriter, "%s\n%v\n", query, args)
+	query := NewQuery(qm.From(`transaction_address`), qm.WhereIn(`transaction_id in ?`, args...))
+	if mods != nil {
+		mods.Apply(query)
 	}
 
-	results, err := e.Query(query, args...)
+	results, err := query.Query(e)
 	if err != nil {
 		return errors.Wrap(err, "failed to eager load transaction_address")
 	}
-	defer results.Close()
 
 	var resultSlice []*TransactionAddress
 	if err = queries.Bind(results, &resultSlice); err != nil {
 		return errors.Wrap(err, "failed to bind eager loaded slice transaction_address")
 	}
 
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on transaction_address")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for transaction_address")
+	}
+
 	if singular {
 		object.R.TransactionAddresses = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &transactionAddressR{}
+			}
+			foreign.R.Transaction = object
+		}
 		return nil
 	}
 
@@ -758,6 +923,10 @@ func (transactionL) LoadTransactionAddresses(e boil.Executor, singular bool, may
 		for _, local := range slice {
 			if local.ID == foreign.TransactionID {
 				local.R.TransactionAddresses = append(local.R.TransactionAddresses, foreign)
+				if foreign.R == nil {
+					foreign.R = &transactionAddressR{}
+				}
+				foreign.R.Transaction = local
 				break
 			}
 		}
@@ -800,7 +969,7 @@ func (o *Transaction) SetBlockHashGP(insert bool, related *Block) {
 func (o *Transaction) SetBlockHash(exec boil.Executor, insert bool, related *Block) error {
 	var err error
 	if insert {
-		if err = related.Insert(exec); err != nil {
+		if err = related.Insert(exec, boil.Infer()); err != nil {
 			return errors.Wrap(err, "failed to insert into foreign table")
 		}
 	}
@@ -821,9 +990,7 @@ func (o *Transaction) SetBlockHash(exec boil.Executor, insert bool, related *Blo
 		return errors.Wrap(err, "failed to update local table")
 	}
 
-	o.BlockHashID.String = related.Hash
-	o.BlockHashID.Valid = true
-
+	queries.Assign(&o.BlockHashID, related.Hash)
 	if o.R == nil {
 		o.R = &transactionR{
 			BlockHash: related,
@@ -877,9 +1044,8 @@ func (o *Transaction) RemoveBlockHashGP(related *Block) {
 func (o *Transaction) RemoveBlockHash(exec boil.Executor, related *Block) error {
 	var err error
 
-	o.BlockHashID.Valid = false
-	if err = o.Update(exec, "block_hash_id"); err != nil {
-		o.BlockHashID.Valid = true
+	queries.SetScanner(&o.BlockHashID, nil)
+	if err = o.Update(exec, boil.Whitelist("block_hash_id")); err != nil {
 		return errors.Wrap(err, "failed to update local table")
 	}
 
@@ -889,7 +1055,7 @@ func (o *Transaction) RemoveBlockHash(exec boil.Executor, related *Block) error 
 	}
 
 	for i, ri := range related.R.BlockHashTransactions {
-		if o.BlockHashID.String != ri.BlockHashID.String {
+		if queries.Equal(o.BlockHashID, ri.BlockHashID) {
 			continue
 		}
 
@@ -942,9 +1108,8 @@ func (o *Transaction) AddTransactionHashClaims(exec boil.Executor, insert bool, 
 	var err error
 	for _, rel := range related {
 		if insert {
-			rel.TransactionHashID.String = o.Hash
-			rel.TransactionHashID.Valid = true
-			if err = rel.Insert(exec); err != nil {
+			queries.Assign(&rel.TransactionHashID, o.Hash)
+			if err = rel.Insert(exec, boil.Infer()); err != nil {
 				return errors.Wrap(err, "failed to insert into foreign table")
 			}
 		} else {
@@ -964,8 +1129,7 @@ func (o *Transaction) AddTransactionHashClaims(exec boil.Executor, insert bool, 
 				return errors.Wrap(err, "failed to update foreign table")
 			}
 
-			rel.TransactionHashID.String = o.Hash
-			rel.TransactionHashID.Valid = true
+			queries.Assign(&rel.TransactionHashID, o.Hash)
 		}
 	}
 
@@ -1047,7 +1211,7 @@ func (o *Transaction) SetTransactionHashClaims(exec boil.Executor, insert bool, 
 
 	if o.R != nil {
 		for _, rel := range o.R.TransactionHashClaims {
-			rel.TransactionHashID.Valid = false
+			queries.SetScanner(&rel.TransactionHashID, nil)
 			if rel.R == nil {
 				continue
 			}
@@ -1094,11 +1258,11 @@ func (o *Transaction) RemoveTransactionHashClaimsGP(related ...*Claim) {
 func (o *Transaction) RemoveTransactionHashClaims(exec boil.Executor, related ...*Claim) error {
 	var err error
 	for _, rel := range related {
-		rel.TransactionHashID.Valid = false
+		queries.SetScanner(&rel.TransactionHashID, nil)
 		if rel.R != nil {
 			rel.R.TransactionHash = nil
 		}
-		if err = rel.Update(exec, "transaction_hash_id"); err != nil {
+		if err = rel.Update(exec, boil.Whitelist("transaction_hash_id")); err != nil {
 			return err
 		}
 	}
@@ -1164,7 +1328,7 @@ func (o *Transaction) AddInputs(exec boil.Executor, insert bool, related ...*Inp
 	for _, rel := range related {
 		if insert {
 			rel.TransactionID = o.ID
-			if err = rel.Insert(exec); err != nil {
+			if err = rel.Insert(exec, boil.Infer()); err != nil {
 				return errors.Wrap(err, "failed to insert into foreign table")
 			}
 		} else {
@@ -1248,7 +1412,7 @@ func (o *Transaction) AddOutputs(exec boil.Executor, insert bool, related ...*Ou
 	for _, rel := range related {
 		if insert {
 			rel.TransactionID = o.ID
-			if err = rel.Insert(exec); err != nil {
+			if err = rel.Insert(exec, boil.Infer()); err != nil {
 				return errors.Wrap(err, "failed to insert into foreign table")
 			}
 		} else {
@@ -1331,9 +1495,8 @@ func (o *Transaction) AddTransactionHashSupports(exec boil.Executor, insert bool
 	var err error
 	for _, rel := range related {
 		if insert {
-			rel.TransactionHashID.String = o.Hash
-			rel.TransactionHashID.Valid = true
-			if err = rel.Insert(exec); err != nil {
+			queries.Assign(&rel.TransactionHashID, o.Hash)
+			if err = rel.Insert(exec, boil.Infer()); err != nil {
 				return errors.Wrap(err, "failed to insert into foreign table")
 			}
 		} else {
@@ -1353,8 +1516,7 @@ func (o *Transaction) AddTransactionHashSupports(exec boil.Executor, insert bool
 				return errors.Wrap(err, "failed to update foreign table")
 			}
 
-			rel.TransactionHashID.String = o.Hash
-			rel.TransactionHashID.Valid = true
+			queries.Assign(&rel.TransactionHashID, o.Hash)
 		}
 	}
 
@@ -1436,7 +1598,7 @@ func (o *Transaction) SetTransactionHashSupports(exec boil.Executor, insert bool
 
 	if o.R != nil {
 		for _, rel := range o.R.TransactionHashSupports {
-			rel.TransactionHashID.Valid = false
+			queries.SetScanner(&rel.TransactionHashID, nil)
 			if rel.R == nil {
 				continue
 			}
@@ -1483,11 +1645,11 @@ func (o *Transaction) RemoveTransactionHashSupportsGP(related ...*Support) {
 func (o *Transaction) RemoveTransactionHashSupports(exec boil.Executor, related ...*Support) error {
 	var err error
 	for _, rel := range related {
-		rel.TransactionHashID.Valid = false
+		queries.SetScanner(&rel.TransactionHashID, nil)
 		if rel.R != nil {
 			rel.R.TransactionHash = nil
 		}
-		if err = rel.Update(exec, "transaction_hash_id"); err != nil {
+		if err = rel.Update(exec, boil.Whitelist("transaction_hash_id")); err != nil {
 			return err
 		}
 	}
@@ -1553,7 +1715,7 @@ func (o *Transaction) AddTransactionAddresses(exec boil.Executor, insert bool, r
 	for _, rel := range related {
 		if insert {
 			rel.TransactionID = o.ID
-			if err = rel.Insert(exec); err != nil {
+			if err = rel.Insert(exec, boil.Infer()); err != nil {
 				return errors.Wrap(err, "failed to insert into foreign table")
 			}
 		} else {
@@ -1597,25 +1759,30 @@ func (o *Transaction) AddTransactionAddresses(exec boil.Executor, insert bool, r
 	return nil
 }
 
-// TransactionsG retrieves all records.
-func TransactionsG(mods ...qm.QueryMod) transactionQuery {
-	return Transactions(boil.GetDB(), mods...)
-}
-
 // Transactions retrieves all the records using an executor.
-func Transactions(exec boil.Executor, mods ...qm.QueryMod) transactionQuery {
+func Transactions(mods ...qm.QueryMod) transactionQuery {
 	mods = append(mods, qm.From("`transaction`"))
-	return transactionQuery{NewQuery(exec, mods...)}
+	return transactionQuery{NewQuery(mods...)}
 }
 
 // FindTransactionG retrieves a single record by ID.
-func FindTransactionG(id uint64, selectCols ...string) (*Transaction, error) {
-	return FindTransaction(boil.GetDB(), id, selectCols...)
+func FindTransactionG(iD uint64, selectCols ...string) (*Transaction, error) {
+	return FindTransaction(boil.GetDB(), iD, selectCols...)
+}
+
+// FindTransactionP retrieves a single record by ID with an executor, and panics on error.
+func FindTransactionP(exec boil.Executor, iD uint64, selectCols ...string) *Transaction {
+	retobj, err := FindTransaction(exec, iD, selectCols...)
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return retobj
 }
 
 // FindTransactionGP retrieves a single record by ID, and panics on error.
-func FindTransactionGP(id uint64, selectCols ...string) *Transaction {
-	retobj, err := FindTransaction(boil.GetDB(), id, selectCols...)
+func FindTransactionGP(iD uint64, selectCols ...string) *Transaction {
+	retobj, err := FindTransaction(boil.GetDB(), iD, selectCols...)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -1625,7 +1792,7 @@ func FindTransactionGP(id uint64, selectCols ...string) *Transaction {
 
 // FindTransaction retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindTransaction(exec boil.Executor, id uint64, selectCols ...string) (*Transaction, error) {
+func FindTransaction(exec boil.Executor, iD uint64, selectCols ...string) (*Transaction, error) {
 	transactionObj := &Transaction{}
 
 	sel := "*"
@@ -1636,9 +1803,9 @@ func FindTransaction(exec boil.Executor, id uint64, selectCols ...string) (*Tran
 		"select %s from `transaction` where `id`=?", sel,
 	)
 
-	q := queries.Raw(exec, query, id)
+	q := queries.Raw(query, iD)
 
-	err := q.Bind(transactionObj)
+	err := q.Bind(nil, exec, transactionObj)
 	if err != nil {
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
@@ -1649,43 +1816,30 @@ func FindTransaction(exec boil.Executor, id uint64, selectCols ...string) (*Tran
 	return transactionObj, nil
 }
 
-// FindTransactionP retrieves a single record by ID with an executor, and panics on error.
-func FindTransactionP(exec boil.Executor, id uint64, selectCols ...string) *Transaction {
-	retobj, err := FindTransaction(exec, id, selectCols...)
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return retobj
-}
-
 // InsertG a single record. See Insert for whitelist behavior description.
-func (o *Transaction) InsertG(whitelist ...string) error {
-	return o.Insert(boil.GetDB(), whitelist...)
-}
-
-// InsertGP a single record, and panics on error. See Insert for whitelist
-// behavior description.
-func (o *Transaction) InsertGP(whitelist ...string) {
-	if err := o.Insert(boil.GetDB(), whitelist...); err != nil {
-		panic(boil.WrapErr(err))
-	}
+func (o *Transaction) InsertG(columns boil.Columns) error {
+	return o.Insert(boil.GetDB(), columns)
 }
 
 // InsertP a single record using an executor, and panics on error. See Insert
 // for whitelist behavior description.
-func (o *Transaction) InsertP(exec boil.Executor, whitelist ...string) {
-	if err := o.Insert(exec, whitelist...); err != nil {
+func (o *Transaction) InsertP(exec boil.Executor, columns boil.Columns) {
+	if err := o.Insert(exec, columns); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// InsertGP a single record, and panics on error. See Insert for whitelist
+// behavior description.
+func (o *Transaction) InsertGP(columns boil.Columns) {
+	if err := o.Insert(boil.GetDB(), columns); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // Insert a single record using an executor.
-// Whitelist behavior: If a whitelist is provided, only those columns supplied are inserted
-// No whitelist behavior: Without a whitelist, columns are inferred by the following rules:
-// - All columns without a default value are included (i.e. name, age)
-// - All columns with a default, but non-zero are included (i.e. health = 75)
-func (o *Transaction) Insert(exec boil.Executor, whitelist ...string) error {
+// See boil.Columns.InsertColumnSet documentation to understand column list inference for inserts.
+func (o *Transaction) Insert(exec boil.Executor, columns boil.Columns) error {
 	if o == nil {
 		return errors.New("model: no transaction provided for insertion")
 	}
@@ -1694,18 +1848,17 @@ func (o *Transaction) Insert(exec boil.Executor, whitelist ...string) error {
 
 	nzDefaults := queries.NonZeroDefaultSet(transactionColumnsWithDefault, o)
 
-	key := makeCacheKey(whitelist, nzDefaults)
+	key := makeCacheKey(columns, nzDefaults)
 	transactionInsertCacheMut.RLock()
 	cache, cached := transactionInsertCache[key]
 	transactionInsertCacheMut.RUnlock()
 
 	if !cached {
-		wl, returnColumns := strmangle.InsertColumnSet(
+		wl, returnColumns := columns.InsertColumnSet(
 			transactionColumns,
 			transactionColumnsWithDefault,
 			transactionColumnsWithoutDefault,
 			nzDefaults,
-			whitelist,
 		)
 
 		cache.valueMapping, err = queries.BindMapping(transactionType, transactionMapping, wl)
@@ -1717,9 +1870,9 @@ func (o *Transaction) Insert(exec boil.Executor, whitelist ...string) error {
 			return err
 		}
 		if len(wl) != 0 {
-			cache.query = fmt.Sprintf("INSERT INTO `transaction` (`%s`) %%sVALUES (%s)%%s", strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.IndexPlaceholders, len(wl), 1, 1))
+			cache.query = fmt.Sprintf("INSERT INTO `transaction` (`%s`) %%sVALUES (%s)%%s", strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
 		} else {
-			cache.query = "INSERT INTO `transaction` () VALUES ()"
+			cache.query = "INSERT INTO `transaction` () VALUES ()%s%s"
 		}
 
 		var queryOutput, queryReturning string
@@ -1728,9 +1881,7 @@ func (o *Transaction) Insert(exec boil.Executor, whitelist ...string) error {
 			cache.retQuery = fmt.Sprintf("SELECT `%s` FROM `transaction` WHERE %s", strings.Join(returnColumns, "`,`"), strmangle.WhereClause("`", "`", 0, transactionPrimaryKeyColumns))
 		}
 
-		if len(wl) != 0 {
-			cache.query = fmt.Sprintf(cache.query, queryOutput, queryReturning)
-		}
+		cache.query = fmt.Sprintf(cache.query, queryOutput, queryReturning)
 	}
 
 	value := reflect.Indirect(reflect.ValueOf(o))
@@ -1788,49 +1939,44 @@ CacheNoHooks:
 	return nil
 }
 
-// UpdateG a single Transaction record. See Update for
-// whitelist behavior description.
-func (o *Transaction) UpdateG(whitelist ...string) error {
-	return o.Update(boil.GetDB(), whitelist...)
+// UpdateG a single Transaction record using the global executor.
+// See Update for more documentation.
+func (o *Transaction) UpdateG(columns boil.Columns) error {
+	return o.Update(boil.GetDB(), columns)
 }
 
-// UpdateGP a single Transaction record.
-// UpdateGP takes a whitelist of column names that should be updated.
-// Panics on error. See Update for whitelist behavior description.
-func (o *Transaction) UpdateGP(whitelist ...string) {
-	if err := o.Update(boil.GetDB(), whitelist...); err != nil {
+// UpdateP uses an executor to update the Transaction, and panics on error.
+// See Update for more documentation.
+func (o *Transaction) UpdateP(exec boil.Executor, columns boil.Columns) {
+	err := o.Update(exec, columns)
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
-// UpdateP uses an executor to update the Transaction, and panics on error.
-// See Update for whitelist behavior description.
-func (o *Transaction) UpdateP(exec boil.Executor, whitelist ...string) {
-	err := o.Update(exec, whitelist...)
+// UpdateGP a single Transaction record using the global executor. Panics on error.
+// See Update for more documentation.
+func (o *Transaction) UpdateGP(columns boil.Columns) {
+	err := o.Update(boil.GetDB(), columns)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // Update uses an executor to update the Transaction.
-// Whitelist behavior: If a whitelist is provided, only the columns given are updated.
-// No whitelist behavior: Without a whitelist, columns are inferred by the following rules:
-// - All columns are inferred to start with
-// - All primary keys are subtracted from this set
-// Update does not automatically update the record in case of default values. Use .Reload()
-// to refresh the records.
-func (o *Transaction) Update(exec boil.Executor, whitelist ...string) error {
+// See boil.Columns.UpdateColumnSet documentation to understand column list inference for updates.
+// Update does not automatically update the record in case of default values. Use .Reload() to refresh the records.
+func (o *Transaction) Update(exec boil.Executor, columns boil.Columns) error {
 	var err error
-	key := makeCacheKey(whitelist, nil)
+	key := makeCacheKey(columns, nil)
 	transactionUpdateCacheMut.RLock()
 	cache, cached := transactionUpdateCache[key]
 	transactionUpdateCacheMut.RUnlock()
 
 	if !cached {
-		wl := strmangle.UpdateColumnSet(
+		wl := columns.UpdateColumnSet(
 			transactionColumns,
 			transactionPrimaryKeyColumns,
-			whitelist,
 		)
 
 		if len(wl) == 0 {
@@ -1869,17 +2015,23 @@ func (o *Transaction) Update(exec boil.Executor, whitelist ...string) error {
 }
 
 // UpdateAllP updates all rows with matching column names, and panics on error.
-func (q transactionQuery) UpdateAllP(cols M) {
-	if err := q.UpdateAll(cols); err != nil {
+func (q transactionQuery) UpdateAllP(exec boil.Executor, cols M) {
+	err := q.UpdateAll(exec, cols)
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
+// UpdateAllG updates all rows with the specified column values.
+func (q transactionQuery) UpdateAllG(cols M) error {
+	return q.UpdateAll(boil.GetDB(), cols)
+}
+
 // UpdateAll updates all rows with the specified column values.
-func (q transactionQuery) UpdateAll(cols M) error {
+func (q transactionQuery) UpdateAll(exec boil.Executor, cols M) error {
 	queries.SetUpdate(q.Query, cols)
 
-	_, err := q.Query.Exec()
+	_, err := q.Query.Exec(exec)
 	if err != nil {
 		return errors.Wrap(err, "model: unable to update all for transaction")
 	}
@@ -1894,14 +2046,16 @@ func (o TransactionSlice) UpdateAllG(cols M) error {
 
 // UpdateAllGP updates all rows with the specified column values, and panics on error.
 func (o TransactionSlice) UpdateAllGP(cols M) {
-	if err := o.UpdateAll(boil.GetDB(), cols); err != nil {
+	err := o.UpdateAll(boil.GetDB(), cols)
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // UpdateAllP updates all rows with the specified column values, and panics on error.
 func (o TransactionSlice) UpdateAllP(exec boil.Executor, cols M) {
-	if err := o.UpdateAll(exec, cols); err != nil {
+	err := o.UpdateAll(exec, cols)
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
@@ -1951,44 +2105,61 @@ func (o TransactionSlice) UpdateAll(exec boil.Executor, cols M) error {
 }
 
 // UpsertG attempts an insert, and does an update or ignore on conflict.
-func (o *Transaction) UpsertG(updateColumns []string, whitelist ...string) error {
-	return o.Upsert(boil.GetDB(), updateColumns, whitelist...)
+func (o *Transaction) UpsertG(updateColumns, insertColumns boil.Columns) error {
+	return o.Upsert(boil.GetDB(), updateColumns, insertColumns)
 }
 
 // UpsertGP attempts an insert, and does an update or ignore on conflict. Panics on error.
-func (o *Transaction) UpsertGP(updateColumns []string, whitelist ...string) {
-	if err := o.Upsert(boil.GetDB(), updateColumns, whitelist...); err != nil {
+func (o *Transaction) UpsertGP(updateColumns, insertColumns boil.Columns) {
+	if err := o.Upsert(boil.GetDB(), updateColumns, insertColumns); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // UpsertP attempts an insert using an executor, and does an update or ignore on conflict.
 // UpsertP panics on error.
-func (o *Transaction) UpsertP(exec boil.Executor, updateColumns []string, whitelist ...string) {
-	if err := o.Upsert(exec, updateColumns, whitelist...); err != nil {
+func (o *Transaction) UpsertP(exec boil.Executor, updateColumns, insertColumns boil.Columns) {
+	if err := o.Upsert(exec, updateColumns, insertColumns); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
+var mySQLTransactionUniqueColumns = []string{
+	"id",
+	"hash",
+}
+
 // Upsert attempts an insert using an executor, and does an update or ignore on conflict.
-func (o *Transaction) Upsert(exec boil.Executor, updateColumns []string, whitelist ...string) error {
+// See boil.Columns documentation for how to properly use updateColumns and insertColumns.
+func (o *Transaction) Upsert(exec boil.Executor, updateColumns, insertColumns boil.Columns) error {
 	if o == nil {
 		return errors.New("model: no transaction provided for upsert")
 	}
 
 	nzDefaults := queries.NonZeroDefaultSet(transactionColumnsWithDefault, o)
+	nzUniques := queries.NonZeroDefaultSet(mySQLTransactionUniqueColumns, o)
 
-	// Build cache key in-line uglily - mysql vs postgres problems
+	if len(nzUniques) == 0 {
+		return errors.New("cannot upsert with a table that cannot conflict on a unique column")
+	}
+
+	// Build cache key in-line uglily - mysql vs psql problems
 	buf := strmangle.GetBuffer()
-	for _, c := range updateColumns {
+	buf.WriteString(strconv.Itoa(updateColumns.Kind))
+	for _, c := range updateColumns.Cols {
 		buf.WriteString(c)
 	}
 	buf.WriteByte('.')
-	for _, c := range whitelist {
+	buf.WriteString(strconv.Itoa(insertColumns.Kind))
+	for _, c := range insertColumns.Cols {
 		buf.WriteString(c)
 	}
 	buf.WriteByte('.')
 	for _, c := range nzDefaults {
+		buf.WriteString(c)
+	}
+	buf.WriteByte('.')
+	for _, c := range nzUniques {
 		buf.WriteString(c)
 	}
 	key := buf.String()
@@ -2001,27 +2172,27 @@ func (o *Transaction) Upsert(exec boil.Executor, updateColumns []string, whiteli
 	var err error
 
 	if !cached {
-		insert, ret := strmangle.InsertColumnSet(
+		insert, ret := insertColumns.InsertColumnSet(
 			transactionColumns,
 			transactionColumnsWithDefault,
 			transactionColumnsWithoutDefault,
 			nzDefaults,
-			whitelist,
 		)
-
-		update := strmangle.UpdateColumnSet(
+		update := updateColumns.UpdateColumnSet(
 			transactionColumns,
 			transactionPrimaryKeyColumns,
-			updateColumns,
 		)
+
 		if len(update) == 0 {
 			return errors.New("model: unable to upsert transaction, could not build update column list")
 		}
 
-		cache.query = queries.BuildUpsertQueryMySQL(dialect, "transaction", update, insert)
+		ret = strmangle.SetComplement(ret, nzUniques)
+		cache.query = buildUpsertQueryMySQL(dialect, "transaction", update, insert)
 		cache.retQuery = fmt.Sprintf(
-			"SELECT %s FROM `transaction` WHERE `id`=?",
+			"SELECT %s FROM `transaction` WHERE %s",
 			strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, ret), ","),
+			strmangle.WhereClause("`", "`", 0, nzUniques),
 		)
 
 		cache.valueMapping, err = queries.BindMapping(transactionType, transactionMapping, insert)
@@ -2055,7 +2226,8 @@ func (o *Transaction) Upsert(exec boil.Executor, updateColumns []string, whiteli
 	}
 
 	var lastID int64
-	var identifierCols []interface{}
+	var uniqueMap []uint64
+	var nzUniqueCols []interface{}
 
 	if len(cache.retMapping) == 0 {
 		goto CacheNoHooks
@@ -2067,20 +2239,22 @@ func (o *Transaction) Upsert(exec boil.Executor, updateColumns []string, whiteli
 	}
 
 	o.ID = uint64(lastID)
-	if lastID != 0 && len(cache.retMapping) == 1 && cache.retMapping[0] == transactionMapping["ID"] {
+	if lastID != 0 && len(cache.retMapping) == 1 && cache.retMapping[0] == transactionMapping["id"] {
 		goto CacheNoHooks
 	}
 
-	identifierCols = []interface{}{
-		o.ID,
+	uniqueMap, err = queries.BindMapping(transactionType, transactionMapping, nzUniques)
+	if err != nil {
+		return errors.Wrap(err, "model: unable to retrieve unique values for transaction")
 	}
+	nzUniqueCols = queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), uniqueMap)
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, cache.retQuery)
-		fmt.Fprintln(boil.DebugWriter, identifierCols...)
+		fmt.Fprintln(boil.DebugWriter, nzUniqueCols...)
 	}
 
-	err = exec.QueryRow(cache.retQuery, identifierCols...).Scan(returns...)
+	err = exec.QueryRow(cache.retQuery, nzUniqueCols...).Scan(returns...)
 	if err != nil {
 		return errors.Wrap(err, "model: unable to populate default values for transaction")
 	}
@@ -2095,30 +2269,28 @@ CacheNoHooks:
 	return nil
 }
 
+// DeleteG deletes a single Transaction record.
+// DeleteG will match against the primary key column to find the record to delete.
+func (o *Transaction) DeleteG() error {
+	return o.Delete(boil.GetDB())
+}
+
 // DeleteP deletes a single Transaction record with an executor.
 // DeleteP will match against the primary key column to find the record to delete.
 // Panics on error.
 func (o *Transaction) DeleteP(exec boil.Executor) {
-	if err := o.Delete(exec); err != nil {
+	err := o.Delete(exec)
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
-}
-
-// DeleteG deletes a single Transaction record.
-// DeleteG will match against the primary key column to find the record to delete.
-func (o *Transaction) DeleteG() error {
-	if o == nil {
-		return errors.New("model: no Transaction provided for deletion")
-	}
-
-	return o.Delete(boil.GetDB())
 }
 
 // DeleteGP deletes a single Transaction record.
 // DeleteGP will match against the primary key column to find the record to delete.
 // Panics on error.
 func (o *Transaction) DeleteGP() {
-	if err := o.DeleteG(); err != nil {
+	err := o.Delete(boil.GetDB())
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
@@ -2147,21 +2319,22 @@ func (o *Transaction) Delete(exec boil.Executor) error {
 }
 
 // DeleteAllP deletes all rows, and panics on error.
-func (q transactionQuery) DeleteAllP() {
-	if err := q.DeleteAll(); err != nil {
+func (q transactionQuery) DeleteAllP(exec boil.Executor) {
+	err := q.DeleteAll(exec)
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // DeleteAll deletes all matching rows.
-func (q transactionQuery) DeleteAll() error {
+func (q transactionQuery) DeleteAll(exec boil.Executor) error {
 	if q.Query == nil {
 		return errors.New("model: no transactionQuery provided for delete all")
 	}
 
 	queries.SetDelete(q.Query)
 
-	_, err := q.Query.Exec()
+	_, err := q.Query.Exec(exec)
 	if err != nil {
 		return errors.Wrap(err, "model: unable to delete all from transaction")
 	}
@@ -2169,24 +2342,23 @@ func (q transactionQuery) DeleteAll() error {
 	return nil
 }
 
-// DeleteAllGP deletes all rows in the slice, and panics on error.
-func (o TransactionSlice) DeleteAllGP() {
-	if err := o.DeleteAllG(); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
 // DeleteAllG deletes all rows in the slice.
 func (o TransactionSlice) DeleteAllG() error {
-	if o == nil {
-		return errors.New("model: no Transaction slice provided for delete all")
-	}
 	return o.DeleteAll(boil.GetDB())
 }
 
 // DeleteAllP deletes all rows in the slice, using an executor, and panics on error.
 func (o TransactionSlice) DeleteAllP(exec boil.Executor) {
-	if err := o.DeleteAll(exec); err != nil {
+	err := o.DeleteAll(exec)
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// DeleteAllGP deletes all rows in the slice, and panics on error.
+func (o TransactionSlice) DeleteAllGP() {
+	err := o.DeleteAll(boil.GetDB())
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
@@ -2223,11 +2395,13 @@ func (o TransactionSlice) DeleteAll(exec boil.Executor) error {
 	return nil
 }
 
-// ReloadGP refetches the object from the database and panics on error.
-func (o *Transaction) ReloadGP() {
-	if err := o.ReloadG(); err != nil {
-		panic(boil.WrapErr(err))
+// ReloadG refetches the object from the database using the primary keys.
+func (o *Transaction) ReloadG() error {
+	if o == nil {
+		return errors.New("model: no Transaction provided for reload")
 	}
+
+	return o.Reload(boil.GetDB())
 }
 
 // ReloadP refetches the object from the database with an executor. Panics on error.
@@ -2237,13 +2411,11 @@ func (o *Transaction) ReloadP(exec boil.Executor) {
 	}
 }
 
-// ReloadG refetches the object from the database using the primary keys.
-func (o *Transaction) ReloadG() error {
-	if o == nil {
-		return errors.New("model: no Transaction provided for reload")
+// ReloadGP refetches the object from the database and panics on error.
+func (o *Transaction) ReloadGP() {
+	if err := o.Reload(boil.GetDB()); err != nil {
+		panic(boil.WrapErr(err))
 	}
-
-	return o.Reload(boil.GetDB())
 }
 
 // Reload refetches the object from the database
@@ -2258,13 +2430,14 @@ func (o *Transaction) Reload(exec boil.Executor) error {
 	return nil
 }
 
-// ReloadAllGP refetches every row with matching primary key column values
+// ReloadAllG refetches every row with matching primary key column values
 // and overwrites the original object slice with the newly updated slice.
-// Panics on error.
-func (o *TransactionSlice) ReloadAllGP() {
-	if err := o.ReloadAllG(); err != nil {
-		panic(boil.WrapErr(err))
+func (o *TransactionSlice) ReloadAllG() error {
+	if o == nil {
+		return errors.New("model: empty TransactionSlice provided for reload all")
 	}
+
+	return o.ReloadAll(boil.GetDB())
 }
 
 // ReloadAllP refetches every row with matching primary key column values
@@ -2276,14 +2449,13 @@ func (o *TransactionSlice) ReloadAllP(exec boil.Executor) {
 	}
 }
 
-// ReloadAllG refetches every row with matching primary key column values
+// ReloadAllGP refetches every row with matching primary key column values
 // and overwrites the original object slice with the newly updated slice.
-func (o *TransactionSlice) ReloadAllG() error {
-	if o == nil {
-		return errors.New("model: empty TransactionSlice provided for reload all")
+// Panics on error.
+func (o *TransactionSlice) ReloadAllGP() {
+	if err := o.ReloadAll(boil.GetDB()); err != nil {
+		panic(boil.WrapErr(err))
 	}
-
-	return o.ReloadAll(boil.GetDB())
 }
 
 // ReloadAll refetches every row with matching primary key column values
@@ -2293,7 +2465,7 @@ func (o *TransactionSlice) ReloadAll(exec boil.Executor) error {
 		return nil
 	}
 
-	transactions := TransactionSlice{}
+	slice := TransactionSlice{}
 	var args []interface{}
 	for _, obj := range *o {
 		pkeyArgs := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(obj)), transactionPrimaryKeyMapping)
@@ -2303,29 +2475,54 @@ func (o *TransactionSlice) ReloadAll(exec boil.Executor) error {
 	sql := "SELECT `transaction`.* FROM `transaction` WHERE " +
 		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, transactionPrimaryKeyColumns, len(*o))
 
-	q := queries.Raw(exec, sql, args...)
+	q := queries.Raw(sql, args...)
 
-	err := q.Bind(&transactions)
+	err := q.Bind(nil, exec, &slice)
 	if err != nil {
 		return errors.Wrap(err, "model: unable to reload all in TransactionSlice")
 	}
 
-	*o = transactions
+	*o = slice
 
 	return nil
 }
 
+// TransactionExistsG checks if the Transaction row exists.
+func TransactionExistsG(iD uint64) (bool, error) {
+	return TransactionExists(boil.GetDB(), iD)
+}
+
+// TransactionExistsP checks if the Transaction row exists. Panics on error.
+func TransactionExistsP(exec boil.Executor, iD uint64) bool {
+	e, err := TransactionExists(exec, iD)
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return e
+}
+
+// TransactionExistsGP checks if the Transaction row exists. Panics on error.
+func TransactionExistsGP(iD uint64) bool {
+	e, err := TransactionExists(boil.GetDB(), iD)
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return e
+}
+
 // TransactionExists checks if the Transaction row exists.
-func TransactionExists(exec boil.Executor, id uint64) (bool, error) {
+func TransactionExists(exec boil.Executor, iD uint64) (bool, error) {
 	var exists bool
 	sql := "select exists(select 1 from `transaction` where `id`=? limit 1)"
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, sql)
-		fmt.Fprintln(boil.DebugWriter, id)
+		fmt.Fprintln(boil.DebugWriter, iD)
 	}
 
-	row := exec.QueryRow(sql, id)
+	row := exec.QueryRow(sql, iD)
 
 	err := row.Scan(&exists)
 	if err != nil {
@@ -2333,29 +2530,4 @@ func TransactionExists(exec boil.Executor, id uint64) (bool, error) {
 	}
 
 	return exists, nil
-}
-
-// TransactionExistsG checks if the Transaction row exists.
-func TransactionExistsG(id uint64) (bool, error) {
-	return TransactionExists(boil.GetDB(), id)
-}
-
-// TransactionExistsGP checks if the Transaction row exists. Panics on error.
-func TransactionExistsGP(id uint64) bool {
-	e, err := TransactionExists(boil.GetDB(), id)
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return e
-}
-
-// TransactionExistsP checks if the Transaction row exists. Panics on error.
-func TransactionExistsP(exec boil.Executor, id uint64) bool {
-	e, err := TransactionExists(exec, id)
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return e
 }

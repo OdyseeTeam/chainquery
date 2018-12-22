@@ -17,7 +17,6 @@ import (
 	"github.com/lbryio/lbry.go/stop"
 
 	log "github.com/sirupsen/logrus"
-	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
@@ -92,7 +91,7 @@ func scheduleJob(job func(), name string, howOften time.Duration) {
 
 func runDaemon() {
 	initBlockWorkers(int(blockWorkers), blockQueue)
-	lastBlock, _ := model.Blocks(boil.GetDB(), qm.OrderBy(model.BlockColumns.Height+" DESC"), qm.Limit(1)).One()
+	lastBlock, _ := model.Blocks(qm.OrderBy(model.BlockColumns.Height+" DESC"), qm.Limit(1)).OneG()
 	if lastBlock != nil && !reindex {
 		//Always
 		lastHeightProcessed = lastBlock.Height

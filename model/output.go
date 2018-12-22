@@ -4,20 +4,20 @@
 package model
 
 import (
-	"bytes"
 	"database/sql"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"github.com/volatiletech/sqlboiler/strmangle"
-	"gopkg.in/volatiletech/null.v6"
 )
 
 // Output is an object representing the database table.
@@ -76,10 +76,24 @@ var OutputColumns = struct {
 	ClaimID:            "claim_id",
 }
 
+// OutputRels is where relationship names are stored.
+var OutputRels = struct {
+	Transaction    string
+	AbnormalClaims string
+}{
+	Transaction:    "Transaction",
+	AbnormalClaims: "AbnormalClaims",
+}
+
 // outputR is where relationships are stored.
 type outputR struct {
 	Transaction    *Transaction
 	AbnormalClaims AbnormalClaimSlice
+}
+
+// NewStruct creates a new relationship struct
+func (*outputR) NewStruct() *outputR {
+	return &outputR{}
 }
 
 // outputL is where Load methods for each relationship are stored.
@@ -118,13 +132,26 @@ var (
 var (
 	// Force time package dependency for automated UpdatedAt/CreatedAt.
 	_ = time.Second
-	// Force bytes in case of primary key column that uses []byte (for relationship compares)
-	_ = bytes.MinRead
 )
 
+// OneG returns a single output record from the query using the global executor.
+func (q outputQuery) OneG() (*Output, error) {
+	return q.One(boil.GetDB())
+}
+
+// OneGP returns a single output record from the query using the global executor, and panics on error.
+func (q outputQuery) OneGP() *Output {
+	o, err := q.One(boil.GetDB())
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return o
+}
+
 // OneP returns a single output record from the query, and panics on error.
-func (q outputQuery) OneP() *Output {
-	o, err := q.One()
+func (q outputQuery) OneP(exec boil.Executor) *Output {
+	o, err := q.One(exec)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -133,12 +160,12 @@ func (q outputQuery) OneP() *Output {
 }
 
 // One returns a single output record from the query.
-func (q outputQuery) One() (*Output, error) {
+func (q outputQuery) One(exec boil.Executor) (*Output, error) {
 	o := &Output{}
 
 	queries.SetLimit(q.Query, 1)
 
-	err := q.Bind(o)
+	err := q.Bind(nil, exec, o)
 	if err != nil {
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
@@ -149,9 +176,24 @@ func (q outputQuery) One() (*Output, error) {
 	return o, nil
 }
 
+// AllG returns all Output records from the query using the global executor.
+func (q outputQuery) AllG() (OutputSlice, error) {
+	return q.All(boil.GetDB())
+}
+
+// AllGP returns all Output records from the query using the global executor, and panics on error.
+func (q outputQuery) AllGP() OutputSlice {
+	o, err := q.All(boil.GetDB())
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return o
+}
+
 // AllP returns all Output records from the query, and panics on error.
-func (q outputQuery) AllP() OutputSlice {
-	o, err := q.All()
+func (q outputQuery) AllP(exec boil.Executor) OutputSlice {
+	o, err := q.All(exec)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -160,10 +202,10 @@ func (q outputQuery) AllP() OutputSlice {
 }
 
 // All returns all Output records from the query.
-func (q outputQuery) All() (OutputSlice, error) {
+func (q outputQuery) All(exec boil.Executor) (OutputSlice, error) {
 	var o []*Output
 
-	err := q.Bind(&o)
+	err := q.Bind(nil, exec, &o)
 	if err != nil {
 		return nil, errors.Wrap(err, "model: failed to assign all query results to Output slice")
 	}
@@ -171,9 +213,24 @@ func (q outputQuery) All() (OutputSlice, error) {
 	return o, nil
 }
 
+// CountG returns the count of all Output records in the query, and panics on error.
+func (q outputQuery) CountG() (int64, error) {
+	return q.Count(boil.GetDB())
+}
+
+// CountGP returns the count of all Output records in the query using the global executor, and panics on error.
+func (q outputQuery) CountGP() int64 {
+	c, err := q.Count(boil.GetDB())
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return c
+}
+
 // CountP returns the count of all Output records in the query, and panics on error.
-func (q outputQuery) CountP() int64 {
-	c, err := q.Count()
+func (q outputQuery) CountP(exec boil.Executor) int64 {
+	c, err := q.Count(exec)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -182,13 +239,13 @@ func (q outputQuery) CountP() int64 {
 }
 
 // Count returns the count of all Output records in the query.
-func (q outputQuery) Count() (int64, error) {
+func (q outputQuery) Count(exec boil.Executor) (int64, error) {
 	var count int64
 
 	queries.SetSelect(q.Query, nil)
 	queries.SetCount(q.Query)
 
-	err := q.Query.QueryRow().Scan(&count)
+	err := q.Query.QueryRow(exec).Scan(&count)
 	if err != nil {
 		return 0, errors.Wrap(err, "model: failed to count output rows")
 	}
@@ -196,9 +253,24 @@ func (q outputQuery) Count() (int64, error) {
 	return count, nil
 }
 
-// Exists checks if the row exists in the table, and panics on error.
-func (q outputQuery) ExistsP() bool {
-	e, err := q.Exists()
+// ExistsG checks if the row exists in the table, and panics on error.
+func (q outputQuery) ExistsG() (bool, error) {
+	return q.Exists(boil.GetDB())
+}
+
+// ExistsGP checks if the row exists in the table using the global executor, and panics on error.
+func (q outputQuery) ExistsGP() bool {
+	e, err := q.Exists(boil.GetDB())
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return e
+}
+
+// ExistsP checks if the row exists in the table, and panics on error.
+func (q outputQuery) ExistsP(exec boil.Executor) bool {
+	e, err := q.Exists(exec)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -207,13 +279,14 @@ func (q outputQuery) ExistsP() bool {
 }
 
 // Exists checks if the row exists in the table.
-func (q outputQuery) Exists() (bool, error) {
+func (q outputQuery) Exists(exec boil.Executor) (bool, error) {
 	var count int64
 
+	queries.SetSelect(q.Query, nil)
 	queries.SetCount(q.Query)
 	queries.SetLimit(q.Query, 1)
 
-	err := q.Query.QueryRow().Scan(&count)
+	err := q.Query.QueryRow(exec).Scan(&count)
 	if err != nil {
 		return false, errors.Wrap(err, "model: failed to check if output exists")
 	}
@@ -221,32 +294,22 @@ func (q outputQuery) Exists() (bool, error) {
 	return count > 0, nil
 }
 
-// TransactionG pointed to by the foreign key.
-func (o *Output) TransactionG(mods ...qm.QueryMod) transactionQuery {
-	return o.Transaction(boil.GetDB(), mods...)
-}
-
 // Transaction pointed to by the foreign key.
-func (o *Output) Transaction(exec boil.Executor, mods ...qm.QueryMod) transactionQuery {
+func (o *Output) Transaction(mods ...qm.QueryMod) transactionQuery {
 	queryMods := []qm.QueryMod{
 		qm.Where("id=?", o.TransactionID),
 	}
 
 	queryMods = append(queryMods, mods...)
 
-	query := Transactions(exec, queryMods...)
+	query := Transactions(queryMods...)
 	queries.SetFrom(query.Query, "`transaction`")
 
 	return query
 }
 
-// AbnormalClaimsG retrieves all the abnormal_claim's abnormal claim.
-func (o *Output) AbnormalClaimsG(mods ...qm.QueryMod) abnormalClaimQuery {
-	return o.AbnormalClaims(boil.GetDB(), mods...)
-}
-
-// AbnormalClaims retrieves all the abnormal_claim's abnormal claim with an executor.
-func (o *Output) AbnormalClaims(exec boil.Executor, mods ...qm.QueryMod) abnormalClaimQuery {
+// AbnormalClaims retrieves all the abnormal_claim's AbnormalClaims with an executor.
+func (o *Output) AbnormalClaims(mods ...qm.QueryMod) abnormalClaimQuery {
 	var queryMods []qm.QueryMod
 	if len(mods) != 0 {
 		queryMods = append(queryMods, mods...)
@@ -256,7 +319,7 @@ func (o *Output) AbnormalClaims(exec boil.Executor, mods ...qm.QueryMod) abnorma
 		qm.Where("`abnormal_claim`.`output_id`=?", o.ID),
 	)
 
-	query := AbnormalClaims(exec, queryMods...)
+	query := AbnormalClaims(queryMods...)
 	queries.SetFrom(query.Query, "`abnormal_claim`")
 
 	if len(queries.GetSelect(query.Query)) == 0 {
@@ -267,52 +330,62 @@ func (o *Output) AbnormalClaims(exec boil.Executor, mods ...qm.QueryMod) abnorma
 }
 
 // LoadTransaction allows an eager lookup of values, cached into the
-// loaded structs of the objects.
-func (outputL) LoadTransaction(e boil.Executor, singular bool, maybeOutput interface{}) error {
+// loaded structs of the objects. This is for an N-1 relationship.
+func (outputL) LoadTransaction(e boil.Executor, singular bool, maybeOutput interface{}, mods queries.Applicator) error {
 	var slice []*Output
 	var object *Output
 
-	count := 1
 	if singular {
 		object = maybeOutput.(*Output)
 	} else {
 		slice = *maybeOutput.(*[]*Output)
-		count = len(slice)
 	}
 
-	args := make([]interface{}, count)
+	args := make([]interface{}, 0, 1)
 	if singular {
 		if object.R == nil {
 			object.R = &outputR{}
 		}
-		args[0] = object.TransactionID
+		args = append(args, object.TransactionID)
+
 	} else {
-		for i, obj := range slice {
+	Outer:
+		for _, obj := range slice {
 			if obj.R == nil {
 				obj.R = &outputR{}
 			}
-			args[i] = obj.TransactionID
+
+			for _, a := range args {
+				if a == obj.TransactionID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.TransactionID)
+
 		}
 	}
 
-	query := fmt.Sprintf(
-		"select * from `transaction` where `id` in (%s)",
-		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
-	)
-
-	if boil.DebugMode {
-		fmt.Fprintf(boil.DebugWriter, "%s\n%v\n", query, args)
+	query := NewQuery(qm.From(`transaction`), qm.WhereIn(`id in ?`, args...))
+	if mods != nil {
+		mods.Apply(query)
 	}
 
-	results, err := e.Query(query, args...)
+	results, err := query.Query(e)
 	if err != nil {
 		return errors.Wrap(err, "failed to eager load Transaction")
 	}
-	defer results.Close()
 
 	var resultSlice []*Transaction
 	if err = queries.Bind(results, &resultSlice); err != nil {
 		return errors.Wrap(err, "failed to bind eager loaded slice Transaction")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results of eager load for transaction")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for transaction")
 	}
 
 	if len(resultSlice) == 0 {
@@ -320,7 +393,12 @@ func (outputL) LoadTransaction(e boil.Executor, singular bool, maybeOutput inter
 	}
 
 	if singular {
-		object.R.Transaction = resultSlice[0]
+		foreign := resultSlice[0]
+		object.R.Transaction = foreign
+		if foreign.R == nil {
+			foreign.R = &transactionR{}
+		}
+		foreign.R.Outputs = append(foreign.R.Outputs, object)
 		return nil
 	}
 
@@ -328,6 +406,10 @@ func (outputL) LoadTransaction(e boil.Executor, singular bool, maybeOutput inter
 		for _, foreign := range resultSlice {
 			if local.TransactionID == foreign.ID {
 				local.R.Transaction = foreign
+				if foreign.R == nil {
+					foreign.R = &transactionR{}
+				}
+				foreign.R.Outputs = append(foreign.R.Outputs, local)
 				break
 			}
 		}
@@ -337,55 +419,70 @@ func (outputL) LoadTransaction(e boil.Executor, singular bool, maybeOutput inter
 }
 
 // LoadAbnormalClaims allows an eager lookup of values, cached into the
-// loaded structs of the objects.
-func (outputL) LoadAbnormalClaims(e boil.Executor, singular bool, maybeOutput interface{}) error {
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (outputL) LoadAbnormalClaims(e boil.Executor, singular bool, maybeOutput interface{}, mods queries.Applicator) error {
 	var slice []*Output
 	var object *Output
 
-	count := 1
 	if singular {
 		object = maybeOutput.(*Output)
 	} else {
 		slice = *maybeOutput.(*[]*Output)
-		count = len(slice)
 	}
 
-	args := make([]interface{}, count)
+	args := make([]interface{}, 0, 1)
 	if singular {
 		if object.R == nil {
 			object.R = &outputR{}
 		}
-		args[0] = object.ID
+		args = append(args, object.ID)
 	} else {
-		for i, obj := range slice {
+	Outer:
+		for _, obj := range slice {
 			if obj.R == nil {
 				obj.R = &outputR{}
 			}
-			args[i] = obj.ID
+
+			for _, a := range args {
+				if a == obj.ID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
 		}
 	}
 
-	query := fmt.Sprintf(
-		"select * from `abnormal_claim` where `output_id` in (%s)",
-		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
-	)
-	if boil.DebugMode {
-		fmt.Fprintf(boil.DebugWriter, "%s\n%v\n", query, args)
+	query := NewQuery(qm.From(`abnormal_claim`), qm.WhereIn(`output_id in ?`, args...))
+	if mods != nil {
+		mods.Apply(query)
 	}
 
-	results, err := e.Query(query, args...)
+	results, err := query.Query(e)
 	if err != nil {
 		return errors.Wrap(err, "failed to eager load abnormal_claim")
 	}
-	defer results.Close()
 
 	var resultSlice []*AbnormalClaim
 	if err = queries.Bind(results, &resultSlice); err != nil {
 		return errors.Wrap(err, "failed to bind eager loaded slice abnormal_claim")
 	}
 
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on abnormal_claim")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for abnormal_claim")
+	}
+
 	if singular {
 		object.R.AbnormalClaims = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &abnormalClaimR{}
+			}
+			foreign.R.Output = object
+		}
 		return nil
 	}
 
@@ -393,6 +490,10 @@ func (outputL) LoadAbnormalClaims(e boil.Executor, singular bool, maybeOutput in
 		for _, local := range slice {
 			if local.ID == foreign.OutputID {
 				local.R.AbnormalClaims = append(local.R.AbnormalClaims, foreign)
+				if foreign.R == nil {
+					foreign.R = &abnormalClaimR{}
+				}
+				foreign.R.Output = local
 				break
 			}
 		}
@@ -435,7 +536,7 @@ func (o *Output) SetTransactionGP(insert bool, related *Transaction) {
 func (o *Output) SetTransaction(exec boil.Executor, insert bool, related *Transaction) error {
 	var err error
 	if insert {
-		if err = related.Insert(exec); err != nil {
+		if err = related.Insert(exec, boil.Infer()); err != nil {
 			return errors.Wrap(err, "failed to insert into foreign table")
 		}
 	}
@@ -457,7 +558,6 @@ func (o *Output) SetTransaction(exec boil.Executor, insert bool, related *Transa
 	}
 
 	o.TransactionID = related.ID
-
 	if o.R == nil {
 		o.R = &outputR{
 			Transaction: related,
@@ -517,7 +617,7 @@ func (o *Output) AddAbnormalClaims(exec boil.Executor, insert bool, related ...*
 	for _, rel := range related {
 		if insert {
 			rel.OutputID = o.ID
-			if err = rel.Insert(exec); err != nil {
+			if err = rel.Insert(exec, boil.Infer()); err != nil {
 				return errors.Wrap(err, "failed to insert into foreign table")
 			}
 		} else {
@@ -561,25 +661,30 @@ func (o *Output) AddAbnormalClaims(exec boil.Executor, insert bool, related ...*
 	return nil
 }
 
-// OutputsG retrieves all records.
-func OutputsG(mods ...qm.QueryMod) outputQuery {
-	return Outputs(boil.GetDB(), mods...)
-}
-
 // Outputs retrieves all the records using an executor.
-func Outputs(exec boil.Executor, mods ...qm.QueryMod) outputQuery {
+func Outputs(mods ...qm.QueryMod) outputQuery {
 	mods = append(mods, qm.From("`output`"))
-	return outputQuery{NewQuery(exec, mods...)}
+	return outputQuery{NewQuery(mods...)}
 }
 
 // FindOutputG retrieves a single record by ID.
-func FindOutputG(id uint64, selectCols ...string) (*Output, error) {
-	return FindOutput(boil.GetDB(), id, selectCols...)
+func FindOutputG(iD uint64, selectCols ...string) (*Output, error) {
+	return FindOutput(boil.GetDB(), iD, selectCols...)
+}
+
+// FindOutputP retrieves a single record by ID with an executor, and panics on error.
+func FindOutputP(exec boil.Executor, iD uint64, selectCols ...string) *Output {
+	retobj, err := FindOutput(exec, iD, selectCols...)
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return retobj
 }
 
 // FindOutputGP retrieves a single record by ID, and panics on error.
-func FindOutputGP(id uint64, selectCols ...string) *Output {
-	retobj, err := FindOutput(boil.GetDB(), id, selectCols...)
+func FindOutputGP(iD uint64, selectCols ...string) *Output {
+	retobj, err := FindOutput(boil.GetDB(), iD, selectCols...)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -589,7 +694,7 @@ func FindOutputGP(id uint64, selectCols ...string) *Output {
 
 // FindOutput retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindOutput(exec boil.Executor, id uint64, selectCols ...string) (*Output, error) {
+func FindOutput(exec boil.Executor, iD uint64, selectCols ...string) (*Output, error) {
 	outputObj := &Output{}
 
 	sel := "*"
@@ -600,9 +705,9 @@ func FindOutput(exec boil.Executor, id uint64, selectCols ...string) (*Output, e
 		"select %s from `output` where `id`=?", sel,
 	)
 
-	q := queries.Raw(exec, query, id)
+	q := queries.Raw(query, iD)
 
-	err := q.Bind(outputObj)
+	err := q.Bind(nil, exec, outputObj)
 	if err != nil {
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
@@ -613,43 +718,30 @@ func FindOutput(exec boil.Executor, id uint64, selectCols ...string) (*Output, e
 	return outputObj, nil
 }
 
-// FindOutputP retrieves a single record by ID with an executor, and panics on error.
-func FindOutputP(exec boil.Executor, id uint64, selectCols ...string) *Output {
-	retobj, err := FindOutput(exec, id, selectCols...)
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return retobj
-}
-
 // InsertG a single record. See Insert for whitelist behavior description.
-func (o *Output) InsertG(whitelist ...string) error {
-	return o.Insert(boil.GetDB(), whitelist...)
-}
-
-// InsertGP a single record, and panics on error. See Insert for whitelist
-// behavior description.
-func (o *Output) InsertGP(whitelist ...string) {
-	if err := o.Insert(boil.GetDB(), whitelist...); err != nil {
-		panic(boil.WrapErr(err))
-	}
+func (o *Output) InsertG(columns boil.Columns) error {
+	return o.Insert(boil.GetDB(), columns)
 }
 
 // InsertP a single record using an executor, and panics on error. See Insert
 // for whitelist behavior description.
-func (o *Output) InsertP(exec boil.Executor, whitelist ...string) {
-	if err := o.Insert(exec, whitelist...); err != nil {
+func (o *Output) InsertP(exec boil.Executor, columns boil.Columns) {
+	if err := o.Insert(exec, columns); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// InsertGP a single record, and panics on error. See Insert for whitelist
+// behavior description.
+func (o *Output) InsertGP(columns boil.Columns) {
+	if err := o.Insert(boil.GetDB(), columns); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // Insert a single record using an executor.
-// Whitelist behavior: If a whitelist is provided, only those columns supplied are inserted
-// No whitelist behavior: Without a whitelist, columns are inferred by the following rules:
-// - All columns without a default value are included (i.e. name, age)
-// - All columns with a default, but non-zero are included (i.e. health = 75)
-func (o *Output) Insert(exec boil.Executor, whitelist ...string) error {
+// See boil.Columns.InsertColumnSet documentation to understand column list inference for inserts.
+func (o *Output) Insert(exec boil.Executor, columns boil.Columns) error {
 	if o == nil {
 		return errors.New("model: no output provided for insertion")
 	}
@@ -658,18 +750,17 @@ func (o *Output) Insert(exec boil.Executor, whitelist ...string) error {
 
 	nzDefaults := queries.NonZeroDefaultSet(outputColumnsWithDefault, o)
 
-	key := makeCacheKey(whitelist, nzDefaults)
+	key := makeCacheKey(columns, nzDefaults)
 	outputInsertCacheMut.RLock()
 	cache, cached := outputInsertCache[key]
 	outputInsertCacheMut.RUnlock()
 
 	if !cached {
-		wl, returnColumns := strmangle.InsertColumnSet(
+		wl, returnColumns := columns.InsertColumnSet(
 			outputColumns,
 			outputColumnsWithDefault,
 			outputColumnsWithoutDefault,
 			nzDefaults,
-			whitelist,
 		)
 
 		cache.valueMapping, err = queries.BindMapping(outputType, outputMapping, wl)
@@ -681,9 +772,9 @@ func (o *Output) Insert(exec boil.Executor, whitelist ...string) error {
 			return err
 		}
 		if len(wl) != 0 {
-			cache.query = fmt.Sprintf("INSERT INTO `output` (`%s`) %%sVALUES (%s)%%s", strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.IndexPlaceholders, len(wl), 1, 1))
+			cache.query = fmt.Sprintf("INSERT INTO `output` (`%s`) %%sVALUES (%s)%%s", strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
 		} else {
-			cache.query = "INSERT INTO `output` () VALUES ()"
+			cache.query = "INSERT INTO `output` () VALUES ()%s%s"
 		}
 
 		var queryOutput, queryReturning string
@@ -692,9 +783,7 @@ func (o *Output) Insert(exec boil.Executor, whitelist ...string) error {
 			cache.retQuery = fmt.Sprintf("SELECT `%s` FROM `output` WHERE %s", strings.Join(returnColumns, "`,`"), strmangle.WhereClause("`", "`", 0, outputPrimaryKeyColumns))
 		}
 
-		if len(wl) != 0 {
-			cache.query = fmt.Sprintf(cache.query, queryOutput, queryReturning)
-		}
+		cache.query = fmt.Sprintf(cache.query, queryOutput, queryReturning)
 	}
 
 	value := reflect.Indirect(reflect.ValueOf(o))
@@ -752,49 +841,44 @@ CacheNoHooks:
 	return nil
 }
 
-// UpdateG a single Output record. See Update for
-// whitelist behavior description.
-func (o *Output) UpdateG(whitelist ...string) error {
-	return o.Update(boil.GetDB(), whitelist...)
+// UpdateG a single Output record using the global executor.
+// See Update for more documentation.
+func (o *Output) UpdateG(columns boil.Columns) error {
+	return o.Update(boil.GetDB(), columns)
 }
 
-// UpdateGP a single Output record.
-// UpdateGP takes a whitelist of column names that should be updated.
-// Panics on error. See Update for whitelist behavior description.
-func (o *Output) UpdateGP(whitelist ...string) {
-	if err := o.Update(boil.GetDB(), whitelist...); err != nil {
+// UpdateP uses an executor to update the Output, and panics on error.
+// See Update for more documentation.
+func (o *Output) UpdateP(exec boil.Executor, columns boil.Columns) {
+	err := o.Update(exec, columns)
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
-// UpdateP uses an executor to update the Output, and panics on error.
-// See Update for whitelist behavior description.
-func (o *Output) UpdateP(exec boil.Executor, whitelist ...string) {
-	err := o.Update(exec, whitelist...)
+// UpdateGP a single Output record using the global executor. Panics on error.
+// See Update for more documentation.
+func (o *Output) UpdateGP(columns boil.Columns) {
+	err := o.Update(boil.GetDB(), columns)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // Update uses an executor to update the Output.
-// Whitelist behavior: If a whitelist is provided, only the columns given are updated.
-// No whitelist behavior: Without a whitelist, columns are inferred by the following rules:
-// - All columns are inferred to start with
-// - All primary keys are subtracted from this set
-// Update does not automatically update the record in case of default values. Use .Reload()
-// to refresh the records.
-func (o *Output) Update(exec boil.Executor, whitelist ...string) error {
+// See boil.Columns.UpdateColumnSet documentation to understand column list inference for updates.
+// Update does not automatically update the record in case of default values. Use .Reload() to refresh the records.
+func (o *Output) Update(exec boil.Executor, columns boil.Columns) error {
 	var err error
-	key := makeCacheKey(whitelist, nil)
+	key := makeCacheKey(columns, nil)
 	outputUpdateCacheMut.RLock()
 	cache, cached := outputUpdateCache[key]
 	outputUpdateCacheMut.RUnlock()
 
 	if !cached {
-		wl := strmangle.UpdateColumnSet(
+		wl := columns.UpdateColumnSet(
 			outputColumns,
 			outputPrimaryKeyColumns,
-			whitelist,
 		)
 
 		if len(wl) == 0 {
@@ -833,17 +917,23 @@ func (o *Output) Update(exec boil.Executor, whitelist ...string) error {
 }
 
 // UpdateAllP updates all rows with matching column names, and panics on error.
-func (q outputQuery) UpdateAllP(cols M) {
-	if err := q.UpdateAll(cols); err != nil {
+func (q outputQuery) UpdateAllP(exec boil.Executor, cols M) {
+	err := q.UpdateAll(exec, cols)
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
+// UpdateAllG updates all rows with the specified column values.
+func (q outputQuery) UpdateAllG(cols M) error {
+	return q.UpdateAll(boil.GetDB(), cols)
+}
+
 // UpdateAll updates all rows with the specified column values.
-func (q outputQuery) UpdateAll(cols M) error {
+func (q outputQuery) UpdateAll(exec boil.Executor, cols M) error {
 	queries.SetUpdate(q.Query, cols)
 
-	_, err := q.Query.Exec()
+	_, err := q.Query.Exec(exec)
 	if err != nil {
 		return errors.Wrap(err, "model: unable to update all for output")
 	}
@@ -858,14 +948,16 @@ func (o OutputSlice) UpdateAllG(cols M) error {
 
 // UpdateAllGP updates all rows with the specified column values, and panics on error.
 func (o OutputSlice) UpdateAllGP(cols M) {
-	if err := o.UpdateAll(boil.GetDB(), cols); err != nil {
+	err := o.UpdateAll(boil.GetDB(), cols)
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // UpdateAllP updates all rows with the specified column values, and panics on error.
 func (o OutputSlice) UpdateAllP(exec boil.Executor, cols M) {
-	if err := o.UpdateAll(exec, cols); err != nil {
+	err := o.UpdateAll(exec, cols)
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
@@ -915,44 +1007,60 @@ func (o OutputSlice) UpdateAll(exec boil.Executor, cols M) error {
 }
 
 // UpsertG attempts an insert, and does an update or ignore on conflict.
-func (o *Output) UpsertG(updateColumns []string, whitelist ...string) error {
-	return o.Upsert(boil.GetDB(), updateColumns, whitelist...)
+func (o *Output) UpsertG(updateColumns, insertColumns boil.Columns) error {
+	return o.Upsert(boil.GetDB(), updateColumns, insertColumns)
 }
 
 // UpsertGP attempts an insert, and does an update or ignore on conflict. Panics on error.
-func (o *Output) UpsertGP(updateColumns []string, whitelist ...string) {
-	if err := o.Upsert(boil.GetDB(), updateColumns, whitelist...); err != nil {
+func (o *Output) UpsertGP(updateColumns, insertColumns boil.Columns) {
+	if err := o.Upsert(boil.GetDB(), updateColumns, insertColumns); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // UpsertP attempts an insert using an executor, and does an update or ignore on conflict.
 // UpsertP panics on error.
-func (o *Output) UpsertP(exec boil.Executor, updateColumns []string, whitelist ...string) {
-	if err := o.Upsert(exec, updateColumns, whitelist...); err != nil {
+func (o *Output) UpsertP(exec boil.Executor, updateColumns, insertColumns boil.Columns) {
+	if err := o.Upsert(exec, updateColumns, insertColumns); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
+var mySQLOutputUniqueColumns = []string{
+	"id",
+}
+
 // Upsert attempts an insert using an executor, and does an update or ignore on conflict.
-func (o *Output) Upsert(exec boil.Executor, updateColumns []string, whitelist ...string) error {
+// See boil.Columns documentation for how to properly use updateColumns and insertColumns.
+func (o *Output) Upsert(exec boil.Executor, updateColumns, insertColumns boil.Columns) error {
 	if o == nil {
 		return errors.New("model: no output provided for upsert")
 	}
 
 	nzDefaults := queries.NonZeroDefaultSet(outputColumnsWithDefault, o)
+	nzUniques := queries.NonZeroDefaultSet(mySQLOutputUniqueColumns, o)
 
-	// Build cache key in-line uglily - mysql vs postgres problems
+	if len(nzUniques) == 0 {
+		return errors.New("cannot upsert with a table that cannot conflict on a unique column")
+	}
+
+	// Build cache key in-line uglily - mysql vs psql problems
 	buf := strmangle.GetBuffer()
-	for _, c := range updateColumns {
+	buf.WriteString(strconv.Itoa(updateColumns.Kind))
+	for _, c := range updateColumns.Cols {
 		buf.WriteString(c)
 	}
 	buf.WriteByte('.')
-	for _, c := range whitelist {
+	buf.WriteString(strconv.Itoa(insertColumns.Kind))
+	for _, c := range insertColumns.Cols {
 		buf.WriteString(c)
 	}
 	buf.WriteByte('.')
 	for _, c := range nzDefaults {
+		buf.WriteString(c)
+	}
+	buf.WriteByte('.')
+	for _, c := range nzUniques {
 		buf.WriteString(c)
 	}
 	key := buf.String()
@@ -965,27 +1073,27 @@ func (o *Output) Upsert(exec boil.Executor, updateColumns []string, whitelist ..
 	var err error
 
 	if !cached {
-		insert, ret := strmangle.InsertColumnSet(
+		insert, ret := insertColumns.InsertColumnSet(
 			outputColumns,
 			outputColumnsWithDefault,
 			outputColumnsWithoutDefault,
 			nzDefaults,
-			whitelist,
 		)
-
-		update := strmangle.UpdateColumnSet(
+		update := updateColumns.UpdateColumnSet(
 			outputColumns,
 			outputPrimaryKeyColumns,
-			updateColumns,
 		)
+
 		if len(update) == 0 {
 			return errors.New("model: unable to upsert output, could not build update column list")
 		}
 
-		cache.query = queries.BuildUpsertQueryMySQL(dialect, "output", update, insert)
+		ret = strmangle.SetComplement(ret, nzUniques)
+		cache.query = buildUpsertQueryMySQL(dialect, "output", update, insert)
 		cache.retQuery = fmt.Sprintf(
-			"SELECT %s FROM `output` WHERE `id`=?",
+			"SELECT %s FROM `output` WHERE %s",
 			strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, ret), ","),
+			strmangle.WhereClause("`", "`", 0, nzUniques),
 		)
 
 		cache.valueMapping, err = queries.BindMapping(outputType, outputMapping, insert)
@@ -1019,7 +1127,8 @@ func (o *Output) Upsert(exec boil.Executor, updateColumns []string, whitelist ..
 	}
 
 	var lastID int64
-	var identifierCols []interface{}
+	var uniqueMap []uint64
+	var nzUniqueCols []interface{}
 
 	if len(cache.retMapping) == 0 {
 		goto CacheNoHooks
@@ -1031,20 +1140,22 @@ func (o *Output) Upsert(exec boil.Executor, updateColumns []string, whitelist ..
 	}
 
 	o.ID = uint64(lastID)
-	if lastID != 0 && len(cache.retMapping) == 1 && cache.retMapping[0] == outputMapping["ID"] {
+	if lastID != 0 && len(cache.retMapping) == 1 && cache.retMapping[0] == outputMapping["id"] {
 		goto CacheNoHooks
 	}
 
-	identifierCols = []interface{}{
-		o.ID,
+	uniqueMap, err = queries.BindMapping(outputType, outputMapping, nzUniques)
+	if err != nil {
+		return errors.Wrap(err, "model: unable to retrieve unique values for output")
 	}
+	nzUniqueCols = queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), uniqueMap)
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, cache.retQuery)
-		fmt.Fprintln(boil.DebugWriter, identifierCols...)
+		fmt.Fprintln(boil.DebugWriter, nzUniqueCols...)
 	}
 
-	err = exec.QueryRow(cache.retQuery, identifierCols...).Scan(returns...)
+	err = exec.QueryRow(cache.retQuery, nzUniqueCols...).Scan(returns...)
 	if err != nil {
 		return errors.Wrap(err, "model: unable to populate default values for output")
 	}
@@ -1059,30 +1170,28 @@ CacheNoHooks:
 	return nil
 }
 
+// DeleteG deletes a single Output record.
+// DeleteG will match against the primary key column to find the record to delete.
+func (o *Output) DeleteG() error {
+	return o.Delete(boil.GetDB())
+}
+
 // DeleteP deletes a single Output record with an executor.
 // DeleteP will match against the primary key column to find the record to delete.
 // Panics on error.
 func (o *Output) DeleteP(exec boil.Executor) {
-	if err := o.Delete(exec); err != nil {
+	err := o.Delete(exec)
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
-}
-
-// DeleteG deletes a single Output record.
-// DeleteG will match against the primary key column to find the record to delete.
-func (o *Output) DeleteG() error {
-	if o == nil {
-		return errors.New("model: no Output provided for deletion")
-	}
-
-	return o.Delete(boil.GetDB())
 }
 
 // DeleteGP deletes a single Output record.
 // DeleteGP will match against the primary key column to find the record to delete.
 // Panics on error.
 func (o *Output) DeleteGP() {
-	if err := o.DeleteG(); err != nil {
+	err := o.Delete(boil.GetDB())
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
@@ -1111,21 +1220,22 @@ func (o *Output) Delete(exec boil.Executor) error {
 }
 
 // DeleteAllP deletes all rows, and panics on error.
-func (q outputQuery) DeleteAllP() {
-	if err := q.DeleteAll(); err != nil {
+func (q outputQuery) DeleteAllP(exec boil.Executor) {
+	err := q.DeleteAll(exec)
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // DeleteAll deletes all matching rows.
-func (q outputQuery) DeleteAll() error {
+func (q outputQuery) DeleteAll(exec boil.Executor) error {
 	if q.Query == nil {
 		return errors.New("model: no outputQuery provided for delete all")
 	}
 
 	queries.SetDelete(q.Query)
 
-	_, err := q.Query.Exec()
+	_, err := q.Query.Exec(exec)
 	if err != nil {
 		return errors.Wrap(err, "model: unable to delete all from output")
 	}
@@ -1133,24 +1243,23 @@ func (q outputQuery) DeleteAll() error {
 	return nil
 }
 
-// DeleteAllGP deletes all rows in the slice, and panics on error.
-func (o OutputSlice) DeleteAllGP() {
-	if err := o.DeleteAllG(); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
 // DeleteAllG deletes all rows in the slice.
 func (o OutputSlice) DeleteAllG() error {
-	if o == nil {
-		return errors.New("model: no Output slice provided for delete all")
-	}
 	return o.DeleteAll(boil.GetDB())
 }
 
 // DeleteAllP deletes all rows in the slice, using an executor, and panics on error.
 func (o OutputSlice) DeleteAllP(exec boil.Executor) {
-	if err := o.DeleteAll(exec); err != nil {
+	err := o.DeleteAll(exec)
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// DeleteAllGP deletes all rows in the slice, and panics on error.
+func (o OutputSlice) DeleteAllGP() {
+	err := o.DeleteAll(boil.GetDB())
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
@@ -1187,11 +1296,13 @@ func (o OutputSlice) DeleteAll(exec boil.Executor) error {
 	return nil
 }
 
-// ReloadGP refetches the object from the database and panics on error.
-func (o *Output) ReloadGP() {
-	if err := o.ReloadG(); err != nil {
-		panic(boil.WrapErr(err))
+// ReloadG refetches the object from the database using the primary keys.
+func (o *Output) ReloadG() error {
+	if o == nil {
+		return errors.New("model: no Output provided for reload")
 	}
+
+	return o.Reload(boil.GetDB())
 }
 
 // ReloadP refetches the object from the database with an executor. Panics on error.
@@ -1201,13 +1312,11 @@ func (o *Output) ReloadP(exec boil.Executor) {
 	}
 }
 
-// ReloadG refetches the object from the database using the primary keys.
-func (o *Output) ReloadG() error {
-	if o == nil {
-		return errors.New("model: no Output provided for reload")
+// ReloadGP refetches the object from the database and panics on error.
+func (o *Output) ReloadGP() {
+	if err := o.Reload(boil.GetDB()); err != nil {
+		panic(boil.WrapErr(err))
 	}
-
-	return o.Reload(boil.GetDB())
 }
 
 // Reload refetches the object from the database
@@ -1222,13 +1331,14 @@ func (o *Output) Reload(exec boil.Executor) error {
 	return nil
 }
 
-// ReloadAllGP refetches every row with matching primary key column values
+// ReloadAllG refetches every row with matching primary key column values
 // and overwrites the original object slice with the newly updated slice.
-// Panics on error.
-func (o *OutputSlice) ReloadAllGP() {
-	if err := o.ReloadAllG(); err != nil {
-		panic(boil.WrapErr(err))
+func (o *OutputSlice) ReloadAllG() error {
+	if o == nil {
+		return errors.New("model: empty OutputSlice provided for reload all")
 	}
+
+	return o.ReloadAll(boil.GetDB())
 }
 
 // ReloadAllP refetches every row with matching primary key column values
@@ -1240,14 +1350,13 @@ func (o *OutputSlice) ReloadAllP(exec boil.Executor) {
 	}
 }
 
-// ReloadAllG refetches every row with matching primary key column values
+// ReloadAllGP refetches every row with matching primary key column values
 // and overwrites the original object slice with the newly updated slice.
-func (o *OutputSlice) ReloadAllG() error {
-	if o == nil {
-		return errors.New("model: empty OutputSlice provided for reload all")
+// Panics on error.
+func (o *OutputSlice) ReloadAllGP() {
+	if err := o.ReloadAll(boil.GetDB()); err != nil {
+		panic(boil.WrapErr(err))
 	}
-
-	return o.ReloadAll(boil.GetDB())
 }
 
 // ReloadAll refetches every row with matching primary key column values
@@ -1257,7 +1366,7 @@ func (o *OutputSlice) ReloadAll(exec boil.Executor) error {
 		return nil
 	}
 
-	outputs := OutputSlice{}
+	slice := OutputSlice{}
 	var args []interface{}
 	for _, obj := range *o {
 		pkeyArgs := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(obj)), outputPrimaryKeyMapping)
@@ -1267,29 +1376,54 @@ func (o *OutputSlice) ReloadAll(exec boil.Executor) error {
 	sql := "SELECT `output`.* FROM `output` WHERE " +
 		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, outputPrimaryKeyColumns, len(*o))
 
-	q := queries.Raw(exec, sql, args...)
+	q := queries.Raw(sql, args...)
 
-	err := q.Bind(&outputs)
+	err := q.Bind(nil, exec, &slice)
 	if err != nil {
 		return errors.Wrap(err, "model: unable to reload all in OutputSlice")
 	}
 
-	*o = outputs
+	*o = slice
 
 	return nil
 }
 
+// OutputExistsG checks if the Output row exists.
+func OutputExistsG(iD uint64) (bool, error) {
+	return OutputExists(boil.GetDB(), iD)
+}
+
+// OutputExistsP checks if the Output row exists. Panics on error.
+func OutputExistsP(exec boil.Executor, iD uint64) bool {
+	e, err := OutputExists(exec, iD)
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return e
+}
+
+// OutputExistsGP checks if the Output row exists. Panics on error.
+func OutputExistsGP(iD uint64) bool {
+	e, err := OutputExists(boil.GetDB(), iD)
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return e
+}
+
 // OutputExists checks if the Output row exists.
-func OutputExists(exec boil.Executor, id uint64) (bool, error) {
+func OutputExists(exec boil.Executor, iD uint64) (bool, error) {
 	var exists bool
 	sql := "select exists(select 1 from `output` where `id`=? limit 1)"
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, sql)
-		fmt.Fprintln(boil.DebugWriter, id)
+		fmt.Fprintln(boil.DebugWriter, iD)
 	}
 
-	row := exec.QueryRow(sql, id)
+	row := exec.QueryRow(sql, iD)
 
 	err := row.Scan(&exists)
 	if err != nil {
@@ -1297,29 +1431,4 @@ func OutputExists(exec boil.Executor, id uint64) (bool, error) {
 	}
 
 	return exists, nil
-}
-
-// OutputExistsG checks if the Output row exists.
-func OutputExistsG(id uint64) (bool, error) {
-	return OutputExists(boil.GetDB(), id)
-}
-
-// OutputExistsGP checks if the Output row exists. Panics on error.
-func OutputExistsGP(id uint64) bool {
-	e, err := OutputExists(boil.GetDB(), id)
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return e
-}
-
-// OutputExistsP checks if the Output row exists. Panics on error.
-func OutputExistsP(exec boil.Executor, id uint64) bool {
-	e, err := OutputExists(exec, id)
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return e
 }

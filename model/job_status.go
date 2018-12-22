@@ -4,20 +4,20 @@
 package model
 
 import (
-	"bytes"
 	"database/sql"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"github.com/volatiletech/sqlboiler/strmangle"
-	"gopkg.in/volatiletech/null.v6"
 )
 
 // JobStatus is an object representing the database table.
@@ -43,8 +43,17 @@ var JobStatusColumns = struct {
 	ErrorMessage: "error_message",
 }
 
+// JobStatusRels is where relationship names are stored.
+var JobStatusRels = struct {
+}{}
+
 // jobStatusR is where relationships are stored.
 type jobStatusR struct {
+}
+
+// NewStruct creates a new relationship struct
+func (*jobStatusR) NewStruct() *jobStatusR {
+	return &jobStatusR{}
 }
 
 // jobStatusL is where Load methods for each relationship are stored.
@@ -83,13 +92,26 @@ var (
 var (
 	// Force time package dependency for automated UpdatedAt/CreatedAt.
 	_ = time.Second
-	// Force bytes in case of primary key column that uses []byte (for relationship compares)
-	_ = bytes.MinRead
 )
 
+// OneG returns a single jobStatus record from the query using the global executor.
+func (q jobStatusQuery) OneG() (*JobStatus, error) {
+	return q.One(boil.GetDB())
+}
+
+// OneGP returns a single jobStatus record from the query using the global executor, and panics on error.
+func (q jobStatusQuery) OneGP() *JobStatus {
+	o, err := q.One(boil.GetDB())
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return o
+}
+
 // OneP returns a single jobStatus record from the query, and panics on error.
-func (q jobStatusQuery) OneP() *JobStatus {
-	o, err := q.One()
+func (q jobStatusQuery) OneP(exec boil.Executor) *JobStatus {
+	o, err := q.One(exec)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -98,12 +120,12 @@ func (q jobStatusQuery) OneP() *JobStatus {
 }
 
 // One returns a single jobStatus record from the query.
-func (q jobStatusQuery) One() (*JobStatus, error) {
+func (q jobStatusQuery) One(exec boil.Executor) (*JobStatus, error) {
 	o := &JobStatus{}
 
 	queries.SetLimit(q.Query, 1)
 
-	err := q.Bind(o)
+	err := q.Bind(nil, exec, o)
 	if err != nil {
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
@@ -114,9 +136,24 @@ func (q jobStatusQuery) One() (*JobStatus, error) {
 	return o, nil
 }
 
+// AllG returns all JobStatus records from the query using the global executor.
+func (q jobStatusQuery) AllG() (JobStatusSlice, error) {
+	return q.All(boil.GetDB())
+}
+
+// AllGP returns all JobStatus records from the query using the global executor, and panics on error.
+func (q jobStatusQuery) AllGP() JobStatusSlice {
+	o, err := q.All(boil.GetDB())
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return o
+}
+
 // AllP returns all JobStatus records from the query, and panics on error.
-func (q jobStatusQuery) AllP() JobStatusSlice {
-	o, err := q.All()
+func (q jobStatusQuery) AllP(exec boil.Executor) JobStatusSlice {
+	o, err := q.All(exec)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -125,10 +162,10 @@ func (q jobStatusQuery) AllP() JobStatusSlice {
 }
 
 // All returns all JobStatus records from the query.
-func (q jobStatusQuery) All() (JobStatusSlice, error) {
+func (q jobStatusQuery) All(exec boil.Executor) (JobStatusSlice, error) {
 	var o []*JobStatus
 
-	err := q.Bind(&o)
+	err := q.Bind(nil, exec, &o)
 	if err != nil {
 		return nil, errors.Wrap(err, "model: failed to assign all query results to JobStatus slice")
 	}
@@ -136,9 +173,24 @@ func (q jobStatusQuery) All() (JobStatusSlice, error) {
 	return o, nil
 }
 
+// CountG returns the count of all JobStatus records in the query, and panics on error.
+func (q jobStatusQuery) CountG() (int64, error) {
+	return q.Count(boil.GetDB())
+}
+
+// CountGP returns the count of all JobStatus records in the query using the global executor, and panics on error.
+func (q jobStatusQuery) CountGP() int64 {
+	c, err := q.Count(boil.GetDB())
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return c
+}
+
 // CountP returns the count of all JobStatus records in the query, and panics on error.
-func (q jobStatusQuery) CountP() int64 {
-	c, err := q.Count()
+func (q jobStatusQuery) CountP(exec boil.Executor) int64 {
+	c, err := q.Count(exec)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -147,13 +199,13 @@ func (q jobStatusQuery) CountP() int64 {
 }
 
 // Count returns the count of all JobStatus records in the query.
-func (q jobStatusQuery) Count() (int64, error) {
+func (q jobStatusQuery) Count(exec boil.Executor) (int64, error) {
 	var count int64
 
 	queries.SetSelect(q.Query, nil)
 	queries.SetCount(q.Query)
 
-	err := q.Query.QueryRow().Scan(&count)
+	err := q.Query.QueryRow(exec).Scan(&count)
 	if err != nil {
 		return 0, errors.Wrap(err, "model: failed to count job_status rows")
 	}
@@ -161,9 +213,24 @@ func (q jobStatusQuery) Count() (int64, error) {
 	return count, nil
 }
 
-// Exists checks if the row exists in the table, and panics on error.
-func (q jobStatusQuery) ExistsP() bool {
-	e, err := q.Exists()
+// ExistsG checks if the row exists in the table, and panics on error.
+func (q jobStatusQuery) ExistsG() (bool, error) {
+	return q.Exists(boil.GetDB())
+}
+
+// ExistsGP checks if the row exists in the table using the global executor, and panics on error.
+func (q jobStatusQuery) ExistsGP() bool {
+	e, err := q.Exists(boil.GetDB())
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return e
+}
+
+// ExistsP checks if the row exists in the table, and panics on error.
+func (q jobStatusQuery) ExistsP(exec boil.Executor) bool {
+	e, err := q.Exists(exec)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -172,13 +239,14 @@ func (q jobStatusQuery) ExistsP() bool {
 }
 
 // Exists checks if the row exists in the table.
-func (q jobStatusQuery) Exists() (bool, error) {
+func (q jobStatusQuery) Exists(exec boil.Executor) (bool, error) {
 	var count int64
 
+	queries.SetSelect(q.Query, nil)
 	queries.SetCount(q.Query)
 	queries.SetLimit(q.Query, 1)
 
-	err := q.Query.QueryRow().Scan(&count)
+	err := q.Query.QueryRow(exec).Scan(&count)
 	if err != nil {
 		return false, errors.Wrap(err, "model: failed to check if job_status exists")
 	}
@@ -186,20 +254,25 @@ func (q jobStatusQuery) Exists() (bool, error) {
 	return count > 0, nil
 }
 
-// JobStatusesG retrieves all records.
-func JobStatusesG(mods ...qm.QueryMod) jobStatusQuery {
-	return JobStatuses(boil.GetDB(), mods...)
-}
-
 // JobStatuses retrieves all the records using an executor.
-func JobStatuses(exec boil.Executor, mods ...qm.QueryMod) jobStatusQuery {
+func JobStatuses(mods ...qm.QueryMod) jobStatusQuery {
 	mods = append(mods, qm.From("`job_status`"))
-	return jobStatusQuery{NewQuery(exec, mods...)}
+	return jobStatusQuery{NewQuery(mods...)}
 }
 
 // FindJobStatusG retrieves a single record by ID.
 func FindJobStatusG(jobName string, selectCols ...string) (*JobStatus, error) {
 	return FindJobStatus(boil.GetDB(), jobName, selectCols...)
+}
+
+// FindJobStatusP retrieves a single record by ID with an executor, and panics on error.
+func FindJobStatusP(exec boil.Executor, jobName string, selectCols ...string) *JobStatus {
+	retobj, err := FindJobStatus(exec, jobName, selectCols...)
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return retobj
 }
 
 // FindJobStatusGP retrieves a single record by ID, and panics on error.
@@ -225,9 +298,9 @@ func FindJobStatus(exec boil.Executor, jobName string, selectCols ...string) (*J
 		"select %s from `job_status` where `job_name`=?", sel,
 	)
 
-	q := queries.Raw(exec, query, jobName)
+	q := queries.Raw(query, jobName)
 
-	err := q.Bind(jobStatusObj)
+	err := q.Bind(nil, exec, jobStatusObj)
 	if err != nil {
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
@@ -238,43 +311,30 @@ func FindJobStatus(exec boil.Executor, jobName string, selectCols ...string) (*J
 	return jobStatusObj, nil
 }
 
-// FindJobStatusP retrieves a single record by ID with an executor, and panics on error.
-func FindJobStatusP(exec boil.Executor, jobName string, selectCols ...string) *JobStatus {
-	retobj, err := FindJobStatus(exec, jobName, selectCols...)
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return retobj
-}
-
 // InsertG a single record. See Insert for whitelist behavior description.
-func (o *JobStatus) InsertG(whitelist ...string) error {
-	return o.Insert(boil.GetDB(), whitelist...)
-}
-
-// InsertGP a single record, and panics on error. See Insert for whitelist
-// behavior description.
-func (o *JobStatus) InsertGP(whitelist ...string) {
-	if err := o.Insert(boil.GetDB(), whitelist...); err != nil {
-		panic(boil.WrapErr(err))
-	}
+func (o *JobStatus) InsertG(columns boil.Columns) error {
+	return o.Insert(boil.GetDB(), columns)
 }
 
 // InsertP a single record using an executor, and panics on error. See Insert
 // for whitelist behavior description.
-func (o *JobStatus) InsertP(exec boil.Executor, whitelist ...string) {
-	if err := o.Insert(exec, whitelist...); err != nil {
+func (o *JobStatus) InsertP(exec boil.Executor, columns boil.Columns) {
+	if err := o.Insert(exec, columns); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// InsertGP a single record, and panics on error. See Insert for whitelist
+// behavior description.
+func (o *JobStatus) InsertGP(columns boil.Columns) {
+	if err := o.Insert(boil.GetDB(), columns); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // Insert a single record using an executor.
-// Whitelist behavior: If a whitelist is provided, only those columns supplied are inserted
-// No whitelist behavior: Without a whitelist, columns are inferred by the following rules:
-// - All columns without a default value are included (i.e. name, age)
-// - All columns with a default, but non-zero are included (i.e. health = 75)
-func (o *JobStatus) Insert(exec boil.Executor, whitelist ...string) error {
+// See boil.Columns.InsertColumnSet documentation to understand column list inference for inserts.
+func (o *JobStatus) Insert(exec boil.Executor, columns boil.Columns) error {
 	if o == nil {
 		return errors.New("model: no job_status provided for insertion")
 	}
@@ -283,18 +343,17 @@ func (o *JobStatus) Insert(exec boil.Executor, whitelist ...string) error {
 
 	nzDefaults := queries.NonZeroDefaultSet(jobStatusColumnsWithDefault, o)
 
-	key := makeCacheKey(whitelist, nzDefaults)
+	key := makeCacheKey(columns, nzDefaults)
 	jobStatusInsertCacheMut.RLock()
 	cache, cached := jobStatusInsertCache[key]
 	jobStatusInsertCacheMut.RUnlock()
 
 	if !cached {
-		wl, returnColumns := strmangle.InsertColumnSet(
+		wl, returnColumns := columns.InsertColumnSet(
 			jobStatusColumns,
 			jobStatusColumnsWithDefault,
 			jobStatusColumnsWithoutDefault,
 			nzDefaults,
-			whitelist,
 		)
 
 		cache.valueMapping, err = queries.BindMapping(jobStatusType, jobStatusMapping, wl)
@@ -306,9 +365,9 @@ func (o *JobStatus) Insert(exec boil.Executor, whitelist ...string) error {
 			return err
 		}
 		if len(wl) != 0 {
-			cache.query = fmt.Sprintf("INSERT INTO `job_status` (`%s`) %%sVALUES (%s)%%s", strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.IndexPlaceholders, len(wl), 1, 1))
+			cache.query = fmt.Sprintf("INSERT INTO `job_status` (`%s`) %%sVALUES (%s)%%s", strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
 		} else {
-			cache.query = "INSERT INTO `job_status` () VALUES ()"
+			cache.query = "INSERT INTO `job_status` () VALUES ()%s%s"
 		}
 
 		var queryOutput, queryReturning string
@@ -317,9 +376,7 @@ func (o *JobStatus) Insert(exec boil.Executor, whitelist ...string) error {
 			cache.retQuery = fmt.Sprintf("SELECT `%s` FROM `job_status` WHERE %s", strings.Join(returnColumns, "`,`"), strmangle.WhereClause("`", "`", 0, jobStatusPrimaryKeyColumns))
 		}
 
-		if len(wl) != 0 {
-			cache.query = fmt.Sprintf(cache.query, queryOutput, queryReturning)
-		}
+		cache.query = fmt.Sprintf(cache.query, queryOutput, queryReturning)
 	}
 
 	value := reflect.Indirect(reflect.ValueOf(o))
@@ -331,6 +388,7 @@ func (o *JobStatus) Insert(exec boil.Executor, whitelist ...string) error {
 	}
 
 	_, err = exec.Exec(cache.query, vals...)
+
 	if err != nil {
 		return errors.Wrap(err, "model: unable to insert into job_status")
 	}
@@ -365,49 +423,44 @@ CacheNoHooks:
 	return nil
 }
 
-// UpdateG a single JobStatus record. See Update for
-// whitelist behavior description.
-func (o *JobStatus) UpdateG(whitelist ...string) error {
-	return o.Update(boil.GetDB(), whitelist...)
+// UpdateG a single JobStatus record using the global executor.
+// See Update for more documentation.
+func (o *JobStatus) UpdateG(columns boil.Columns) error {
+	return o.Update(boil.GetDB(), columns)
 }
 
-// UpdateGP a single JobStatus record.
-// UpdateGP takes a whitelist of column names that should be updated.
-// Panics on error. See Update for whitelist behavior description.
-func (o *JobStatus) UpdateGP(whitelist ...string) {
-	if err := o.Update(boil.GetDB(), whitelist...); err != nil {
+// UpdateP uses an executor to update the JobStatus, and panics on error.
+// See Update for more documentation.
+func (o *JobStatus) UpdateP(exec boil.Executor, columns boil.Columns) {
+	err := o.Update(exec, columns)
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
-// UpdateP uses an executor to update the JobStatus, and panics on error.
-// See Update for whitelist behavior description.
-func (o *JobStatus) UpdateP(exec boil.Executor, whitelist ...string) {
-	err := o.Update(exec, whitelist...)
+// UpdateGP a single JobStatus record using the global executor. Panics on error.
+// See Update for more documentation.
+func (o *JobStatus) UpdateGP(columns boil.Columns) {
+	err := o.Update(boil.GetDB(), columns)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // Update uses an executor to update the JobStatus.
-// Whitelist behavior: If a whitelist is provided, only the columns given are updated.
-// No whitelist behavior: Without a whitelist, columns are inferred by the following rules:
-// - All columns are inferred to start with
-// - All primary keys are subtracted from this set
-// Update does not automatically update the record in case of default values. Use .Reload()
-// to refresh the records.
-func (o *JobStatus) Update(exec boil.Executor, whitelist ...string) error {
+// See boil.Columns.UpdateColumnSet documentation to understand column list inference for updates.
+// Update does not automatically update the record in case of default values. Use .Reload() to refresh the records.
+func (o *JobStatus) Update(exec boil.Executor, columns boil.Columns) error {
 	var err error
-	key := makeCacheKey(whitelist, nil)
+	key := makeCacheKey(columns, nil)
 	jobStatusUpdateCacheMut.RLock()
 	cache, cached := jobStatusUpdateCache[key]
 	jobStatusUpdateCacheMut.RUnlock()
 
 	if !cached {
-		wl := strmangle.UpdateColumnSet(
+		wl := columns.UpdateColumnSet(
 			jobStatusColumns,
 			jobStatusPrimaryKeyColumns,
-			whitelist,
 		)
 
 		if len(wl) == 0 {
@@ -446,17 +499,23 @@ func (o *JobStatus) Update(exec boil.Executor, whitelist ...string) error {
 }
 
 // UpdateAllP updates all rows with matching column names, and panics on error.
-func (q jobStatusQuery) UpdateAllP(cols M) {
-	if err := q.UpdateAll(cols); err != nil {
+func (q jobStatusQuery) UpdateAllP(exec boil.Executor, cols M) {
+	err := q.UpdateAll(exec, cols)
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
+// UpdateAllG updates all rows with the specified column values.
+func (q jobStatusQuery) UpdateAllG(cols M) error {
+	return q.UpdateAll(boil.GetDB(), cols)
+}
+
 // UpdateAll updates all rows with the specified column values.
-func (q jobStatusQuery) UpdateAll(cols M) error {
+func (q jobStatusQuery) UpdateAll(exec boil.Executor, cols M) error {
 	queries.SetUpdate(q.Query, cols)
 
-	_, err := q.Query.Exec()
+	_, err := q.Query.Exec(exec)
 	if err != nil {
 		return errors.Wrap(err, "model: unable to update all for job_status")
 	}
@@ -471,14 +530,16 @@ func (o JobStatusSlice) UpdateAllG(cols M) error {
 
 // UpdateAllGP updates all rows with the specified column values, and panics on error.
 func (o JobStatusSlice) UpdateAllGP(cols M) {
-	if err := o.UpdateAll(boil.GetDB(), cols); err != nil {
+	err := o.UpdateAll(boil.GetDB(), cols)
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // UpdateAllP updates all rows with the specified column values, and panics on error.
 func (o JobStatusSlice) UpdateAllP(exec boil.Executor, cols M) {
-	if err := o.UpdateAll(exec, cols); err != nil {
+	err := o.UpdateAll(exec, cols)
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
@@ -528,44 +589,60 @@ func (o JobStatusSlice) UpdateAll(exec boil.Executor, cols M) error {
 }
 
 // UpsertG attempts an insert, and does an update or ignore on conflict.
-func (o *JobStatus) UpsertG(updateColumns []string, whitelist ...string) error {
-	return o.Upsert(boil.GetDB(), updateColumns, whitelist...)
+func (o *JobStatus) UpsertG(updateColumns, insertColumns boil.Columns) error {
+	return o.Upsert(boil.GetDB(), updateColumns, insertColumns)
 }
 
 // UpsertGP attempts an insert, and does an update or ignore on conflict. Panics on error.
-func (o *JobStatus) UpsertGP(updateColumns []string, whitelist ...string) {
-	if err := o.Upsert(boil.GetDB(), updateColumns, whitelist...); err != nil {
+func (o *JobStatus) UpsertGP(updateColumns, insertColumns boil.Columns) {
+	if err := o.Upsert(boil.GetDB(), updateColumns, insertColumns); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // UpsertP attempts an insert using an executor, and does an update or ignore on conflict.
 // UpsertP panics on error.
-func (o *JobStatus) UpsertP(exec boil.Executor, updateColumns []string, whitelist ...string) {
-	if err := o.Upsert(exec, updateColumns, whitelist...); err != nil {
+func (o *JobStatus) UpsertP(exec boil.Executor, updateColumns, insertColumns boil.Columns) {
+	if err := o.Upsert(exec, updateColumns, insertColumns); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
+var mySQLJobStatusUniqueColumns = []string{
+	"job_name",
+}
+
 // Upsert attempts an insert using an executor, and does an update or ignore on conflict.
-func (o *JobStatus) Upsert(exec boil.Executor, updateColumns []string, whitelist ...string) error {
+// See boil.Columns documentation for how to properly use updateColumns and insertColumns.
+func (o *JobStatus) Upsert(exec boil.Executor, updateColumns, insertColumns boil.Columns) error {
 	if o == nil {
 		return errors.New("model: no job_status provided for upsert")
 	}
 
 	nzDefaults := queries.NonZeroDefaultSet(jobStatusColumnsWithDefault, o)
+	nzUniques := queries.NonZeroDefaultSet(mySQLJobStatusUniqueColumns, o)
 
-	// Build cache key in-line uglily - mysql vs postgres problems
+	if len(nzUniques) == 0 {
+		return errors.New("cannot upsert with a table that cannot conflict on a unique column")
+	}
+
+	// Build cache key in-line uglily - mysql vs psql problems
 	buf := strmangle.GetBuffer()
-	for _, c := range updateColumns {
+	buf.WriteString(strconv.Itoa(updateColumns.Kind))
+	for _, c := range updateColumns.Cols {
 		buf.WriteString(c)
 	}
 	buf.WriteByte('.')
-	for _, c := range whitelist {
+	buf.WriteString(strconv.Itoa(insertColumns.Kind))
+	for _, c := range insertColumns.Cols {
 		buf.WriteString(c)
 	}
 	buf.WriteByte('.')
 	for _, c := range nzDefaults {
+		buf.WriteString(c)
+	}
+	buf.WriteByte('.')
+	for _, c := range nzUniques {
 		buf.WriteString(c)
 	}
 	key := buf.String()
@@ -578,27 +655,27 @@ func (o *JobStatus) Upsert(exec boil.Executor, updateColumns []string, whitelist
 	var err error
 
 	if !cached {
-		insert, ret := strmangle.InsertColumnSet(
+		insert, ret := insertColumns.InsertColumnSet(
 			jobStatusColumns,
 			jobStatusColumnsWithDefault,
 			jobStatusColumnsWithoutDefault,
 			nzDefaults,
-			whitelist,
 		)
-
-		update := strmangle.UpdateColumnSet(
+		update := updateColumns.UpdateColumnSet(
 			jobStatusColumns,
 			jobStatusPrimaryKeyColumns,
-			updateColumns,
 		)
+
 		if len(update) == 0 {
 			return errors.New("model: unable to upsert job_status, could not build update column list")
 		}
 
-		cache.query = queries.BuildUpsertQueryMySQL(dialect, "job_status", update, insert)
+		ret = strmangle.SetComplement(ret, nzUniques)
+		cache.query = buildUpsertQueryMySQL(dialect, "job_status", update, insert)
 		cache.retQuery = fmt.Sprintf(
-			"SELECT %s FROM `job_status` WHERE `job_name`=?",
+			"SELECT %s FROM `job_status` WHERE %s",
 			strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, ret), ","),
+			strmangle.WhereClause("`", "`", 0, nzUniques),
 		)
 
 		cache.valueMapping, err = queries.BindMapping(jobStatusType, jobStatusMapping, insert)
@@ -626,26 +703,30 @@ func (o *JobStatus) Upsert(exec boil.Executor, updateColumns []string, whitelist
 	}
 
 	_, err = exec.Exec(cache.query, vals...)
+
 	if err != nil {
 		return errors.Wrap(err, "model: unable to upsert for job_status")
 	}
 
-	var identifierCols []interface{}
+	var uniqueMap []uint64
+	var nzUniqueCols []interface{}
 
 	if len(cache.retMapping) == 0 {
 		goto CacheNoHooks
 	}
 
-	identifierCols = []interface{}{
-		o.JobName,
+	uniqueMap, err = queries.BindMapping(jobStatusType, jobStatusMapping, nzUniques)
+	if err != nil {
+		return errors.Wrap(err, "model: unable to retrieve unique values for job_status")
 	}
+	nzUniqueCols = queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), uniqueMap)
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, cache.retQuery)
-		fmt.Fprintln(boil.DebugWriter, identifierCols...)
+		fmt.Fprintln(boil.DebugWriter, nzUniqueCols...)
 	}
 
-	err = exec.QueryRow(cache.retQuery, identifierCols...).Scan(returns...)
+	err = exec.QueryRow(cache.retQuery, nzUniqueCols...).Scan(returns...)
 	if err != nil {
 		return errors.Wrap(err, "model: unable to populate default values for job_status")
 	}
@@ -660,30 +741,28 @@ CacheNoHooks:
 	return nil
 }
 
+// DeleteG deletes a single JobStatus record.
+// DeleteG will match against the primary key column to find the record to delete.
+func (o *JobStatus) DeleteG() error {
+	return o.Delete(boil.GetDB())
+}
+
 // DeleteP deletes a single JobStatus record with an executor.
 // DeleteP will match against the primary key column to find the record to delete.
 // Panics on error.
 func (o *JobStatus) DeleteP(exec boil.Executor) {
-	if err := o.Delete(exec); err != nil {
+	err := o.Delete(exec)
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
-}
-
-// DeleteG deletes a single JobStatus record.
-// DeleteG will match against the primary key column to find the record to delete.
-func (o *JobStatus) DeleteG() error {
-	if o == nil {
-		return errors.New("model: no JobStatus provided for deletion")
-	}
-
-	return o.Delete(boil.GetDB())
 }
 
 // DeleteGP deletes a single JobStatus record.
 // DeleteGP will match against the primary key column to find the record to delete.
 // Panics on error.
 func (o *JobStatus) DeleteGP() {
-	if err := o.DeleteG(); err != nil {
+	err := o.Delete(boil.GetDB())
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
@@ -712,21 +791,22 @@ func (o *JobStatus) Delete(exec boil.Executor) error {
 }
 
 // DeleteAllP deletes all rows, and panics on error.
-func (q jobStatusQuery) DeleteAllP() {
-	if err := q.DeleteAll(); err != nil {
+func (q jobStatusQuery) DeleteAllP(exec boil.Executor) {
+	err := q.DeleteAll(exec)
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // DeleteAll deletes all matching rows.
-func (q jobStatusQuery) DeleteAll() error {
+func (q jobStatusQuery) DeleteAll(exec boil.Executor) error {
 	if q.Query == nil {
 		return errors.New("model: no jobStatusQuery provided for delete all")
 	}
 
 	queries.SetDelete(q.Query)
 
-	_, err := q.Query.Exec()
+	_, err := q.Query.Exec(exec)
 	if err != nil {
 		return errors.Wrap(err, "model: unable to delete all from job_status")
 	}
@@ -734,24 +814,23 @@ func (q jobStatusQuery) DeleteAll() error {
 	return nil
 }
 
-// DeleteAllGP deletes all rows in the slice, and panics on error.
-func (o JobStatusSlice) DeleteAllGP() {
-	if err := o.DeleteAllG(); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
 // DeleteAllG deletes all rows in the slice.
 func (o JobStatusSlice) DeleteAllG() error {
-	if o == nil {
-		return errors.New("model: no JobStatus slice provided for delete all")
-	}
 	return o.DeleteAll(boil.GetDB())
 }
 
 // DeleteAllP deletes all rows in the slice, using an executor, and panics on error.
 func (o JobStatusSlice) DeleteAllP(exec boil.Executor) {
-	if err := o.DeleteAll(exec); err != nil {
+	err := o.DeleteAll(exec)
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// DeleteAllGP deletes all rows in the slice, and panics on error.
+func (o JobStatusSlice) DeleteAllGP() {
+	err := o.DeleteAll(boil.GetDB())
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
@@ -788,11 +867,13 @@ func (o JobStatusSlice) DeleteAll(exec boil.Executor) error {
 	return nil
 }
 
-// ReloadGP refetches the object from the database and panics on error.
-func (o *JobStatus) ReloadGP() {
-	if err := o.ReloadG(); err != nil {
-		panic(boil.WrapErr(err))
+// ReloadG refetches the object from the database using the primary keys.
+func (o *JobStatus) ReloadG() error {
+	if o == nil {
+		return errors.New("model: no JobStatus provided for reload")
 	}
+
+	return o.Reload(boil.GetDB())
 }
 
 // ReloadP refetches the object from the database with an executor. Panics on error.
@@ -802,13 +883,11 @@ func (o *JobStatus) ReloadP(exec boil.Executor) {
 	}
 }
 
-// ReloadG refetches the object from the database using the primary keys.
-func (o *JobStatus) ReloadG() error {
-	if o == nil {
-		return errors.New("model: no JobStatus provided for reload")
+// ReloadGP refetches the object from the database and panics on error.
+func (o *JobStatus) ReloadGP() {
+	if err := o.Reload(boil.GetDB()); err != nil {
+		panic(boil.WrapErr(err))
 	}
-
-	return o.Reload(boil.GetDB())
 }
 
 // Reload refetches the object from the database
@@ -823,13 +902,14 @@ func (o *JobStatus) Reload(exec boil.Executor) error {
 	return nil
 }
 
-// ReloadAllGP refetches every row with matching primary key column values
+// ReloadAllG refetches every row with matching primary key column values
 // and overwrites the original object slice with the newly updated slice.
-// Panics on error.
-func (o *JobStatusSlice) ReloadAllGP() {
-	if err := o.ReloadAllG(); err != nil {
-		panic(boil.WrapErr(err))
+func (o *JobStatusSlice) ReloadAllG() error {
+	if o == nil {
+		return errors.New("model: empty JobStatusSlice provided for reload all")
 	}
+
+	return o.ReloadAll(boil.GetDB())
 }
 
 // ReloadAllP refetches every row with matching primary key column values
@@ -841,14 +921,13 @@ func (o *JobStatusSlice) ReloadAllP(exec boil.Executor) {
 	}
 }
 
-// ReloadAllG refetches every row with matching primary key column values
+// ReloadAllGP refetches every row with matching primary key column values
 // and overwrites the original object slice with the newly updated slice.
-func (o *JobStatusSlice) ReloadAllG() error {
-	if o == nil {
-		return errors.New("model: empty JobStatusSlice provided for reload all")
+// Panics on error.
+func (o *JobStatusSlice) ReloadAllGP() {
+	if err := o.ReloadAll(boil.GetDB()); err != nil {
+		panic(boil.WrapErr(err))
 	}
-
-	return o.ReloadAll(boil.GetDB())
 }
 
 // ReloadAll refetches every row with matching primary key column values
@@ -858,7 +937,7 @@ func (o *JobStatusSlice) ReloadAll(exec boil.Executor) error {
 		return nil
 	}
 
-	jobStatuses := JobStatusSlice{}
+	slice := JobStatusSlice{}
 	var args []interface{}
 	for _, obj := range *o {
 		pkeyArgs := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(obj)), jobStatusPrimaryKeyMapping)
@@ -868,16 +947,41 @@ func (o *JobStatusSlice) ReloadAll(exec boil.Executor) error {
 	sql := "SELECT `job_status`.* FROM `job_status` WHERE " +
 		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, jobStatusPrimaryKeyColumns, len(*o))
 
-	q := queries.Raw(exec, sql, args...)
+	q := queries.Raw(sql, args...)
 
-	err := q.Bind(&jobStatuses)
+	err := q.Bind(nil, exec, &slice)
 	if err != nil {
 		return errors.Wrap(err, "model: unable to reload all in JobStatusSlice")
 	}
 
-	*o = jobStatuses
+	*o = slice
 
 	return nil
+}
+
+// JobStatusExistsG checks if the JobStatus row exists.
+func JobStatusExistsG(jobName string) (bool, error) {
+	return JobStatusExists(boil.GetDB(), jobName)
+}
+
+// JobStatusExistsP checks if the JobStatus row exists. Panics on error.
+func JobStatusExistsP(exec boil.Executor, jobName string) bool {
+	e, err := JobStatusExists(exec, jobName)
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return e
+}
+
+// JobStatusExistsGP checks if the JobStatus row exists. Panics on error.
+func JobStatusExistsGP(jobName string) bool {
+	e, err := JobStatusExists(boil.GetDB(), jobName)
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return e
 }
 
 // JobStatusExists checks if the JobStatus row exists.
@@ -898,29 +1002,4 @@ func JobStatusExists(exec boil.Executor, jobName string) (bool, error) {
 	}
 
 	return exists, nil
-}
-
-// JobStatusExistsG checks if the JobStatus row exists.
-func JobStatusExistsG(jobName string) (bool, error) {
-	return JobStatusExists(boil.GetDB(), jobName)
-}
-
-// JobStatusExistsGP checks if the JobStatus row exists. Panics on error.
-func JobStatusExistsGP(jobName string) bool {
-	e, err := JobStatusExists(boil.GetDB(), jobName)
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return e
-}
-
-// JobStatusExistsP checks if the JobStatus row exists. Panics on error.
-func JobStatusExistsP(exec boil.Executor, jobName string) bool {
-	e, err := JobStatusExists(exec, jobName)
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return e
 }

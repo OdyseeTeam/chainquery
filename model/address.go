@@ -4,20 +4,20 @@
 package model
 
 import (
-	"bytes"
 	"database/sql"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"github.com/volatiletech/sqlboiler/strmangle"
-	"gopkg.in/volatiletech/null.v6"
 )
 
 // Address is an object representing the database table.
@@ -46,9 +46,21 @@ var AddressColumns = struct {
 	ModifiedAt: "modified_at",
 }
 
+// AddressRels is where relationship names are stored.
+var AddressRels = struct {
+	TransactionAddresses string
+}{
+	TransactionAddresses: "TransactionAddresses",
+}
+
 // addressR is where relationships are stored.
 type addressR struct {
 	TransactionAddresses TransactionAddressSlice
+}
+
+// NewStruct creates a new relationship struct
+func (*addressR) NewStruct() *addressR {
+	return &addressR{}
 }
 
 // addressL is where Load methods for each relationship are stored.
@@ -87,13 +99,26 @@ var (
 var (
 	// Force time package dependency for automated UpdatedAt/CreatedAt.
 	_ = time.Second
-	// Force bytes in case of primary key column that uses []byte (for relationship compares)
-	_ = bytes.MinRead
 )
 
+// OneG returns a single address record from the query using the global executor.
+func (q addressQuery) OneG() (*Address, error) {
+	return q.One(boil.GetDB())
+}
+
+// OneGP returns a single address record from the query using the global executor, and panics on error.
+func (q addressQuery) OneGP() *Address {
+	o, err := q.One(boil.GetDB())
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return o
+}
+
 // OneP returns a single address record from the query, and panics on error.
-func (q addressQuery) OneP() *Address {
-	o, err := q.One()
+func (q addressQuery) OneP(exec boil.Executor) *Address {
+	o, err := q.One(exec)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -102,12 +127,12 @@ func (q addressQuery) OneP() *Address {
 }
 
 // One returns a single address record from the query.
-func (q addressQuery) One() (*Address, error) {
+func (q addressQuery) One(exec boil.Executor) (*Address, error) {
 	o := &Address{}
 
 	queries.SetLimit(q.Query, 1)
 
-	err := q.Bind(o)
+	err := q.Bind(nil, exec, o)
 	if err != nil {
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
@@ -118,9 +143,24 @@ func (q addressQuery) One() (*Address, error) {
 	return o, nil
 }
 
+// AllG returns all Address records from the query using the global executor.
+func (q addressQuery) AllG() (AddressSlice, error) {
+	return q.All(boil.GetDB())
+}
+
+// AllGP returns all Address records from the query using the global executor, and panics on error.
+func (q addressQuery) AllGP() AddressSlice {
+	o, err := q.All(boil.GetDB())
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return o
+}
+
 // AllP returns all Address records from the query, and panics on error.
-func (q addressQuery) AllP() AddressSlice {
-	o, err := q.All()
+func (q addressQuery) AllP(exec boil.Executor) AddressSlice {
+	o, err := q.All(exec)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -129,10 +169,10 @@ func (q addressQuery) AllP() AddressSlice {
 }
 
 // All returns all Address records from the query.
-func (q addressQuery) All() (AddressSlice, error) {
+func (q addressQuery) All(exec boil.Executor) (AddressSlice, error) {
 	var o []*Address
 
-	err := q.Bind(&o)
+	err := q.Bind(nil, exec, &o)
 	if err != nil {
 		return nil, errors.Wrap(err, "model: failed to assign all query results to Address slice")
 	}
@@ -140,9 +180,24 @@ func (q addressQuery) All() (AddressSlice, error) {
 	return o, nil
 }
 
+// CountG returns the count of all Address records in the query, and panics on error.
+func (q addressQuery) CountG() (int64, error) {
+	return q.Count(boil.GetDB())
+}
+
+// CountGP returns the count of all Address records in the query using the global executor, and panics on error.
+func (q addressQuery) CountGP() int64 {
+	c, err := q.Count(boil.GetDB())
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return c
+}
+
 // CountP returns the count of all Address records in the query, and panics on error.
-func (q addressQuery) CountP() int64 {
-	c, err := q.Count()
+func (q addressQuery) CountP(exec boil.Executor) int64 {
+	c, err := q.Count(exec)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -151,13 +206,13 @@ func (q addressQuery) CountP() int64 {
 }
 
 // Count returns the count of all Address records in the query.
-func (q addressQuery) Count() (int64, error) {
+func (q addressQuery) Count(exec boil.Executor) (int64, error) {
 	var count int64
 
 	queries.SetSelect(q.Query, nil)
 	queries.SetCount(q.Query)
 
-	err := q.Query.QueryRow().Scan(&count)
+	err := q.Query.QueryRow(exec).Scan(&count)
 	if err != nil {
 		return 0, errors.Wrap(err, "model: failed to count address rows")
 	}
@@ -165,9 +220,24 @@ func (q addressQuery) Count() (int64, error) {
 	return count, nil
 }
 
-// Exists checks if the row exists in the table, and panics on error.
-func (q addressQuery) ExistsP() bool {
-	e, err := q.Exists()
+// ExistsG checks if the row exists in the table, and panics on error.
+func (q addressQuery) ExistsG() (bool, error) {
+	return q.Exists(boil.GetDB())
+}
+
+// ExistsGP checks if the row exists in the table using the global executor, and panics on error.
+func (q addressQuery) ExistsGP() bool {
+	e, err := q.Exists(boil.GetDB())
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return e
+}
+
+// ExistsP checks if the row exists in the table, and panics on error.
+func (q addressQuery) ExistsP(exec boil.Executor) bool {
+	e, err := q.Exists(exec)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -176,13 +246,14 @@ func (q addressQuery) ExistsP() bool {
 }
 
 // Exists checks if the row exists in the table.
-func (q addressQuery) Exists() (bool, error) {
+func (q addressQuery) Exists(exec boil.Executor) (bool, error) {
 	var count int64
 
+	queries.SetSelect(q.Query, nil)
 	queries.SetCount(q.Query)
 	queries.SetLimit(q.Query, 1)
 
-	err := q.Query.QueryRow().Scan(&count)
+	err := q.Query.QueryRow(exec).Scan(&count)
 	if err != nil {
 		return false, errors.Wrap(err, "model: failed to check if address exists")
 	}
@@ -190,13 +261,8 @@ func (q addressQuery) Exists() (bool, error) {
 	return count > 0, nil
 }
 
-// TransactionAddressesG retrieves all the transaction_address's transaction address.
-func (o *Address) TransactionAddressesG(mods ...qm.QueryMod) transactionAddressQuery {
-	return o.TransactionAddresses(boil.GetDB(), mods...)
-}
-
-// TransactionAddresses retrieves all the transaction_address's transaction address with an executor.
-func (o *Address) TransactionAddresses(exec boil.Executor, mods ...qm.QueryMod) transactionAddressQuery {
+// TransactionAddresses retrieves all the transaction_address's TransactionAddresses with an executor.
+func (o *Address) TransactionAddresses(mods ...qm.QueryMod) transactionAddressQuery {
 	var queryMods []qm.QueryMod
 	if len(mods) != 0 {
 		queryMods = append(queryMods, mods...)
@@ -206,7 +272,7 @@ func (o *Address) TransactionAddresses(exec boil.Executor, mods ...qm.QueryMod) 
 		qm.Where("`transaction_address`.`address_id`=?", o.ID),
 	)
 
-	query := TransactionAddresses(exec, queryMods...)
+	query := TransactionAddresses(queryMods...)
 	queries.SetFrom(query.Query, "`transaction_address`")
 
 	if len(queries.GetSelect(query.Query)) == 0 {
@@ -217,55 +283,70 @@ func (o *Address) TransactionAddresses(exec boil.Executor, mods ...qm.QueryMod) 
 }
 
 // LoadTransactionAddresses allows an eager lookup of values, cached into the
-// loaded structs of the objects.
-func (addressL) LoadTransactionAddresses(e boil.Executor, singular bool, maybeAddress interface{}) error {
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (addressL) LoadTransactionAddresses(e boil.Executor, singular bool, maybeAddress interface{}, mods queries.Applicator) error {
 	var slice []*Address
 	var object *Address
 
-	count := 1
 	if singular {
 		object = maybeAddress.(*Address)
 	} else {
 		slice = *maybeAddress.(*[]*Address)
-		count = len(slice)
 	}
 
-	args := make([]interface{}, count)
+	args := make([]interface{}, 0, 1)
 	if singular {
 		if object.R == nil {
 			object.R = &addressR{}
 		}
-		args[0] = object.ID
+		args = append(args, object.ID)
 	} else {
-		for i, obj := range slice {
+	Outer:
+		for _, obj := range slice {
 			if obj.R == nil {
 				obj.R = &addressR{}
 			}
-			args[i] = obj.ID
+
+			for _, a := range args {
+				if a == obj.ID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
 		}
 	}
 
-	query := fmt.Sprintf(
-		"select * from `transaction_address` where `address_id` in (%s)",
-		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
-	)
-	if boil.DebugMode {
-		fmt.Fprintf(boil.DebugWriter, "%s\n%v\n", query, args)
+	query := NewQuery(qm.From(`transaction_address`), qm.WhereIn(`address_id in ?`, args...))
+	if mods != nil {
+		mods.Apply(query)
 	}
 
-	results, err := e.Query(query, args...)
+	results, err := query.Query(e)
 	if err != nil {
 		return errors.Wrap(err, "failed to eager load transaction_address")
 	}
-	defer results.Close()
 
 	var resultSlice []*TransactionAddress
 	if err = queries.Bind(results, &resultSlice); err != nil {
 		return errors.Wrap(err, "failed to bind eager loaded slice transaction_address")
 	}
 
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on transaction_address")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for transaction_address")
+	}
+
 	if singular {
 		object.R.TransactionAddresses = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &transactionAddressR{}
+			}
+			foreign.R.Address = object
+		}
 		return nil
 	}
 
@@ -273,6 +354,10 @@ func (addressL) LoadTransactionAddresses(e boil.Executor, singular bool, maybeAd
 		for _, local := range slice {
 			if local.ID == foreign.AddressID {
 				local.R.TransactionAddresses = append(local.R.TransactionAddresses, foreign)
+				if foreign.R == nil {
+					foreign.R = &transactionAddressR{}
+				}
+				foreign.R.Address = local
 				break
 			}
 		}
@@ -321,7 +406,7 @@ func (o *Address) AddTransactionAddresses(exec boil.Executor, insert bool, relat
 	for _, rel := range related {
 		if insert {
 			rel.AddressID = o.ID
-			if err = rel.Insert(exec); err != nil {
+			if err = rel.Insert(exec, boil.Infer()); err != nil {
 				return errors.Wrap(err, "failed to insert into foreign table")
 			}
 		} else {
@@ -365,25 +450,30 @@ func (o *Address) AddTransactionAddresses(exec boil.Executor, insert bool, relat
 	return nil
 }
 
-// AddressesG retrieves all records.
-func AddressesG(mods ...qm.QueryMod) addressQuery {
-	return Addresses(boil.GetDB(), mods...)
-}
-
 // Addresses retrieves all the records using an executor.
-func Addresses(exec boil.Executor, mods ...qm.QueryMod) addressQuery {
+func Addresses(mods ...qm.QueryMod) addressQuery {
 	mods = append(mods, qm.From("`address`"))
-	return addressQuery{NewQuery(exec, mods...)}
+	return addressQuery{NewQuery(mods...)}
 }
 
 // FindAddressG retrieves a single record by ID.
-func FindAddressG(id uint64, selectCols ...string) (*Address, error) {
-	return FindAddress(boil.GetDB(), id, selectCols...)
+func FindAddressG(iD uint64, selectCols ...string) (*Address, error) {
+	return FindAddress(boil.GetDB(), iD, selectCols...)
+}
+
+// FindAddressP retrieves a single record by ID with an executor, and panics on error.
+func FindAddressP(exec boil.Executor, iD uint64, selectCols ...string) *Address {
+	retobj, err := FindAddress(exec, iD, selectCols...)
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return retobj
 }
 
 // FindAddressGP retrieves a single record by ID, and panics on error.
-func FindAddressGP(id uint64, selectCols ...string) *Address {
-	retobj, err := FindAddress(boil.GetDB(), id, selectCols...)
+func FindAddressGP(iD uint64, selectCols ...string) *Address {
+	retobj, err := FindAddress(boil.GetDB(), iD, selectCols...)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -393,7 +483,7 @@ func FindAddressGP(id uint64, selectCols ...string) *Address {
 
 // FindAddress retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindAddress(exec boil.Executor, id uint64, selectCols ...string) (*Address, error) {
+func FindAddress(exec boil.Executor, iD uint64, selectCols ...string) (*Address, error) {
 	addressObj := &Address{}
 
 	sel := "*"
@@ -404,9 +494,9 @@ func FindAddress(exec boil.Executor, id uint64, selectCols ...string) (*Address,
 		"select %s from `address` where `id`=?", sel,
 	)
 
-	q := queries.Raw(exec, query, id)
+	q := queries.Raw(query, iD)
 
-	err := q.Bind(addressObj)
+	err := q.Bind(nil, exec, addressObj)
 	if err != nil {
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
@@ -417,43 +507,30 @@ func FindAddress(exec boil.Executor, id uint64, selectCols ...string) (*Address,
 	return addressObj, nil
 }
 
-// FindAddressP retrieves a single record by ID with an executor, and panics on error.
-func FindAddressP(exec boil.Executor, id uint64, selectCols ...string) *Address {
-	retobj, err := FindAddress(exec, id, selectCols...)
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return retobj
-}
-
 // InsertG a single record. See Insert for whitelist behavior description.
-func (o *Address) InsertG(whitelist ...string) error {
-	return o.Insert(boil.GetDB(), whitelist...)
-}
-
-// InsertGP a single record, and panics on error. See Insert for whitelist
-// behavior description.
-func (o *Address) InsertGP(whitelist ...string) {
-	if err := o.Insert(boil.GetDB(), whitelist...); err != nil {
-		panic(boil.WrapErr(err))
-	}
+func (o *Address) InsertG(columns boil.Columns) error {
+	return o.Insert(boil.GetDB(), columns)
 }
 
 // InsertP a single record using an executor, and panics on error. See Insert
 // for whitelist behavior description.
-func (o *Address) InsertP(exec boil.Executor, whitelist ...string) {
-	if err := o.Insert(exec, whitelist...); err != nil {
+func (o *Address) InsertP(exec boil.Executor, columns boil.Columns) {
+	if err := o.Insert(exec, columns); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// InsertGP a single record, and panics on error. See Insert for whitelist
+// behavior description.
+func (o *Address) InsertGP(columns boil.Columns) {
+	if err := o.Insert(boil.GetDB(), columns); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // Insert a single record using an executor.
-// Whitelist behavior: If a whitelist is provided, only those columns supplied are inserted
-// No whitelist behavior: Without a whitelist, columns are inferred by the following rules:
-// - All columns without a default value are included (i.e. name, age)
-// - All columns with a default, but non-zero are included (i.e. health = 75)
-func (o *Address) Insert(exec boil.Executor, whitelist ...string) error {
+// See boil.Columns.InsertColumnSet documentation to understand column list inference for inserts.
+func (o *Address) Insert(exec boil.Executor, columns boil.Columns) error {
 	if o == nil {
 		return errors.New("model: no address provided for insertion")
 	}
@@ -462,18 +539,17 @@ func (o *Address) Insert(exec boil.Executor, whitelist ...string) error {
 
 	nzDefaults := queries.NonZeroDefaultSet(addressColumnsWithDefault, o)
 
-	key := makeCacheKey(whitelist, nzDefaults)
+	key := makeCacheKey(columns, nzDefaults)
 	addressInsertCacheMut.RLock()
 	cache, cached := addressInsertCache[key]
 	addressInsertCacheMut.RUnlock()
 
 	if !cached {
-		wl, returnColumns := strmangle.InsertColumnSet(
+		wl, returnColumns := columns.InsertColumnSet(
 			addressColumns,
 			addressColumnsWithDefault,
 			addressColumnsWithoutDefault,
 			nzDefaults,
-			whitelist,
 		)
 
 		cache.valueMapping, err = queries.BindMapping(addressType, addressMapping, wl)
@@ -485,9 +561,9 @@ func (o *Address) Insert(exec boil.Executor, whitelist ...string) error {
 			return err
 		}
 		if len(wl) != 0 {
-			cache.query = fmt.Sprintf("INSERT INTO `address` (`%s`) %%sVALUES (%s)%%s", strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.IndexPlaceholders, len(wl), 1, 1))
+			cache.query = fmt.Sprintf("INSERT INTO `address` (`%s`) %%sVALUES (%s)%%s", strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
 		} else {
-			cache.query = "INSERT INTO `address` () VALUES ()"
+			cache.query = "INSERT INTO `address` () VALUES ()%s%s"
 		}
 
 		var queryOutput, queryReturning string
@@ -496,9 +572,7 @@ func (o *Address) Insert(exec boil.Executor, whitelist ...string) error {
 			cache.retQuery = fmt.Sprintf("SELECT `%s` FROM `address` WHERE %s", strings.Join(returnColumns, "`,`"), strmangle.WhereClause("`", "`", 0, addressPrimaryKeyColumns))
 		}
 
-		if len(wl) != 0 {
-			cache.query = fmt.Sprintf(cache.query, queryOutput, queryReturning)
-		}
+		cache.query = fmt.Sprintf(cache.query, queryOutput, queryReturning)
 	}
 
 	value := reflect.Indirect(reflect.ValueOf(o))
@@ -556,49 +630,44 @@ CacheNoHooks:
 	return nil
 }
 
-// UpdateG a single Address record. See Update for
-// whitelist behavior description.
-func (o *Address) UpdateG(whitelist ...string) error {
-	return o.Update(boil.GetDB(), whitelist...)
+// UpdateG a single Address record using the global executor.
+// See Update for more documentation.
+func (o *Address) UpdateG(columns boil.Columns) error {
+	return o.Update(boil.GetDB(), columns)
 }
 
-// UpdateGP a single Address record.
-// UpdateGP takes a whitelist of column names that should be updated.
-// Panics on error. See Update for whitelist behavior description.
-func (o *Address) UpdateGP(whitelist ...string) {
-	if err := o.Update(boil.GetDB(), whitelist...); err != nil {
+// UpdateP uses an executor to update the Address, and panics on error.
+// See Update for more documentation.
+func (o *Address) UpdateP(exec boil.Executor, columns boil.Columns) {
+	err := o.Update(exec, columns)
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
-// UpdateP uses an executor to update the Address, and panics on error.
-// See Update for whitelist behavior description.
-func (o *Address) UpdateP(exec boil.Executor, whitelist ...string) {
-	err := o.Update(exec, whitelist...)
+// UpdateGP a single Address record using the global executor. Panics on error.
+// See Update for more documentation.
+func (o *Address) UpdateGP(columns boil.Columns) {
+	err := o.Update(boil.GetDB(), columns)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // Update uses an executor to update the Address.
-// Whitelist behavior: If a whitelist is provided, only the columns given are updated.
-// No whitelist behavior: Without a whitelist, columns are inferred by the following rules:
-// - All columns are inferred to start with
-// - All primary keys are subtracted from this set
-// Update does not automatically update the record in case of default values. Use .Reload()
-// to refresh the records.
-func (o *Address) Update(exec boil.Executor, whitelist ...string) error {
+// See boil.Columns.UpdateColumnSet documentation to understand column list inference for updates.
+// Update does not automatically update the record in case of default values. Use .Reload() to refresh the records.
+func (o *Address) Update(exec boil.Executor, columns boil.Columns) error {
 	var err error
-	key := makeCacheKey(whitelist, nil)
+	key := makeCacheKey(columns, nil)
 	addressUpdateCacheMut.RLock()
 	cache, cached := addressUpdateCache[key]
 	addressUpdateCacheMut.RUnlock()
 
 	if !cached {
-		wl := strmangle.UpdateColumnSet(
+		wl := columns.UpdateColumnSet(
 			addressColumns,
 			addressPrimaryKeyColumns,
-			whitelist,
 		)
 
 		if len(wl) == 0 {
@@ -637,17 +706,23 @@ func (o *Address) Update(exec boil.Executor, whitelist ...string) error {
 }
 
 // UpdateAllP updates all rows with matching column names, and panics on error.
-func (q addressQuery) UpdateAllP(cols M) {
-	if err := q.UpdateAll(cols); err != nil {
+func (q addressQuery) UpdateAllP(exec boil.Executor, cols M) {
+	err := q.UpdateAll(exec, cols)
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
+// UpdateAllG updates all rows with the specified column values.
+func (q addressQuery) UpdateAllG(cols M) error {
+	return q.UpdateAll(boil.GetDB(), cols)
+}
+
 // UpdateAll updates all rows with the specified column values.
-func (q addressQuery) UpdateAll(cols M) error {
+func (q addressQuery) UpdateAll(exec boil.Executor, cols M) error {
 	queries.SetUpdate(q.Query, cols)
 
-	_, err := q.Query.Exec()
+	_, err := q.Query.Exec(exec)
 	if err != nil {
 		return errors.Wrap(err, "model: unable to update all for address")
 	}
@@ -662,14 +737,16 @@ func (o AddressSlice) UpdateAllG(cols M) error {
 
 // UpdateAllGP updates all rows with the specified column values, and panics on error.
 func (o AddressSlice) UpdateAllGP(cols M) {
-	if err := o.UpdateAll(boil.GetDB(), cols); err != nil {
+	err := o.UpdateAll(boil.GetDB(), cols)
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // UpdateAllP updates all rows with the specified column values, and panics on error.
 func (o AddressSlice) UpdateAllP(exec boil.Executor, cols M) {
-	if err := o.UpdateAll(exec, cols); err != nil {
+	err := o.UpdateAll(exec, cols)
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
@@ -719,44 +796,61 @@ func (o AddressSlice) UpdateAll(exec boil.Executor, cols M) error {
 }
 
 // UpsertG attempts an insert, and does an update or ignore on conflict.
-func (o *Address) UpsertG(updateColumns []string, whitelist ...string) error {
-	return o.Upsert(boil.GetDB(), updateColumns, whitelist...)
+func (o *Address) UpsertG(updateColumns, insertColumns boil.Columns) error {
+	return o.Upsert(boil.GetDB(), updateColumns, insertColumns)
 }
 
 // UpsertGP attempts an insert, and does an update or ignore on conflict. Panics on error.
-func (o *Address) UpsertGP(updateColumns []string, whitelist ...string) {
-	if err := o.Upsert(boil.GetDB(), updateColumns, whitelist...); err != nil {
+func (o *Address) UpsertGP(updateColumns, insertColumns boil.Columns) {
+	if err := o.Upsert(boil.GetDB(), updateColumns, insertColumns); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // UpsertP attempts an insert using an executor, and does an update or ignore on conflict.
 // UpsertP panics on error.
-func (o *Address) UpsertP(exec boil.Executor, updateColumns []string, whitelist ...string) {
-	if err := o.Upsert(exec, updateColumns, whitelist...); err != nil {
+func (o *Address) UpsertP(exec boil.Executor, updateColumns, insertColumns boil.Columns) {
+	if err := o.Upsert(exec, updateColumns, insertColumns); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
+var mySQLAddressUniqueColumns = []string{
+	"id",
+	"address",
+}
+
 // Upsert attempts an insert using an executor, and does an update or ignore on conflict.
-func (o *Address) Upsert(exec boil.Executor, updateColumns []string, whitelist ...string) error {
+// See boil.Columns documentation for how to properly use updateColumns and insertColumns.
+func (o *Address) Upsert(exec boil.Executor, updateColumns, insertColumns boil.Columns) error {
 	if o == nil {
 		return errors.New("model: no address provided for upsert")
 	}
 
 	nzDefaults := queries.NonZeroDefaultSet(addressColumnsWithDefault, o)
+	nzUniques := queries.NonZeroDefaultSet(mySQLAddressUniqueColumns, o)
 
-	// Build cache key in-line uglily - mysql vs postgres problems
+	if len(nzUniques) == 0 {
+		return errors.New("cannot upsert with a table that cannot conflict on a unique column")
+	}
+
+	// Build cache key in-line uglily - mysql vs psql problems
 	buf := strmangle.GetBuffer()
-	for _, c := range updateColumns {
+	buf.WriteString(strconv.Itoa(updateColumns.Kind))
+	for _, c := range updateColumns.Cols {
 		buf.WriteString(c)
 	}
 	buf.WriteByte('.')
-	for _, c := range whitelist {
+	buf.WriteString(strconv.Itoa(insertColumns.Kind))
+	for _, c := range insertColumns.Cols {
 		buf.WriteString(c)
 	}
 	buf.WriteByte('.')
 	for _, c := range nzDefaults {
+		buf.WriteString(c)
+	}
+	buf.WriteByte('.')
+	for _, c := range nzUniques {
 		buf.WriteString(c)
 	}
 	key := buf.String()
@@ -769,27 +863,27 @@ func (o *Address) Upsert(exec boil.Executor, updateColumns []string, whitelist .
 	var err error
 
 	if !cached {
-		insert, ret := strmangle.InsertColumnSet(
+		insert, ret := insertColumns.InsertColumnSet(
 			addressColumns,
 			addressColumnsWithDefault,
 			addressColumnsWithoutDefault,
 			nzDefaults,
-			whitelist,
 		)
-
-		update := strmangle.UpdateColumnSet(
+		update := updateColumns.UpdateColumnSet(
 			addressColumns,
 			addressPrimaryKeyColumns,
-			updateColumns,
 		)
+
 		if len(update) == 0 {
 			return errors.New("model: unable to upsert address, could not build update column list")
 		}
 
-		cache.query = queries.BuildUpsertQueryMySQL(dialect, "address", update, insert)
+		ret = strmangle.SetComplement(ret, nzUniques)
+		cache.query = buildUpsertQueryMySQL(dialect, "address", update, insert)
 		cache.retQuery = fmt.Sprintf(
-			"SELECT %s FROM `address` WHERE `id`=?",
+			"SELECT %s FROM `address` WHERE %s",
 			strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, ret), ","),
+			strmangle.WhereClause("`", "`", 0, nzUniques),
 		)
 
 		cache.valueMapping, err = queries.BindMapping(addressType, addressMapping, insert)
@@ -823,7 +917,8 @@ func (o *Address) Upsert(exec boil.Executor, updateColumns []string, whitelist .
 	}
 
 	var lastID int64
-	var identifierCols []interface{}
+	var uniqueMap []uint64
+	var nzUniqueCols []interface{}
 
 	if len(cache.retMapping) == 0 {
 		goto CacheNoHooks
@@ -835,20 +930,22 @@ func (o *Address) Upsert(exec boil.Executor, updateColumns []string, whitelist .
 	}
 
 	o.ID = uint64(lastID)
-	if lastID != 0 && len(cache.retMapping) == 1 && cache.retMapping[0] == addressMapping["ID"] {
+	if lastID != 0 && len(cache.retMapping) == 1 && cache.retMapping[0] == addressMapping["id"] {
 		goto CacheNoHooks
 	}
 
-	identifierCols = []interface{}{
-		o.ID,
+	uniqueMap, err = queries.BindMapping(addressType, addressMapping, nzUniques)
+	if err != nil {
+		return errors.Wrap(err, "model: unable to retrieve unique values for address")
 	}
+	nzUniqueCols = queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), uniqueMap)
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, cache.retQuery)
-		fmt.Fprintln(boil.DebugWriter, identifierCols...)
+		fmt.Fprintln(boil.DebugWriter, nzUniqueCols...)
 	}
 
-	err = exec.QueryRow(cache.retQuery, identifierCols...).Scan(returns...)
+	err = exec.QueryRow(cache.retQuery, nzUniqueCols...).Scan(returns...)
 	if err != nil {
 		return errors.Wrap(err, "model: unable to populate default values for address")
 	}
@@ -863,30 +960,28 @@ CacheNoHooks:
 	return nil
 }
 
+// DeleteG deletes a single Address record.
+// DeleteG will match against the primary key column to find the record to delete.
+func (o *Address) DeleteG() error {
+	return o.Delete(boil.GetDB())
+}
+
 // DeleteP deletes a single Address record with an executor.
 // DeleteP will match against the primary key column to find the record to delete.
 // Panics on error.
 func (o *Address) DeleteP(exec boil.Executor) {
-	if err := o.Delete(exec); err != nil {
+	err := o.Delete(exec)
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
-}
-
-// DeleteG deletes a single Address record.
-// DeleteG will match against the primary key column to find the record to delete.
-func (o *Address) DeleteG() error {
-	if o == nil {
-		return errors.New("model: no Address provided for deletion")
-	}
-
-	return o.Delete(boil.GetDB())
 }
 
 // DeleteGP deletes a single Address record.
 // DeleteGP will match against the primary key column to find the record to delete.
 // Panics on error.
 func (o *Address) DeleteGP() {
-	if err := o.DeleteG(); err != nil {
+	err := o.Delete(boil.GetDB())
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
@@ -915,21 +1010,22 @@ func (o *Address) Delete(exec boil.Executor) error {
 }
 
 // DeleteAllP deletes all rows, and panics on error.
-func (q addressQuery) DeleteAllP() {
-	if err := q.DeleteAll(); err != nil {
+func (q addressQuery) DeleteAllP(exec boil.Executor) {
+	err := q.DeleteAll(exec)
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // DeleteAll deletes all matching rows.
-func (q addressQuery) DeleteAll() error {
+func (q addressQuery) DeleteAll(exec boil.Executor) error {
 	if q.Query == nil {
 		return errors.New("model: no addressQuery provided for delete all")
 	}
 
 	queries.SetDelete(q.Query)
 
-	_, err := q.Query.Exec()
+	_, err := q.Query.Exec(exec)
 	if err != nil {
 		return errors.Wrap(err, "model: unable to delete all from address")
 	}
@@ -937,24 +1033,23 @@ func (q addressQuery) DeleteAll() error {
 	return nil
 }
 
-// DeleteAllGP deletes all rows in the slice, and panics on error.
-func (o AddressSlice) DeleteAllGP() {
-	if err := o.DeleteAllG(); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
 // DeleteAllG deletes all rows in the slice.
 func (o AddressSlice) DeleteAllG() error {
-	if o == nil {
-		return errors.New("model: no Address slice provided for delete all")
-	}
 	return o.DeleteAll(boil.GetDB())
 }
 
 // DeleteAllP deletes all rows in the slice, using an executor, and panics on error.
 func (o AddressSlice) DeleteAllP(exec boil.Executor) {
-	if err := o.DeleteAll(exec); err != nil {
+	err := o.DeleteAll(exec)
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// DeleteAllGP deletes all rows in the slice, and panics on error.
+func (o AddressSlice) DeleteAllGP() {
+	err := o.DeleteAll(boil.GetDB())
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
@@ -991,11 +1086,13 @@ func (o AddressSlice) DeleteAll(exec boil.Executor) error {
 	return nil
 }
 
-// ReloadGP refetches the object from the database and panics on error.
-func (o *Address) ReloadGP() {
-	if err := o.ReloadG(); err != nil {
-		panic(boil.WrapErr(err))
+// ReloadG refetches the object from the database using the primary keys.
+func (o *Address) ReloadG() error {
+	if o == nil {
+		return errors.New("model: no Address provided for reload")
 	}
+
+	return o.Reload(boil.GetDB())
 }
 
 // ReloadP refetches the object from the database with an executor. Panics on error.
@@ -1005,13 +1102,11 @@ func (o *Address) ReloadP(exec boil.Executor) {
 	}
 }
 
-// ReloadG refetches the object from the database using the primary keys.
-func (o *Address) ReloadG() error {
-	if o == nil {
-		return errors.New("model: no Address provided for reload")
+// ReloadGP refetches the object from the database and panics on error.
+func (o *Address) ReloadGP() {
+	if err := o.Reload(boil.GetDB()); err != nil {
+		panic(boil.WrapErr(err))
 	}
-
-	return o.Reload(boil.GetDB())
 }
 
 // Reload refetches the object from the database
@@ -1026,13 +1121,14 @@ func (o *Address) Reload(exec boil.Executor) error {
 	return nil
 }
 
-// ReloadAllGP refetches every row with matching primary key column values
+// ReloadAllG refetches every row with matching primary key column values
 // and overwrites the original object slice with the newly updated slice.
-// Panics on error.
-func (o *AddressSlice) ReloadAllGP() {
-	if err := o.ReloadAllG(); err != nil {
-		panic(boil.WrapErr(err))
+func (o *AddressSlice) ReloadAllG() error {
+	if o == nil {
+		return errors.New("model: empty AddressSlice provided for reload all")
 	}
+
+	return o.ReloadAll(boil.GetDB())
 }
 
 // ReloadAllP refetches every row with matching primary key column values
@@ -1044,14 +1140,13 @@ func (o *AddressSlice) ReloadAllP(exec boil.Executor) {
 	}
 }
 
-// ReloadAllG refetches every row with matching primary key column values
+// ReloadAllGP refetches every row with matching primary key column values
 // and overwrites the original object slice with the newly updated slice.
-func (o *AddressSlice) ReloadAllG() error {
-	if o == nil {
-		return errors.New("model: empty AddressSlice provided for reload all")
+// Panics on error.
+func (o *AddressSlice) ReloadAllGP() {
+	if err := o.ReloadAll(boil.GetDB()); err != nil {
+		panic(boil.WrapErr(err))
 	}
-
-	return o.ReloadAll(boil.GetDB())
 }
 
 // ReloadAll refetches every row with matching primary key column values
@@ -1061,7 +1156,7 @@ func (o *AddressSlice) ReloadAll(exec boil.Executor) error {
 		return nil
 	}
 
-	addresses := AddressSlice{}
+	slice := AddressSlice{}
 	var args []interface{}
 	for _, obj := range *o {
 		pkeyArgs := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(obj)), addressPrimaryKeyMapping)
@@ -1071,29 +1166,54 @@ func (o *AddressSlice) ReloadAll(exec boil.Executor) error {
 	sql := "SELECT `address`.* FROM `address` WHERE " +
 		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, addressPrimaryKeyColumns, len(*o))
 
-	q := queries.Raw(exec, sql, args...)
+	q := queries.Raw(sql, args...)
 
-	err := q.Bind(&addresses)
+	err := q.Bind(nil, exec, &slice)
 	if err != nil {
 		return errors.Wrap(err, "model: unable to reload all in AddressSlice")
 	}
 
-	*o = addresses
+	*o = slice
 
 	return nil
 }
 
+// AddressExistsG checks if the Address row exists.
+func AddressExistsG(iD uint64) (bool, error) {
+	return AddressExists(boil.GetDB(), iD)
+}
+
+// AddressExistsP checks if the Address row exists. Panics on error.
+func AddressExistsP(exec boil.Executor, iD uint64) bool {
+	e, err := AddressExists(exec, iD)
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return e
+}
+
+// AddressExistsGP checks if the Address row exists. Panics on error.
+func AddressExistsGP(iD uint64) bool {
+	e, err := AddressExists(boil.GetDB(), iD)
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return e
+}
+
 // AddressExists checks if the Address row exists.
-func AddressExists(exec boil.Executor, id uint64) (bool, error) {
+func AddressExists(exec boil.Executor, iD uint64) (bool, error) {
 	var exists bool
 	sql := "select exists(select 1 from `address` where `id`=? limit 1)"
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, sql)
-		fmt.Fprintln(boil.DebugWriter, id)
+		fmt.Fprintln(boil.DebugWriter, iD)
 	}
 
-	row := exec.QueryRow(sql, id)
+	row := exec.QueryRow(sql, iD)
 
 	err := row.Scan(&exists)
 	if err != nil {
@@ -1101,29 +1221,4 @@ func AddressExists(exec boil.Executor, id uint64) (bool, error) {
 	}
 
 	return exists, nil
-}
-
-// AddressExistsG checks if the Address row exists.
-func AddressExistsG(id uint64) (bool, error) {
-	return AddressExists(boil.GetDB(), id)
-}
-
-// AddressExistsGP checks if the Address row exists. Panics on error.
-func AddressExistsGP(id uint64) bool {
-	e, err := AddressExists(boil.GetDB(), id)
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return e
-}
-
-// AddressExistsP checks if the Address row exists. Panics on error.
-func AddressExistsP(exec boil.Executor, id uint64) bool {
-	e, err := AddressExists(exec, id)
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return e
 }

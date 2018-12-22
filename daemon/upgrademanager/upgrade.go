@@ -4,6 +4,7 @@ import (
 	"github.com/lbryio/chainquery/model"
 	"github.com/lbryio/lbry.go/errors"
 	"github.com/sirupsen/logrus"
+	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
@@ -21,7 +22,7 @@ func RunUpgradesForVersion() {
 	var err error
 	if !model.ApplicationStatusExistsGP(1) {
 		appStatus = &model.ApplicationStatus{AppVersion: appVersion, APIVersion: apiVersion, DataVersion: dataVersion}
-		if err := appStatus.InsertG(); err != nil {
+		if err := appStatus.InsertG(boil.Infer()); err != nil {
 			err := errors.Prefix("App Status Error: ", err)
 			panic(err)
 		}
@@ -49,7 +50,7 @@ func RunUpgradesForVersion() {
 		appStatus.DataVersion = dataVersion
 		appStatus.APIVersion = apiVersion
 	}
-	if err := appStatus.UpdateG(); err != nil {
+	if err := appStatus.UpdateG(boil.Infer()); err != nil {
 		err := errors.Prefix("App Status Error: ", err)
 		panic(err)
 	}
@@ -95,12 +96,12 @@ func upgradeFrom4(version int) {
 func upgradeFrom5(version int) {
 	if version < 6 {
 		logrus.Info("Deleting top 50 blocks to ensure consistency for release")
-		highestBlock, err := model.BlocksG(qm.OrderBy(model.BlockColumns.Height + " DESC")).One()
+		highestBlock, err := model.Blocks(qm.OrderBy(model.BlockColumns.Height + " DESC")).OneG()
 		if err != nil {
 			logrus.Error(err)
 			return
 		}
-		blocks, err := model.BlocksG(qm.Where(model.BlockColumns.Height+">= ?", highestBlock.Height-50)).All()
+		blocks, err := model.Blocks(qm.Where(model.BlockColumns.Height+">= ?", highestBlock.Height-50)).AllG()
 		if err != nil {
 			logrus.Error(err)
 			return
@@ -121,7 +122,7 @@ func upgradeFrom6(version int) {
 
 func upgradeFrom7(version int) {
 	if version < 8 {
-		block, err := model.BlocksG(qm.OrderBy(model.BlockColumns.Height+" DESC"), qm.Limit(1)).One()
+		block, err := model.Blocks(qm.OrderBy(model.BlockColumns.Height+" DESC"), qm.Limit(1)).OneG()
 		if err != nil {
 			logrus.Error(err)
 			return

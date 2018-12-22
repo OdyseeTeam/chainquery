@@ -14,6 +14,7 @@ import (
 
 	"github.com/lbryio/lbry.go/stop"
 	"github.com/sirupsen/logrus"
+	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
@@ -160,17 +161,15 @@ func ProcessTx(jsonTx *lbrycrd.TxRawResult, blockTime uint64, blockHeight uint64
 func saveUpdateTransaction(jsonTx *lbrycrd.TxRawResult) (*model.Transaction, error) {
 	transaction := &model.Transaction{}
 	// Error is not helpful. It returns an error if there is nothing in the database.
-	foundTx, _ := model.TransactionsG(qm.Where(model.TransactionColumns.Hash+"=?", jsonTx.Txid)).One()
+	foundTx, _ := model.Transactions(qm.Where(model.TransactionColumns.Hash+"=?", jsonTx.Txid)).OneG()
 	if foundTx != nil {
 		transaction = foundTx
 	}
 	transaction.Hash = jsonTx.Txid
 	transaction.Version = int(jsonTx.Version)
-	transaction.BlockHashID.String = jsonTx.BlockHash
-	transaction.BlockHashID.Valid = true
+	transaction.BlockHashID.SetValid(jsonTx.BlockHash)
 	transaction.CreatedTime = time.Unix(jsonTx.Blocktime, 0)
-	transaction.TransactionTime.Uint64 = uint64(jsonTx.Time)
-	transaction.TransactionTime.Valid = true
+	transaction.TransactionTime.SetValid(uint64(jsonTx.Time))
 	transaction.LockTime = uint(jsonTx.LockTime)
 	transaction.InputCount = uint(len(jsonTx.Vin))
 	transaction.OutputCount = uint(len(jsonTx.Vout))
@@ -178,11 +177,11 @@ func saveUpdateTransaction(jsonTx *lbrycrd.TxRawResult) (*model.Transaction, err
 	transaction.TransactionSize = uint64(jsonTx.Size)
 
 	if foundTx != nil {
-		if err := transaction.UpdateG(); err != nil {
+		if err := transaction.UpdateG(boil.Infer()); err != nil {
 			return transaction, err
 		}
 	} else {
-		if err := transaction.InsertG(); err != nil {
+		if err := transaction.InsertG(boil.Infer()); err != nil {
 			return nil, err
 		}
 	}

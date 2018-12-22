@@ -82,14 +82,10 @@ func processVin(jsonVin *lbrycrd.Vin, tx *m.Transaction, txDC *txDebitCredits) e
 			return err
 		}
 	} else {
-		vin.PrevoutHash.String = jsonVin.TxID
-		vin.PrevoutHash.Valid = true
-		vin.PrevoutN.Uint = uint(jsonVin.Vout)
-		vin.PrevoutN.Valid = true
-		vin.ScriptSigHex.String = jsonVin.ScriptSig.Hex
-		vin.ScriptSigHex.Valid = true
-		vin.ScriptSigAsm.String = jsonVin.ScriptSig.Asm
-		vin.ScriptSigAsm.Valid = true
+		vin.PrevoutHash.SetValid(jsonVin.TxID)
+		vin.PrevoutN.SetValid(uint(jsonVin.Vout))
+		vin.ScriptSigHex.SetValid(jsonVin.ScriptSig.Hex)
+		vin.ScriptSigAsm.SetValid(jsonVin.ScriptSig.Asm)
 		srcOutput := ds.GetOutput(vin.PrevoutHash.String, vin.PrevoutN.Uint)
 		if srcOutput == nil {
 			id := strconv.Itoa(int(tx.ID))
@@ -123,8 +119,7 @@ func processVin(jsonVin *lbrycrd.Vin, tx *m.Transaction, txDC *txDebitCredits) e
 			}
 			if address != nil {
 				txDC.subtract(address.Address, srcOutput.Value.Float64)
-				vin.InputAddressID.Uint64 = address.ID
-				vin.InputAddressID.Valid = true
+				vin.InputAddressID.SetValid(address.ID)
 				// Store input - Needed to store input address below
 				err := ds.PutInput(vin)
 				if err != nil {
@@ -136,8 +131,7 @@ func processVin(jsonVin *lbrycrd.Vin, tx *m.Transaction, txDC *txDebitCredits) e
 			}
 			// Update the srcOutput spent if successful
 			srcOutput.IsSpent = true
-			srcOutput.SpentByInputID.Uint64 = vin.ID
-			srcOutput.SpentByInputID.Valid = true
+			srcOutput.SpentByInputID.SetValid(vin.ID)
 			c := m.OutputColumns
 			err := ds.PutOutput(srcOutput, c.IsSpent, c.SpentByInputID)
 			if err != nil {
@@ -156,8 +150,7 @@ func processVin(jsonVin *lbrycrd.Vin, tx *m.Transaction, txDC *txDebitCredits) e
 
 func processCoinBaseVin(jsonVin *lbrycrd.Vin, vin *m.Input) error {
 	vin.IsCoinbase = true
-	vin.Coinbase.String = jsonVin.Coinbase
-	vin.Coinbase.Valid = true
+	vin.Coinbase.SetValid(jsonVin.Coinbase)
 	err := ds.PutInput(vin)
 	if err != nil {
 		return err
@@ -175,22 +168,16 @@ func processVout(jsonVout *lbrycrd.Vout, tx *m.Transaction, txDC *txDebitCredits
 	vout.TransactionID = tx.ID
 	vout.TransactionHash = tx.Hash
 	vout.Vout = uint(jsonVout.N)
-	vout.Value.Float64 = jsonVout.Value
-	vout.Value.Valid = true
-	vout.RequiredSignatures.Uint = uint(jsonVout.ScriptPubKey.ReqSigs)
-	vout.RequiredSignatures.Valid = true
-	vout.ScriptPubKeyAsm.String = jsonVout.ScriptPubKey.Asm
-	vout.ScriptPubKeyAsm.Valid = true
-	vout.ScriptPubKeyHex.String = jsonVout.ScriptPubKey.Hex
-	vout.ScriptPubKeyHex.Valid = true
-	vout.Type.String = jsonVout.ScriptPubKey.Type
-	vout.Type.Valid = true
+	vout.Value.SetValid(jsonVout.Value)
+	vout.RequiredSignatures.SetValid(uint(jsonVout.ScriptPubKey.ReqSigs))
+	vout.ScriptPubKeyAsm.SetValid(jsonVout.ScriptPubKey.Asm)
+	vout.ScriptPubKeyHex.SetValid(jsonVout.ScriptPubKey.Hex)
+	vout.Type.SetValid(jsonVout.ScriptPubKey.Type)
 	jsonAddresses, err := json.Marshal(jsonVout.ScriptPubKey.Addresses)
 	var address *m.Address
 	if len(jsonVout.ScriptPubKey.Addresses) > 0 {
 		address = ds.GetAddress(jsonVout.ScriptPubKey.Addresses[0])
-		vout.AddressList.String = string(jsonAddresses)
-		vout.AddressList.Valid = true
+		vout.AddressList.SetValid(string(jsonAddresses))
 	} else if vout.Type.String == lbrycrd.NonStandard {
 		jsonAddress, err := getAddressFromNonStandardVout(vout.ScriptPubKeyHex.String)
 		if err != nil {
@@ -229,8 +216,7 @@ func processVout(jsonVout *lbrycrd.Vout, tx *m.Transaction, txDC *txDebitCredits
 		//Update output to link to the proper claim id
 		claim := ds.GetClaim(*claimid)
 		if claim != nil {
-			vout.ClaimID.String = claim.ClaimID
-			vout.ClaimID.Valid = true
+			vout.ClaimID.SetValid(claim.ClaimID)
 		}
 	}
 

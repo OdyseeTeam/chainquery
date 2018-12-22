@@ -17,6 +17,7 @@ import (
 	"github.com/lbryio/lbry.go/stop"
 
 	"github.com/sirupsen/logrus"
+	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
@@ -69,7 +70,7 @@ func RunBlockProcessing(height uint64) uint64 {
 func parseBlockInfo(blockHeight uint64, jsonBlock *lbrycrd.GetBlockResponse) (block *model.Block) {
 
 	block = &model.Block{}
-	foundBlock, _ := model.BlocksG(qm.Where(model.BlockColumns.Hash+"=?", jsonBlock.Hash)).One()
+	foundBlock, _ := model.Blocks(qm.Where(model.BlockColumns.Hash+"=?", jsonBlock.Hash)).OneG()
 	if foundBlock != nil {
 		block = foundBlock
 	}
@@ -86,18 +87,16 @@ func parseBlockInfo(blockHeight uint64, jsonBlock *lbrycrd.GetBlockResponse) (bl
 	block.NameClaimRoot = jsonBlock.NameClaimRoot
 	block.Nonce = jsonBlock.Nonce
 	block.NextBlockHash.String = jsonBlock.NextHash
-	block.PreviousBlockHash.String = jsonBlock.PreviousHash
-	block.PreviousBlockHash.Valid = true
-	block.TransactionHashes.String = strings.Join(jsonBlock.Tx, ",")
-	block.TransactionHashes.Valid = true
+	block.PreviousBlockHash.SetValid(jsonBlock.PreviousHash)
+	block.TransactionHashes.SetValid(strings.Join(jsonBlock.Tx, ","))
 	block.Version = uint64(jsonBlock.Version)
 	block.VersionHex = jsonBlock.VersionHex
 
 	var err error
 	if foundBlock != nil {
-		err = block.UpdateG()
+		err = block.UpdateG(boil.Infer())
 	} else {
-		err = block.InsertG()
+		err = block.InsertG(boil.Infer())
 	}
 	if err != nil {
 		logrus.Panic(err)
@@ -308,7 +307,7 @@ func checkHandleReorg(height uint64, chainPrevHash string) (uint64, error) {
 	prevHeight := height - 1
 	depth := 0
 	if height > 0 {
-		prevBlock, err := model.BlocksG(qm.Where(model.BlockColumns.Height+"=?", prevHeight)).One()
+		prevBlock, err := model.Blocks(qm.Where(model.BlockColumns.Height+"=?", prevHeight)).OneG()
 		if err != nil {
 			return height, errors.Prefix("error getting block@"+strconv.Itoa(int(prevHeight))+": ", err)
 		}
@@ -333,7 +332,7 @@ func checkHandleReorg(height uint64, chainPrevHash string) (uint64, error) {
 
 			// Decrement height and set prevBlock to the new previous
 			prevHeight--
-			prevBlock, err = model.BlocksG(qm.Where(model.BlockColumns.Height+"=?", prevHeight)).One()
+			prevBlock, err = model.Blocks(qm.Where(model.BlockColumns.Height+"=?", prevHeight)).OneG()
 			if err != nil {
 				return height, errors.Prefix("error getting previous block@"+strconv.Itoa(int(prevHeight))+": ", err)
 			}
