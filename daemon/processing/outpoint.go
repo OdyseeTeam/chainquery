@@ -13,6 +13,7 @@ import (
 	"github.com/lbryio/lbry.go/stop"
 
 	"github.com/sirupsen/logrus"
+	"github.com/volatiletech/sqlboiler/boil"
 )
 
 type vinToProcess struct {
@@ -133,7 +134,7 @@ func processVin(jsonVin *lbrycrd.Vin, tx *m.Transaction, txDC *txDebitCredits) e
 			srcOutput.IsSpent = true
 			srcOutput.SpentByInputID.SetValid(vin.ID)
 			c := m.OutputColumns
-			err := ds.PutOutput(srcOutput, c.IsSpent, c.SpentByInputID)
+			err := ds.PutOutput(srcOutput, boil.Whitelist(c.IsSpent, c.SpentByInputID))
 			if err != nil {
 				return err
 			}
@@ -197,7 +198,7 @@ func processVout(jsonVout *lbrycrd.Vout, tx *m.Transaction, txDC *txDebitCredits
 	}
 
 	// Save output
-	err = ds.PutOutput(vout)
+	err = ds.PutOutput(vout, boil.Infer())
 	if err != nil {
 		return err
 	}
