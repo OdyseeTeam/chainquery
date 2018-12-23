@@ -59,9 +59,11 @@ func MempoolSync() {
 					logrus.Error("MempoolSync:", err)
 				}
 			} else {
-				logrus.Info("Daemon is not caught up to mempool transactions, delaying mempool sync 1 minute...")
-				time.Sleep(1 * time.Minute)
-				mempoolSyncIsRunning = false
+				go func() {
+					logrus.Info("Daemon is not caught up to mempool transactions, delaying mempool sync 1 minute...")
+					time.Sleep(1 * time.Minute)
+					mempoolSyncIsRunning = false
+				}()
 				return
 			}
 		}
