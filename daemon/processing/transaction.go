@@ -13,7 +13,6 @@ import (
 	"github.com/lbryio/lbry.go/errors"
 
 	"github.com/lbryio/lbry.go/stop"
-	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
@@ -153,7 +152,10 @@ func ProcessTx(jsonTx *lbrycrd.TxRawResult, blockTime uint64, blockHeight uint64
 		return err
 	}
 	//Set the send and receive values for the transaction
-	setSendReceive(transaction, txDbCrAddrMap)
+	err = setSendReceive(transaction, txDbCrAddrMap)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -290,7 +292,7 @@ func saveUpdateOutputs(transaction *model.Transaction, jsonTx *lbrycrd.TxRawResu
 	return nil
 }
 
-func setSendReceive(transaction *model.Transaction, txDbCrAddrMap *txDebitCredits) {
+func setSendReceive(transaction *model.Transaction, txDbCrAddrMap *txDebitCredits) error {
 	for addr, DC := range txDbCrAddrMap.addrDCMap {
 
 		address := datastore.GetAddress(addr)
@@ -301,7 +303,8 @@ func setSendReceive(transaction *model.Transaction, txDbCrAddrMap *txDebitCredit
 		txAddr.DebitAmount = DC.Debits()
 
 		if err := datastore.PutTxAddress(txAddr); err != nil {
-			logrus.Panic(err) //Should never happen or something is wrong
+			return err //Should never happen or something is wrong
 		}
 	}
+	return nil
 }
