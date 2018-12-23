@@ -27,6 +27,7 @@ type Address struct {
 	FirstSeen  null.Time `boil:"first_seen" json:"first_seen,omitempty" toml:"first_seen" yaml:"first_seen,omitempty"`
 	CreatedAt  time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 	ModifiedAt time.Time `boil:"modified_at" json:"modified_at" toml:"modified_at" yaml:"modified_at"`
+	Balance    float64   `boil:"balance" json:"balance" toml:"balance" yaml:"balance"`
 
 	R *addressR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L addressL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -38,12 +39,14 @@ var AddressColumns = struct {
 	FirstSeen  string
 	CreatedAt  string
 	ModifiedAt string
+	Balance    string
 }{
 	ID:         "id",
 	Address:    "address",
 	FirstSeen:  "first_seen",
 	CreatedAt:  "created_at",
 	ModifiedAt: "modified_at",
+	Balance:    "balance",
 }
 
 // AddressRels is where relationship names are stored.
@@ -67,9 +70,9 @@ func (*addressR) NewStruct() *addressR {
 type addressL struct{}
 
 var (
-	addressColumns               = []string{"id", "address", "first_seen", "created_at", "modified_at"}
+	addressColumns               = []string{"id", "address", "first_seen", "created_at", "modified_at", "balance"}
 	addressColumnsWithoutDefault = []string{"address", "first_seen"}
-	addressColumnsWithDefault    = []string{"id", "created_at", "modified_at"}
+	addressColumnsWithDefault    = []string{"id", "created_at", "modified_at", "balance"}
 	addressPrimaryKeyColumns     = []string{"id"}
 )
 

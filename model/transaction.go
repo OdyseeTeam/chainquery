@@ -36,6 +36,7 @@ type Transaction struct {
 	CreatedAt       time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 	ModifiedAt      time.Time   `boil:"modified_at" json:"modified_at" toml:"modified_at" yaml:"modified_at"`
 	CreatedTime     time.Time   `boil:"created_time" json:"created_time" toml:"created_time" yaml:"created_time"`
+	Value           float64     `boil:"value" json:"value" toml:"value" yaml:"value"`
 
 	R *transactionR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L transactionL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -56,6 +57,7 @@ var TransactionColumns = struct {
 	CreatedAt       string
 	ModifiedAt      string
 	CreatedTime     string
+	Value           string
 }{
 	ID:              "id",
 	BlockHashID:     "block_hash_id",
@@ -71,6 +73,7 @@ var TransactionColumns = struct {
 	CreatedAt:       "created_at",
 	ModifiedAt:      "modified_at",
 	CreatedTime:     "created_time",
+	Value:           "value",
 }
 
 // TransactionRels is where relationship names are stored.
@@ -109,9 +112,9 @@ func (*transactionR) NewStruct() *transactionR {
 type transactionL struct{}
 
 var (
-	transactionColumns               = []string{"id", "block_hash_id", "input_count", "output_count", "fee", "transaction_time", "transaction_size", "hash", "version", "lock_time", "raw", "created_at", "modified_at", "created_time"}
+	transactionColumns               = []string{"id", "block_hash_id", "input_count", "output_count", "fee", "transaction_time", "transaction_size", "hash", "version", "lock_time", "raw", "created_at", "modified_at", "created_time", "value"}
 	transactionColumnsWithoutDefault = []string{"block_hash_id", "input_count", "output_count", "transaction_time", "transaction_size", "hash", "version", "lock_time", "raw"}
-	transactionColumnsWithDefault    = []string{"id", "fee", "created_at", "modified_at", "created_time"}
+	transactionColumnsWithDefault    = []string{"id", "fee", "created_at", "modified_at", "created_time", "value"}
 	transactionPrimaryKeyColumns     = []string{"id"}
 )
 

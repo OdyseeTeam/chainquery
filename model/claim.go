@@ -48,11 +48,11 @@ type Claim struct {
 	Title             null.String `boil:"title" json:"title,omitempty" toml:"title" yaml:"title,omitempty"`
 	Fee               float64     `boil:"fee" json:"fee" toml:"fee" yaml:"fee"`
 	FeeCurrency       null.String `boil:"fee_currency" json:"fee_currency,omitempty" toml:"fee_currency" yaml:"fee_currency,omitempty"`
+	FeeAddress        string      `boil:"fee_address" json:"fee_address" toml:"fee_address" yaml:"fee_address"`
 	IsFiltered        bool        `boil:"is_filtered" json:"is_filtered" toml:"is_filtered" yaml:"is_filtered"`
 	BidState          string      `boil:"bid_state" json:"bid_state" toml:"bid_state" yaml:"bid_state"`
 	CreatedAt         time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 	ModifiedAt        time.Time   `boil:"modified_at" json:"modified_at" toml:"modified_at" yaml:"modified_at"`
-	FeeAddress        string      `boil:"fee_address" json:"fee_address" toml:"fee_address" yaml:"fee_address"`
 	ClaimAddress      string      `boil:"claim_address" json:"claim_address" toml:"claim_address" yaml:"claim_address"`
 	IsCertValid       bool        `boil:"is_cert_valid" json:"is_cert_valid" toml:"is_cert_valid" yaml:"is_cert_valid"`
 	IsCertProcessed   bool        `boil:"is_cert_processed" json:"is_cert_processed" toml:"is_cert_processed" yaml:"is_cert_processed"`
@@ -88,11 +88,11 @@ var ClaimColumns = struct {
 	Title             string
 	Fee               string
 	FeeCurrency       string
+	FeeAddress        string
 	IsFiltered        string
 	BidState          string
 	CreatedAt         string
 	ModifiedAt        string
-	FeeAddress        string
 	ClaimAddress      string
 	IsCertValid       string
 	IsCertProcessed   string
@@ -123,11 +123,11 @@ var ClaimColumns = struct {
 	Title:             "title",
 	Fee:               "fee",
 	FeeCurrency:       "fee_currency",
+	FeeAddress:        "fee_address",
 	IsFiltered:        "is_filtered",
 	BidState:          "bid_state",
 	CreatedAt:         "created_at",
 	ModifiedAt:        "modified_at",
-	FeeAddress:        "fee_address",
 	ClaimAddress:      "claim_address",
 	IsCertValid:       "is_cert_valid",
 	IsCertProcessed:   "is_cert_processed",
@@ -154,7 +154,7 @@ func (*claimR) NewStruct() *claimR {
 type claimL struct{}
 
 var (
-	claimColumns               = []string{"id", "transaction_hash_id", "vout", "name", "claim_id", "claim_type", "publisher_id", "publisher_sig", "certificate", "sd_hash", "transaction_time", "version", "value_as_hex", "value_as_json", "valid_at_height", "height", "effective_amount", "author", "description", "content_type", "is_nsfw", "language", "thumbnail_url", "title", "fee", "fee_currency", "is_filtered", "bid_state", "created_at", "modified_at", "fee_address", "claim_address", "is_cert_valid", "is_cert_processed"}
+	claimColumns               = []string{"id", "transaction_hash_id", "vout", "name", "claim_id", "claim_type", "publisher_id", "publisher_sig", "certificate", "sd_hash", "transaction_time", "version", "value_as_hex", "value_as_json", "valid_at_height", "height", "effective_amount", "author", "description", "content_type", "is_nsfw", "language", "thumbnail_url", "title", "fee", "fee_currency", "fee_address", "is_filtered", "bid_state", "created_at", "modified_at", "claim_address", "is_cert_valid", "is_cert_processed"}
 	claimColumnsWithoutDefault = []string{"transaction_hash_id", "vout", "name", "claim_id", "claim_type", "publisher_id", "publisher_sig", "certificate", "sd_hash", "transaction_time", "version", "value_as_hex", "value_as_json", "valid_at_height", "height", "author", "description", "content_type", "language", "thumbnail_url", "title", "fee_currency", "fee_address", "claim_address", "is_cert_valid", "is_cert_processed"}
 	claimColumnsWithDefault    = []string{"id", "effective_amount", "is_nsfw", "fee", "is_filtered", "bid_state", "created_at", "modified_at"}
 	claimPrimaryKeyColumns     = []string{"id"}

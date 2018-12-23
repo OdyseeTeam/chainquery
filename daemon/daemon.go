@@ -3,7 +3,9 @@ package daemon
 import (
 	"os"
 	"os/signal"
+	"reflect"
 	"runtime"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -73,9 +75,9 @@ func shutdownDaemon() {
 
 func scheduleJob(job func(), name string, howOften time.Duration) {
 	asyncStoppable(job)
-	stopper.Add(1)
+	stopper.AddNamed(1, "scheduled job "+name)
 	go func() {
-		defer stopper.Done()
+		defer stopper.DoneNamed("scheduled job " + name)
 		t := time.NewTicker(howOften)
 		for {
 			select {
@@ -115,9 +117,9 @@ func runDaemon() {
 }
 
 func asyncStoppable(function func()) {
-	stopper.Add(1)
+	stopper.AddNamed(1, "stoppable - "+runtime.FuncForPC(reflect.ValueOf(function).Pointer()).Name())
 	go func() {
-		defer stopper.Done()
+		defer stopper.DoneNamed("stoppable - " + runtime.FuncForPC(reflect.ValueOf(function).Pointer()).Name())
 		function()
 	}()
 }
@@ -182,9 +184,9 @@ func ApplySettings(settings global.DaemonSettings) {
 
 func initBlockWorkers(nrWorkers int, jobs <-chan uint64) {
 	for i := 0; i < nrWorkers; i++ {
-		stopper.Add(1)
+		stopper.AddNamed(1, "block worker "+strconv.Itoa(i))
 		go func(worker int) {
-			defer stopper.Done()
+			defer stopper.DoneNamed("block worker " + strconv.Itoa(worker))
 			log.Info("block worker ", worker+1, " running")
 			BlockProcessor(jobs, worker)
 		}(i)
