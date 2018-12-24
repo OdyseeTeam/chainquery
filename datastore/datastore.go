@@ -82,7 +82,13 @@ func PutInput(input *model.Input) error {
 		txHashMatch := qm.Where(model.InputColumns.TransactionHash+"=?", input.TransactionHash)
 		txCoinBaseMatch := qm.Where(model.InputColumns.IsCoinbase+"=?", input.IsCoinbase)
 		prevHashMatch := qm.Where(model.InputColumns.PrevoutHash+"=?", input.PrevoutHash)
+		if input.PrevoutHash.IsZero() {
+			prevHashMatch = qm.Where(model.InputColumns.PrevoutHash + " IS NULL")
+		}
 		prevNMatch := qm.And(model.InputColumns.PrevoutN+"=?", input.PrevoutN)
+		if input.PrevoutN.IsZero() {
+			prevNMatch = qm.And(model.InputColumns.PrevoutN + " IS NULL ")
+		}
 
 		var err error
 		if model.Inputs(txHashMatch, txCoinBaseMatch, prevHashMatch, prevNMatch).ExistsGP() {

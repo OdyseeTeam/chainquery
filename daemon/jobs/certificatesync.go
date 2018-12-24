@@ -1,6 +1,8 @@
 package jobs
 
 import (
+	"context"
+
 	"github.com/lbryio/chainquery/global"
 	"github.com/lbryio/chainquery/model"
 	"github.com/lbryio/lbry.go/errors"
@@ -76,6 +78,7 @@ type claimToBeSynced struct {
 }
 
 func getClaimsToBeSynced() ([]claimToBeSynced, error) {
+	var context context.Context
 	claim := model.TableNames.Claim
 	claimID := claim + "." + model.ClaimColumns.ID
 	signedClaimHex := claim + "." + model.ClaimColumns.ValueAsHex + " as signed_claim_hex"
@@ -95,7 +98,7 @@ func getClaimsToBeSynced() ([]claimToBeSynced, error) {
 			`+ChannelClaimID+` 
 		FROM `+claim+`
 		INNER JOIN `+claim+` channel ON `+ChannelClaimID+` = `+publisherID+`
-		WHERE `+isCertProcessed+`=? LIMIT ?`, false, certsProcessedPerIteration).BindG(nil, &claims)
+		WHERE `+isCertProcessed+`=? LIMIT ?`, false, certsProcessedPerIteration).BindG(context, &claims)
 	if err != nil {
 		return nil, err
 	}

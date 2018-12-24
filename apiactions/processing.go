@@ -13,6 +13,7 @@ import (
 	v "github.com/lbryio/ozzo-validation"
 )
 
+// ProcessBlocks processed a specific block or range of blocks if authorized.
 func ProcessBlocks(r *http.Request) api.Response {
 	params := struct {
 		Block *uint64
@@ -35,9 +36,6 @@ func ProcessBlocks(r *http.Request) api.Response {
 		return api.Response{Error: errors.Err("not authorized"), Status: http.StatusUnauthorized}
 	}
 
-	if (params.Block != nil && *params.Block < 0) || (params.From != nil && *params.From < 0) || (params.To != nil && *params.To < 0) {
-		return api.Response{Error: errors.Err("a positive value must be passed"), Status: http.StatusBadRequest}
-	}
 	if params.Block != nil {
 		err = processBlocks(params.Block, nil, nil)
 	} else if params.To != nil {

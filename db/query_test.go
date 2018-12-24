@@ -22,7 +22,7 @@ func TestMain(m *testing.M) {
 
 func TestQueryGetAddressSummary(t *testing.T) {
 	//Need to add setup here so it can connect to the db
-	addresses, err := model.AddressesG(qm.Limit(1000)).All()
+	addresses, err := model.Addresses(qm.Limit(1000)).AllG()
 	if err != nil {
 		t.Error(err)
 	}
