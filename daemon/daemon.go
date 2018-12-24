@@ -66,6 +66,7 @@ func initJobs() {
 	scheduleJob(jobs.ClaimTrieSync, "Claimtrie Sync", 15*time.Minute)
 	scheduleJob(jobs.MempoolSync, "Mempool Sync", 1*time.Second)
 	scheduleJob(jobs.CertificateSync, "Certificate Sync", 5*time.Second)
+	scheduleJob(jobs.ValidateChain, "Validate Chain", 24*time.Hour)
 }
 
 func shutdownDaemon() {
@@ -74,7 +75,6 @@ func shutdownDaemon() {
 }
 
 func scheduleJob(job func(), name string, howOften time.Duration) {
-	asyncStoppable(job)
 	stopper.AddNamed(1, "scheduled job "+name)
 	go func() {
 		defer stopper.DoneNamed("scheduled job " + name)

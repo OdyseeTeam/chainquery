@@ -58,3 +58,6 @@
 #DEFAULT-twilioauthtoken=""
 #DEFAULT-smsrecipients=["",""]
 #DEFAULT-smsfromphonenumber=""
+
+#API Keys - Disallowed by default unless keys are entered.
+#DEFAULT-apikeys=[]

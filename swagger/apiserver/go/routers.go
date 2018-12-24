@@ -79,4 +79,18 @@ var routes = Routes{
 		"/api/status",
 		ChainQueryStatusAction,
 	},
+
+	Route{
+		"ValidateChain",
+		strings.ToUpper("Get"),
+		"/api/validate",
+		ValidateChainData,
+	},
+
+	Route{
+		"ProcessBlocks",
+		strings.ToUpper("Get"),
+		"/api/process",
+		ProcessBlocks,
+	},
 }
