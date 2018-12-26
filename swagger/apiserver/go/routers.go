@@ -93,4 +93,18 @@ var routes = Routes{
 		"/api/process",
 		ProcessBlocks,
 	},
+
+	Route{
+		"SyncAddressBalance",
+		strings.ToUpper("Get"),
+		"/api/sync/addresses",
+		SyncAddressBalance,
+	},
+
+	Route{
+		"SyncTransactionValue",
+		strings.ToUpper("Get"),
+		"/api/sync/txvalues",
+		SyncTransactionValue,
+	},
 }

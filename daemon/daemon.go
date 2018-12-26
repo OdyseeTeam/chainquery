@@ -67,6 +67,8 @@ func initJobs() {
 	scheduleJob(jobs.MempoolSync, "Mempool Sync", 1*time.Second)
 	scheduleJob(jobs.CertificateSync, "Certificate Sync", 5*time.Second)
 	scheduleJob(jobs.ValidateChain, "Validate Chain", 24*time.Hour)
+	scheduleJob(jobs.SyncAddressBalancesJob, "Address Balance Sync", 24*time.Hour)
+	scheduleJob(jobs.SyncTransactionValueJob, "Transaction Value Sync", 24*time.Hour)
 }
 
 func shutdownDaemon() {
