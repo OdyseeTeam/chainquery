@@ -234,15 +234,8 @@ func getClaimStatus(claim *model.Claim) string {
 		status = "Spent" //Should be unreachable because claim would be out of claimtrie if spent.
 	}
 	height := claim.Height
-	if height >= expirationHardForkHeight {
-		// https://github.com/lbryio/lbrycrd/pull/137 - HardFork extends claim expiration.
-		if height+hardForkBlocksToExpiration < uint(blockHeight) {
-			status = "Expired"
-		}
-	} else {
-		if height+blocksToExpiration < uint(blockHeight) {
-			status = "Expired"
-		}
+	if GetIsExpiredAtHeight(height, uint(blockHeight)) {
+		status = "Expired"
 	}
 
 	//Neither Spent or Expired = Active
@@ -251,6 +244,26 @@ func getClaimStatus(claim *model.Claim) string {
 	}
 
 	return status
+}
+
+//GetIsExpiredAtHeight checks the claim height compared to the current height to determine expiration.
+func GetIsExpiredAtHeight(height, blockHeight uint) bool {
+	if height >= expirationHardForkHeight {
+		// https://github.com/lbryio/lbrycrd/pull/137 - HardFork extends claim expiration.
+		if height+hardForkBlocksToExpiration < uint(blockHeight) {
+			return true
+		}
+	} else if height+blocksToExpiration >= expirationHardForkHeight {
+		// https://github.com/lbryio/lbrycrd/pull/137 - HardFork extends claim expiration.
+		if height+hardForkBlocksToExpiration < uint(blockHeight) {
+			return true
+		}
+	} else {
+		if height+blocksToExpiration < uint(blockHeight) {
+			return true
+		}
+	}
+	return false
 }
 
 func getUpdatedClaims(jobStatus *model.JobStatus) (model.ClaimSlice, error) {

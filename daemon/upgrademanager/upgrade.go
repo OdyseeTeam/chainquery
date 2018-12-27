@@ -1,6 +1,10 @@
 package upgrademanager
 
 import (
+	"time"
+
+	"github.com/lbryio/chainquery/daemon/jobs"
+	"github.com/lbryio/chainquery/lbrycrd"
 	"github.com/lbryio/chainquery/model"
 	"github.com/lbryio/lbry.go/errors"
 	"github.com/sirupsen/logrus"
@@ -9,9 +13,9 @@ import (
 )
 
 const (
-	appVersion  = 9
-	apiVersion  = 9
-	dataVersion = 9
+	appVersion  = 10
+	apiVersion  = 10
+	dataVersion = 10
 )
 
 // RunUpgradesForVersion - Migrations are for structure of the data. Upgrade Manager scripts are for the data itself.
@@ -43,6 +47,7 @@ func RunUpgradesForVersion() {
 		upgradeFrom6(appStatus.AppVersion)
 		upgradeFrom7(appStatus.AppVersion)
 		upgradeFrom8(appStatus.AppVersion)
+		upgradeFrom9(appStatus.AppVersion)
 		////Increment and save
 		//
 		logrus.Debug("Upgrading app status version to App-", appVersion, " Data-", dataVersion, " Api-", apiVersion)
@@ -139,5 +144,31 @@ func upgradeFrom8(version int) {
 	if version < 9 {
 		logrus.Info("Re-Processing all claim outputs")
 		reProcessAllClaims()
+	}
+}
+
+func upgradeFrom9(version int) {
+	if version < 10 {
+		//Get blockheight for calculating expired status
+		count, err := lbrycrd.GetBlockCount()
+		if err != nil {
+			logrus.Error("Upgrade 9-10: Error getting block height", err)
+			return
+		}
+		expiredClaims, err := model.Claims(qm.Where(model.ClaimColumns.BidState+"=?", "Expired")).AllG()
+		if err != nil {
+			logrus.Error("Upgrade 9-10: ", err)
+		}
+
+		for _, expiredClaim := range expiredClaims {
+			if !jobs.GetIsExpiredAtHeight(expiredClaim.Height, uint(*count)) {
+				expiredClaim.BidState = "Active" //Will update it to go through the claimtrie sync
+				expiredClaim.ModifiedAt = time.Now()
+				err = expiredClaim.UpdateG(boil.Infer())
+				if err != nil {
+					logrus.Error("Upgrade 9-10: ", err)
+				}
+			}
+		}
 	}
 }
