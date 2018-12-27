@@ -36,7 +36,7 @@ func createUpdateVoutAddresses(tx *model.Transaction, outputs *[]lbrycrd.Vout, b
 			}
 		}
 		for _, address := range output.ScriptPubKey.Addresses {
-			foundAddress, _ := model.AddressesG(qm.Where(model.AddressColumns.Address+"=?", address)).One()
+			foundAddress, _ := model.Addresses(qm.Where(model.AddressColumns.Address+"=?", address)).OneG()
 			if foundAddress != nil {
 				addressIDMap[address] = foundAddress.ID
 				err := createTxAddressIfNotExist(tx.ID, foundAddress.ID)
@@ -46,8 +46,7 @@ func createUpdateVoutAddresses(tx *model.Transaction, outputs *[]lbrycrd.Vout, b
 			} else {
 				newAddress := model.Address{}
 				newAddress.Address = address
-				newAddress.FirstSeen.Time = time.Unix(int64(blockSeconds), 0)
-				newAddress.FirstSeen.Valid = true
+				newAddress.FirstSeen.SetValid(time.Unix(int64(blockSeconds), 0))
 				err := datastore.PutAddress(&newAddress)
 				if err != nil {
 					return nil, err

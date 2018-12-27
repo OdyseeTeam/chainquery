@@ -7,5 +7,6 @@ DIR="$PWD"
 (
   cd "$DIR"
   go get -u -t github.com/volatiletech/sqlboiler
-  sqlboiler --no-auto-timestamps --no-hooks --no-tests --tinyint-as-bool --wipe mysql
+  go get -u -t github.com/volatiletech/sqlboiler/drivers/sqlboiler-mysql
+  sqlboiler --no-rows-affected --no-auto-timestamps --no-hooks --no-tests --no-context --add-global-variants --add-panic-variants --wipe mysql
 )

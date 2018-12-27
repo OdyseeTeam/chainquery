@@ -6,10 +6,12 @@ import (
 	"os"
 	"time"
 
+	"github.com/lbryio/chainquery/auth"
 	"github.com/lbryio/chainquery/daemon"
 	"github.com/lbryio/chainquery/global"
 	"github.com/lbryio/chainquery/lbrycrd"
 	"github.com/lbryio/chainquery/twilio"
+
 	"github.com/lbryio/lbry.go/errors"
 
 	"github.com/fsnotify/fsnotify"
@@ -44,6 +46,7 @@ const ( // config setting keys
 	twilioauthtoken      = "twilioauthtoken"
 	smsrecipients        = "smsrecipients"
 	smsfromphonenumber   = "smsfromphonenumber"
+	apikeys              = "apikeys"
 )
 
 const (
@@ -158,6 +161,7 @@ func processConfiguration() {
 
 	daemon.ApplySettings(settings)
 	lbrycrd.LBRYcrdURL = GetLBRYcrdURL()
+	auth.APIKeys = viper.GetStringSlice(apikeys)
 
 }
 

@@ -4,20 +4,20 @@
 package model
 
 import (
-	"bytes"
 	"database/sql"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"github.com/volatiletech/sqlboiler/strmangle"
-	"gopkg.in/volatiletech/null.v6"
 )
 
 // Block is an object representing the database table.
@@ -91,9 +91,21 @@ var BlockColumns = struct {
 	ModifiedAt:            "modified_at",
 }
 
+// BlockRels is where relationship names are stored.
+var BlockRels = struct {
+	BlockHashTransactions string
+}{
+	BlockHashTransactions: "BlockHashTransactions",
+}
+
 // blockR is where relationships are stored.
 type blockR struct {
 	BlockHashTransactions TransactionSlice
+}
+
+// NewStruct creates a new relationship struct
+func (*blockR) NewStruct() *blockR {
+	return &blockR{}
 }
 
 // blockL is where Load methods for each relationship are stored.
@@ -132,13 +144,26 @@ var (
 var (
 	// Force time package dependency for automated UpdatedAt/CreatedAt.
 	_ = time.Second
-	// Force bytes in case of primary key column that uses []byte (for relationship compares)
-	_ = bytes.MinRead
 )
 
+// OneG returns a single block record from the query using the global executor.
+func (q blockQuery) OneG() (*Block, error) {
+	return q.One(boil.GetDB())
+}
+
+// OneGP returns a single block record from the query using the global executor, and panics on error.
+func (q blockQuery) OneGP() *Block {
+	o, err := q.One(boil.GetDB())
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return o
+}
+
 // OneP returns a single block record from the query, and panics on error.
-func (q blockQuery) OneP() *Block {
-	o, err := q.One()
+func (q blockQuery) OneP(exec boil.Executor) *Block {
+	o, err := q.One(exec)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -147,12 +172,12 @@ func (q blockQuery) OneP() *Block {
 }
 
 // One returns a single block record from the query.
-func (q blockQuery) One() (*Block, error) {
+func (q blockQuery) One(exec boil.Executor) (*Block, error) {
 	o := &Block{}
 
 	queries.SetLimit(q.Query, 1)
 
-	err := q.Bind(o)
+	err := q.Bind(nil, exec, o)
 	if err != nil {
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
@@ -163,9 +188,24 @@ func (q blockQuery) One() (*Block, error) {
 	return o, nil
 }
 
+// AllG returns all Block records from the query using the global executor.
+func (q blockQuery) AllG() (BlockSlice, error) {
+	return q.All(boil.GetDB())
+}
+
+// AllGP returns all Block records from the query using the global executor, and panics on error.
+func (q blockQuery) AllGP() BlockSlice {
+	o, err := q.All(boil.GetDB())
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return o
+}
+
 // AllP returns all Block records from the query, and panics on error.
-func (q blockQuery) AllP() BlockSlice {
-	o, err := q.All()
+func (q blockQuery) AllP(exec boil.Executor) BlockSlice {
+	o, err := q.All(exec)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -174,10 +214,10 @@ func (q blockQuery) AllP() BlockSlice {
 }
 
 // All returns all Block records from the query.
-func (q blockQuery) All() (BlockSlice, error) {
+func (q blockQuery) All(exec boil.Executor) (BlockSlice, error) {
 	var o []*Block
 
-	err := q.Bind(&o)
+	err := q.Bind(nil, exec, &o)
 	if err != nil {
 		return nil, errors.Wrap(err, "model: failed to assign all query results to Block slice")
 	}
@@ -185,9 +225,24 @@ func (q blockQuery) All() (BlockSlice, error) {
 	return o, nil
 }
 
+// CountG returns the count of all Block records in the query, and panics on error.
+func (q blockQuery) CountG() (int64, error) {
+	return q.Count(boil.GetDB())
+}
+
+// CountGP returns the count of all Block records in the query using the global executor, and panics on error.
+func (q blockQuery) CountGP() int64 {
+	c, err := q.Count(boil.GetDB())
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return c
+}
+
 // CountP returns the count of all Block records in the query, and panics on error.
-func (q blockQuery) CountP() int64 {
-	c, err := q.Count()
+func (q blockQuery) CountP(exec boil.Executor) int64 {
+	c, err := q.Count(exec)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -196,13 +251,13 @@ func (q blockQuery) CountP() int64 {
 }
 
 // Count returns the count of all Block records in the query.
-func (q blockQuery) Count() (int64, error) {
+func (q blockQuery) Count(exec boil.Executor) (int64, error) {
 	var count int64
 
 	queries.SetSelect(q.Query, nil)
 	queries.SetCount(q.Query)
 
-	err := q.Query.QueryRow().Scan(&count)
+	err := q.Query.QueryRow(exec).Scan(&count)
 	if err != nil {
 		return 0, errors.Wrap(err, "model: failed to count block rows")
 	}
@@ -210,9 +265,24 @@ func (q blockQuery) Count() (int64, error) {
 	return count, nil
 }
 
-// Exists checks if the row exists in the table, and panics on error.
-func (q blockQuery) ExistsP() bool {
-	e, err := q.Exists()
+// ExistsG checks if the row exists in the table, and panics on error.
+func (q blockQuery) ExistsG() (bool, error) {
+	return q.Exists(boil.GetDB())
+}
+
+// ExistsGP checks if the row exists in the table using the global executor, and panics on error.
+func (q blockQuery) ExistsGP() bool {
+	e, err := q.Exists(boil.GetDB())
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return e
+}
+
+// ExistsP checks if the row exists in the table, and panics on error.
+func (q blockQuery) ExistsP(exec boil.Executor) bool {
+	e, err := q.Exists(exec)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -221,13 +291,14 @@ func (q blockQuery) ExistsP() bool {
 }
 
 // Exists checks if the row exists in the table.
-func (q blockQuery) Exists() (bool, error) {
+func (q blockQuery) Exists(exec boil.Executor) (bool, error) {
 	var count int64
 
+	queries.SetSelect(q.Query, nil)
 	queries.SetCount(q.Query)
 	queries.SetLimit(q.Query, 1)
 
-	err := q.Query.QueryRow().Scan(&count)
+	err := q.Query.QueryRow(exec).Scan(&count)
 	if err != nil {
 		return false, errors.Wrap(err, "model: failed to check if block exists")
 	}
@@ -235,13 +306,8 @@ func (q blockQuery) Exists() (bool, error) {
 	return count > 0, nil
 }
 
-// BlockHashTransactionsG retrieves all the transaction's transaction via block_hash_id column.
-func (o *Block) BlockHashTransactionsG(mods ...qm.QueryMod) transactionQuery {
-	return o.BlockHashTransactions(boil.GetDB(), mods...)
-}
-
-// BlockHashTransactions retrieves all the transaction's transaction with an executor via block_hash_id column.
-func (o *Block) BlockHashTransactions(exec boil.Executor, mods ...qm.QueryMod) transactionQuery {
+// BlockHashTransactions retrieves all the transaction's Transactions with an executor via block_hash_id column.
+func (o *Block) BlockHashTransactions(mods ...qm.QueryMod) transactionQuery {
 	var queryMods []qm.QueryMod
 	if len(mods) != 0 {
 		queryMods = append(queryMods, mods...)
@@ -251,7 +317,7 @@ func (o *Block) BlockHashTransactions(exec boil.Executor, mods ...qm.QueryMod) t
 		qm.Where("`transaction`.`block_hash_id`=?", o.Hash),
 	)
 
-	query := Transactions(exec, queryMods...)
+	query := Transactions(queryMods...)
 	queries.SetFrom(query.Query, "`transaction`")
 
 	if len(queries.GetSelect(query.Query)) == 0 {
@@ -262,62 +328,81 @@ func (o *Block) BlockHashTransactions(exec boil.Executor, mods ...qm.QueryMod) t
 }
 
 // LoadBlockHashTransactions allows an eager lookup of values, cached into the
-// loaded structs of the objects.
-func (blockL) LoadBlockHashTransactions(e boil.Executor, singular bool, maybeBlock interface{}) error {
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (blockL) LoadBlockHashTransactions(e boil.Executor, singular bool, maybeBlock interface{}, mods queries.Applicator) error {
 	var slice []*Block
 	var object *Block
 
-	count := 1
 	if singular {
 		object = maybeBlock.(*Block)
 	} else {
 		slice = *maybeBlock.(*[]*Block)
-		count = len(slice)
 	}
 
-	args := make([]interface{}, count)
+	args := make([]interface{}, 0, 1)
 	if singular {
 		if object.R == nil {
 			object.R = &blockR{}
 		}
-		args[0] = object.Hash
+		args = append(args, object.Hash)
 	} else {
-		for i, obj := range slice {
+	Outer:
+		for _, obj := range slice {
 			if obj.R == nil {
 				obj.R = &blockR{}
 			}
-			args[i] = obj.Hash
+
+			for _, a := range args {
+				if queries.Equal(a, obj.Hash) {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.Hash)
 		}
 	}
 
-	query := fmt.Sprintf(
-		"select * from `transaction` where `block_hash_id` in (%s)",
-		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
-	)
-	if boil.DebugMode {
-		fmt.Fprintf(boil.DebugWriter, "%s\n%v\n", query, args)
+	query := NewQuery(qm.From(`transaction`), qm.WhereIn(`block_hash_id in ?`, args...))
+	if mods != nil {
+		mods.Apply(query)
 	}
 
-	results, err := e.Query(query, args...)
+	results, err := query.Query(e)
 	if err != nil {
 		return errors.Wrap(err, "failed to eager load transaction")
 	}
-	defer results.Close()
 
 	var resultSlice []*Transaction
 	if err = queries.Bind(results, &resultSlice); err != nil {
 		return errors.Wrap(err, "failed to bind eager loaded slice transaction")
 	}
 
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on transaction")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for transaction")
+	}
+
 	if singular {
 		object.R.BlockHashTransactions = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &transactionR{}
+			}
+			foreign.R.BlockHash = object
+		}
 		return nil
 	}
 
 	for _, foreign := range resultSlice {
 		for _, local := range slice {
-			if local.Hash == foreign.BlockHashID.String {
+			if queries.Equal(local.Hash, foreign.BlockHashID) {
 				local.R.BlockHashTransactions = append(local.R.BlockHashTransactions, foreign)
+				if foreign.R == nil {
+					foreign.R = &transactionR{}
+				}
+				foreign.R.BlockHash = local
 				break
 			}
 		}
@@ -365,9 +450,8 @@ func (o *Block) AddBlockHashTransactions(exec boil.Executor, insert bool, relate
 	var err error
 	for _, rel := range related {
 		if insert {
-			rel.BlockHashID.String = o.Hash
-			rel.BlockHashID.Valid = true
-			if err = rel.Insert(exec); err != nil {
+			queries.Assign(&rel.BlockHashID, o.Hash)
+			if err = rel.Insert(exec, boil.Infer()); err != nil {
 				return errors.Wrap(err, "failed to insert into foreign table")
 			}
 		} else {
@@ -387,8 +471,7 @@ func (o *Block) AddBlockHashTransactions(exec boil.Executor, insert bool, relate
 				return errors.Wrap(err, "failed to update foreign table")
 			}
 
-			rel.BlockHashID.String = o.Hash
-			rel.BlockHashID.Valid = true
+			queries.Assign(&rel.BlockHashID, o.Hash)
 		}
 	}
 
@@ -470,7 +553,7 @@ func (o *Block) SetBlockHashTransactions(exec boil.Executor, insert bool, relate
 
 	if o.R != nil {
 		for _, rel := range o.R.BlockHashTransactions {
-			rel.BlockHashID.Valid = false
+			queries.SetScanner(&rel.BlockHashID, nil)
 			if rel.R == nil {
 				continue
 			}
@@ -517,11 +600,11 @@ func (o *Block) RemoveBlockHashTransactionsGP(related ...*Transaction) {
 func (o *Block) RemoveBlockHashTransactions(exec boil.Executor, related ...*Transaction) error {
 	var err error
 	for _, rel := range related {
-		rel.BlockHashID.Valid = false
+		queries.SetScanner(&rel.BlockHashID, nil)
 		if rel.R != nil {
 			rel.R.BlockHash = nil
 		}
-		if err = rel.Update(exec, "block_hash_id"); err != nil {
+		if err = rel.Update(exec, boil.Whitelist("block_hash_id")); err != nil {
 			return err
 		}
 	}
@@ -547,25 +630,30 @@ func (o *Block) RemoveBlockHashTransactions(exec boil.Executor, related ...*Tran
 	return nil
 }
 
-// BlocksG retrieves all records.
-func BlocksG(mods ...qm.QueryMod) blockQuery {
-	return Blocks(boil.GetDB(), mods...)
-}
-
 // Blocks retrieves all the records using an executor.
-func Blocks(exec boil.Executor, mods ...qm.QueryMod) blockQuery {
+func Blocks(mods ...qm.QueryMod) blockQuery {
 	mods = append(mods, qm.From("`block`"))
-	return blockQuery{NewQuery(exec, mods...)}
+	return blockQuery{NewQuery(mods...)}
 }
 
 // FindBlockG retrieves a single record by ID.
-func FindBlockG(id uint64, selectCols ...string) (*Block, error) {
-	return FindBlock(boil.GetDB(), id, selectCols...)
+func FindBlockG(iD uint64, selectCols ...string) (*Block, error) {
+	return FindBlock(boil.GetDB(), iD, selectCols...)
+}
+
+// FindBlockP retrieves a single record by ID with an executor, and panics on error.
+func FindBlockP(exec boil.Executor, iD uint64, selectCols ...string) *Block {
+	retobj, err := FindBlock(exec, iD, selectCols...)
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return retobj
 }
 
 // FindBlockGP retrieves a single record by ID, and panics on error.
-func FindBlockGP(id uint64, selectCols ...string) *Block {
-	retobj, err := FindBlock(boil.GetDB(), id, selectCols...)
+func FindBlockGP(iD uint64, selectCols ...string) *Block {
+	retobj, err := FindBlock(boil.GetDB(), iD, selectCols...)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -575,7 +663,7 @@ func FindBlockGP(id uint64, selectCols ...string) *Block {
 
 // FindBlock retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindBlock(exec boil.Executor, id uint64, selectCols ...string) (*Block, error) {
+func FindBlock(exec boil.Executor, iD uint64, selectCols ...string) (*Block, error) {
 	blockObj := &Block{}
 
 	sel := "*"
@@ -586,9 +674,9 @@ func FindBlock(exec boil.Executor, id uint64, selectCols ...string) (*Block, err
 		"select %s from `block` where `id`=?", sel,
 	)
 
-	q := queries.Raw(exec, query, id)
+	q := queries.Raw(query, iD)
 
-	err := q.Bind(blockObj)
+	err := q.Bind(nil, exec, blockObj)
 	if err != nil {
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
@@ -599,43 +687,30 @@ func FindBlock(exec boil.Executor, id uint64, selectCols ...string) (*Block, err
 	return blockObj, nil
 }
 
-// FindBlockP retrieves a single record by ID with an executor, and panics on error.
-func FindBlockP(exec boil.Executor, id uint64, selectCols ...string) *Block {
-	retobj, err := FindBlock(exec, id, selectCols...)
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return retobj
-}
-
 // InsertG a single record. See Insert for whitelist behavior description.
-func (o *Block) InsertG(whitelist ...string) error {
-	return o.Insert(boil.GetDB(), whitelist...)
-}
-
-// InsertGP a single record, and panics on error. See Insert for whitelist
-// behavior description.
-func (o *Block) InsertGP(whitelist ...string) {
-	if err := o.Insert(boil.GetDB(), whitelist...); err != nil {
-		panic(boil.WrapErr(err))
-	}
+func (o *Block) InsertG(columns boil.Columns) error {
+	return o.Insert(boil.GetDB(), columns)
 }
 
 // InsertP a single record using an executor, and panics on error. See Insert
 // for whitelist behavior description.
-func (o *Block) InsertP(exec boil.Executor, whitelist ...string) {
-	if err := o.Insert(exec, whitelist...); err != nil {
+func (o *Block) InsertP(exec boil.Executor, columns boil.Columns) {
+	if err := o.Insert(exec, columns); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// InsertGP a single record, and panics on error. See Insert for whitelist
+// behavior description.
+func (o *Block) InsertGP(columns boil.Columns) {
+	if err := o.Insert(boil.GetDB(), columns); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // Insert a single record using an executor.
-// Whitelist behavior: If a whitelist is provided, only those columns supplied are inserted
-// No whitelist behavior: Without a whitelist, columns are inferred by the following rules:
-// - All columns without a default value are included (i.e. name, age)
-// - All columns with a default, but non-zero are included (i.e. health = 75)
-func (o *Block) Insert(exec boil.Executor, whitelist ...string) error {
+// See boil.Columns.InsertColumnSet documentation to understand column list inference for inserts.
+func (o *Block) Insert(exec boil.Executor, columns boil.Columns) error {
 	if o == nil {
 		return errors.New("model: no block provided for insertion")
 	}
@@ -644,18 +719,17 @@ func (o *Block) Insert(exec boil.Executor, whitelist ...string) error {
 
 	nzDefaults := queries.NonZeroDefaultSet(blockColumnsWithDefault, o)
 
-	key := makeCacheKey(whitelist, nzDefaults)
+	key := makeCacheKey(columns, nzDefaults)
 	blockInsertCacheMut.RLock()
 	cache, cached := blockInsertCache[key]
 	blockInsertCacheMut.RUnlock()
 
 	if !cached {
-		wl, returnColumns := strmangle.InsertColumnSet(
+		wl, returnColumns := columns.InsertColumnSet(
 			blockColumns,
 			blockColumnsWithDefault,
 			blockColumnsWithoutDefault,
 			nzDefaults,
-			whitelist,
 		)
 
 		cache.valueMapping, err = queries.BindMapping(blockType, blockMapping, wl)
@@ -667,9 +741,9 @@ func (o *Block) Insert(exec boil.Executor, whitelist ...string) error {
 			return err
 		}
 		if len(wl) != 0 {
-			cache.query = fmt.Sprintf("INSERT INTO `block` (`%s`) %%sVALUES (%s)%%s", strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.IndexPlaceholders, len(wl), 1, 1))
+			cache.query = fmt.Sprintf("INSERT INTO `block` (`%s`) %%sVALUES (%s)%%s", strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
 		} else {
-			cache.query = "INSERT INTO `block` () VALUES ()"
+			cache.query = "INSERT INTO `block` () VALUES ()%s%s"
 		}
 
 		var queryOutput, queryReturning string
@@ -678,9 +752,7 @@ func (o *Block) Insert(exec boil.Executor, whitelist ...string) error {
 			cache.retQuery = fmt.Sprintf("SELECT `%s` FROM `block` WHERE %s", strings.Join(returnColumns, "`,`"), strmangle.WhereClause("`", "`", 0, blockPrimaryKeyColumns))
 		}
 
-		if len(wl) != 0 {
-			cache.query = fmt.Sprintf(cache.query, queryOutput, queryReturning)
-		}
+		cache.query = fmt.Sprintf(cache.query, queryOutput, queryReturning)
 	}
 
 	value := reflect.Indirect(reflect.ValueOf(o))
@@ -738,49 +810,44 @@ CacheNoHooks:
 	return nil
 }
 
-// UpdateG a single Block record. See Update for
-// whitelist behavior description.
-func (o *Block) UpdateG(whitelist ...string) error {
-	return o.Update(boil.GetDB(), whitelist...)
+// UpdateG a single Block record using the global executor.
+// See Update for more documentation.
+func (o *Block) UpdateG(columns boil.Columns) error {
+	return o.Update(boil.GetDB(), columns)
 }
 
-// UpdateGP a single Block record.
-// UpdateGP takes a whitelist of column names that should be updated.
-// Panics on error. See Update for whitelist behavior description.
-func (o *Block) UpdateGP(whitelist ...string) {
-	if err := o.Update(boil.GetDB(), whitelist...); err != nil {
+// UpdateP uses an executor to update the Block, and panics on error.
+// See Update for more documentation.
+func (o *Block) UpdateP(exec boil.Executor, columns boil.Columns) {
+	err := o.Update(exec, columns)
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
-// UpdateP uses an executor to update the Block, and panics on error.
-// See Update for whitelist behavior description.
-func (o *Block) UpdateP(exec boil.Executor, whitelist ...string) {
-	err := o.Update(exec, whitelist...)
+// UpdateGP a single Block record using the global executor. Panics on error.
+// See Update for more documentation.
+func (o *Block) UpdateGP(columns boil.Columns) {
+	err := o.Update(boil.GetDB(), columns)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // Update uses an executor to update the Block.
-// Whitelist behavior: If a whitelist is provided, only the columns given are updated.
-// No whitelist behavior: Without a whitelist, columns are inferred by the following rules:
-// - All columns are inferred to start with
-// - All primary keys are subtracted from this set
-// Update does not automatically update the record in case of default values. Use .Reload()
-// to refresh the records.
-func (o *Block) Update(exec boil.Executor, whitelist ...string) error {
+// See boil.Columns.UpdateColumnSet documentation to understand column list inference for updates.
+// Update does not automatically update the record in case of default values. Use .Reload() to refresh the records.
+func (o *Block) Update(exec boil.Executor, columns boil.Columns) error {
 	var err error
-	key := makeCacheKey(whitelist, nil)
+	key := makeCacheKey(columns, nil)
 	blockUpdateCacheMut.RLock()
 	cache, cached := blockUpdateCache[key]
 	blockUpdateCacheMut.RUnlock()
 
 	if !cached {
-		wl := strmangle.UpdateColumnSet(
+		wl := columns.UpdateColumnSet(
 			blockColumns,
 			blockPrimaryKeyColumns,
-			whitelist,
 		)
 
 		if len(wl) == 0 {
@@ -819,17 +886,23 @@ func (o *Block) Update(exec boil.Executor, whitelist ...string) error {
 }
 
 // UpdateAllP updates all rows with matching column names, and panics on error.
-func (q blockQuery) UpdateAllP(cols M) {
-	if err := q.UpdateAll(cols); err != nil {
+func (q blockQuery) UpdateAllP(exec boil.Executor, cols M) {
+	err := q.UpdateAll(exec, cols)
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
+// UpdateAllG updates all rows with the specified column values.
+func (q blockQuery) UpdateAllG(cols M) error {
+	return q.UpdateAll(boil.GetDB(), cols)
+}
+
 // UpdateAll updates all rows with the specified column values.
-func (q blockQuery) UpdateAll(cols M) error {
+func (q blockQuery) UpdateAll(exec boil.Executor, cols M) error {
 	queries.SetUpdate(q.Query, cols)
 
-	_, err := q.Query.Exec()
+	_, err := q.Query.Exec(exec)
 	if err != nil {
 		return errors.Wrap(err, "model: unable to update all for block")
 	}
@@ -844,14 +917,16 @@ func (o BlockSlice) UpdateAllG(cols M) error {
 
 // UpdateAllGP updates all rows with the specified column values, and panics on error.
 func (o BlockSlice) UpdateAllGP(cols M) {
-	if err := o.UpdateAll(boil.GetDB(), cols); err != nil {
+	err := o.UpdateAll(boil.GetDB(), cols)
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // UpdateAllP updates all rows with the specified column values, and panics on error.
 func (o BlockSlice) UpdateAllP(exec boil.Executor, cols M) {
-	if err := o.UpdateAll(exec, cols); err != nil {
+	err := o.UpdateAll(exec, cols)
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
@@ -901,44 +976,61 @@ func (o BlockSlice) UpdateAll(exec boil.Executor, cols M) error {
 }
 
 // UpsertG attempts an insert, and does an update or ignore on conflict.
-func (o *Block) UpsertG(updateColumns []string, whitelist ...string) error {
-	return o.Upsert(boil.GetDB(), updateColumns, whitelist...)
+func (o *Block) UpsertG(updateColumns, insertColumns boil.Columns) error {
+	return o.Upsert(boil.GetDB(), updateColumns, insertColumns)
 }
 
 // UpsertGP attempts an insert, and does an update or ignore on conflict. Panics on error.
-func (o *Block) UpsertGP(updateColumns []string, whitelist ...string) {
-	if err := o.Upsert(boil.GetDB(), updateColumns, whitelist...); err != nil {
+func (o *Block) UpsertGP(updateColumns, insertColumns boil.Columns) {
+	if err := o.Upsert(boil.GetDB(), updateColumns, insertColumns); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // UpsertP attempts an insert using an executor, and does an update or ignore on conflict.
 // UpsertP panics on error.
-func (o *Block) UpsertP(exec boil.Executor, updateColumns []string, whitelist ...string) {
-	if err := o.Upsert(exec, updateColumns, whitelist...); err != nil {
+func (o *Block) UpsertP(exec boil.Executor, updateColumns, insertColumns boil.Columns) {
+	if err := o.Upsert(exec, updateColumns, insertColumns); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
+var mySQLBlockUniqueColumns = []string{
+	"id",
+	"hash",
+}
+
 // Upsert attempts an insert using an executor, and does an update or ignore on conflict.
-func (o *Block) Upsert(exec boil.Executor, updateColumns []string, whitelist ...string) error {
+// See boil.Columns documentation for how to properly use updateColumns and insertColumns.
+func (o *Block) Upsert(exec boil.Executor, updateColumns, insertColumns boil.Columns) error {
 	if o == nil {
 		return errors.New("model: no block provided for upsert")
 	}
 
 	nzDefaults := queries.NonZeroDefaultSet(blockColumnsWithDefault, o)
+	nzUniques := queries.NonZeroDefaultSet(mySQLBlockUniqueColumns, o)
 
-	// Build cache key in-line uglily - mysql vs postgres problems
+	if len(nzUniques) == 0 {
+		return errors.New("cannot upsert with a table that cannot conflict on a unique column")
+	}
+
+	// Build cache key in-line uglily - mysql vs psql problems
 	buf := strmangle.GetBuffer()
-	for _, c := range updateColumns {
+	buf.WriteString(strconv.Itoa(updateColumns.Kind))
+	for _, c := range updateColumns.Cols {
 		buf.WriteString(c)
 	}
 	buf.WriteByte('.')
-	for _, c := range whitelist {
+	buf.WriteString(strconv.Itoa(insertColumns.Kind))
+	for _, c := range insertColumns.Cols {
 		buf.WriteString(c)
 	}
 	buf.WriteByte('.')
 	for _, c := range nzDefaults {
+		buf.WriteString(c)
+	}
+	buf.WriteByte('.')
+	for _, c := range nzUniques {
 		buf.WriteString(c)
 	}
 	key := buf.String()
@@ -951,27 +1043,27 @@ func (o *Block) Upsert(exec boil.Executor, updateColumns []string, whitelist ...
 	var err error
 
 	if !cached {
-		insert, ret := strmangle.InsertColumnSet(
+		insert, ret := insertColumns.InsertColumnSet(
 			blockColumns,
 			blockColumnsWithDefault,
 			blockColumnsWithoutDefault,
 			nzDefaults,
-			whitelist,
 		)
-
-		update := strmangle.UpdateColumnSet(
+		update := updateColumns.UpdateColumnSet(
 			blockColumns,
 			blockPrimaryKeyColumns,
-			updateColumns,
 		)
+
 		if len(update) == 0 {
 			return errors.New("model: unable to upsert block, could not build update column list")
 		}
 
-		cache.query = queries.BuildUpsertQueryMySQL(dialect, "block", update, insert)
+		ret = strmangle.SetComplement(ret, nzUniques)
+		cache.query = buildUpsertQueryMySQL(dialect, "block", update, insert)
 		cache.retQuery = fmt.Sprintf(
-			"SELECT %s FROM `block` WHERE `id`=?",
+			"SELECT %s FROM `block` WHERE %s",
 			strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, ret), ","),
+			strmangle.WhereClause("`", "`", 0, nzUniques),
 		)
 
 		cache.valueMapping, err = queries.BindMapping(blockType, blockMapping, insert)
@@ -1005,7 +1097,8 @@ func (o *Block) Upsert(exec boil.Executor, updateColumns []string, whitelist ...
 	}
 
 	var lastID int64
-	var identifierCols []interface{}
+	var uniqueMap []uint64
+	var nzUniqueCols []interface{}
 
 	if len(cache.retMapping) == 0 {
 		goto CacheNoHooks
@@ -1017,20 +1110,22 @@ func (o *Block) Upsert(exec boil.Executor, updateColumns []string, whitelist ...
 	}
 
 	o.ID = uint64(lastID)
-	if lastID != 0 && len(cache.retMapping) == 1 && cache.retMapping[0] == blockMapping["ID"] {
+	if lastID != 0 && len(cache.retMapping) == 1 && cache.retMapping[0] == blockMapping["id"] {
 		goto CacheNoHooks
 	}
 
-	identifierCols = []interface{}{
-		o.ID,
+	uniqueMap, err = queries.BindMapping(blockType, blockMapping, nzUniques)
+	if err != nil {
+		return errors.Wrap(err, "model: unable to retrieve unique values for block")
 	}
+	nzUniqueCols = queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), uniqueMap)
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, cache.retQuery)
-		fmt.Fprintln(boil.DebugWriter, identifierCols...)
+		fmt.Fprintln(boil.DebugWriter, nzUniqueCols...)
 	}
 
-	err = exec.QueryRow(cache.retQuery, identifierCols...).Scan(returns...)
+	err = exec.QueryRow(cache.retQuery, nzUniqueCols...).Scan(returns...)
 	if err != nil {
 		return errors.Wrap(err, "model: unable to populate default values for block")
 	}
@@ -1045,30 +1140,28 @@ CacheNoHooks:
 	return nil
 }
 
+// DeleteG deletes a single Block record.
+// DeleteG will match against the primary key column to find the record to delete.
+func (o *Block) DeleteG() error {
+	return o.Delete(boil.GetDB())
+}
+
 // DeleteP deletes a single Block record with an executor.
 // DeleteP will match against the primary key column to find the record to delete.
 // Panics on error.
 func (o *Block) DeleteP(exec boil.Executor) {
-	if err := o.Delete(exec); err != nil {
+	err := o.Delete(exec)
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
-}
-
-// DeleteG deletes a single Block record.
-// DeleteG will match against the primary key column to find the record to delete.
-func (o *Block) DeleteG() error {
-	if o == nil {
-		return errors.New("model: no Block provided for deletion")
-	}
-
-	return o.Delete(boil.GetDB())
 }
 
 // DeleteGP deletes a single Block record.
 // DeleteGP will match against the primary key column to find the record to delete.
 // Panics on error.
 func (o *Block) DeleteGP() {
-	if err := o.DeleteG(); err != nil {
+	err := o.Delete(boil.GetDB())
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
@@ -1097,21 +1190,22 @@ func (o *Block) Delete(exec boil.Executor) error {
 }
 
 // DeleteAllP deletes all rows, and panics on error.
-func (q blockQuery) DeleteAllP() {
-	if err := q.DeleteAll(); err != nil {
+func (q blockQuery) DeleteAllP(exec boil.Executor) {
+	err := q.DeleteAll(exec)
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // DeleteAll deletes all matching rows.
-func (q blockQuery) DeleteAll() error {
+func (q blockQuery) DeleteAll(exec boil.Executor) error {
 	if q.Query == nil {
 		return errors.New("model: no blockQuery provided for delete all")
 	}
 
 	queries.SetDelete(q.Query)
 
-	_, err := q.Query.Exec()
+	_, err := q.Query.Exec(exec)
 	if err != nil {
 		return errors.Wrap(err, "model: unable to delete all from block")
 	}
@@ -1119,24 +1213,23 @@ func (q blockQuery) DeleteAll() error {
 	return nil
 }
 
-// DeleteAllGP deletes all rows in the slice, and panics on error.
-func (o BlockSlice) DeleteAllGP() {
-	if err := o.DeleteAllG(); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
 // DeleteAllG deletes all rows in the slice.
 func (o BlockSlice) DeleteAllG() error {
-	if o == nil {
-		return errors.New("model: no Block slice provided for delete all")
-	}
 	return o.DeleteAll(boil.GetDB())
 }
 
 // DeleteAllP deletes all rows in the slice, using an executor, and panics on error.
 func (o BlockSlice) DeleteAllP(exec boil.Executor) {
-	if err := o.DeleteAll(exec); err != nil {
+	err := o.DeleteAll(exec)
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// DeleteAllGP deletes all rows in the slice, and panics on error.
+func (o BlockSlice) DeleteAllGP() {
+	err := o.DeleteAll(boil.GetDB())
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
@@ -1173,11 +1266,13 @@ func (o BlockSlice) DeleteAll(exec boil.Executor) error {
 	return nil
 }
 
-// ReloadGP refetches the object from the database and panics on error.
-func (o *Block) ReloadGP() {
-	if err := o.ReloadG(); err != nil {
-		panic(boil.WrapErr(err))
+// ReloadG refetches the object from the database using the primary keys.
+func (o *Block) ReloadG() error {
+	if o == nil {
+		return errors.New("model: no Block provided for reload")
 	}
+
+	return o.Reload(boil.GetDB())
 }
 
 // ReloadP refetches the object from the database with an executor. Panics on error.
@@ -1187,13 +1282,11 @@ func (o *Block) ReloadP(exec boil.Executor) {
 	}
 }
 
-// ReloadG refetches the object from the database using the primary keys.
-func (o *Block) ReloadG() error {
-	if o == nil {
-		return errors.New("model: no Block provided for reload")
+// ReloadGP refetches the object from the database and panics on error.
+func (o *Block) ReloadGP() {
+	if err := o.Reload(boil.GetDB()); err != nil {
+		panic(boil.WrapErr(err))
 	}
-
-	return o.Reload(boil.GetDB())
 }
 
 // Reload refetches the object from the database
@@ -1208,13 +1301,14 @@ func (o *Block) Reload(exec boil.Executor) error {
 	return nil
 }
 
-// ReloadAllGP refetches every row with matching primary key column values
+// ReloadAllG refetches every row with matching primary key column values
 // and overwrites the original object slice with the newly updated slice.
-// Panics on error.
-func (o *BlockSlice) ReloadAllGP() {
-	if err := o.ReloadAllG(); err != nil {
-		panic(boil.WrapErr(err))
+func (o *BlockSlice) ReloadAllG() error {
+	if o == nil {
+		return errors.New("model: empty BlockSlice provided for reload all")
 	}
+
+	return o.ReloadAll(boil.GetDB())
 }
 
 // ReloadAllP refetches every row with matching primary key column values
@@ -1226,14 +1320,13 @@ func (o *BlockSlice) ReloadAllP(exec boil.Executor) {
 	}
 }
 
-// ReloadAllG refetches every row with matching primary key column values
+// ReloadAllGP refetches every row with matching primary key column values
 // and overwrites the original object slice with the newly updated slice.
-func (o *BlockSlice) ReloadAllG() error {
-	if o == nil {
-		return errors.New("model: empty BlockSlice provided for reload all")
+// Panics on error.
+func (o *BlockSlice) ReloadAllGP() {
+	if err := o.ReloadAll(boil.GetDB()); err != nil {
+		panic(boil.WrapErr(err))
 	}
-
-	return o.ReloadAll(boil.GetDB())
 }
 
 // ReloadAll refetches every row with matching primary key column values
@@ -1243,7 +1336,7 @@ func (o *BlockSlice) ReloadAll(exec boil.Executor) error {
 		return nil
 	}
 
-	blocks := BlockSlice{}
+	slice := BlockSlice{}
 	var args []interface{}
 	for _, obj := range *o {
 		pkeyArgs := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(obj)), blockPrimaryKeyMapping)
@@ -1253,29 +1346,54 @@ func (o *BlockSlice) ReloadAll(exec boil.Executor) error {
 	sql := "SELECT `block`.* FROM `block` WHERE " +
 		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, blockPrimaryKeyColumns, len(*o))
 
-	q := queries.Raw(exec, sql, args...)
+	q := queries.Raw(sql, args...)
 
-	err := q.Bind(&blocks)
+	err := q.Bind(nil, exec, &slice)
 	if err != nil {
 		return errors.Wrap(err, "model: unable to reload all in BlockSlice")
 	}
 
-	*o = blocks
+	*o = slice
 
 	return nil
 }
 
+// BlockExistsG checks if the Block row exists.
+func BlockExistsG(iD uint64) (bool, error) {
+	return BlockExists(boil.GetDB(), iD)
+}
+
+// BlockExistsP checks if the Block row exists. Panics on error.
+func BlockExistsP(exec boil.Executor, iD uint64) bool {
+	e, err := BlockExists(exec, iD)
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return e
+}
+
+// BlockExistsGP checks if the Block row exists. Panics on error.
+func BlockExistsGP(iD uint64) bool {
+	e, err := BlockExists(boil.GetDB(), iD)
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return e
+}
+
 // BlockExists checks if the Block row exists.
-func BlockExists(exec boil.Executor, id uint64) (bool, error) {
+func BlockExists(exec boil.Executor, iD uint64) (bool, error) {
 	var exists bool
 	sql := "select exists(select 1 from `block` where `id`=? limit 1)"
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, sql)
-		fmt.Fprintln(boil.DebugWriter, id)
+		fmt.Fprintln(boil.DebugWriter, iD)
 	}
 
-	row := exec.QueryRow(sql, id)
+	row := exec.QueryRow(sql, iD)
 
 	err := row.Scan(&exists)
 	if err != nil {
@@ -1283,29 +1401,4 @@ func BlockExists(exec boil.Executor, id uint64) (bool, error) {
 	}
 
 	return exists, nil
-}
-
-// BlockExistsG checks if the Block row exists.
-func BlockExistsG(id uint64) (bool, error) {
-	return BlockExists(boil.GetDB(), id)
-}
-
-// BlockExistsGP checks if the Block row exists. Panics on error.
-func BlockExistsGP(id uint64) bool {
-	e, err := BlockExists(boil.GetDB(), id)
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return e
-}
-
-// BlockExistsP checks if the Block row exists. Panics on error.
-func BlockExistsP(exec boil.Executor, id uint64) bool {
-	e, err := BlockExists(exec, id)
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return e
 }

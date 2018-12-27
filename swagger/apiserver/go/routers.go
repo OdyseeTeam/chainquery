@@ -79,4 +79,32 @@ var routes = Routes{
 		"/api/status",
 		ChainQueryStatusAction,
 	},
+
+	Route{
+		"ValidateChain",
+		strings.ToUpper("Get"),
+		"/api/validate",
+		ValidateChainData,
+	},
+
+	Route{
+		"ProcessBlocks",
+		strings.ToUpper("Get"),
+		"/api/process",
+		ProcessBlocks,
+	},
+
+	Route{
+		"SyncAddressBalance",
+		strings.ToUpper("Get"),
+		"/api/sync/addresses",
+		SyncAddressBalance,
+	},
+
+	Route{
+		"SyncTransactionValue",
+		strings.ToUpper("Get"),
+		"/api/sync/txvalues",
+		SyncTransactionValue,
+	},
 }

@@ -1,6 +1,8 @@
 package db
 
 import (
+	"context"
+
 	g "github.com/lbryio/chainquery/swagger/clients/goclient"
 	"github.com/lbryio/chainquery/util"
 
@@ -53,15 +55,16 @@ func GetTableStatus() (*g.ChainqueryStatus, error) {
 
 // GetAddressSummary returns summary information of an address in the chainquery database.
 func GetAddressSummary(address string) (*AddressSummary, error) {
+	var context context.Context
 	addressSummary := AddressSummary{}
-	err := queries.RawG(
+	err := queries.Raw(
 		`SELECT address.address, `+
 			`SUM(ta.credit_amount) AS total_received, `+
 			`SUM(ta.debit_amount) AS total_sent,`+
 			`(SUM(ta.credit_amount) - SUM(ta.debit_amount)) AS balance `+
 			`FROM address LEFT JOIN transaction_address as ta ON ta.address_id = address.id `+
 			`WHERE address.address=? `+
-			`GROUP BY address.address `, address).Bind(&addressSummary)
+			`GROUP BY address.address `, address).BindG(context, &addressSummary)
 
 	if err != nil {
 		return nil, err

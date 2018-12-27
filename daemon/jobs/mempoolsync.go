@@ -2,6 +2,8 @@ package jobs
 
 import (
 	"database/sql"
+	"time"
+
 	"github.com/lbryio/chainquery/daemon/processing"
 	"github.com/lbryio/chainquery/lbrycrd"
 	"github.com/lbryio/chainquery/model"
@@ -9,7 +11,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
-	"time"
 )
 
 const (
@@ -39,7 +40,7 @@ func MempoolSync() {
 			logrus.Error("MempoolSync:", errors.Err(err))
 			return
 		}
-		lastBlock, err := model.Blocks(boil.GetDB(), qm.OrderBy(model.BlockColumns.Height+" DESC"), qm.Limit(1)).One()
+		lastBlock, err := model.Blocks(qm.OrderBy(model.BlockColumns.Height+" DESC"), qm.Limit(1)).OneG()
 		if err != nil {
 			logrus.Error("MempoolSync:", err)
 		}
@@ -58,9 +59,11 @@ func MempoolSync() {
 					logrus.Error("MempoolSync:", err)
 				}
 			} else {
-				logrus.Info("Daemon is not caught up to mempool transactions, delaying mempool sync 1 minute...")
-				time.Sleep(1 * time.Minute)
-				mempoolSyncIsRunning = false
+				go func() {
+					logrus.Info("Daemon is not caught up to mempool transactions, delaying mempool sync 1 minute...")
+					time.Sleep(1 * time.Minute)
+					mempoolSyncIsRunning = false
+				}()
 				return
 			}
 		}
@@ -69,7 +72,7 @@ func MempoolSync() {
 }
 
 func getMempoolBlock() (*model.Block, error) {
-	mempoolBlock, err := model.BlocksG(qm.Where(model.BlockColumns.Hash+" = ?", "MEMPOOL")).One()
+	mempoolBlock, err := model.Blocks(qm.Where(model.BlockColumns.Hash+" = ?", "MEMPOOL")).OneG()
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return nil, errors.Err(err)
 	}
@@ -92,7 +95,7 @@ func getMempoolBlock() (*model.Block, error) {
 		VersionHex:    "",
 	}
 
-	err = mempoolBlock.InsertG()
+	err = mempoolBlock.InsertG(boil.Infer())
 	if err != nil {
 		return nil, errors.Err(err)
 	}
@@ -106,7 +109,7 @@ func processMempoolTx(txid string, block model.Block) error {
 	// incorrectly.
 	processing.BlockLock.Lock()
 	defer processing.BlockLock.Unlock()
-	exists, err := model.TransactionsG(qm.Where(model.TransactionColumns.Hash+"=?", txid)).Exists()
+	exists, err := model.Transactions(qm.Where(model.TransactionColumns.Hash+"=?", txid)).ExistsG()
 	if err != nil {
 		return errors.Err(err)
 	}
