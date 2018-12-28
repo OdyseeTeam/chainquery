@@ -54,7 +54,7 @@ before_script:
   - go get github.com/opennota/check/cmd/varcheck               # Checks for unused vars
   - go get github.com/opennota/check/cmd/structcheck            # Checks for unused fields in structs
   #Spin up lbrycrd regtest
-#  - ./scripts/regtest.sh
+  - ./scripts/regtest.sh
 
 
 
