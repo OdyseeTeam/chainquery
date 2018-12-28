@@ -6,5 +6,5 @@ curl https://raw.githubusercontent.com/lbryio/lbry-docker/regtest/lbrycrd/regtes
 docker-compose up -d
 docker ps
 #alias lbrycrd-cli="docker-compose exec lbrycrd lbrycrd-cli -conf=/data/.lbrycrd/lbrycrd.conf"
-docker-compose exec lbrycrd lbrycrd-cli -conf=/data/.lbrycrd/lbrycrd.conf lbrycrd-cli generate 101
+#docker-compose exec lbrycrd lbrycrd-cli -conf=/data/.lbrycrd/lbrycrd.conf lbrycrd-cli generate 101
 
