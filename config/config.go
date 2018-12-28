@@ -105,9 +105,8 @@ func readConfig() {
 	viper.AddConfigPath("$HOME/")                        // 2 - check $HOME
 	viper.AddConfigPath(".")                             // 3 - optionally look for config in the working directory
 	viper.AddConfigPath("./config/default/")             // 4 - use default that comes with the branch
-
-	err := viper.ReadInConfig() // Find and read the config file
-	if err != nil {             // Handle errors reading the config file
+	err := viper.ReadInConfig()                          // Find and read the config file
+	if err != nil {                                      // Handle errors reading the config file
 		logrus.Warning("Error reading config file...defaults will be used: ", err)
 	}
 	twilio.RecipientList = viper.GetStringSlice(smsrecipients)

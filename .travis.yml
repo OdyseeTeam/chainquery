@@ -30,6 +30,7 @@ matrix:
 
 services:
 - mysql
+- docker
 
 before_install:
 - mysql -u root -e 'CREATE DATABASE IF NOT EXISTS chainquery;'
@@ -52,6 +53,9 @@ before_script:
   - go get github.com/kisielk/errcheck                          # Checks for unhandled errors
   - go get github.com/opennota/check/cmd/varcheck               # Checks for unused vars
   - go get github.com/opennota/check/cmd/structcheck            # Checks for unused fields in structs
+  #Spin up lbrycrd regtest
+#  - ./scripts/regtest.sh
+
 
 
 
@@ -82,7 +86,7 @@ script:
   # one last linter - ignore autogen code
   - golint -set_exit_status $(go list ./... | grep -v /vendor/ | grep -v /model/ | grep -v /swagger/ | grep -v /migration )
   # start up chainquery
-  - ./bin/chainquery api &
+  - ./bin/chainquery serve &
   - sleep 10s
   - "curl -i -H 'Accept: application/json' -H 'Content-Type: application/json' http://localhost:6300/api/status"
   # ToDo need to wait until the SQLBoiler issues are resolved. - ./app/gen_models.sh

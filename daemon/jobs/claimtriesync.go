@@ -250,16 +250,16 @@ func getClaimStatus(claim *model.Claim) string {
 func GetIsExpiredAtHeight(height, blockHeight uint) bool {
 	if height >= expirationHardForkHeight {
 		// https://github.com/lbryio/lbrycrd/pull/137 - HardFork extends claim expiration.
-		if height+hardForkBlocksToExpiration < uint(blockHeight) {
+		if height+hardForkBlocksToExpiration < blockHeight {
 			return true
 		}
 	} else if height+blocksToExpiration >= expirationHardForkHeight {
 		// https://github.com/lbryio/lbrycrd/pull/137 - HardFork extends claim expiration.
-		if height+hardForkBlocksToExpiration < uint(blockHeight) {
+		if height+hardForkBlocksToExpiration < blockHeight {
 			return true
 		}
 	} else {
-		if height+blocksToExpiration < uint(blockHeight) {
+		if height+blocksToExpiration < blockHeight {
 			return true
 		}
 	}

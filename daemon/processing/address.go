@@ -39,6 +39,13 @@ func createUpdateVoutAddresses(tx *model.Transaction, outputs *[]lbrycrd.Vout, b
 			foundAddress, _ := model.Addresses(qm.Where(model.AddressColumns.Address+"=?", address)).OneG()
 			if foundAddress != nil {
 				addressIDMap[address] = foundAddress.ID
+				if foundAddress.FirstSeen.Valid && foundAddress.FirstSeen.Time.Unix() == 0 {
+					foundAddress.FirstSeen.SetValid(time.Unix(int64(blockSeconds), 0))
+					err := datastore.PutAddress(foundAddress)
+					if err != nil {
+						return nil, errors.Err(err)
+					}
+				}
 				err := createTxAddressIfNotExist(tx.ID, foundAddress.ID)
 				if err != nil {
 					return nil, err
