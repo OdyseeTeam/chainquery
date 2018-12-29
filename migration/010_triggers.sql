@@ -48,16 +48,6 @@ CREATE TRIGGER tg_delete_balance AFTER DELETE ON transaction_address
 -- +migrate StatementEnd
 
 -- +migrate StatementBegin
-UPDATE address
-SET address.balance = (SELECT COALESCE( SUM( ta.credit_amount - ta.debit_amount ),0.0) FROM transaction_address ta WHERE ta.address_id = address.id);
--- +migrate StatementEnd
-
--- +migrate StatementBegin
-UPDATE transaction
-SET transaction.value = ( SELECT COALESCE( SUM( ta.credit_amount ),0.0) FROM transaction_address ta WHERE ta.transaction_id = transaction.id);
--- +migrate StatementEnd
-
--- +migrate StatementBegin
 ALTER TABLE address ADD INDEX (balance);
 -- +migrate StatementEnd
 
