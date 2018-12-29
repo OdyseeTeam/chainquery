@@ -16,6 +16,11 @@ go:
 # code in vendor/
 install: true
 
+cache:
+  directories:
+  - $HOME/.cache/go-build
+  - $HOME/gopath/pkg/mod
+
 matrix:
   # It's ok if our code fails on unstable development versions of Go.
   allow_failures:
@@ -53,8 +58,6 @@ before_script:
   - go get github.com/kisielk/errcheck                          # Checks for unhandled errors
   - go get github.com/opennota/check/cmd/varcheck               # Checks for unused vars
   - go get github.com/opennota/check/cmd/structcheck            # Checks for unused fields in structs
-  #Spin up lbrycrd regtest
-  - ./scripts/regtest.sh
 
 
 
@@ -68,8 +71,6 @@ script:
   - test -z $(gofmt -s -l $GO_FILES)
   # Run unit tests
   - ./scripts/test.sh
-  # Run integration tests
-  - ./scripts/int_tests.sh
   # Checks for unused vars and fields on structs
   - varcheck ./...
   - structcheck ./...
@@ -85,11 +86,11 @@ script:
   - unconvert -v $(go list ./... | grep -v /vendor/ | grep -v /model | grep -v /swagger/ | grep -v /migration )
   # one last linter - ignore autogen code
   - golint -set_exit_status $(go list ./... | grep -v /vendor/ | grep -v /model/ | grep -v /swagger/ | grep -v /migration )
-  # start up chainquery
-  - ./bin/chainquery serve &
-  - sleep 10s
-  - "curl -i -H 'Accept: application/json' -H 'Content-Type: application/json' http://localhost:6300/api/status"
-  # ToDo need to wait until the SQLBoiler issues are resolved. - ./app/gen_models.sh
+  # end to end testing
+  - ./e2e/e2e.sh
+  # check model generation...
+  - ./bin/chainquery serve db && ./scripts/gen_models.sh
+  # matches what was commited
   - git diff --exit-code
 
 # calls goreleaser

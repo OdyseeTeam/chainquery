@@ -171,6 +171,14 @@
   revision = "ef8a98b0bbce4a65b5aa4c368430a80ddc533168"
 
 [[projects]]
+  digest = "1:870d441fe217b8e689d7949fef6e43efbc787e50f200cb1e70dbca9204a1d6be"
+  name = "github.com/inconshreveable/mousetrap"
+  packages = ["."]
+  pruneopts = ""
+  revision = "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
+  version = "v1.0"
+
+[[projects]]
   digest = "1:57fcf9db7cd7b5c885504e9f085c5b6d6bf5320f4dc6c74d0fce88b7f472a6eb"
   name = "github.com/jmoiron/sqlx"
   packages = [
@@ -356,6 +364,14 @@
   packages = ["."]
   pruneopts = ""
   revision = "8965335b8c7107321228e3e3702cab9832751bac"
+
+[[projects]]
+  digest = "1:a1403cc8a94b8d7956ee5e9694badef0e7b051af289caad1cf668331e3ffa4f6"
+  name = "github.com/spf13/cobra"
+  packages = ["."]
+  pruneopts = ""
+  revision = "ef82de70bb3f60c65fb8eebacbb2d122ef517385"
+  version = "v0.0.3"
 
 [[projects]]
   branch = "master"
@@ -545,6 +561,7 @@
     "github.com/sfreiberg/gotwilio",
     "github.com/shopspring/decimal",
     "github.com/sirupsen/logrus",
+    "github.com/spf13/cobra",
     "github.com/spf13/pflag",
     "github.com/spf13/viper",
     "github.com/volatiletech/null",

@@ -59,7 +59,7 @@ func DoYourThing() {
 	interruptChan := make(chan os.Signal, 1)
 	signal.Notify(interruptChan, os.Interrupt, syscall.SIGTERM)
 	<-interruptChan
-	shutdownDaemon()
+	ShutdownDaemon()
 }
 
 func initJobs() {
@@ -71,7 +71,8 @@ func initJobs() {
 	scheduleJob(jobs.SyncTransactionValueJob, "Transaction Value Sync", 24*time.Hour)
 }
 
-func shutdownDaemon() {
+// ShutdownDaemon shuts the daemon down gracefully without corrupting the data.
+func ShutdownDaemon() {
 	log.Info("Shutting down daemon...") //
 	stopper.StopAndWait()
 }

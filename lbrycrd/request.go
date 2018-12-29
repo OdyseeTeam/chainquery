@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/lbryio/chainquery/util"
+	"github.com/lbryio/lbry.go/errors"
 )
 
 //GetBlock performs a jsonrpc that returns the structured data as a GetBlockResponse.
@@ -93,4 +94,28 @@ func GetRawMempool() (RawMempoolVerboseResponse, error) {
 	response := new(RawMempoolVerboseResponse)
 
 	return *response, call(&response, "getrawmempool", true)
+}
+
+// ClaimName creates a claim transaction for lbrycrd.
+func ClaimName(name string, hexValue string, amount float64) (string, error) {
+	defer util.TimeTrack(time.Now(), "claimname", "lbrycrdprofile")
+
+	rawresponse, err := callNoDecode("claimname", name, hexValue, amount)
+	if err != nil {
+		return "", err
+	}
+
+	value, ok := rawresponse.(string)
+	if !ok {
+		return "", errors.Err("response is not a string")
+	}
+
+	return value, nil
+}
+
+//GenerateBlocks generates n blocks in regtest. Will error in mainnet or testnet.
+func GenerateBlocks(count int64) ([]string, error) {
+	defer util.TimeTrack(time.Now(), "generate", "lbrycrdprofile")
+	var response []string
+	return response, call(&response, "generate", count)
 }
