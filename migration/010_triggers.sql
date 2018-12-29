@@ -11,7 +11,7 @@ ALTER TABLE transaction ADD COLUMN value DOUBLE(58,8) NOT NULL DEFAULT '0.000000
 CREATE TRIGGER tg_insert_value AFTER INSERT ON transaction_address
   FOR EACH ROW
   UPDATE transaction
-  SET transaction.value = transaction.value + (NEW.credit_amount - NEW.debit_amount)
+  SET transaction.value = transaction.value + NEW.credit_amount
   WHERE transaction.id = NEW.transaction_id;
 -- +migrate StatementEnd
 
@@ -19,7 +19,7 @@ CREATE TRIGGER tg_insert_value AFTER INSERT ON transaction_address
 CREATE TRIGGER tg_update_value AFTER UPDATE ON transaction_address
   FOR EACH ROW
   UPDATE transaction
-  SET transaction.value = transaction.value - (OLD.credit_amount - OLD.debit_amount) + (NEW.credit_amount - NEW.debit_amount)
+  SET transaction.value = transaction.value - OLD.credit_amount + NEW.credit_amount
   WHERE transaction.id = NEW.transaction_id;
 -- +migrate StatementEnd
 
@@ -54,7 +54,7 @@ SET address.balance = (SELECT COALESCE( SUM( ta.credit_amount - ta.debit_amount 
 
 -- +migrate StatementBegin
 UPDATE transaction
-SET transaction.value = ( SELECT COALESCE( SUM( ta.credit_amount - ta.debit_amount ),0.0) FROM transaction_address ta WHERE ta.transaction_id = transaction.id);
+SET transaction.value = ( SELECT COALESCE( SUM( ta.credit_amount ),0.0) FROM transaction_address ta WHERE ta.transaction_id = transaction.id);
 -- +migrate StatementEnd
 
 -- +migrate StatementBegin
