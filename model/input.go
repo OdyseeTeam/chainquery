@@ -4,20 +4,20 @@
 package model
 
 import (
-	"bytes"
 	"database/sql"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"github.com/volatiletech/sqlboiler/strmangle"
-	"gopkg.in/volatiletech/null.v6"
 )
 
 // Input is an object representing the database table.
@@ -76,9 +76,21 @@ var InputColumns = struct {
 	Modified:            "modified",
 }
 
+// InputRels is where relationship names are stored.
+var InputRels = struct {
+	Transaction string
+}{
+	Transaction: "Transaction",
+}
+
 // inputR is where relationships are stored.
 type inputR struct {
 	Transaction *Transaction
+}
+
+// NewStruct creates a new relationship struct
+func (*inputR) NewStruct() *inputR {
+	return &inputR{}
 }
 
 // inputL is where Load methods for each relationship are stored.
@@ -117,13 +129,26 @@ var (
 var (
 	// Force time package dependency for automated UpdatedAt/CreatedAt.
 	_ = time.Second
-	// Force bytes in case of primary key column that uses []byte (for relationship compares)
-	_ = bytes.MinRead
 )
 
+// OneG returns a single input record from the query using the global executor.
+func (q inputQuery) OneG() (*Input, error) {
+	return q.One(boil.GetDB())
+}
+
+// OneGP returns a single input record from the query using the global executor, and panics on error.
+func (q inputQuery) OneGP() *Input {
+	o, err := q.One(boil.GetDB())
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return o
+}
+
 // OneP returns a single input record from the query, and panics on error.
-func (q inputQuery) OneP() *Input {
-	o, err := q.One()
+func (q inputQuery) OneP(exec boil.Executor) *Input {
+	o, err := q.One(exec)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -132,12 +157,12 @@ func (q inputQuery) OneP() *Input {
 }
 
 // One returns a single input record from the query.
-func (q inputQuery) One() (*Input, error) {
+func (q inputQuery) One(exec boil.Executor) (*Input, error) {
 	o := &Input{}
 
 	queries.SetLimit(q.Query, 1)
 
-	err := q.Bind(o)
+	err := q.Bind(nil, exec, o)
 	if err != nil {
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
@@ -148,9 +173,24 @@ func (q inputQuery) One() (*Input, error) {
 	return o, nil
 }
 
+// AllG returns all Input records from the query using the global executor.
+func (q inputQuery) AllG() (InputSlice, error) {
+	return q.All(boil.GetDB())
+}
+
+// AllGP returns all Input records from the query using the global executor, and panics on error.
+func (q inputQuery) AllGP() InputSlice {
+	o, err := q.All(boil.GetDB())
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return o
+}
+
 // AllP returns all Input records from the query, and panics on error.
-func (q inputQuery) AllP() InputSlice {
-	o, err := q.All()
+func (q inputQuery) AllP(exec boil.Executor) InputSlice {
+	o, err := q.All(exec)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -159,10 +199,10 @@ func (q inputQuery) AllP() InputSlice {
 }
 
 // All returns all Input records from the query.
-func (q inputQuery) All() (InputSlice, error) {
+func (q inputQuery) All(exec boil.Executor) (InputSlice, error) {
 	var o []*Input
 
-	err := q.Bind(&o)
+	err := q.Bind(nil, exec, &o)
 	if err != nil {
 		return nil, errors.Wrap(err, "model: failed to assign all query results to Input slice")
 	}
@@ -170,9 +210,24 @@ func (q inputQuery) All() (InputSlice, error) {
 	return o, nil
 }
 
+// CountG returns the count of all Input records in the query, and panics on error.
+func (q inputQuery) CountG() (int64, error) {
+	return q.Count(boil.GetDB())
+}
+
+// CountGP returns the count of all Input records in the query using the global executor, and panics on error.
+func (q inputQuery) CountGP() int64 {
+	c, err := q.Count(boil.GetDB())
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return c
+}
+
 // CountP returns the count of all Input records in the query, and panics on error.
-func (q inputQuery) CountP() int64 {
-	c, err := q.Count()
+func (q inputQuery) CountP(exec boil.Executor) int64 {
+	c, err := q.Count(exec)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -181,13 +236,13 @@ func (q inputQuery) CountP() int64 {
 }
 
 // Count returns the count of all Input records in the query.
-func (q inputQuery) Count() (int64, error) {
+func (q inputQuery) Count(exec boil.Executor) (int64, error) {
 	var count int64
 
 	queries.SetSelect(q.Query, nil)
 	queries.SetCount(q.Query)
 
-	err := q.Query.QueryRow().Scan(&count)
+	err := q.Query.QueryRow(exec).Scan(&count)
 	if err != nil {
 		return 0, errors.Wrap(err, "model: failed to count input rows")
 	}
@@ -195,9 +250,24 @@ func (q inputQuery) Count() (int64, error) {
 	return count, nil
 }
 
-// Exists checks if the row exists in the table, and panics on error.
-func (q inputQuery) ExistsP() bool {
-	e, err := q.Exists()
+// ExistsG checks if the row exists in the table, and panics on error.
+func (q inputQuery) ExistsG() (bool, error) {
+	return q.Exists(boil.GetDB())
+}
+
+// ExistsGP checks if the row exists in the table using the global executor, and panics on error.
+func (q inputQuery) ExistsGP() bool {
+	e, err := q.Exists(boil.GetDB())
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return e
+}
+
+// ExistsP checks if the row exists in the table, and panics on error.
+func (q inputQuery) ExistsP(exec boil.Executor) bool {
+	e, err := q.Exists(exec)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -206,13 +276,14 @@ func (q inputQuery) ExistsP() bool {
 }
 
 // Exists checks if the row exists in the table.
-func (q inputQuery) Exists() (bool, error) {
+func (q inputQuery) Exists(exec boil.Executor) (bool, error) {
 	var count int64
 
+	queries.SetSelect(q.Query, nil)
 	queries.SetCount(q.Query)
 	queries.SetLimit(q.Query, 1)
 
-	err := q.Query.QueryRow().Scan(&count)
+	err := q.Query.QueryRow(exec).Scan(&count)
 	if err != nil {
 		return false, errors.Wrap(err, "model: failed to check if input exists")
 	}
@@ -220,70 +291,77 @@ func (q inputQuery) Exists() (bool, error) {
 	return count > 0, nil
 }
 
-// TransactionG pointed to by the foreign key.
-func (o *Input) TransactionG(mods ...qm.QueryMod) transactionQuery {
-	return o.Transaction(boil.GetDB(), mods...)
-}
-
 // Transaction pointed to by the foreign key.
-func (o *Input) Transaction(exec boil.Executor, mods ...qm.QueryMod) transactionQuery {
+func (o *Input) Transaction(mods ...qm.QueryMod) transactionQuery {
 	queryMods := []qm.QueryMod{
 		qm.Where("id=?", o.TransactionID),
 	}
 
 	queryMods = append(queryMods, mods...)
 
-	query := Transactions(exec, queryMods...)
+	query := Transactions(queryMods...)
 	queries.SetFrom(query.Query, "`transaction`")
 
 	return query
-} // LoadTransaction allows an eager lookup of values, cached into the
-// loaded structs of the objects.
-func (inputL) LoadTransaction(e boil.Executor, singular bool, maybeInput interface{}) error {
+}
+
+// LoadTransaction allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for an N-1 relationship.
+func (inputL) LoadTransaction(e boil.Executor, singular bool, maybeInput interface{}, mods queries.Applicator) error {
 	var slice []*Input
 	var object *Input
 
-	count := 1
 	if singular {
 		object = maybeInput.(*Input)
 	} else {
 		slice = *maybeInput.(*[]*Input)
-		count = len(slice)
 	}
 
-	args := make([]interface{}, count)
+	args := make([]interface{}, 0, 1)
 	if singular {
 		if object.R == nil {
 			object.R = &inputR{}
 		}
-		args[0] = object.TransactionID
+		args = append(args, object.TransactionID)
+
 	} else {
-		for i, obj := range slice {
+	Outer:
+		for _, obj := range slice {
 			if obj.R == nil {
 				obj.R = &inputR{}
 			}
-			args[i] = obj.TransactionID
+
+			for _, a := range args {
+				if a == obj.TransactionID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.TransactionID)
+
 		}
 	}
 
-	query := fmt.Sprintf(
-		"select * from `transaction` where `id` in (%s)",
-		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
-	)
-
-	if boil.DebugMode {
-		fmt.Fprintf(boil.DebugWriter, "%s\n%v\n", query, args)
+	query := NewQuery(qm.From(`transaction`), qm.WhereIn(`id in ?`, args...))
+	if mods != nil {
+		mods.Apply(query)
 	}
 
-	results, err := e.Query(query, args...)
+	results, err := query.Query(e)
 	if err != nil {
 		return errors.Wrap(err, "failed to eager load Transaction")
 	}
-	defer results.Close()
 
 	var resultSlice []*Transaction
 	if err = queries.Bind(results, &resultSlice); err != nil {
 		return errors.Wrap(err, "failed to bind eager loaded slice Transaction")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results of eager load for transaction")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for transaction")
 	}
 
 	if len(resultSlice) == 0 {
@@ -291,7 +369,12 @@ func (inputL) LoadTransaction(e boil.Executor, singular bool, maybeInput interfa
 	}
 
 	if singular {
-		object.R.Transaction = resultSlice[0]
+		foreign := resultSlice[0]
+		object.R.Transaction = foreign
+		if foreign.R == nil {
+			foreign.R = &transactionR{}
+		}
+		foreign.R.Inputs = append(foreign.R.Inputs, object)
 		return nil
 	}
 
@@ -299,6 +382,10 @@ func (inputL) LoadTransaction(e boil.Executor, singular bool, maybeInput interfa
 		for _, foreign := range resultSlice {
 			if local.TransactionID == foreign.ID {
 				local.R.Transaction = foreign
+				if foreign.R == nil {
+					foreign.R = &transactionR{}
+				}
+				foreign.R.Inputs = append(foreign.R.Inputs, local)
 				break
 			}
 		}
@@ -341,7 +428,7 @@ func (o *Input) SetTransactionGP(insert bool, related *Transaction) {
 func (o *Input) SetTransaction(exec boil.Executor, insert bool, related *Transaction) error {
 	var err error
 	if insert {
-		if err = related.Insert(exec); err != nil {
+		if err = related.Insert(exec, boil.Infer()); err != nil {
 			return errors.Wrap(err, "failed to insert into foreign table")
 		}
 	}
@@ -363,7 +450,6 @@ func (o *Input) SetTransaction(exec boil.Executor, insert bool, related *Transac
 	}
 
 	o.TransactionID = related.ID
-
 	if o.R == nil {
 		o.R = &inputR{
 			Transaction: related,
@@ -383,25 +469,30 @@ func (o *Input) SetTransaction(exec boil.Executor, insert bool, related *Transac
 	return nil
 }
 
-// InputsG retrieves all records.
-func InputsG(mods ...qm.QueryMod) inputQuery {
-	return Inputs(boil.GetDB(), mods...)
-}
-
 // Inputs retrieves all the records using an executor.
-func Inputs(exec boil.Executor, mods ...qm.QueryMod) inputQuery {
+func Inputs(mods ...qm.QueryMod) inputQuery {
 	mods = append(mods, qm.From("`input`"))
-	return inputQuery{NewQuery(exec, mods...)}
+	return inputQuery{NewQuery(mods...)}
 }
 
 // FindInputG retrieves a single record by ID.
-func FindInputG(id uint64, selectCols ...string) (*Input, error) {
-	return FindInput(boil.GetDB(), id, selectCols...)
+func FindInputG(iD uint64, selectCols ...string) (*Input, error) {
+	return FindInput(boil.GetDB(), iD, selectCols...)
+}
+
+// FindInputP retrieves a single record by ID with an executor, and panics on error.
+func FindInputP(exec boil.Executor, iD uint64, selectCols ...string) *Input {
+	retobj, err := FindInput(exec, iD, selectCols...)
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return retobj
 }
 
 // FindInputGP retrieves a single record by ID, and panics on error.
-func FindInputGP(id uint64, selectCols ...string) *Input {
-	retobj, err := FindInput(boil.GetDB(), id, selectCols...)
+func FindInputGP(iD uint64, selectCols ...string) *Input {
+	retobj, err := FindInput(boil.GetDB(), iD, selectCols...)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -411,7 +502,7 @@ func FindInputGP(id uint64, selectCols ...string) *Input {
 
 // FindInput retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindInput(exec boil.Executor, id uint64, selectCols ...string) (*Input, error) {
+func FindInput(exec boil.Executor, iD uint64, selectCols ...string) (*Input, error) {
 	inputObj := &Input{}
 
 	sel := "*"
@@ -422,9 +513,9 @@ func FindInput(exec boil.Executor, id uint64, selectCols ...string) (*Input, err
 		"select %s from `input` where `id`=?", sel,
 	)
 
-	q := queries.Raw(exec, query, id)
+	q := queries.Raw(query, iD)
 
-	err := q.Bind(inputObj)
+	err := q.Bind(nil, exec, inputObj)
 	if err != nil {
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
@@ -435,43 +526,30 @@ func FindInput(exec boil.Executor, id uint64, selectCols ...string) (*Input, err
 	return inputObj, nil
 }
 
-// FindInputP retrieves a single record by ID with an executor, and panics on error.
-func FindInputP(exec boil.Executor, id uint64, selectCols ...string) *Input {
-	retobj, err := FindInput(exec, id, selectCols...)
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return retobj
-}
-
 // InsertG a single record. See Insert for whitelist behavior description.
-func (o *Input) InsertG(whitelist ...string) error {
-	return o.Insert(boil.GetDB(), whitelist...)
-}
-
-// InsertGP a single record, and panics on error. See Insert for whitelist
-// behavior description.
-func (o *Input) InsertGP(whitelist ...string) {
-	if err := o.Insert(boil.GetDB(), whitelist...); err != nil {
-		panic(boil.WrapErr(err))
-	}
+func (o *Input) InsertG(columns boil.Columns) error {
+	return o.Insert(boil.GetDB(), columns)
 }
 
 // InsertP a single record using an executor, and panics on error. See Insert
 // for whitelist behavior description.
-func (o *Input) InsertP(exec boil.Executor, whitelist ...string) {
-	if err := o.Insert(exec, whitelist...); err != nil {
+func (o *Input) InsertP(exec boil.Executor, columns boil.Columns) {
+	if err := o.Insert(exec, columns); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// InsertGP a single record, and panics on error. See Insert for whitelist
+// behavior description.
+func (o *Input) InsertGP(columns boil.Columns) {
+	if err := o.Insert(boil.GetDB(), columns); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // Insert a single record using an executor.
-// Whitelist behavior: If a whitelist is provided, only those columns supplied are inserted
-// No whitelist behavior: Without a whitelist, columns are inferred by the following rules:
-// - All columns without a default value are included (i.e. name, age)
-// - All columns with a default, but non-zero are included (i.e. health = 75)
-func (o *Input) Insert(exec boil.Executor, whitelist ...string) error {
+// See boil.Columns.InsertColumnSet documentation to understand column list inference for inserts.
+func (o *Input) Insert(exec boil.Executor, columns boil.Columns) error {
 	if o == nil {
 		return errors.New("model: no input provided for insertion")
 	}
@@ -480,18 +558,17 @@ func (o *Input) Insert(exec boil.Executor, whitelist ...string) error {
 
 	nzDefaults := queries.NonZeroDefaultSet(inputColumnsWithDefault, o)
 
-	key := makeCacheKey(whitelist, nzDefaults)
+	key := makeCacheKey(columns, nzDefaults)
 	inputInsertCacheMut.RLock()
 	cache, cached := inputInsertCache[key]
 	inputInsertCacheMut.RUnlock()
 
 	if !cached {
-		wl, returnColumns := strmangle.InsertColumnSet(
+		wl, returnColumns := columns.InsertColumnSet(
 			inputColumns,
 			inputColumnsWithDefault,
 			inputColumnsWithoutDefault,
 			nzDefaults,
-			whitelist,
 		)
 
 		cache.valueMapping, err = queries.BindMapping(inputType, inputMapping, wl)
@@ -503,9 +580,9 @@ func (o *Input) Insert(exec boil.Executor, whitelist ...string) error {
 			return err
 		}
 		if len(wl) != 0 {
-			cache.query = fmt.Sprintf("INSERT INTO `input` (`%s`) %%sVALUES (%s)%%s", strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.IndexPlaceholders, len(wl), 1, 1))
+			cache.query = fmt.Sprintf("INSERT INTO `input` (`%s`) %%sVALUES (%s)%%s", strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
 		} else {
-			cache.query = "INSERT INTO `input` () VALUES ()"
+			cache.query = "INSERT INTO `input` () VALUES ()%s%s"
 		}
 
 		var queryOutput, queryReturning string
@@ -514,9 +591,7 @@ func (o *Input) Insert(exec boil.Executor, whitelist ...string) error {
 			cache.retQuery = fmt.Sprintf("SELECT `%s` FROM `input` WHERE %s", strings.Join(returnColumns, "`,`"), strmangle.WhereClause("`", "`", 0, inputPrimaryKeyColumns))
 		}
 
-		if len(wl) != 0 {
-			cache.query = fmt.Sprintf(cache.query, queryOutput, queryReturning)
-		}
+		cache.query = fmt.Sprintf(cache.query, queryOutput, queryReturning)
 	}
 
 	value := reflect.Indirect(reflect.ValueOf(o))
@@ -574,49 +649,44 @@ CacheNoHooks:
 	return nil
 }
 
-// UpdateG a single Input record. See Update for
-// whitelist behavior description.
-func (o *Input) UpdateG(whitelist ...string) error {
-	return o.Update(boil.GetDB(), whitelist...)
+// UpdateG a single Input record using the global executor.
+// See Update for more documentation.
+func (o *Input) UpdateG(columns boil.Columns) error {
+	return o.Update(boil.GetDB(), columns)
 }
 
-// UpdateGP a single Input record.
-// UpdateGP takes a whitelist of column names that should be updated.
-// Panics on error. See Update for whitelist behavior description.
-func (o *Input) UpdateGP(whitelist ...string) {
-	if err := o.Update(boil.GetDB(), whitelist...); err != nil {
+// UpdateP uses an executor to update the Input, and panics on error.
+// See Update for more documentation.
+func (o *Input) UpdateP(exec boil.Executor, columns boil.Columns) {
+	err := o.Update(exec, columns)
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
-// UpdateP uses an executor to update the Input, and panics on error.
-// See Update for whitelist behavior description.
-func (o *Input) UpdateP(exec boil.Executor, whitelist ...string) {
-	err := o.Update(exec, whitelist...)
+// UpdateGP a single Input record using the global executor. Panics on error.
+// See Update for more documentation.
+func (o *Input) UpdateGP(columns boil.Columns) {
+	err := o.Update(boil.GetDB(), columns)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // Update uses an executor to update the Input.
-// Whitelist behavior: If a whitelist is provided, only the columns given are updated.
-// No whitelist behavior: Without a whitelist, columns are inferred by the following rules:
-// - All columns are inferred to start with
-// - All primary keys are subtracted from this set
-// Update does not automatically update the record in case of default values. Use .Reload()
-// to refresh the records.
-func (o *Input) Update(exec boil.Executor, whitelist ...string) error {
+// See boil.Columns.UpdateColumnSet documentation to understand column list inference for updates.
+// Update does not automatically update the record in case of default values. Use .Reload() to refresh the records.
+func (o *Input) Update(exec boil.Executor, columns boil.Columns) error {
 	var err error
-	key := makeCacheKey(whitelist, nil)
+	key := makeCacheKey(columns, nil)
 	inputUpdateCacheMut.RLock()
 	cache, cached := inputUpdateCache[key]
 	inputUpdateCacheMut.RUnlock()
 
 	if !cached {
-		wl := strmangle.UpdateColumnSet(
+		wl := columns.UpdateColumnSet(
 			inputColumns,
 			inputPrimaryKeyColumns,
-			whitelist,
 		)
 
 		if len(wl) == 0 {
@@ -655,17 +725,23 @@ func (o *Input) Update(exec boil.Executor, whitelist ...string) error {
 }
 
 // UpdateAllP updates all rows with matching column names, and panics on error.
-func (q inputQuery) UpdateAllP(cols M) {
-	if err := q.UpdateAll(cols); err != nil {
+func (q inputQuery) UpdateAllP(exec boil.Executor, cols M) {
+	err := q.UpdateAll(exec, cols)
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
+// UpdateAllG updates all rows with the specified column values.
+func (q inputQuery) UpdateAllG(cols M) error {
+	return q.UpdateAll(boil.GetDB(), cols)
+}
+
 // UpdateAll updates all rows with the specified column values.
-func (q inputQuery) UpdateAll(cols M) error {
+func (q inputQuery) UpdateAll(exec boil.Executor, cols M) error {
 	queries.SetUpdate(q.Query, cols)
 
-	_, err := q.Query.Exec()
+	_, err := q.Query.Exec(exec)
 	if err != nil {
 		return errors.Wrap(err, "model: unable to update all for input")
 	}
@@ -680,14 +756,16 @@ func (o InputSlice) UpdateAllG(cols M) error {
 
 // UpdateAllGP updates all rows with the specified column values, and panics on error.
 func (o InputSlice) UpdateAllGP(cols M) {
-	if err := o.UpdateAll(boil.GetDB(), cols); err != nil {
+	err := o.UpdateAll(boil.GetDB(), cols)
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // UpdateAllP updates all rows with the specified column values, and panics on error.
 func (o InputSlice) UpdateAllP(exec boil.Executor, cols M) {
-	if err := o.UpdateAll(exec, cols); err != nil {
+	err := o.UpdateAll(exec, cols)
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
@@ -737,44 +815,60 @@ func (o InputSlice) UpdateAll(exec boil.Executor, cols M) error {
 }
 
 // UpsertG attempts an insert, and does an update or ignore on conflict.
-func (o *Input) UpsertG(updateColumns []string, whitelist ...string) error {
-	return o.Upsert(boil.GetDB(), updateColumns, whitelist...)
+func (o *Input) UpsertG(updateColumns, insertColumns boil.Columns) error {
+	return o.Upsert(boil.GetDB(), updateColumns, insertColumns)
 }
 
 // UpsertGP attempts an insert, and does an update or ignore on conflict. Panics on error.
-func (o *Input) UpsertGP(updateColumns []string, whitelist ...string) {
-	if err := o.Upsert(boil.GetDB(), updateColumns, whitelist...); err != nil {
+func (o *Input) UpsertGP(updateColumns, insertColumns boil.Columns) {
+	if err := o.Upsert(boil.GetDB(), updateColumns, insertColumns); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // UpsertP attempts an insert using an executor, and does an update or ignore on conflict.
 // UpsertP panics on error.
-func (o *Input) UpsertP(exec boil.Executor, updateColumns []string, whitelist ...string) {
-	if err := o.Upsert(exec, updateColumns, whitelist...); err != nil {
+func (o *Input) UpsertP(exec boil.Executor, updateColumns, insertColumns boil.Columns) {
+	if err := o.Upsert(exec, updateColumns, insertColumns); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
+var mySQLInputUniqueColumns = []string{
+	"id",
+}
+
 // Upsert attempts an insert using an executor, and does an update or ignore on conflict.
-func (o *Input) Upsert(exec boil.Executor, updateColumns []string, whitelist ...string) error {
+// See boil.Columns documentation for how to properly use updateColumns and insertColumns.
+func (o *Input) Upsert(exec boil.Executor, updateColumns, insertColumns boil.Columns) error {
 	if o == nil {
 		return errors.New("model: no input provided for upsert")
 	}
 
 	nzDefaults := queries.NonZeroDefaultSet(inputColumnsWithDefault, o)
+	nzUniques := queries.NonZeroDefaultSet(mySQLInputUniqueColumns, o)
 
-	// Build cache key in-line uglily - mysql vs postgres problems
+	if len(nzUniques) == 0 {
+		return errors.New("cannot upsert with a table that cannot conflict on a unique column")
+	}
+
+	// Build cache key in-line uglily - mysql vs psql problems
 	buf := strmangle.GetBuffer()
-	for _, c := range updateColumns {
+	buf.WriteString(strconv.Itoa(updateColumns.Kind))
+	for _, c := range updateColumns.Cols {
 		buf.WriteString(c)
 	}
 	buf.WriteByte('.')
-	for _, c := range whitelist {
+	buf.WriteString(strconv.Itoa(insertColumns.Kind))
+	for _, c := range insertColumns.Cols {
 		buf.WriteString(c)
 	}
 	buf.WriteByte('.')
 	for _, c := range nzDefaults {
+		buf.WriteString(c)
+	}
+	buf.WriteByte('.')
+	for _, c := range nzUniques {
 		buf.WriteString(c)
 	}
 	key := buf.String()
@@ -787,27 +881,27 @@ func (o *Input) Upsert(exec boil.Executor, updateColumns []string, whitelist ...
 	var err error
 
 	if !cached {
-		insert, ret := strmangle.InsertColumnSet(
+		insert, ret := insertColumns.InsertColumnSet(
 			inputColumns,
 			inputColumnsWithDefault,
 			inputColumnsWithoutDefault,
 			nzDefaults,
-			whitelist,
 		)
-
-		update := strmangle.UpdateColumnSet(
+		update := updateColumns.UpdateColumnSet(
 			inputColumns,
 			inputPrimaryKeyColumns,
-			updateColumns,
 		)
+
 		if len(update) == 0 {
 			return errors.New("model: unable to upsert input, could not build update column list")
 		}
 
-		cache.query = queries.BuildUpsertQueryMySQL(dialect, "input", update, insert)
+		ret = strmangle.SetComplement(ret, nzUniques)
+		cache.query = buildUpsertQueryMySQL(dialect, "input", update, insert)
 		cache.retQuery = fmt.Sprintf(
-			"SELECT %s FROM `input` WHERE `id`=?",
+			"SELECT %s FROM `input` WHERE %s",
 			strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, ret), ","),
+			strmangle.WhereClause("`", "`", 0, nzUniques),
 		)
 
 		cache.valueMapping, err = queries.BindMapping(inputType, inputMapping, insert)
@@ -841,7 +935,8 @@ func (o *Input) Upsert(exec boil.Executor, updateColumns []string, whitelist ...
 	}
 
 	var lastID int64
-	var identifierCols []interface{}
+	var uniqueMap []uint64
+	var nzUniqueCols []interface{}
 
 	if len(cache.retMapping) == 0 {
 		goto CacheNoHooks
@@ -853,20 +948,22 @@ func (o *Input) Upsert(exec boil.Executor, updateColumns []string, whitelist ...
 	}
 
 	o.ID = uint64(lastID)
-	if lastID != 0 && len(cache.retMapping) == 1 && cache.retMapping[0] == inputMapping["ID"] {
+	if lastID != 0 && len(cache.retMapping) == 1 && cache.retMapping[0] == inputMapping["id"] {
 		goto CacheNoHooks
 	}
 
-	identifierCols = []interface{}{
-		o.ID,
+	uniqueMap, err = queries.BindMapping(inputType, inputMapping, nzUniques)
+	if err != nil {
+		return errors.Wrap(err, "model: unable to retrieve unique values for input")
 	}
+	nzUniqueCols = queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), uniqueMap)
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, cache.retQuery)
-		fmt.Fprintln(boil.DebugWriter, identifierCols...)
+		fmt.Fprintln(boil.DebugWriter, nzUniqueCols...)
 	}
 
-	err = exec.QueryRow(cache.retQuery, identifierCols...).Scan(returns...)
+	err = exec.QueryRow(cache.retQuery, nzUniqueCols...).Scan(returns...)
 	if err != nil {
 		return errors.Wrap(err, "model: unable to populate default values for input")
 	}
@@ -881,30 +978,28 @@ CacheNoHooks:
 	return nil
 }
 
+// DeleteG deletes a single Input record.
+// DeleteG will match against the primary key column to find the record to delete.
+func (o *Input) DeleteG() error {
+	return o.Delete(boil.GetDB())
+}
+
 // DeleteP deletes a single Input record with an executor.
 // DeleteP will match against the primary key column to find the record to delete.
 // Panics on error.
 func (o *Input) DeleteP(exec boil.Executor) {
-	if err := o.Delete(exec); err != nil {
+	err := o.Delete(exec)
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
-}
-
-// DeleteG deletes a single Input record.
-// DeleteG will match against the primary key column to find the record to delete.
-func (o *Input) DeleteG() error {
-	if o == nil {
-		return errors.New("model: no Input provided for deletion")
-	}
-
-	return o.Delete(boil.GetDB())
 }
 
 // DeleteGP deletes a single Input record.
 // DeleteGP will match against the primary key column to find the record to delete.
 // Panics on error.
 func (o *Input) DeleteGP() {
-	if err := o.DeleteG(); err != nil {
+	err := o.Delete(boil.GetDB())
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
@@ -933,21 +1028,22 @@ func (o *Input) Delete(exec boil.Executor) error {
 }
 
 // DeleteAllP deletes all rows, and panics on error.
-func (q inputQuery) DeleteAllP() {
-	if err := q.DeleteAll(); err != nil {
+func (q inputQuery) DeleteAllP(exec boil.Executor) {
+	err := q.DeleteAll(exec)
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // DeleteAll deletes all matching rows.
-func (q inputQuery) DeleteAll() error {
+func (q inputQuery) DeleteAll(exec boil.Executor) error {
 	if q.Query == nil {
 		return errors.New("model: no inputQuery provided for delete all")
 	}
 
 	queries.SetDelete(q.Query)
 
-	_, err := q.Query.Exec()
+	_, err := q.Query.Exec(exec)
 	if err != nil {
 		return errors.Wrap(err, "model: unable to delete all from input")
 	}
@@ -955,24 +1051,23 @@ func (q inputQuery) DeleteAll() error {
 	return nil
 }
 
-// DeleteAllGP deletes all rows in the slice, and panics on error.
-func (o InputSlice) DeleteAllGP() {
-	if err := o.DeleteAllG(); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
 // DeleteAllG deletes all rows in the slice.
 func (o InputSlice) DeleteAllG() error {
-	if o == nil {
-		return errors.New("model: no Input slice provided for delete all")
-	}
 	return o.DeleteAll(boil.GetDB())
 }
 
 // DeleteAllP deletes all rows in the slice, using an executor, and panics on error.
 func (o InputSlice) DeleteAllP(exec boil.Executor) {
-	if err := o.DeleteAll(exec); err != nil {
+	err := o.DeleteAll(exec)
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// DeleteAllGP deletes all rows in the slice, and panics on error.
+func (o InputSlice) DeleteAllGP() {
+	err := o.DeleteAll(boil.GetDB())
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
@@ -1009,11 +1104,13 @@ func (o InputSlice) DeleteAll(exec boil.Executor) error {
 	return nil
 }
 
-// ReloadGP refetches the object from the database and panics on error.
-func (o *Input) ReloadGP() {
-	if err := o.ReloadG(); err != nil {
-		panic(boil.WrapErr(err))
+// ReloadG refetches the object from the database using the primary keys.
+func (o *Input) ReloadG() error {
+	if o == nil {
+		return errors.New("model: no Input provided for reload")
 	}
+
+	return o.Reload(boil.GetDB())
 }
 
 // ReloadP refetches the object from the database with an executor. Panics on error.
@@ -1023,13 +1120,11 @@ func (o *Input) ReloadP(exec boil.Executor) {
 	}
 }
 
-// ReloadG refetches the object from the database using the primary keys.
-func (o *Input) ReloadG() error {
-	if o == nil {
-		return errors.New("model: no Input provided for reload")
+// ReloadGP refetches the object from the database and panics on error.
+func (o *Input) ReloadGP() {
+	if err := o.Reload(boil.GetDB()); err != nil {
+		panic(boil.WrapErr(err))
 	}
-
-	return o.Reload(boil.GetDB())
 }
 
 // Reload refetches the object from the database
@@ -1044,13 +1139,14 @@ func (o *Input) Reload(exec boil.Executor) error {
 	return nil
 }
 
-// ReloadAllGP refetches every row with matching primary key column values
+// ReloadAllG refetches every row with matching primary key column values
 // and overwrites the original object slice with the newly updated slice.
-// Panics on error.
-func (o *InputSlice) ReloadAllGP() {
-	if err := o.ReloadAllG(); err != nil {
-		panic(boil.WrapErr(err))
+func (o *InputSlice) ReloadAllG() error {
+	if o == nil {
+		return errors.New("model: empty InputSlice provided for reload all")
 	}
+
+	return o.ReloadAll(boil.GetDB())
 }
 
 // ReloadAllP refetches every row with matching primary key column values
@@ -1062,14 +1158,13 @@ func (o *InputSlice) ReloadAllP(exec boil.Executor) {
 	}
 }
 
-// ReloadAllG refetches every row with matching primary key column values
+// ReloadAllGP refetches every row with matching primary key column values
 // and overwrites the original object slice with the newly updated slice.
-func (o *InputSlice) ReloadAllG() error {
-	if o == nil {
-		return errors.New("model: empty InputSlice provided for reload all")
+// Panics on error.
+func (o *InputSlice) ReloadAllGP() {
+	if err := o.ReloadAll(boil.GetDB()); err != nil {
+		panic(boil.WrapErr(err))
 	}
-
-	return o.ReloadAll(boil.GetDB())
 }
 
 // ReloadAll refetches every row with matching primary key column values
@@ -1079,7 +1174,7 @@ func (o *InputSlice) ReloadAll(exec boil.Executor) error {
 		return nil
 	}
 
-	inputs := InputSlice{}
+	slice := InputSlice{}
 	var args []interface{}
 	for _, obj := range *o {
 		pkeyArgs := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(obj)), inputPrimaryKeyMapping)
@@ -1089,29 +1184,54 @@ func (o *InputSlice) ReloadAll(exec boil.Executor) error {
 	sql := "SELECT `input`.* FROM `input` WHERE " +
 		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, inputPrimaryKeyColumns, len(*o))
 
-	q := queries.Raw(exec, sql, args...)
+	q := queries.Raw(sql, args...)
 
-	err := q.Bind(&inputs)
+	err := q.Bind(nil, exec, &slice)
 	if err != nil {
 		return errors.Wrap(err, "model: unable to reload all in InputSlice")
 	}
 
-	*o = inputs
+	*o = slice
 
 	return nil
 }
 
+// InputExistsG checks if the Input row exists.
+func InputExistsG(iD uint64) (bool, error) {
+	return InputExists(boil.GetDB(), iD)
+}
+
+// InputExistsP checks if the Input row exists. Panics on error.
+func InputExistsP(exec boil.Executor, iD uint64) bool {
+	e, err := InputExists(exec, iD)
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return e
+}
+
+// InputExistsGP checks if the Input row exists. Panics on error.
+func InputExistsGP(iD uint64) bool {
+	e, err := InputExists(boil.GetDB(), iD)
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return e
+}
+
 // InputExists checks if the Input row exists.
-func InputExists(exec boil.Executor, id uint64) (bool, error) {
+func InputExists(exec boil.Executor, iD uint64) (bool, error) {
 	var exists bool
 	sql := "select exists(select 1 from `input` where `id`=? limit 1)"
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, sql)
-		fmt.Fprintln(boil.DebugWriter, id)
+		fmt.Fprintln(boil.DebugWriter, iD)
 	}
 
-	row := exec.QueryRow(sql, id)
+	row := exec.QueryRow(sql, iD)
 
 	err := row.Scan(&exists)
 	if err != nil {
@@ -1119,29 +1239,4 @@ func InputExists(exec boil.Executor, id uint64) (bool, error) {
 	}
 
 	return exists, nil
-}
-
-// InputExistsG checks if the Input row exists.
-func InputExistsG(id uint64) (bool, error) {
-	return InputExists(boil.GetDB(), id)
-}
-
-// InputExistsGP checks if the Input row exists. Panics on error.
-func InputExistsGP(id uint64) bool {
-	e, err := InputExists(boil.GetDB(), id)
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return e
-}
-
-// InputExistsP checks if the Input row exists. Panics on error.
-func InputExistsP(exec boil.Executor, id uint64) bool {
-	e, err := InputExists(exec, id)
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return e
 }

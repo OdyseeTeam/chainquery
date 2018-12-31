@@ -4,20 +4,20 @@
 package model
 
 import (
-	"bytes"
 	"database/sql"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"github.com/volatiletech/sqlboiler/strmangle"
-	"gopkg.in/volatiletech/null.v6"
 )
 
 // Support is an object representing the database table.
@@ -55,9 +55,21 @@ var SupportColumns = struct {
 	ModifiedAt:        "modified_at",
 }
 
+// SupportRels is where relationship names are stored.
+var SupportRels = struct {
+	TransactionHash string
+}{
+	TransactionHash: "TransactionHash",
+}
+
 // supportR is where relationships are stored.
 type supportR struct {
 	TransactionHash *Transaction
+}
+
+// NewStruct creates a new relationship struct
+func (*supportR) NewStruct() *supportR {
+	return &supportR{}
 }
 
 // supportL is where Load methods for each relationship are stored.
@@ -96,13 +108,26 @@ var (
 var (
 	// Force time package dependency for automated UpdatedAt/CreatedAt.
 	_ = time.Second
-	// Force bytes in case of primary key column that uses []byte (for relationship compares)
-	_ = bytes.MinRead
 )
 
+// OneG returns a single support record from the query using the global executor.
+func (q supportQuery) OneG() (*Support, error) {
+	return q.One(boil.GetDB())
+}
+
+// OneGP returns a single support record from the query using the global executor, and panics on error.
+func (q supportQuery) OneGP() *Support {
+	o, err := q.One(boil.GetDB())
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return o
+}
+
 // OneP returns a single support record from the query, and panics on error.
-func (q supportQuery) OneP() *Support {
-	o, err := q.One()
+func (q supportQuery) OneP(exec boil.Executor) *Support {
+	o, err := q.One(exec)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -111,12 +136,12 @@ func (q supportQuery) OneP() *Support {
 }
 
 // One returns a single support record from the query.
-func (q supportQuery) One() (*Support, error) {
+func (q supportQuery) One(exec boil.Executor) (*Support, error) {
 	o := &Support{}
 
 	queries.SetLimit(q.Query, 1)
 
-	err := q.Bind(o)
+	err := q.Bind(nil, exec, o)
 	if err != nil {
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
@@ -127,9 +152,24 @@ func (q supportQuery) One() (*Support, error) {
 	return o, nil
 }
 
+// AllG returns all Support records from the query using the global executor.
+func (q supportQuery) AllG() (SupportSlice, error) {
+	return q.All(boil.GetDB())
+}
+
+// AllGP returns all Support records from the query using the global executor, and panics on error.
+func (q supportQuery) AllGP() SupportSlice {
+	o, err := q.All(boil.GetDB())
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return o
+}
+
 // AllP returns all Support records from the query, and panics on error.
-func (q supportQuery) AllP() SupportSlice {
-	o, err := q.All()
+func (q supportQuery) AllP(exec boil.Executor) SupportSlice {
+	o, err := q.All(exec)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -138,10 +178,10 @@ func (q supportQuery) AllP() SupportSlice {
 }
 
 // All returns all Support records from the query.
-func (q supportQuery) All() (SupportSlice, error) {
+func (q supportQuery) All(exec boil.Executor) (SupportSlice, error) {
 	var o []*Support
 
-	err := q.Bind(&o)
+	err := q.Bind(nil, exec, &o)
 	if err != nil {
 		return nil, errors.Wrap(err, "model: failed to assign all query results to Support slice")
 	}
@@ -149,9 +189,24 @@ func (q supportQuery) All() (SupportSlice, error) {
 	return o, nil
 }
 
+// CountG returns the count of all Support records in the query, and panics on error.
+func (q supportQuery) CountG() (int64, error) {
+	return q.Count(boil.GetDB())
+}
+
+// CountGP returns the count of all Support records in the query using the global executor, and panics on error.
+func (q supportQuery) CountGP() int64 {
+	c, err := q.Count(boil.GetDB())
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return c
+}
+
 // CountP returns the count of all Support records in the query, and panics on error.
-func (q supportQuery) CountP() int64 {
-	c, err := q.Count()
+func (q supportQuery) CountP(exec boil.Executor) int64 {
+	c, err := q.Count(exec)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -160,13 +215,13 @@ func (q supportQuery) CountP() int64 {
 }
 
 // Count returns the count of all Support records in the query.
-func (q supportQuery) Count() (int64, error) {
+func (q supportQuery) Count(exec boil.Executor) (int64, error) {
 	var count int64
 
 	queries.SetSelect(q.Query, nil)
 	queries.SetCount(q.Query)
 
-	err := q.Query.QueryRow().Scan(&count)
+	err := q.Query.QueryRow(exec).Scan(&count)
 	if err != nil {
 		return 0, errors.Wrap(err, "model: failed to count support rows")
 	}
@@ -174,9 +229,24 @@ func (q supportQuery) Count() (int64, error) {
 	return count, nil
 }
 
-// Exists checks if the row exists in the table, and panics on error.
-func (q supportQuery) ExistsP() bool {
-	e, err := q.Exists()
+// ExistsG checks if the row exists in the table, and panics on error.
+func (q supportQuery) ExistsG() (bool, error) {
+	return q.Exists(boil.GetDB())
+}
+
+// ExistsGP checks if the row exists in the table using the global executor, and panics on error.
+func (q supportQuery) ExistsGP() bool {
+	e, err := q.Exists(boil.GetDB())
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return e
+}
+
+// ExistsP checks if the row exists in the table, and panics on error.
+func (q supportQuery) ExistsP(exec boil.Executor) bool {
+	e, err := q.Exists(exec)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -185,13 +255,14 @@ func (q supportQuery) ExistsP() bool {
 }
 
 // Exists checks if the row exists in the table.
-func (q supportQuery) Exists() (bool, error) {
+func (q supportQuery) Exists(exec boil.Executor) (bool, error) {
 	var count int64
 
+	queries.SetSelect(q.Query, nil)
 	queries.SetCount(q.Query)
 	queries.SetLimit(q.Query, 1)
 
-	err := q.Query.QueryRow().Scan(&count)
+	err := q.Query.QueryRow(exec).Scan(&count)
 	if err != nil {
 		return false, errors.Wrap(err, "model: failed to check if support exists")
 	}
@@ -199,70 +270,81 @@ func (q supportQuery) Exists() (bool, error) {
 	return count > 0, nil
 }
 
-// TransactionHashG pointed to by the foreign key.
-func (o *Support) TransactionHashG(mods ...qm.QueryMod) transactionQuery {
-	return o.TransactionHash(boil.GetDB(), mods...)
-}
-
 // TransactionHash pointed to by the foreign key.
-func (o *Support) TransactionHash(exec boil.Executor, mods ...qm.QueryMod) transactionQuery {
+func (o *Support) TransactionHash(mods ...qm.QueryMod) transactionQuery {
 	queryMods := []qm.QueryMod{
 		qm.Where("hash=?", o.TransactionHashID),
 	}
 
 	queryMods = append(queryMods, mods...)
 
-	query := Transactions(exec, queryMods...)
+	query := Transactions(queryMods...)
 	queries.SetFrom(query.Query, "`transaction`")
 
 	return query
-} // LoadTransactionHash allows an eager lookup of values, cached into the
-// loaded structs of the objects.
-func (supportL) LoadTransactionHash(e boil.Executor, singular bool, maybeSupport interface{}) error {
+}
+
+// LoadTransactionHash allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for an N-1 relationship.
+func (supportL) LoadTransactionHash(e boil.Executor, singular bool, maybeSupport interface{}, mods queries.Applicator) error {
 	var slice []*Support
 	var object *Support
 
-	count := 1
 	if singular {
 		object = maybeSupport.(*Support)
 	} else {
 		slice = *maybeSupport.(*[]*Support)
-		count = len(slice)
 	}
 
-	args := make([]interface{}, count)
+	args := make([]interface{}, 0, 1)
 	if singular {
 		if object.R == nil {
 			object.R = &supportR{}
 		}
-		args[0] = object.TransactionHashID
+		if !queries.IsNil(object.TransactionHashID) {
+			args = append(args, object.TransactionHashID)
+		}
+
 	} else {
-		for i, obj := range slice {
+	Outer:
+		for _, obj := range slice {
 			if obj.R == nil {
 				obj.R = &supportR{}
 			}
-			args[i] = obj.TransactionHashID
+
+			for _, a := range args {
+				if queries.Equal(a, obj.TransactionHashID) {
+					continue Outer
+				}
+			}
+
+			if !queries.IsNil(obj.TransactionHashID) {
+				args = append(args, obj.TransactionHashID)
+			}
+
 		}
 	}
 
-	query := fmt.Sprintf(
-		"select * from `transaction` where `hash` in (%s)",
-		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
-	)
-
-	if boil.DebugMode {
-		fmt.Fprintf(boil.DebugWriter, "%s\n%v\n", query, args)
+	query := NewQuery(qm.From(`transaction`), qm.WhereIn(`hash in ?`, args...))
+	if mods != nil {
+		mods.Apply(query)
 	}
 
-	results, err := e.Query(query, args...)
+	results, err := query.Query(e)
 	if err != nil {
 		return errors.Wrap(err, "failed to eager load Transaction")
 	}
-	defer results.Close()
 
 	var resultSlice []*Transaction
 	if err = queries.Bind(results, &resultSlice); err != nil {
 		return errors.Wrap(err, "failed to bind eager loaded slice Transaction")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results of eager load for transaction")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for transaction")
 	}
 
 	if len(resultSlice) == 0 {
@@ -270,14 +352,23 @@ func (supportL) LoadTransactionHash(e boil.Executor, singular bool, maybeSupport
 	}
 
 	if singular {
-		object.R.TransactionHash = resultSlice[0]
+		foreign := resultSlice[0]
+		object.R.TransactionHash = foreign
+		if foreign.R == nil {
+			foreign.R = &transactionR{}
+		}
+		foreign.R.TransactionHashSupports = append(foreign.R.TransactionHashSupports, object)
 		return nil
 	}
 
 	for _, local := range slice {
 		for _, foreign := range resultSlice {
-			if local.TransactionHashID.String == foreign.Hash {
+			if queries.Equal(local.TransactionHashID, foreign.Hash) {
 				local.R.TransactionHash = foreign
+				if foreign.R == nil {
+					foreign.R = &transactionR{}
+				}
+				foreign.R.TransactionHashSupports = append(foreign.R.TransactionHashSupports, local)
 				break
 			}
 		}
@@ -320,7 +411,7 @@ func (o *Support) SetTransactionHashGP(insert bool, related *Transaction) {
 func (o *Support) SetTransactionHash(exec boil.Executor, insert bool, related *Transaction) error {
 	var err error
 	if insert {
-		if err = related.Insert(exec); err != nil {
+		if err = related.Insert(exec, boil.Infer()); err != nil {
 			return errors.Wrap(err, "failed to insert into foreign table")
 		}
 	}
@@ -341,9 +432,7 @@ func (o *Support) SetTransactionHash(exec boil.Executor, insert bool, related *T
 		return errors.Wrap(err, "failed to update local table")
 	}
 
-	o.TransactionHashID.String = related.Hash
-	o.TransactionHashID.Valid = true
-
+	queries.Assign(&o.TransactionHashID, related.Hash)
 	if o.R == nil {
 		o.R = &supportR{
 			TransactionHash: related,
@@ -397,9 +486,8 @@ func (o *Support) RemoveTransactionHashGP(related *Transaction) {
 func (o *Support) RemoveTransactionHash(exec boil.Executor, related *Transaction) error {
 	var err error
 
-	o.TransactionHashID.Valid = false
-	if err = o.Update(exec, "transaction_hash_id"); err != nil {
-		o.TransactionHashID.Valid = true
+	queries.SetScanner(&o.TransactionHashID, nil)
+	if err = o.Update(exec, boil.Whitelist("transaction_hash_id")); err != nil {
 		return errors.Wrap(err, "failed to update local table")
 	}
 
@@ -409,7 +497,7 @@ func (o *Support) RemoveTransactionHash(exec boil.Executor, related *Transaction
 	}
 
 	for i, ri := range related.R.TransactionHashSupports {
-		if o.TransactionHashID.String != ri.TransactionHashID.String {
+		if queries.Equal(o.TransactionHashID, ri.TransactionHashID) {
 			continue
 		}
 
@@ -423,25 +511,30 @@ func (o *Support) RemoveTransactionHash(exec boil.Executor, related *Transaction
 	return nil
 }
 
-// SupportsG retrieves all records.
-func SupportsG(mods ...qm.QueryMod) supportQuery {
-	return Supports(boil.GetDB(), mods...)
-}
-
 // Supports retrieves all the records using an executor.
-func Supports(exec boil.Executor, mods ...qm.QueryMod) supportQuery {
+func Supports(mods ...qm.QueryMod) supportQuery {
 	mods = append(mods, qm.From("`support`"))
-	return supportQuery{NewQuery(exec, mods...)}
+	return supportQuery{NewQuery(mods...)}
 }
 
 // FindSupportG retrieves a single record by ID.
-func FindSupportG(id uint64, selectCols ...string) (*Support, error) {
-	return FindSupport(boil.GetDB(), id, selectCols...)
+func FindSupportG(iD uint64, selectCols ...string) (*Support, error) {
+	return FindSupport(boil.GetDB(), iD, selectCols...)
+}
+
+// FindSupportP retrieves a single record by ID with an executor, and panics on error.
+func FindSupportP(exec boil.Executor, iD uint64, selectCols ...string) *Support {
+	retobj, err := FindSupport(exec, iD, selectCols...)
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return retobj
 }
 
 // FindSupportGP retrieves a single record by ID, and panics on error.
-func FindSupportGP(id uint64, selectCols ...string) *Support {
-	retobj, err := FindSupport(boil.GetDB(), id, selectCols...)
+func FindSupportGP(iD uint64, selectCols ...string) *Support {
+	retobj, err := FindSupport(boil.GetDB(), iD, selectCols...)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -451,7 +544,7 @@ func FindSupportGP(id uint64, selectCols ...string) *Support {
 
 // FindSupport retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindSupport(exec boil.Executor, id uint64, selectCols ...string) (*Support, error) {
+func FindSupport(exec boil.Executor, iD uint64, selectCols ...string) (*Support, error) {
 	supportObj := &Support{}
 
 	sel := "*"
@@ -462,9 +555,9 @@ func FindSupport(exec boil.Executor, id uint64, selectCols ...string) (*Support,
 		"select %s from `support` where `id`=?", sel,
 	)
 
-	q := queries.Raw(exec, query, id)
+	q := queries.Raw(query, iD)
 
-	err := q.Bind(supportObj)
+	err := q.Bind(nil, exec, supportObj)
 	if err != nil {
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
@@ -475,43 +568,30 @@ func FindSupport(exec boil.Executor, id uint64, selectCols ...string) (*Support,
 	return supportObj, nil
 }
 
-// FindSupportP retrieves a single record by ID with an executor, and panics on error.
-func FindSupportP(exec boil.Executor, id uint64, selectCols ...string) *Support {
-	retobj, err := FindSupport(exec, id, selectCols...)
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return retobj
-}
-
 // InsertG a single record. See Insert for whitelist behavior description.
-func (o *Support) InsertG(whitelist ...string) error {
-	return o.Insert(boil.GetDB(), whitelist...)
-}
-
-// InsertGP a single record, and panics on error. See Insert for whitelist
-// behavior description.
-func (o *Support) InsertGP(whitelist ...string) {
-	if err := o.Insert(boil.GetDB(), whitelist...); err != nil {
-		panic(boil.WrapErr(err))
-	}
+func (o *Support) InsertG(columns boil.Columns) error {
+	return o.Insert(boil.GetDB(), columns)
 }
 
 // InsertP a single record using an executor, and panics on error. See Insert
 // for whitelist behavior description.
-func (o *Support) InsertP(exec boil.Executor, whitelist ...string) {
-	if err := o.Insert(exec, whitelist...); err != nil {
+func (o *Support) InsertP(exec boil.Executor, columns boil.Columns) {
+	if err := o.Insert(exec, columns); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// InsertGP a single record, and panics on error. See Insert for whitelist
+// behavior description.
+func (o *Support) InsertGP(columns boil.Columns) {
+	if err := o.Insert(boil.GetDB(), columns); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // Insert a single record using an executor.
-// Whitelist behavior: If a whitelist is provided, only those columns supplied are inserted
-// No whitelist behavior: Without a whitelist, columns are inferred by the following rules:
-// - All columns without a default value are included (i.e. name, age)
-// - All columns with a default, but non-zero are included (i.e. health = 75)
-func (o *Support) Insert(exec boil.Executor, whitelist ...string) error {
+// See boil.Columns.InsertColumnSet documentation to understand column list inference for inserts.
+func (o *Support) Insert(exec boil.Executor, columns boil.Columns) error {
 	if o == nil {
 		return errors.New("model: no support provided for insertion")
 	}
@@ -520,18 +600,17 @@ func (o *Support) Insert(exec boil.Executor, whitelist ...string) error {
 
 	nzDefaults := queries.NonZeroDefaultSet(supportColumnsWithDefault, o)
 
-	key := makeCacheKey(whitelist, nzDefaults)
+	key := makeCacheKey(columns, nzDefaults)
 	supportInsertCacheMut.RLock()
 	cache, cached := supportInsertCache[key]
 	supportInsertCacheMut.RUnlock()
 
 	if !cached {
-		wl, returnColumns := strmangle.InsertColumnSet(
+		wl, returnColumns := columns.InsertColumnSet(
 			supportColumns,
 			supportColumnsWithDefault,
 			supportColumnsWithoutDefault,
 			nzDefaults,
-			whitelist,
 		)
 
 		cache.valueMapping, err = queries.BindMapping(supportType, supportMapping, wl)
@@ -543,9 +622,9 @@ func (o *Support) Insert(exec boil.Executor, whitelist ...string) error {
 			return err
 		}
 		if len(wl) != 0 {
-			cache.query = fmt.Sprintf("INSERT INTO `support` (`%s`) %%sVALUES (%s)%%s", strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.IndexPlaceholders, len(wl), 1, 1))
+			cache.query = fmt.Sprintf("INSERT INTO `support` (`%s`) %%sVALUES (%s)%%s", strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
 		} else {
-			cache.query = "INSERT INTO `support` () VALUES ()"
+			cache.query = "INSERT INTO `support` () VALUES ()%s%s"
 		}
 
 		var queryOutput, queryReturning string
@@ -554,9 +633,7 @@ func (o *Support) Insert(exec boil.Executor, whitelist ...string) error {
 			cache.retQuery = fmt.Sprintf("SELECT `%s` FROM `support` WHERE %s", strings.Join(returnColumns, "`,`"), strmangle.WhereClause("`", "`", 0, supportPrimaryKeyColumns))
 		}
 
-		if len(wl) != 0 {
-			cache.query = fmt.Sprintf(cache.query, queryOutput, queryReturning)
-		}
+		cache.query = fmt.Sprintf(cache.query, queryOutput, queryReturning)
 	}
 
 	value := reflect.Indirect(reflect.ValueOf(o))
@@ -614,49 +691,44 @@ CacheNoHooks:
 	return nil
 }
 
-// UpdateG a single Support record. See Update for
-// whitelist behavior description.
-func (o *Support) UpdateG(whitelist ...string) error {
-	return o.Update(boil.GetDB(), whitelist...)
+// UpdateG a single Support record using the global executor.
+// See Update for more documentation.
+func (o *Support) UpdateG(columns boil.Columns) error {
+	return o.Update(boil.GetDB(), columns)
 }
 
-// UpdateGP a single Support record.
-// UpdateGP takes a whitelist of column names that should be updated.
-// Panics on error. See Update for whitelist behavior description.
-func (o *Support) UpdateGP(whitelist ...string) {
-	if err := o.Update(boil.GetDB(), whitelist...); err != nil {
+// UpdateP uses an executor to update the Support, and panics on error.
+// See Update for more documentation.
+func (o *Support) UpdateP(exec boil.Executor, columns boil.Columns) {
+	err := o.Update(exec, columns)
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
-// UpdateP uses an executor to update the Support, and panics on error.
-// See Update for whitelist behavior description.
-func (o *Support) UpdateP(exec boil.Executor, whitelist ...string) {
-	err := o.Update(exec, whitelist...)
+// UpdateGP a single Support record using the global executor. Panics on error.
+// See Update for more documentation.
+func (o *Support) UpdateGP(columns boil.Columns) {
+	err := o.Update(boil.GetDB(), columns)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // Update uses an executor to update the Support.
-// Whitelist behavior: If a whitelist is provided, only the columns given are updated.
-// No whitelist behavior: Without a whitelist, columns are inferred by the following rules:
-// - All columns are inferred to start with
-// - All primary keys are subtracted from this set
-// Update does not automatically update the record in case of default values. Use .Reload()
-// to refresh the records.
-func (o *Support) Update(exec boil.Executor, whitelist ...string) error {
+// See boil.Columns.UpdateColumnSet documentation to understand column list inference for updates.
+// Update does not automatically update the record in case of default values. Use .Reload() to refresh the records.
+func (o *Support) Update(exec boil.Executor, columns boil.Columns) error {
 	var err error
-	key := makeCacheKey(whitelist, nil)
+	key := makeCacheKey(columns, nil)
 	supportUpdateCacheMut.RLock()
 	cache, cached := supportUpdateCache[key]
 	supportUpdateCacheMut.RUnlock()
 
 	if !cached {
-		wl := strmangle.UpdateColumnSet(
+		wl := columns.UpdateColumnSet(
 			supportColumns,
 			supportPrimaryKeyColumns,
-			whitelist,
 		)
 
 		if len(wl) == 0 {
@@ -695,17 +767,23 @@ func (o *Support) Update(exec boil.Executor, whitelist ...string) error {
 }
 
 // UpdateAllP updates all rows with matching column names, and panics on error.
-func (q supportQuery) UpdateAllP(cols M) {
-	if err := q.UpdateAll(cols); err != nil {
+func (q supportQuery) UpdateAllP(exec boil.Executor, cols M) {
+	err := q.UpdateAll(exec, cols)
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
+// UpdateAllG updates all rows with the specified column values.
+func (q supportQuery) UpdateAllG(cols M) error {
+	return q.UpdateAll(boil.GetDB(), cols)
+}
+
 // UpdateAll updates all rows with the specified column values.
-func (q supportQuery) UpdateAll(cols M) error {
+func (q supportQuery) UpdateAll(exec boil.Executor, cols M) error {
 	queries.SetUpdate(q.Query, cols)
 
-	_, err := q.Query.Exec()
+	_, err := q.Query.Exec(exec)
 	if err != nil {
 		return errors.Wrap(err, "model: unable to update all for support")
 	}
@@ -720,14 +798,16 @@ func (o SupportSlice) UpdateAllG(cols M) error {
 
 // UpdateAllGP updates all rows with the specified column values, and panics on error.
 func (o SupportSlice) UpdateAllGP(cols M) {
-	if err := o.UpdateAll(boil.GetDB(), cols); err != nil {
+	err := o.UpdateAll(boil.GetDB(), cols)
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // UpdateAllP updates all rows with the specified column values, and panics on error.
 func (o SupportSlice) UpdateAllP(exec boil.Executor, cols M) {
-	if err := o.UpdateAll(exec, cols); err != nil {
+	err := o.UpdateAll(exec, cols)
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
@@ -777,44 +857,60 @@ func (o SupportSlice) UpdateAll(exec boil.Executor, cols M) error {
 }
 
 // UpsertG attempts an insert, and does an update or ignore on conflict.
-func (o *Support) UpsertG(updateColumns []string, whitelist ...string) error {
-	return o.Upsert(boil.GetDB(), updateColumns, whitelist...)
+func (o *Support) UpsertG(updateColumns, insertColumns boil.Columns) error {
+	return o.Upsert(boil.GetDB(), updateColumns, insertColumns)
 }
 
 // UpsertGP attempts an insert, and does an update or ignore on conflict. Panics on error.
-func (o *Support) UpsertGP(updateColumns []string, whitelist ...string) {
-	if err := o.Upsert(boil.GetDB(), updateColumns, whitelist...); err != nil {
+func (o *Support) UpsertGP(updateColumns, insertColumns boil.Columns) {
+	if err := o.Upsert(boil.GetDB(), updateColumns, insertColumns); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // UpsertP attempts an insert using an executor, and does an update or ignore on conflict.
 // UpsertP panics on error.
-func (o *Support) UpsertP(exec boil.Executor, updateColumns []string, whitelist ...string) {
-	if err := o.Upsert(exec, updateColumns, whitelist...); err != nil {
+func (o *Support) UpsertP(exec boil.Executor, updateColumns, insertColumns boil.Columns) {
+	if err := o.Upsert(exec, updateColumns, insertColumns); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
+var mySQLSupportUniqueColumns = []string{
+	"id",
+}
+
 // Upsert attempts an insert using an executor, and does an update or ignore on conflict.
-func (o *Support) Upsert(exec boil.Executor, updateColumns []string, whitelist ...string) error {
+// See boil.Columns documentation for how to properly use updateColumns and insertColumns.
+func (o *Support) Upsert(exec boil.Executor, updateColumns, insertColumns boil.Columns) error {
 	if o == nil {
 		return errors.New("model: no support provided for upsert")
 	}
 
 	nzDefaults := queries.NonZeroDefaultSet(supportColumnsWithDefault, o)
+	nzUniques := queries.NonZeroDefaultSet(mySQLSupportUniqueColumns, o)
 
-	// Build cache key in-line uglily - mysql vs postgres problems
+	if len(nzUniques) == 0 {
+		return errors.New("cannot upsert with a table that cannot conflict on a unique column")
+	}
+
+	// Build cache key in-line uglily - mysql vs psql problems
 	buf := strmangle.GetBuffer()
-	for _, c := range updateColumns {
+	buf.WriteString(strconv.Itoa(updateColumns.Kind))
+	for _, c := range updateColumns.Cols {
 		buf.WriteString(c)
 	}
 	buf.WriteByte('.')
-	for _, c := range whitelist {
+	buf.WriteString(strconv.Itoa(insertColumns.Kind))
+	for _, c := range insertColumns.Cols {
 		buf.WriteString(c)
 	}
 	buf.WriteByte('.')
 	for _, c := range nzDefaults {
+		buf.WriteString(c)
+	}
+	buf.WriteByte('.')
+	for _, c := range nzUniques {
 		buf.WriteString(c)
 	}
 	key := buf.String()
@@ -827,27 +923,27 @@ func (o *Support) Upsert(exec boil.Executor, updateColumns []string, whitelist .
 	var err error
 
 	if !cached {
-		insert, ret := strmangle.InsertColumnSet(
+		insert, ret := insertColumns.InsertColumnSet(
 			supportColumns,
 			supportColumnsWithDefault,
 			supportColumnsWithoutDefault,
 			nzDefaults,
-			whitelist,
 		)
-
-		update := strmangle.UpdateColumnSet(
+		update := updateColumns.UpdateColumnSet(
 			supportColumns,
 			supportPrimaryKeyColumns,
-			updateColumns,
 		)
+
 		if len(update) == 0 {
 			return errors.New("model: unable to upsert support, could not build update column list")
 		}
 
-		cache.query = queries.BuildUpsertQueryMySQL(dialect, "support", update, insert)
+		ret = strmangle.SetComplement(ret, nzUniques)
+		cache.query = buildUpsertQueryMySQL(dialect, "support", update, insert)
 		cache.retQuery = fmt.Sprintf(
-			"SELECT %s FROM `support` WHERE `id`=?",
+			"SELECT %s FROM `support` WHERE %s",
 			strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, ret), ","),
+			strmangle.WhereClause("`", "`", 0, nzUniques),
 		)
 
 		cache.valueMapping, err = queries.BindMapping(supportType, supportMapping, insert)
@@ -881,7 +977,8 @@ func (o *Support) Upsert(exec boil.Executor, updateColumns []string, whitelist .
 	}
 
 	var lastID int64
-	var identifierCols []interface{}
+	var uniqueMap []uint64
+	var nzUniqueCols []interface{}
 
 	if len(cache.retMapping) == 0 {
 		goto CacheNoHooks
@@ -893,20 +990,22 @@ func (o *Support) Upsert(exec boil.Executor, updateColumns []string, whitelist .
 	}
 
 	o.ID = uint64(lastID)
-	if lastID != 0 && len(cache.retMapping) == 1 && cache.retMapping[0] == supportMapping["ID"] {
+	if lastID != 0 && len(cache.retMapping) == 1 && cache.retMapping[0] == supportMapping["id"] {
 		goto CacheNoHooks
 	}
 
-	identifierCols = []interface{}{
-		o.ID,
+	uniqueMap, err = queries.BindMapping(supportType, supportMapping, nzUniques)
+	if err != nil {
+		return errors.Wrap(err, "model: unable to retrieve unique values for support")
 	}
+	nzUniqueCols = queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), uniqueMap)
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, cache.retQuery)
-		fmt.Fprintln(boil.DebugWriter, identifierCols...)
+		fmt.Fprintln(boil.DebugWriter, nzUniqueCols...)
 	}
 
-	err = exec.QueryRow(cache.retQuery, identifierCols...).Scan(returns...)
+	err = exec.QueryRow(cache.retQuery, nzUniqueCols...).Scan(returns...)
 	if err != nil {
 		return errors.Wrap(err, "model: unable to populate default values for support")
 	}
@@ -921,30 +1020,28 @@ CacheNoHooks:
 	return nil
 }
 
+// DeleteG deletes a single Support record.
+// DeleteG will match against the primary key column to find the record to delete.
+func (o *Support) DeleteG() error {
+	return o.Delete(boil.GetDB())
+}
+
 // DeleteP deletes a single Support record with an executor.
 // DeleteP will match against the primary key column to find the record to delete.
 // Panics on error.
 func (o *Support) DeleteP(exec boil.Executor) {
-	if err := o.Delete(exec); err != nil {
+	err := o.Delete(exec)
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
-}
-
-// DeleteG deletes a single Support record.
-// DeleteG will match against the primary key column to find the record to delete.
-func (o *Support) DeleteG() error {
-	if o == nil {
-		return errors.New("model: no Support provided for deletion")
-	}
-
-	return o.Delete(boil.GetDB())
 }
 
 // DeleteGP deletes a single Support record.
 // DeleteGP will match against the primary key column to find the record to delete.
 // Panics on error.
 func (o *Support) DeleteGP() {
-	if err := o.DeleteG(); err != nil {
+	err := o.Delete(boil.GetDB())
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
@@ -973,21 +1070,22 @@ func (o *Support) Delete(exec boil.Executor) error {
 }
 
 // DeleteAllP deletes all rows, and panics on error.
-func (q supportQuery) DeleteAllP() {
-	if err := q.DeleteAll(); err != nil {
+func (q supportQuery) DeleteAllP(exec boil.Executor) {
+	err := q.DeleteAll(exec)
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // DeleteAll deletes all matching rows.
-func (q supportQuery) DeleteAll() error {
+func (q supportQuery) DeleteAll(exec boil.Executor) error {
 	if q.Query == nil {
 		return errors.New("model: no supportQuery provided for delete all")
 	}
 
 	queries.SetDelete(q.Query)
 
-	_, err := q.Query.Exec()
+	_, err := q.Query.Exec(exec)
 	if err != nil {
 		return errors.Wrap(err, "model: unable to delete all from support")
 	}
@@ -995,24 +1093,23 @@ func (q supportQuery) DeleteAll() error {
 	return nil
 }
 
-// DeleteAllGP deletes all rows in the slice, and panics on error.
-func (o SupportSlice) DeleteAllGP() {
-	if err := o.DeleteAllG(); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
 // DeleteAllG deletes all rows in the slice.
 func (o SupportSlice) DeleteAllG() error {
-	if o == nil {
-		return errors.New("model: no Support slice provided for delete all")
-	}
 	return o.DeleteAll(boil.GetDB())
 }
 
 // DeleteAllP deletes all rows in the slice, using an executor, and panics on error.
 func (o SupportSlice) DeleteAllP(exec boil.Executor) {
-	if err := o.DeleteAll(exec); err != nil {
+	err := o.DeleteAll(exec)
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// DeleteAllGP deletes all rows in the slice, and panics on error.
+func (o SupportSlice) DeleteAllGP() {
+	err := o.DeleteAll(boil.GetDB())
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
@@ -1049,11 +1146,13 @@ func (o SupportSlice) DeleteAll(exec boil.Executor) error {
 	return nil
 }
 
-// ReloadGP refetches the object from the database and panics on error.
-func (o *Support) ReloadGP() {
-	if err := o.ReloadG(); err != nil {
-		panic(boil.WrapErr(err))
+// ReloadG refetches the object from the database using the primary keys.
+func (o *Support) ReloadG() error {
+	if o == nil {
+		return errors.New("model: no Support provided for reload")
 	}
+
+	return o.Reload(boil.GetDB())
 }
 
 // ReloadP refetches the object from the database with an executor. Panics on error.
@@ -1063,13 +1162,11 @@ func (o *Support) ReloadP(exec boil.Executor) {
 	}
 }
 
-// ReloadG refetches the object from the database using the primary keys.
-func (o *Support) ReloadG() error {
-	if o == nil {
-		return errors.New("model: no Support provided for reload")
+// ReloadGP refetches the object from the database and panics on error.
+func (o *Support) ReloadGP() {
+	if err := o.Reload(boil.GetDB()); err != nil {
+		panic(boil.WrapErr(err))
 	}
-
-	return o.Reload(boil.GetDB())
 }
 
 // Reload refetches the object from the database
@@ -1084,13 +1181,14 @@ func (o *Support) Reload(exec boil.Executor) error {
 	return nil
 }
 
-// ReloadAllGP refetches every row with matching primary key column values
+// ReloadAllG refetches every row with matching primary key column values
 // and overwrites the original object slice with the newly updated slice.
-// Panics on error.
-func (o *SupportSlice) ReloadAllGP() {
-	if err := o.ReloadAllG(); err != nil {
-		panic(boil.WrapErr(err))
+func (o *SupportSlice) ReloadAllG() error {
+	if o == nil {
+		return errors.New("model: empty SupportSlice provided for reload all")
 	}
+
+	return o.ReloadAll(boil.GetDB())
 }
 
 // ReloadAllP refetches every row with matching primary key column values
@@ -1102,14 +1200,13 @@ func (o *SupportSlice) ReloadAllP(exec boil.Executor) {
 	}
 }
 
-// ReloadAllG refetches every row with matching primary key column values
+// ReloadAllGP refetches every row with matching primary key column values
 // and overwrites the original object slice with the newly updated slice.
-func (o *SupportSlice) ReloadAllG() error {
-	if o == nil {
-		return errors.New("model: empty SupportSlice provided for reload all")
+// Panics on error.
+func (o *SupportSlice) ReloadAllGP() {
+	if err := o.ReloadAll(boil.GetDB()); err != nil {
+		panic(boil.WrapErr(err))
 	}
-
-	return o.ReloadAll(boil.GetDB())
 }
 
 // ReloadAll refetches every row with matching primary key column values
@@ -1119,7 +1216,7 @@ func (o *SupportSlice) ReloadAll(exec boil.Executor) error {
 		return nil
 	}
 
-	supports := SupportSlice{}
+	slice := SupportSlice{}
 	var args []interface{}
 	for _, obj := range *o {
 		pkeyArgs := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(obj)), supportPrimaryKeyMapping)
@@ -1129,29 +1226,54 @@ func (o *SupportSlice) ReloadAll(exec boil.Executor) error {
 	sql := "SELECT `support`.* FROM `support` WHERE " +
 		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, supportPrimaryKeyColumns, len(*o))
 
-	q := queries.Raw(exec, sql, args...)
+	q := queries.Raw(sql, args...)
 
-	err := q.Bind(&supports)
+	err := q.Bind(nil, exec, &slice)
 	if err != nil {
 		return errors.Wrap(err, "model: unable to reload all in SupportSlice")
 	}
 
-	*o = supports
+	*o = slice
 
 	return nil
 }
 
+// SupportExistsG checks if the Support row exists.
+func SupportExistsG(iD uint64) (bool, error) {
+	return SupportExists(boil.GetDB(), iD)
+}
+
+// SupportExistsP checks if the Support row exists. Panics on error.
+func SupportExistsP(exec boil.Executor, iD uint64) bool {
+	e, err := SupportExists(exec, iD)
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return e
+}
+
+// SupportExistsGP checks if the Support row exists. Panics on error.
+func SupportExistsGP(iD uint64) bool {
+	e, err := SupportExists(boil.GetDB(), iD)
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return e
+}
+
 // SupportExists checks if the Support row exists.
-func SupportExists(exec boil.Executor, id uint64) (bool, error) {
+func SupportExists(exec boil.Executor, iD uint64) (bool, error) {
 	var exists bool
 	sql := "select exists(select 1 from `support` where `id`=? limit 1)"
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, sql)
-		fmt.Fprintln(boil.DebugWriter, id)
+		fmt.Fprintln(boil.DebugWriter, iD)
 	}
 
-	row := exec.QueryRow(sql, id)
+	row := exec.QueryRow(sql, iD)
 
 	err := row.Scan(&exists)
 	if err != nil {
@@ -1159,29 +1281,4 @@ func SupportExists(exec boil.Executor, id uint64) (bool, error) {
 	}
 
 	return exists, nil
-}
-
-// SupportExistsG checks if the Support row exists.
-func SupportExistsG(id uint64) (bool, error) {
-	return SupportExists(boil.GetDB(), id)
-}
-
-// SupportExistsGP checks if the Support row exists. Panics on error.
-func SupportExistsGP(id uint64) bool {
-	e, err := SupportExists(boil.GetDB(), id)
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return e
-}
-
-// SupportExistsP checks if the Support row exists. Panics on error.
-func SupportExistsP(exec boil.Executor, id uint64) bool {
-	e, err := SupportExists(exec, id)
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return e
 }

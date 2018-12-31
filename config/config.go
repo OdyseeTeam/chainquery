@@ -6,10 +6,12 @@ import (
 	"os"
 	"time"
 
+	"github.com/lbryio/chainquery/auth"
 	"github.com/lbryio/chainquery/daemon"
 	"github.com/lbryio/chainquery/global"
 	"github.com/lbryio/chainquery/lbrycrd"
 	"github.com/lbryio/chainquery/twilio"
+
 	"github.com/lbryio/lbry.go/errors"
 
 	"github.com/fsnotify/fsnotify"
@@ -44,6 +46,7 @@ const ( // config setting keys
 	twilioauthtoken      = "twilioauthtoken"
 	smsrecipients        = "smsrecipients"
 	smsfromphonenumber   = "smsfromphonenumber"
+	apikeys              = "apikeys"
 )
 
 const (
@@ -102,9 +105,8 @@ func readConfig() {
 	viper.AddConfigPath("$HOME/")                        // 2 - check $HOME
 	viper.AddConfigPath(".")                             // 3 - optionally look for config in the working directory
 	viper.AddConfigPath("./config/default/")             // 4 - use default that comes with the branch
-
-	err := viper.ReadInConfig() // Find and read the config file
-	if err != nil {             // Handle errors reading the config file
+	err := viper.ReadInConfig()                          // Find and read the config file
+	if err != nil {                                      // Handle errors reading the config file
 		logrus.Warning("Error reading config file...defaults will be used: ", err)
 	}
 	twilio.RecipientList = viper.GetStringSlice(smsrecipients)
@@ -158,6 +160,7 @@ func processConfiguration() {
 
 	daemon.ApplySettings(settings)
 	lbrycrd.LBRYcrdURL = GetLBRYcrdURL()
+	auth.APIKeys = viper.GetStringSlice(apikeys)
 
 }
 

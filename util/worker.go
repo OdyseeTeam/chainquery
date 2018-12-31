@@ -22,11 +22,11 @@ func InitWorkers(numworkers int, jobs chan PieceOfWork) *sync.WaitGroup {
 	for i := 0; i < numworkers; i++ {
 		wg.Add(1)
 		go func() {
+			defer wg.Done()
 			for job := range jobs {
 				err := job.Execute()
 				job.OnError(err)
 			}
-			wg.Done()
 		}()
 	}
 

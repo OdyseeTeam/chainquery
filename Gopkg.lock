@@ -100,6 +100,14 @@
   revision = "26471af196a17ee75a22e6481b5a5897fb16b081"
 
 [[projects]]
+  digest = "1:660175e70abad3868119f2c29f43339608d7d3b93c8eb178b812ed330be6c07b"
+  name = "github.com/gofrs/uuid"
+  packages = ["."]
+  pruneopts = ""
+  revision = "7077aa61129615a0d7f45c49101cd011ab221c27"
+  version = "v3.1.2"
+
+[[projects]]
   digest = "1:f958a1c137db276e52f0b50efee41a1a389dcdded59a69711f3e872757dab34b"
   name = "github.com/golang/protobuf"
   packages = [
@@ -163,6 +171,14 @@
   revision = "ef8a98b0bbce4a65b5aa4c368430a80ddc533168"
 
 [[projects]]
+  digest = "1:870d441fe217b8e689d7949fef6e43efbc787e50f200cb1e70dbca9204a1d6be"
+  name = "github.com/inconshreveable/mousetrap"
+  packages = ["."]
+  pruneopts = ""
+  revision = "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
+  version = "v1.0"
+
+[[projects]]
   digest = "1:57fcf9db7cd7b5c885504e9f085c5b6d6bf5320f4dc6c74d0fce88b7f472a6eb"
   name = "github.com/jmoiron/sqlx"
   packages = [
@@ -197,7 +213,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:b606706bcfe0f589e965cb3d3afad200ca78333e03a4e1aa915187dc5aeabf01"
+  digest = "1:571b7569490b981769403746b5a987adfdb74cddeae809a90d627a2741f4b2c6"
   name = "github.com/lbryio/lbry.go"
   packages = [
     "api",
@@ -211,7 +227,7 @@
     "validator",
   ]
   pruneopts = ""
-  revision = "7c3d1d062af46c7357cbc6a7b61f40df358365e8"
+  revision = "7593aa704fe495eba2eb61d73c8229a5010ff502"
 
 [[projects]]
   branch = "master"
@@ -350,6 +366,14 @@
   revision = "8965335b8c7107321228e3e3702cab9832751bac"
 
 [[projects]]
+  digest = "1:a1403cc8a94b8d7956ee5e9694badef0e7b051af289caad1cf668331e3ffa4f6"
+  name = "github.com/spf13/cobra"
+  packages = ["."]
+  pruneopts = ""
+  revision = "ef82de70bb3f60c65fb8eebacbb2d122ef517385"
+  version = "v0.0.3"
+
+[[projects]]
   branch = "master"
   digest = "1:104517520aab91164020ab6524a5d6b7cafc641b2e42ac6236f6ac1deac4f66a"
   name = "github.com/spf13/jwalterweatherman"
@@ -382,17 +406,31 @@
   revision = "e7201282ae8da26cd97aed2e516f75c0bd91bb93"
 
 [[projects]]
+  digest = "1:3610e24260db9be91620fb8f3958c2048cc8856b10037112b2d279cb0b550c1b"
+  name = "github.com/volatiletech/null"
+  packages = [
+    ".",
+    "convert",
+  ]
+  pruneopts = ""
+  revision = "0681ee3b5e046ac8bfbbd3999e79d3905e96972f"
+  version = "v8.0.0"
+
+[[projects]]
   branch = "master"
-  digest = "1:331277aa6a5d0a71d4e6c1acac8f83e8e6c0a5adb3b2cd5b70882e7dddd2b098"
+  digest = "1:4b803d6e4d2eae3c745a5063e82fbc14eca88945da36814f6b677cebf19fb088"
   name = "github.com/volatiletech/sqlboiler"
   packages = [
     "boil",
+    "drivers",
+    "importers",
     "queries",
     "queries/qm",
+    "randomize",
     "strmangle",
   ]
   pruneopts = ""
-  revision = "d4bc831c7df09032b8290a3ddfb7bb41a0866934"
+  revision = "4dea9a5f77e3ec6090ad455df3d408e47e077700"
 
 [[projects]]
   branch = "master"
@@ -486,17 +524,6 @@
   version = "v6.3"
 
 [[projects]]
-  digest = "1:01850b279c2d150477906dbc1364feb0431f4138d385359b6929b59f79c8371f"
-  name = "gopkg.in/volatiletech/null.v6"
-  packages = [
-    ".",
-    "convert",
-  ]
-  pruneopts = ""
-  revision = "0bef4e07ae1b27a2a4efa23bbb3006c8c3d2e01d"
-  version = "v6.4"
-
-[[projects]]
   digest = "1:f0620375dd1f6251d9973b5f2596228cc8042e887cd7f827e4220bc1ce8c30e2"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
@@ -534,15 +561,17 @@
     "github.com/sfreiberg/gotwilio",
     "github.com/shopspring/decimal",
     "github.com/sirupsen/logrus",
+    "github.com/spf13/cobra",
     "github.com/spf13/pflag",
     "github.com/spf13/viper",
+    "github.com/volatiletech/null",
     "github.com/volatiletech/sqlboiler/boil",
+    "github.com/volatiletech/sqlboiler/drivers",
     "github.com/volatiletech/sqlboiler/queries",
     "github.com/volatiletech/sqlboiler/queries/qm",
     "github.com/volatiletech/sqlboiler/strmangle",
     "golang.org/x/net/context",
     "golang.org/x/oauth2",
-    "gopkg.in/volatiletech/null.v6",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1

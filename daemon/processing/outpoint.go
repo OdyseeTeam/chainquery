@@ -3,14 +3,17 @@ package processing
 import (
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"strconv"
 
 	ds "github.com/lbryio/chainquery/datastore"
 	"github.com/lbryio/chainquery/lbrycrd"
 	m "github.com/lbryio/chainquery/model"
 	"github.com/lbryio/lbry.go/errors"
+	"github.com/lbryio/lbry.go/stop"
 
 	"github.com/sirupsen/logrus"
+	"github.com/volatiletech/sqlboiler/boil"
 )
 
 type vinToProcess struct {
@@ -26,28 +29,42 @@ type voutToProcess struct {
 	blockHeight uint64
 }
 
-func initVinWorkers(nrWorkers int, jobs <-chan vinToProcess, results chan<- error) {
+func initVinWorkers(s *stop.Group, nrWorkers int, jobs <-chan vinToProcess, results chan<- error) {
 	for i := 0; i < nrWorkers; i++ {
-		go vinProcessor(jobs, results)
+		s.Add(1)
+		go func(worker int) {
+			defer s.Done()
+			vinProcessor(worker, jobs, results)
+		}(i)
 	}
 }
 
-func vinProcessor(jobs <-chan vinToProcess, results chan<- error) {
+func vinProcessor(worker int, jobs <-chan vinToProcess, results chan<- error) {
 	for job := range jobs {
-		results <- processVin(job.jsonVin, job.tx, job.txDC)
+		q(strconv.Itoa(worker) + " - WORKER VIN start new job " + strconv.Itoa(int(job.jsonVin.Sequence)))
+		result := processVin(job.jsonVin, job.tx, job.txDC)
+		q(strconv.Itoa(worker) + " - WORKER VIN passing result " + strconv.Itoa(int(job.jsonVin.Sequence)))
+		results <- result
+		q(strconv.Itoa(worker) + " - WORKER VIN passed result " + strconv.Itoa(int(job.jsonVin.Sequence)))
 	}
+	q(strconv.Itoa(worker) + " - WORKER VIN finished all jobs")
 }
 
-func initVoutWorkers(nrWorkers int, jobs <-chan voutToProcess, results chan<- error) {
+func initVoutWorkers(s *stop.Group, nrWorkers int, jobs <-chan voutToProcess, results chan<- error) {
 	for i := 0; i < nrWorkers; i++ {
-		go voutProcessor(jobs, results)
+		s.Add(1)
+		go func(worker int) {
+			defer s.Done()
+			voutProcessor(worker, jobs, results)
+		}(i)
 	}
 }
 
-func voutProcessor(jobs <-chan voutToProcess, results chan<- error) {
+func voutProcessor(worker int, jobs <-chan voutToProcess, results chan<- error) {
 	for job := range jobs {
 		results <- processVout(job.jsonVout, job.tx, job.txDC, job.blockHeight)
 	}
+	q(strconv.Itoa(worker) + " - WORKER VOUT finished all jobs")
 }
 
 func processVin(jsonVin *lbrycrd.Vin, tx *m.Transaction, txDC *txDebitCredits) error {
@@ -66,14 +83,10 @@ func processVin(jsonVin *lbrycrd.Vin, tx *m.Transaction, txDC *txDebitCredits) e
 			return err
 		}
 	} else {
-		vin.PrevoutHash.String = jsonVin.TxID
-		vin.PrevoutHash.Valid = true
-		vin.PrevoutN.Uint = uint(jsonVin.Vout)
-		vin.PrevoutN.Valid = true
-		vin.ScriptSigHex.String = jsonVin.ScriptSig.Hex
-		vin.ScriptSigHex.Valid = true
-		vin.ScriptSigAsm.String = jsonVin.ScriptSig.Asm
-		vin.ScriptSigAsm.Valid = true
+		vin.PrevoutHash.SetValid(jsonVin.TxID)
+		vin.PrevoutN.SetValid(uint(jsonVin.Vout))
+		vin.ScriptSigHex.SetValid(jsonVin.ScriptSig.Hex)
+		vin.ScriptSigAsm.SetValid(jsonVin.ScriptSig.Asm)
 		srcOutput := ds.GetOutput(vin.PrevoutHash.String, vin.PrevoutN.Uint)
 		if srcOutput == nil {
 			id := strconv.Itoa(int(tx.ID))
@@ -83,12 +96,11 @@ func processVin(jsonVin *lbrycrd.Vin, tx *m.Transaction, txDC *txDebitCredits) e
 			return err
 		}
 		if srcOutput != nil {
-
 			vin.Value = srcOutput.Value
 			var addresses []string
 			if srcOutput.AddressList.Valid {
 				if err := json.Unmarshal([]byte(srcOutput.AddressList.String), &addresses); err != nil {
-					logrus.Error("Error unmarshalling source output address list: ", err)
+					return errors.Err("Error unmarshalling source output address list: ", err)
 				}
 			}
 			var address *m.Address
@@ -102,30 +114,27 @@ func processVin(jsonVin *lbrycrd.Vin, tx *m.Transaction, txDC *txDebitCredits) e
 				}
 				address = ds.GetAddress(jsonAddress)
 				if address == nil {
-					logrus.Error("No addresses for vout address list! ", srcOutput.ID, " -> ", srcOutput.AddressList.String)
-					logrus.Panic(nil)
+					logrus.Panic("No addresses for vout address list! ", srcOutput.ID, " -> ", srcOutput.AddressList.String)
 				}
 
 			}
 			if address != nil {
 				txDC.subtract(address.Address, srcOutput.Value.Float64)
-				vin.InputAddressID.Uint64 = address.ID
-				vin.InputAddressID.Valid = true
+				vin.InputAddressID.SetValid(address.ID)
 				// Store input - Needed to store input address below
 				err := ds.PutInput(vin)
 				if err != nil {
 					return err
 				}
 			} else {
-				logrus.Error("No Address created for Vin: ", vin.ID, " of tx ", tx.ID, " vout: ", srcOutput.ID, " Address: ", addresses[0])
-				logrus.Panic(nil)
+				errMessage := fmt.Sprintf("No Address created for Vin: %d of tx %d vout: %d Address: %s", vin.ID, tx.ID, srcOutput.ID, addresses[0])
+				logrus.Panic(errMessage)
 			}
 			// Update the srcOutput spent if successful
 			srcOutput.IsSpent = true
-			srcOutput.SpentByInputID.Uint64 = vin.ID
-			srcOutput.SpentByInputID.Valid = true
+			srcOutput.SpentByInputID.SetValid(vin.ID)
 			c := m.OutputColumns
-			err := ds.PutOutput(srcOutput, c.IsSpent, c.SpentByInputID)
+			err := ds.PutOutput(srcOutput, boil.Whitelist(c.IsSpent, c.SpentByInputID))
 			if err != nil {
 				return err
 			}
@@ -133,7 +142,7 @@ func processVin(jsonVin *lbrycrd.Vin, tx *m.Transaction, txDC *txDebitCredits) e
 			//Make sure there is a transaction address
 
 			if ds.GetTxAddress(tx.ID, vin.InputAddressID.Uint64) == nil {
-				return errors.Base("Missing txAddress for Tx" + strconv.Itoa(int(tx.ID)) + "- Addr:" + strconv.Itoa(int(vin.InputAddressID.Uint64)))
+				return errors.Err("Missing txAddress for Tx: " + strconv.Itoa(int(tx.ID)) + " - Addr: " + strconv.Itoa(int(vin.InputAddressID.Uint64)) + "[" + address.Address + "]")
 			}
 		}
 	}
@@ -142,8 +151,7 @@ func processVin(jsonVin *lbrycrd.Vin, tx *m.Transaction, txDC *txDebitCredits) e
 
 func processCoinBaseVin(jsonVin *lbrycrd.Vin, vin *m.Input) error {
 	vin.IsCoinbase = true
-	vin.Coinbase.String = jsonVin.Coinbase
-	vin.Coinbase.Valid = true
+	vin.Coinbase.SetValid(jsonVin.Coinbase)
 	err := ds.PutInput(vin)
 	if err != nil {
 		return err
@@ -161,22 +169,16 @@ func processVout(jsonVout *lbrycrd.Vout, tx *m.Transaction, txDC *txDebitCredits
 	vout.TransactionID = tx.ID
 	vout.TransactionHash = tx.Hash
 	vout.Vout = uint(jsonVout.N)
-	vout.Value.Float64 = jsonVout.Value
-	vout.Value.Valid = true
-	vout.RequiredSignatures.Uint = uint(jsonVout.ScriptPubKey.ReqSigs)
-	vout.RequiredSignatures.Valid = true
-	vout.ScriptPubKeyAsm.String = jsonVout.ScriptPubKey.Asm
-	vout.ScriptPubKeyAsm.Valid = true
-	vout.ScriptPubKeyHex.String = jsonVout.ScriptPubKey.Hex
-	vout.ScriptPubKeyHex.Valid = true
-	vout.Type.String = jsonVout.ScriptPubKey.Type
-	vout.Type.Valid = true
+	vout.Value.SetValid(jsonVout.Value)
+	vout.RequiredSignatures.SetValid(uint(jsonVout.ScriptPubKey.ReqSigs))
+	vout.ScriptPubKeyAsm.SetValid(jsonVout.ScriptPubKey.Asm)
+	vout.ScriptPubKeyHex.SetValid(jsonVout.ScriptPubKey.Hex)
+	vout.Type.SetValid(jsonVout.ScriptPubKey.Type)
 	jsonAddresses, err := json.Marshal(jsonVout.ScriptPubKey.Addresses)
 	var address *m.Address
 	if len(jsonVout.ScriptPubKey.Addresses) > 0 {
 		address = ds.GetAddress(jsonVout.ScriptPubKey.Addresses[0])
-		vout.AddressList.String = string(jsonAddresses)
-		vout.AddressList.Valid = true
+		vout.AddressList.SetValid(string(jsonAddresses))
 	} else if vout.Type.String == lbrycrd.NonStandard {
 		jsonAddress, err := getAddressFromNonStandardVout(vout.ScriptPubKeyHex.String)
 		if err != nil {
@@ -196,7 +198,7 @@ func processVout(jsonVout *lbrycrd.Vout, tx *m.Transaction, txDC *txDebitCredits
 	}
 
 	// Save output
-	err = ds.PutOutput(vout)
+	err = ds.PutOutput(vout, boil.Infer())
 	if err != nil {
 		return err
 	}
@@ -215,8 +217,7 @@ func processVout(jsonVout *lbrycrd.Vout, tx *m.Transaction, txDC *txDebitCredits
 		//Update output to link to the proper claim id
 		claim := ds.GetClaim(*claimid)
 		if claim != nil {
-			vout.ClaimID.String = claim.ClaimID
-			vout.ClaimID.Valid = true
+			vout.ClaimID.SetValid(claim.ClaimID)
 		}
 	}
 

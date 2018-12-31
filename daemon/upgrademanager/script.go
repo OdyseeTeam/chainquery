@@ -14,16 +14,16 @@ import (
 )
 
 func reProcessAllClaims() {
-	outputs := model.OutputsG(qm.Where(model.OutputColumns.Type+" =?", lbrycrd.NonStandard),
-		qm.Select(model.OutputColumns.TransactionHash)).AllP()
+	outputs := model.Outputs(qm.Where(model.OutputColumns.Type+" =?", lbrycrd.NonStandard),
+		qm.Select(model.OutputColumns.TransactionHash)).AllGP()
 	for i, output := range outputs {
 		processClaimOut(i, len(outputs), output.TransactionHash)
 	}
 }
 
 func processClaimOut(index int, total int, txHash string) {
-	tx, err := model.TransactionsG(qm.Where(model.TransactionColumns.Hash+"=?", txHash),
-		qm.Select(model.TransactionColumns.Hash, model.TransactionColumns.BlockHashID)).One()
+	tx, err := model.Transactions(qm.Where(model.TransactionColumns.Hash+"=?", txHash),
+		qm.Select(model.TransactionColumns.Hash, model.TransactionColumns.BlockHashID)).OneG()
 	if err != nil {
 		logrus.Panic(err)
 	}
@@ -32,7 +32,7 @@ func processClaimOut(index int, total int, txHash string) {
 		logrus.Panic(err)
 	}
 
-	block, err := model.BlocksG(qm.Where(model.BlockColumns.Hash+"=?", txResult.BlockHash)).One()
+	block, err := model.Blocks(qm.Where(model.BlockColumns.Hash+"=?", txResult.BlockHash)).OneG()
 	if err != nil {
 		logrus.Panic(err)
 	}
@@ -98,7 +98,7 @@ func setClaimAddresses() {
 			}
 			pksAddress := lbrycrd.GetAddressFromPublicKeyScript(pkscript)
 			claim.ClaimAddress = pksAddress
-			if err := claim.UpdateG(model.ClaimColumns.ClaimAddress); err != nil {
+			if err := claim.UpdateG(boil.Whitelist(model.ClaimColumns.ClaimAddress)); err != nil {
 				logrus.Error("Saving Claim Address Error: ", err)
 			}
 		}
@@ -141,7 +141,7 @@ func setBlockHeightOnAllClaims() {
 		}
 
 		claim := model.Claim{ID: info.ID, Height: uint(info.height)}
-		if err := claim.UpdateG(model.ClaimColumns.Height); err != nil {
+		if err := claim.UpdateG(boil.Whitelist(model.ClaimColumns.Height)); err != nil {
 			println(err)
 		}
 	}
@@ -155,13 +155,13 @@ func reProcessAllClaimsFromHeight(height uint) {
 	blockHash := block + "." + model.BlockColumns.Hash
 	blockHeight := block + "." + model.BlockColumns.Height
 	txBlockHash := transaction + "." + model.TransactionColumns.BlockHashID
-	outputs := model.OutputsG(
+	outputs := model.Outputs(
 		qm.Select(model.OutputColumns.TransactionHash, model.BlockColumns.Height),
 		qm.InnerJoin(transaction+" on "+txHash+" = "+outputTxHash),
 		qm.InnerJoin(block+" on "+txBlockHash+" = "+blockHash),
 		qm.Where(model.OutputColumns.Type+" =?", lbrycrd.NonStandard),
 		qm.And(blockHeight+" >= ?", height),
-	).AllP()
+	).AllGP()
 	for i, output := range outputs {
 		processClaimOut(i, len(outputs), output.TransactionHash)
 	}

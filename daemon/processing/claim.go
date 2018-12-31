@@ -15,6 +15,7 @@ import (
 
 	"github.com/lbryio/chainquery/global"
 	"github.com/sirupsen/logrus"
+	"github.com/volatiletech/sqlboiler/boil"
 )
 
 func processAsClaim(script []byte, vout model.Output, tx model.Transaction, blockHeight uint64) (address *string, claimID *string, err error) {
@@ -137,8 +138,7 @@ func processClaim(pbClaim *pb.Claim, claim *model.Claim, value []byte, output mo
 	if claim == nil {
 		claim = &model.Claim{}
 	}
-	claim.TransactionHashID.String = tx.Hash
-	claim.TransactionHashID.Valid = true
+	claim.TransactionHashID.SetValid(tx.Hash)
 	claim.Vout = output.Vout
 	claim.Version = pbClaim.GetVersion().String()
 	claim.ValueAsHex = hex.EncodeToString(value)
@@ -147,8 +147,7 @@ func processClaim(pbClaim *pb.Claim, claim *model.Claim, value []byte, output mo
 	// pbClaim JSON
 	if claimHelper, err := c.DecodeClaimHex(claim.ValueAsHex, global.BlockChainName); err == nil {
 		if jsonvalue, err := claimHelper.RenderJSON(); err == nil {
-			claim.ValueAsJSON.String = jsonvalue
-			claim.ValueAsJSON.Valid = true
+			claim.ValueAsJSON.SetValid(jsonvalue)
 		}
 	}
 
@@ -165,8 +164,7 @@ func processSupport(claimID string, support *model.Support, output model.Output,
 		support = &model.Support{}
 	}
 
-	support.TransactionHashID.String = tx.Hash
-	support.TransactionHashID.Valid = true
+	support.TransactionHashID.SetValid(tx.Hash)
 	support.Vout = output.Vout
 	support.SupportAmount = output.Value.Float64
 	if claim := datastore.GetClaim(claimID); claim != nil {
@@ -188,8 +186,7 @@ func processUpdateClaim(pbClaim *pb.Claim, claim *model.Claim, value []byte) (*m
 	// pbClaim JSON
 	if claimHelper, err := c.DecodeClaimHex(claim.ValueAsHex, "lbrycrd_main"); err == nil {
 		if jsonvalue, err := claimHelper.RenderJSON(); err == nil {
-			claim.ValueAsJSON.String = jsonvalue
-			claim.ValueAsJSON.Valid = true
+			claim.ValueAsJSON.SetValid(jsonvalue)
 		}
 	}
 
@@ -207,10 +204,8 @@ func setPublisherInfo(claim *model.Claim, pbClaim *pb.Claim) {
 	if pbClaim.GetPublisherSignature() != nil {
 		claim.IsCertProcessed = false
 		publisherClaimID := hex.EncodeToString(pbClaim.GetPublisherSignature().GetCertificateId())
-		claim.PublisherID.String = publisherClaimID
-		claim.PublisherID.Valid = true
-		claim.PublisherSig.String = hex.EncodeToString(pbClaim.GetPublisherSignature().GetSignature())
-		claim.PublisherSig.Valid = true
+		claim.PublisherID.SetValid(publisherClaimID)
+		claim.PublisherSig.SetValid(hex.EncodeToString(pbClaim.GetPublisherSignature().GetSignature()))
 	}
 }
 
@@ -223,8 +218,7 @@ func setCertificateInfo(claim *model.Claim, pbClaim *pb.Claim) {
 		if err != nil {
 			logrus.Error("Could not form json from certificate")
 		}
-		claim.Certificate.String = string(certBytes)
-		claim.Certificate.Valid = true
+		claim.Certificate.SetValid(string(certBytes))
 	}
 }
 
@@ -233,25 +227,16 @@ func setMetaDataInfo(claim *model.Claim, pbClaim *pb.Claim) {
 	if stream != nil {
 		metadata := stream.GetMetadata()
 		if metadata != nil {
-			claim.Title.String = metadata.GetTitle()
-			claim.Title.Valid = true //
+			claim.Title.SetValid(metadata.GetTitle())
 
-			claim.Description.String = metadata.GetDescription()
-			claim.Description.Valid = true
-
-			claim.Language.String = metadata.GetLanguage().String()
-			claim.Language.Valid = true
-
-			claim.Author.String = metadata.GetAuthor()
-			claim.Author.Valid = true
-
-			claim.ThumbnailURL.String = metadata.GetThumbnail()
-			claim.ThumbnailURL.Valid = true
+			claim.Description.SetValid(metadata.GetDescription())
+			claim.Language.SetValid(metadata.GetLanguage().String())
+			claim.Author.SetValid(metadata.GetAuthor())
+			claim.ThumbnailURL.SetValid(metadata.GetThumbnail())
 
 			fee := metadata.GetFee()
 			if fee != nil {
-				claim.FeeCurrency.String = fee.GetCurrency().String()
-				claim.FeeCurrency.Valid = true
+				claim.FeeCurrency.SetValid(fee.GetCurrency().String())
 
 				claim.Fee = float64(fee.GetAmount())
 				claim.FeeAddress = base58.EncodeBase58(fee.GetAddress())
@@ -267,11 +252,9 @@ func setSourceInfo(claim *model.Claim, pbClaim *pb.Claim) {
 		if source != nil {
 			contentType := source.GetContentType()
 			if contentType != "" {
-				claim.ContentType.String = contentType
-				claim.ContentType.Valid = true
+				claim.ContentType.SetValid(contentType)
 				if source.GetSourceType() == pb.Source_lbry_sd_hash {
-					claim.SDHash.String = hex.EncodeToString(source.GetSource())
-					claim.SDHash.Valid = true
+					claim.SDHash.SetValid(hex.EncodeToString(source.GetSource()))
 				}
 			}
 		}
@@ -284,19 +267,17 @@ func saveUnknownClaim(name string, claimid string, isUpdate bool, value []byte, 
 	abnormalClaim.Name = name
 	abnormalClaim.ClaimID = claimid
 	abnormalClaim.IsUpdate = isUpdate
-	abnormalClaim.TransactionHash.String = vout.TransactionHash
-	abnormalClaim.TransactionHash.Valid = true
+	abnormalClaim.TransactionHash.SetValid(vout.TransactionHash)
 	abnormalClaim.ValueAsHex = hex.EncodeToString(value)
 	abnormalClaim.BlockHash = tx.BlockHashID
 
 	var js map[string]interface{} //JSON Map
 	if json.Unmarshal(value, &js) == nil {
-		abnormalClaim.ValueAsJSON.String = string(value)
-		abnormalClaim.ValueAsJSON.Valid = true
+		abnormalClaim.ValueAsJSON.SetValid(string(value))
 	}
 
 	abnormalClaim.OutputID = vout.ID
-	if err := abnormalClaim.InsertG(); err != nil {
+	if err := abnormalClaim.InsertG(boil.Infer()); err != nil {
 		logrus.Error("UnknownClaim Saving Error: ", err)
 	}
 

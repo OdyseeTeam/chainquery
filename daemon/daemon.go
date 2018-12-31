@@ -3,7 +3,9 @@ package daemon
 import (
 	"os"
 	"os/signal"
+	"reflect"
 	"runtime"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -17,7 +19,6 @@ import (
 	"github.com/lbryio/lbry.go/stop"
 
 	log "github.com/sirupsen/logrus"
-	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
@@ -58,25 +59,28 @@ func DoYourThing() {
 	interruptChan := make(chan os.Signal, 1)
 	signal.Notify(interruptChan, os.Interrupt, syscall.SIGTERM)
 	<-interruptChan
-	shutdownDaemon()
+	ShutdownDaemon()
 }
 
 func initJobs() {
 	scheduleJob(jobs.ClaimTrieSync, "Claimtrie Sync", 15*time.Minute)
 	scheduleJob(jobs.MempoolSync, "Mempool Sync", 1*time.Second)
 	scheduleJob(jobs.CertificateSync, "Certificate Sync", 5*time.Second)
+	scheduleJob(jobs.ValidateChain, "Validate Chain", 24*time.Hour)
+	scheduleJob(jobs.SyncAddressBalancesJob, "Address Balance Sync", 24*time.Hour)
+	scheduleJob(jobs.SyncTransactionValueJob, "Transaction Value Sync", 24*time.Hour)
 }
 
-func shutdownDaemon() {
+// ShutdownDaemon shuts the daemon down gracefully without corrupting the data.
+func ShutdownDaemon() {
 	log.Info("Shutting down daemon...") //
 	stopper.StopAndWait()
 }
 
 func scheduleJob(job func(), name string, howOften time.Duration) {
-	asyncStoppable(job)
-	stopper.Add(1)
+	stopper.AddNamed(1, "scheduled job "+name)
 	go func() {
-		defer stopper.Done()
+		defer stopper.DoneNamed("scheduled job " + name)
 		t := time.NewTicker(howOften)
 		for {
 			select {
@@ -92,33 +96,33 @@ func scheduleJob(job func(), name string, howOften time.Duration) {
 
 func runDaemon() {
 	initBlockWorkers(int(blockWorkers), blockQueue)
-	lastBlock, _ := model.Blocks(boil.GetDB(), qm.OrderBy(model.BlockColumns.Height+" DESC"), qm.Limit(1)).One()
+	lastBlock, _ := model.Blocks(qm.OrderBy(model.BlockColumns.Height+" DESC"), qm.Limit(1)).OneG()
 	if lastBlock != nil && !reindex {
 		//Always
 		lastHeightProcessed = lastBlock.Height
 	}
 	log.Info("Daemon initialized and running")
+	t := time.NewTicker(daemonDelay)
 	for {
 		select {
 		case <-stopper.Ch():
 			log.Info("stopping daemon...")
 			return
-		default:
+		case <-t.C:
 			if !running {
 				running = true
 				log.Debug("Running daemon iteration ", iteration)
 				asyncStoppable(daemonIteration)
 				iteration++
 			}
-			time.Sleep(daemonDelay)
 		}
 	}
 }
 
 func asyncStoppable(function func()) {
-	stopper.Add(1)
+	stopper.AddNamed(1, "stoppable - "+runtime.FuncForPC(reflect.ValueOf(function).Pointer()).Name())
 	go func() {
-		defer stopper.Done()
+		defer stopper.DoneNamed("stoppable - " + runtime.FuncForPC(reflect.ValueOf(function).Pointer()).Name())
 		function()
 	}()
 }
@@ -127,6 +131,7 @@ func daemonIteration() {
 	height, err := lbrycrd.GetBlockCount()
 	if err != nil {
 		log.Error(errors.Prefix("Could not get block height:", err))
+		running = false
 		return
 	}
 	blockHeight = *height
@@ -135,10 +140,11 @@ func daemonIteration() {
 		lastHeightProcessed = <-blockProcessedChan
 	}
 	for {
-
 		select {
 		case <-stopper.Ch():
+			close(blockQueue)
 			log.Info("stopping daemon iteration...")
+			close(blockProcessedChan)
 			return
 		default:
 			next := lastHeightProcessed + 1
@@ -181,9 +187,9 @@ func ApplySettings(settings global.DaemonSettings) {
 
 func initBlockWorkers(nrWorkers int, jobs <-chan uint64) {
 	for i := 0; i < nrWorkers; i++ {
-		stopper.Add(1)
+		stopper.AddNamed(1, "block worker "+strconv.Itoa(i))
 		go func(worker int) {
-			defer stopper.Done()
+			defer stopper.DoneNamed("block worker " + strconv.Itoa(worker))
 			log.Info("block worker ", worker+1, " running")
 			BlockProcessor(jobs, worker)
 		}(i)
@@ -193,7 +199,12 @@ func initBlockWorkers(nrWorkers int, jobs <-chan uint64) {
 // BlockProcessor takes a channel of block heights to process. When a new one comes in it runs block processing for
 // the block height
 func BlockProcessor(blocks <-chan uint64, worker int) {
-	for block := range blocks {
-		blockProcessedChan <- processing.RunBlockProcessing(&block)
+	for {
+		select {
+		case <-stopper.Ch():
+			return
+		case block := <-blocks:
+			blockProcessedChan <- processing.RunBlockProcessing(block)
+		}
 	}
 }

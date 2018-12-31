@@ -1,16 +1,21 @@
 package upgrademanager
 
 import (
+	"time"
+
+	"github.com/lbryio/chainquery/daemon/jobs"
+	"github.com/lbryio/chainquery/lbrycrd"
 	"github.com/lbryio/chainquery/model"
 	"github.com/lbryio/lbry.go/errors"
 	"github.com/sirupsen/logrus"
+	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 const (
-	appVersion  = 9
-	apiVersion  = 9
-	dataVersion = 9
+	appVersion  = 10
+	apiVersion  = 10
+	dataVersion = 10
 )
 
 // RunUpgradesForVersion - Migrations are for structure of the data. Upgrade Manager scripts are for the data itself.
@@ -21,7 +26,7 @@ func RunUpgradesForVersion() {
 	var err error
 	if !model.ApplicationStatusExistsGP(1) {
 		appStatus = &model.ApplicationStatus{AppVersion: appVersion, APIVersion: apiVersion, DataVersion: dataVersion}
-		if err := appStatus.InsertG(); err != nil {
+		if err := appStatus.InsertG(boil.Infer()); err != nil {
 			err := errors.Prefix("App Status Error: ", err)
 			panic(err)
 		}
@@ -42,6 +47,7 @@ func RunUpgradesForVersion() {
 		upgradeFrom6(appStatus.AppVersion)
 		upgradeFrom7(appStatus.AppVersion)
 		upgradeFrom8(appStatus.AppVersion)
+		upgradeFrom9(appStatus.AppVersion)
 		////Increment and save
 		//
 		logrus.Debug("Upgrading app status version to App-", appVersion, " Data-", dataVersion, " Api-", apiVersion)
@@ -49,7 +55,7 @@ func RunUpgradesForVersion() {
 		appStatus.DataVersion = dataVersion
 		appStatus.APIVersion = apiVersion
 	}
-	if err := appStatus.UpdateG(); err != nil {
+	if err := appStatus.UpdateG(boil.Infer()); err != nil {
 		err := errors.Prefix("App Status Error: ", err)
 		panic(err)
 	}
@@ -95,12 +101,12 @@ func upgradeFrom4(version int) {
 func upgradeFrom5(version int) {
 	if version < 6 {
 		logrus.Info("Deleting top 50 blocks to ensure consistency for release")
-		highestBlock, err := model.BlocksG(qm.OrderBy(model.BlockColumns.Height + " DESC")).One()
+		highestBlock, err := model.Blocks(qm.OrderBy(model.BlockColumns.Height + " DESC")).OneG()
 		if err != nil {
 			logrus.Error(err)
 			return
 		}
-		blocks, err := model.BlocksG(qm.Where(model.BlockColumns.Height+">= ?", highestBlock.Height-50)).All()
+		blocks, err := model.Blocks(qm.Where(model.BlockColumns.Height+">= ?", highestBlock.Height-50)).AllG()
 		if err != nil {
 			logrus.Error(err)
 			return
@@ -121,7 +127,7 @@ func upgradeFrom6(version int) {
 
 func upgradeFrom7(version int) {
 	if version < 8 {
-		block, err := model.BlocksG(qm.OrderBy(model.BlockColumns.Height+" DESC"), qm.Limit(1)).One()
+		block, err := model.Blocks(qm.OrderBy(model.BlockColumns.Height+" DESC"), qm.Limit(1)).OneG()
 		if err != nil {
 			logrus.Error(err)
 			return
@@ -138,5 +144,31 @@ func upgradeFrom8(version int) {
 	if version < 9 {
 		logrus.Info("Re-Processing all claim outputs")
 		reProcessAllClaims()
+	}
+}
+
+func upgradeFrom9(version int) {
+	if version < 10 {
+		//Get blockheight for calculating expired status
+		count, err := lbrycrd.GetBlockCount()
+		if err != nil {
+			logrus.Error("Upgrade 9-10: Error getting block height", err)
+			return
+		}
+		expiredClaims, err := model.Claims(qm.Where(model.ClaimColumns.BidState+"=?", "Expired")).AllG()
+		if err != nil {
+			logrus.Error("Upgrade 9-10: ", err)
+		}
+
+		for _, expiredClaim := range expiredClaims {
+			if !jobs.GetIsExpiredAtHeight(expiredClaim.Height, uint(*count)) {
+				expiredClaim.BidState = "Active" //Will update it to go through the claimtrie sync
+				expiredClaim.ModifiedAt = time.Now()
+				err = expiredClaim.UpdateG(boil.Infer())
+				if err != nil {
+					logrus.Error("Upgrade 9-10: ", err)
+				}
+			}
+		}
 	}
 }

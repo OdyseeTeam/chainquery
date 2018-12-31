@@ -1,5 +1,5 @@
 os: linux
-dist: trusty
+dist: xenial
 language: go
 
 # Only the last two Go releases are supported by the Go team with security
@@ -16,6 +16,11 @@ go:
 # code in vendor/
 install: true
 
+cache:
+  directories:
+  - $HOME/.cache/go-build
+  - $HOME/gopath/pkg/mod
+
 matrix:
   # It's ok if our code fails on unstable development versions of Go.
   allow_failures:
@@ -30,6 +35,7 @@ matrix:
 
 services:
 - mysql
+- docker
 
 before_install:
 - mysql -u root -e 'CREATE DATABASE IF NOT EXISTS chainquery;'
@@ -55,6 +61,7 @@ before_script:
 
 
 
+
 # script always run to completion (set +e). All of these code checks are must haves
 # in a modern Go project.
 script:
@@ -64,8 +71,6 @@ script:
   - test -z $(gofmt -s -l $GO_FILES)
   # Run unit tests
   - ./scripts/test.sh
-  # Run integration tests
-  - ./scripts/int_tests.sh
   # Checks for unused vars and fields on structs
   - varcheck ./...
   - structcheck ./...
@@ -81,11 +86,11 @@ script:
   - unconvert -v $(go list ./... | grep -v /vendor/ | grep -v /model | grep -v /swagger/ | grep -v /migration )
   # one last linter - ignore autogen code
   - golint -set_exit_status $(go list ./... | grep -v /vendor/ | grep -v /model/ | grep -v /swagger/ | grep -v /migration )
-  # start up chainquery
-  - ./bin/chainquery api &
-  - sleep 10s
-  - "curl -i -H 'Accept: application/json' -H 'Content-Type: application/json' http://localhost:6300/api/status"
-  # ToDo need to wait until the SQLBoiler issues are resolved. - ./app/gen_models.sh
+  # end to end testing
+  - ./e2e/e2e.sh
+  # check model generation...
+  - ./bin/chainquery serve db && ./scripts/gen_models.sh
+  # matches what was commited
   - git diff --exit-code
 
 # calls goreleaser

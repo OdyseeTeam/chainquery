@@ -4,20 +4,20 @@
 package model
 
 import (
-	"bytes"
 	"database/sql"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"github.com/volatiletech/sqlboiler/strmangle"
-	"gopkg.in/volatiletech/null.v6"
 )
 
 // Claim is an object representing the database table.
@@ -88,11 +88,11 @@ var ClaimColumns = struct {
 	Title             string
 	Fee               string
 	FeeCurrency       string
+	FeeAddress        string
 	IsFiltered        string
 	BidState          string
 	CreatedAt         string
 	ModifiedAt        string
-	FeeAddress        string
 	ClaimAddress      string
 	IsCertValid       string
 	IsCertProcessed   string
@@ -123,14 +123,21 @@ var ClaimColumns = struct {
 	Title:             "title",
 	Fee:               "fee",
 	FeeCurrency:       "fee_currency",
+	FeeAddress:        "fee_address",
 	IsFiltered:        "is_filtered",
 	BidState:          "bid_state",
 	CreatedAt:         "created_at",
 	ModifiedAt:        "modified_at",
-	FeeAddress:        "fee_address",
 	ClaimAddress:      "claim_address",
 	IsCertValid:       "is_cert_valid",
 	IsCertProcessed:   "is_cert_processed",
+}
+
+// ClaimRels is where relationship names are stored.
+var ClaimRels = struct {
+	TransactionHash string
+}{
+	TransactionHash: "TransactionHash",
 }
 
 // claimR is where relationships are stored.
@@ -138,11 +145,16 @@ type claimR struct {
 	TransactionHash *Transaction
 }
 
+// NewStruct creates a new relationship struct
+func (*claimR) NewStruct() *claimR {
+	return &claimR{}
+}
+
 // claimL is where Load methods for each relationship are stored.
 type claimL struct{}
 
 var (
-	claimColumns               = []string{"id", "transaction_hash_id", "vout", "name", "claim_id", "claim_type", "publisher_id", "publisher_sig", "certificate", "sd_hash", "transaction_time", "version", "value_as_hex", "value_as_json", "valid_at_height", "height", "effective_amount", "author", "description", "content_type", "is_nsfw", "language", "thumbnail_url", "title", "fee", "fee_currency", "is_filtered", "bid_state", "created_at", "modified_at", "fee_address", "claim_address", "is_cert_valid", "is_cert_processed"}
+	claimColumns               = []string{"id", "transaction_hash_id", "vout", "name", "claim_id", "claim_type", "publisher_id", "publisher_sig", "certificate", "sd_hash", "transaction_time", "version", "value_as_hex", "value_as_json", "valid_at_height", "height", "effective_amount", "author", "description", "content_type", "is_nsfw", "language", "thumbnail_url", "title", "fee", "fee_currency", "fee_address", "is_filtered", "bid_state", "created_at", "modified_at", "claim_address", "is_cert_valid", "is_cert_processed"}
 	claimColumnsWithoutDefault = []string{"transaction_hash_id", "vout", "name", "claim_id", "claim_type", "publisher_id", "publisher_sig", "certificate", "sd_hash", "transaction_time", "version", "value_as_hex", "value_as_json", "valid_at_height", "height", "author", "description", "content_type", "language", "thumbnail_url", "title", "fee_currency", "fee_address", "claim_address", "is_cert_valid", "is_cert_processed"}
 	claimColumnsWithDefault    = []string{"id", "effective_amount", "is_nsfw", "fee", "is_filtered", "bid_state", "created_at", "modified_at"}
 	claimPrimaryKeyColumns     = []string{"id"}
@@ -174,13 +186,26 @@ var (
 var (
 	// Force time package dependency for automated UpdatedAt/CreatedAt.
 	_ = time.Second
-	// Force bytes in case of primary key column that uses []byte (for relationship compares)
-	_ = bytes.MinRead
 )
 
+// OneG returns a single claim record from the query using the global executor.
+func (q claimQuery) OneG() (*Claim, error) {
+	return q.One(boil.GetDB())
+}
+
+// OneGP returns a single claim record from the query using the global executor, and panics on error.
+func (q claimQuery) OneGP() *Claim {
+	o, err := q.One(boil.GetDB())
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return o
+}
+
 // OneP returns a single claim record from the query, and panics on error.
-func (q claimQuery) OneP() *Claim {
-	o, err := q.One()
+func (q claimQuery) OneP(exec boil.Executor) *Claim {
+	o, err := q.One(exec)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -189,12 +214,12 @@ func (q claimQuery) OneP() *Claim {
 }
 
 // One returns a single claim record from the query.
-func (q claimQuery) One() (*Claim, error) {
+func (q claimQuery) One(exec boil.Executor) (*Claim, error) {
 	o := &Claim{}
 
 	queries.SetLimit(q.Query, 1)
 
-	err := q.Bind(o)
+	err := q.Bind(nil, exec, o)
 	if err != nil {
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
@@ -205,9 +230,24 @@ func (q claimQuery) One() (*Claim, error) {
 	return o, nil
 }
 
+// AllG returns all Claim records from the query using the global executor.
+func (q claimQuery) AllG() (ClaimSlice, error) {
+	return q.All(boil.GetDB())
+}
+
+// AllGP returns all Claim records from the query using the global executor, and panics on error.
+func (q claimQuery) AllGP() ClaimSlice {
+	o, err := q.All(boil.GetDB())
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return o
+}
+
 // AllP returns all Claim records from the query, and panics on error.
-func (q claimQuery) AllP() ClaimSlice {
-	o, err := q.All()
+func (q claimQuery) AllP(exec boil.Executor) ClaimSlice {
+	o, err := q.All(exec)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -216,10 +256,10 @@ func (q claimQuery) AllP() ClaimSlice {
 }
 
 // All returns all Claim records from the query.
-func (q claimQuery) All() (ClaimSlice, error) {
+func (q claimQuery) All(exec boil.Executor) (ClaimSlice, error) {
 	var o []*Claim
 
-	err := q.Bind(&o)
+	err := q.Bind(nil, exec, &o)
 	if err != nil {
 		return nil, errors.Wrap(err, "model: failed to assign all query results to Claim slice")
 	}
@@ -227,9 +267,24 @@ func (q claimQuery) All() (ClaimSlice, error) {
 	return o, nil
 }
 
+// CountG returns the count of all Claim records in the query, and panics on error.
+func (q claimQuery) CountG() (int64, error) {
+	return q.Count(boil.GetDB())
+}
+
+// CountGP returns the count of all Claim records in the query using the global executor, and panics on error.
+func (q claimQuery) CountGP() int64 {
+	c, err := q.Count(boil.GetDB())
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return c
+}
+
 // CountP returns the count of all Claim records in the query, and panics on error.
-func (q claimQuery) CountP() int64 {
-	c, err := q.Count()
+func (q claimQuery) CountP(exec boil.Executor) int64 {
+	c, err := q.Count(exec)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -238,13 +293,13 @@ func (q claimQuery) CountP() int64 {
 }
 
 // Count returns the count of all Claim records in the query.
-func (q claimQuery) Count() (int64, error) {
+func (q claimQuery) Count(exec boil.Executor) (int64, error) {
 	var count int64
 
 	queries.SetSelect(q.Query, nil)
 	queries.SetCount(q.Query)
 
-	err := q.Query.QueryRow().Scan(&count)
+	err := q.Query.QueryRow(exec).Scan(&count)
 	if err != nil {
 		return 0, errors.Wrap(err, "model: failed to count claim rows")
 	}
@@ -252,9 +307,24 @@ func (q claimQuery) Count() (int64, error) {
 	return count, nil
 }
 
-// Exists checks if the row exists in the table, and panics on error.
-func (q claimQuery) ExistsP() bool {
-	e, err := q.Exists()
+// ExistsG checks if the row exists in the table, and panics on error.
+func (q claimQuery) ExistsG() (bool, error) {
+	return q.Exists(boil.GetDB())
+}
+
+// ExistsGP checks if the row exists in the table using the global executor, and panics on error.
+func (q claimQuery) ExistsGP() bool {
+	e, err := q.Exists(boil.GetDB())
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return e
+}
+
+// ExistsP checks if the row exists in the table, and panics on error.
+func (q claimQuery) ExistsP(exec boil.Executor) bool {
+	e, err := q.Exists(exec)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -263,13 +333,14 @@ func (q claimQuery) ExistsP() bool {
 }
 
 // Exists checks if the row exists in the table.
-func (q claimQuery) Exists() (bool, error) {
+func (q claimQuery) Exists(exec boil.Executor) (bool, error) {
 	var count int64
 
+	queries.SetSelect(q.Query, nil)
 	queries.SetCount(q.Query)
 	queries.SetLimit(q.Query, 1)
 
-	err := q.Query.QueryRow().Scan(&count)
+	err := q.Query.QueryRow(exec).Scan(&count)
 	if err != nil {
 		return false, errors.Wrap(err, "model: failed to check if claim exists")
 	}
@@ -277,70 +348,81 @@ func (q claimQuery) Exists() (bool, error) {
 	return count > 0, nil
 }
 
-// TransactionHashG pointed to by the foreign key.
-func (o *Claim) TransactionHashG(mods ...qm.QueryMod) transactionQuery {
-	return o.TransactionHash(boil.GetDB(), mods...)
-}
-
 // TransactionHash pointed to by the foreign key.
-func (o *Claim) TransactionHash(exec boil.Executor, mods ...qm.QueryMod) transactionQuery {
+func (o *Claim) TransactionHash(mods ...qm.QueryMod) transactionQuery {
 	queryMods := []qm.QueryMod{
 		qm.Where("hash=?", o.TransactionHashID),
 	}
 
 	queryMods = append(queryMods, mods...)
 
-	query := Transactions(exec, queryMods...)
+	query := Transactions(queryMods...)
 	queries.SetFrom(query.Query, "`transaction`")
 
 	return query
-} // LoadTransactionHash allows an eager lookup of values, cached into the
-// loaded structs of the objects.
-func (claimL) LoadTransactionHash(e boil.Executor, singular bool, maybeClaim interface{}) error {
+}
+
+// LoadTransactionHash allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for an N-1 relationship.
+func (claimL) LoadTransactionHash(e boil.Executor, singular bool, maybeClaim interface{}, mods queries.Applicator) error {
 	var slice []*Claim
 	var object *Claim
 
-	count := 1
 	if singular {
 		object = maybeClaim.(*Claim)
 	} else {
 		slice = *maybeClaim.(*[]*Claim)
-		count = len(slice)
 	}
 
-	args := make([]interface{}, count)
+	args := make([]interface{}, 0, 1)
 	if singular {
 		if object.R == nil {
 			object.R = &claimR{}
 		}
-		args[0] = object.TransactionHashID
+		if !queries.IsNil(object.TransactionHashID) {
+			args = append(args, object.TransactionHashID)
+		}
+
 	} else {
-		for i, obj := range slice {
+	Outer:
+		for _, obj := range slice {
 			if obj.R == nil {
 				obj.R = &claimR{}
 			}
-			args[i] = obj.TransactionHashID
+
+			for _, a := range args {
+				if queries.Equal(a, obj.TransactionHashID) {
+					continue Outer
+				}
+			}
+
+			if !queries.IsNil(obj.TransactionHashID) {
+				args = append(args, obj.TransactionHashID)
+			}
+
 		}
 	}
 
-	query := fmt.Sprintf(
-		"select * from `transaction` where `hash` in (%s)",
-		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
-	)
-
-	if boil.DebugMode {
-		fmt.Fprintf(boil.DebugWriter, "%s\n%v\n", query, args)
+	query := NewQuery(qm.From(`transaction`), qm.WhereIn(`hash in ?`, args...))
+	if mods != nil {
+		mods.Apply(query)
 	}
 
-	results, err := e.Query(query, args...)
+	results, err := query.Query(e)
 	if err != nil {
 		return errors.Wrap(err, "failed to eager load Transaction")
 	}
-	defer results.Close()
 
 	var resultSlice []*Transaction
 	if err = queries.Bind(results, &resultSlice); err != nil {
 		return errors.Wrap(err, "failed to bind eager loaded slice Transaction")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results of eager load for transaction")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for transaction")
 	}
 
 	if len(resultSlice) == 0 {
@@ -348,14 +430,23 @@ func (claimL) LoadTransactionHash(e boil.Executor, singular bool, maybeClaim int
 	}
 
 	if singular {
-		object.R.TransactionHash = resultSlice[0]
+		foreign := resultSlice[0]
+		object.R.TransactionHash = foreign
+		if foreign.R == nil {
+			foreign.R = &transactionR{}
+		}
+		foreign.R.TransactionHashClaims = append(foreign.R.TransactionHashClaims, object)
 		return nil
 	}
 
 	for _, local := range slice {
 		for _, foreign := range resultSlice {
-			if local.TransactionHashID.String == foreign.Hash {
+			if queries.Equal(local.TransactionHashID, foreign.Hash) {
 				local.R.TransactionHash = foreign
+				if foreign.R == nil {
+					foreign.R = &transactionR{}
+				}
+				foreign.R.TransactionHashClaims = append(foreign.R.TransactionHashClaims, local)
 				break
 			}
 		}
@@ -398,7 +489,7 @@ func (o *Claim) SetTransactionHashGP(insert bool, related *Transaction) {
 func (o *Claim) SetTransactionHash(exec boil.Executor, insert bool, related *Transaction) error {
 	var err error
 	if insert {
-		if err = related.Insert(exec); err != nil {
+		if err = related.Insert(exec, boil.Infer()); err != nil {
 			return errors.Wrap(err, "failed to insert into foreign table")
 		}
 	}
@@ -419,9 +510,7 @@ func (o *Claim) SetTransactionHash(exec boil.Executor, insert bool, related *Tra
 		return errors.Wrap(err, "failed to update local table")
 	}
 
-	o.TransactionHashID.String = related.Hash
-	o.TransactionHashID.Valid = true
-
+	queries.Assign(&o.TransactionHashID, related.Hash)
 	if o.R == nil {
 		o.R = &claimR{
 			TransactionHash: related,
@@ -475,9 +564,8 @@ func (o *Claim) RemoveTransactionHashGP(related *Transaction) {
 func (o *Claim) RemoveTransactionHash(exec boil.Executor, related *Transaction) error {
 	var err error
 
-	o.TransactionHashID.Valid = false
-	if err = o.Update(exec, "transaction_hash_id"); err != nil {
-		o.TransactionHashID.Valid = true
+	queries.SetScanner(&o.TransactionHashID, nil)
+	if err = o.Update(exec, boil.Whitelist("transaction_hash_id")); err != nil {
 		return errors.Wrap(err, "failed to update local table")
 	}
 
@@ -487,7 +575,7 @@ func (o *Claim) RemoveTransactionHash(exec boil.Executor, related *Transaction) 
 	}
 
 	for i, ri := range related.R.TransactionHashClaims {
-		if o.TransactionHashID.String != ri.TransactionHashID.String {
+		if queries.Equal(o.TransactionHashID, ri.TransactionHashID) {
 			continue
 		}
 
@@ -501,25 +589,30 @@ func (o *Claim) RemoveTransactionHash(exec boil.Executor, related *Transaction) 
 	return nil
 }
 
-// ClaimsG retrieves all records.
-func ClaimsG(mods ...qm.QueryMod) claimQuery {
-	return Claims(boil.GetDB(), mods...)
-}
-
 // Claims retrieves all the records using an executor.
-func Claims(exec boil.Executor, mods ...qm.QueryMod) claimQuery {
+func Claims(mods ...qm.QueryMod) claimQuery {
 	mods = append(mods, qm.From("`claim`"))
-	return claimQuery{NewQuery(exec, mods...)}
+	return claimQuery{NewQuery(mods...)}
 }
 
 // FindClaimG retrieves a single record by ID.
-func FindClaimG(id uint64, selectCols ...string) (*Claim, error) {
-	return FindClaim(boil.GetDB(), id, selectCols...)
+func FindClaimG(iD uint64, selectCols ...string) (*Claim, error) {
+	return FindClaim(boil.GetDB(), iD, selectCols...)
+}
+
+// FindClaimP retrieves a single record by ID with an executor, and panics on error.
+func FindClaimP(exec boil.Executor, iD uint64, selectCols ...string) *Claim {
+	retobj, err := FindClaim(exec, iD, selectCols...)
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return retobj
 }
 
 // FindClaimGP retrieves a single record by ID, and panics on error.
-func FindClaimGP(id uint64, selectCols ...string) *Claim {
-	retobj, err := FindClaim(boil.GetDB(), id, selectCols...)
+func FindClaimGP(iD uint64, selectCols ...string) *Claim {
+	retobj, err := FindClaim(boil.GetDB(), iD, selectCols...)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -529,7 +622,7 @@ func FindClaimGP(id uint64, selectCols ...string) *Claim {
 
 // FindClaim retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindClaim(exec boil.Executor, id uint64, selectCols ...string) (*Claim, error) {
+func FindClaim(exec boil.Executor, iD uint64, selectCols ...string) (*Claim, error) {
 	claimObj := &Claim{}
 
 	sel := "*"
@@ -540,9 +633,9 @@ func FindClaim(exec boil.Executor, id uint64, selectCols ...string) (*Claim, err
 		"select %s from `claim` where `id`=?", sel,
 	)
 
-	q := queries.Raw(exec, query, id)
+	q := queries.Raw(query, iD)
 
-	err := q.Bind(claimObj)
+	err := q.Bind(nil, exec, claimObj)
 	if err != nil {
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
@@ -553,43 +646,30 @@ func FindClaim(exec boil.Executor, id uint64, selectCols ...string) (*Claim, err
 	return claimObj, nil
 }
 
-// FindClaimP retrieves a single record by ID with an executor, and panics on error.
-func FindClaimP(exec boil.Executor, id uint64, selectCols ...string) *Claim {
-	retobj, err := FindClaim(exec, id, selectCols...)
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return retobj
-}
-
 // InsertG a single record. See Insert for whitelist behavior description.
-func (o *Claim) InsertG(whitelist ...string) error {
-	return o.Insert(boil.GetDB(), whitelist...)
-}
-
-// InsertGP a single record, and panics on error. See Insert for whitelist
-// behavior description.
-func (o *Claim) InsertGP(whitelist ...string) {
-	if err := o.Insert(boil.GetDB(), whitelist...); err != nil {
-		panic(boil.WrapErr(err))
-	}
+func (o *Claim) InsertG(columns boil.Columns) error {
+	return o.Insert(boil.GetDB(), columns)
 }
 
 // InsertP a single record using an executor, and panics on error. See Insert
 // for whitelist behavior description.
-func (o *Claim) InsertP(exec boil.Executor, whitelist ...string) {
-	if err := o.Insert(exec, whitelist...); err != nil {
+func (o *Claim) InsertP(exec boil.Executor, columns boil.Columns) {
+	if err := o.Insert(exec, columns); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// InsertGP a single record, and panics on error. See Insert for whitelist
+// behavior description.
+func (o *Claim) InsertGP(columns boil.Columns) {
+	if err := o.Insert(boil.GetDB(), columns); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // Insert a single record using an executor.
-// Whitelist behavior: If a whitelist is provided, only those columns supplied are inserted
-// No whitelist behavior: Without a whitelist, columns are inferred by the following rules:
-// - All columns without a default value are included (i.e. name, age)
-// - All columns with a default, but non-zero are included (i.e. health = 75)
-func (o *Claim) Insert(exec boil.Executor, whitelist ...string) error {
+// See boil.Columns.InsertColumnSet documentation to understand column list inference for inserts.
+func (o *Claim) Insert(exec boil.Executor, columns boil.Columns) error {
 	if o == nil {
 		return errors.New("model: no claim provided for insertion")
 	}
@@ -598,18 +678,17 @@ func (o *Claim) Insert(exec boil.Executor, whitelist ...string) error {
 
 	nzDefaults := queries.NonZeroDefaultSet(claimColumnsWithDefault, o)
 
-	key := makeCacheKey(whitelist, nzDefaults)
+	key := makeCacheKey(columns, nzDefaults)
 	claimInsertCacheMut.RLock()
 	cache, cached := claimInsertCache[key]
 	claimInsertCacheMut.RUnlock()
 
 	if !cached {
-		wl, returnColumns := strmangle.InsertColumnSet(
+		wl, returnColumns := columns.InsertColumnSet(
 			claimColumns,
 			claimColumnsWithDefault,
 			claimColumnsWithoutDefault,
 			nzDefaults,
-			whitelist,
 		)
 
 		cache.valueMapping, err = queries.BindMapping(claimType, claimMapping, wl)
@@ -621,9 +700,9 @@ func (o *Claim) Insert(exec boil.Executor, whitelist ...string) error {
 			return err
 		}
 		if len(wl) != 0 {
-			cache.query = fmt.Sprintf("INSERT INTO `claim` (`%s`) %%sVALUES (%s)%%s", strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.IndexPlaceholders, len(wl), 1, 1))
+			cache.query = fmt.Sprintf("INSERT INTO `claim` (`%s`) %%sVALUES (%s)%%s", strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
 		} else {
-			cache.query = "INSERT INTO `claim` () VALUES ()"
+			cache.query = "INSERT INTO `claim` () VALUES ()%s%s"
 		}
 
 		var queryOutput, queryReturning string
@@ -632,9 +711,7 @@ func (o *Claim) Insert(exec boil.Executor, whitelist ...string) error {
 			cache.retQuery = fmt.Sprintf("SELECT `%s` FROM `claim` WHERE %s", strings.Join(returnColumns, "`,`"), strmangle.WhereClause("`", "`", 0, claimPrimaryKeyColumns))
 		}
 
-		if len(wl) != 0 {
-			cache.query = fmt.Sprintf(cache.query, queryOutput, queryReturning)
-		}
+		cache.query = fmt.Sprintf(cache.query, queryOutput, queryReturning)
 	}
 
 	value := reflect.Indirect(reflect.ValueOf(o))
@@ -692,49 +769,44 @@ CacheNoHooks:
 	return nil
 }
 
-// UpdateG a single Claim record. See Update for
-// whitelist behavior description.
-func (o *Claim) UpdateG(whitelist ...string) error {
-	return o.Update(boil.GetDB(), whitelist...)
+// UpdateG a single Claim record using the global executor.
+// See Update for more documentation.
+func (o *Claim) UpdateG(columns boil.Columns) error {
+	return o.Update(boil.GetDB(), columns)
 }
 
-// UpdateGP a single Claim record.
-// UpdateGP takes a whitelist of column names that should be updated.
-// Panics on error. See Update for whitelist behavior description.
-func (o *Claim) UpdateGP(whitelist ...string) {
-	if err := o.Update(boil.GetDB(), whitelist...); err != nil {
+// UpdateP uses an executor to update the Claim, and panics on error.
+// See Update for more documentation.
+func (o *Claim) UpdateP(exec boil.Executor, columns boil.Columns) {
+	err := o.Update(exec, columns)
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
-// UpdateP uses an executor to update the Claim, and panics on error.
-// See Update for whitelist behavior description.
-func (o *Claim) UpdateP(exec boil.Executor, whitelist ...string) {
-	err := o.Update(exec, whitelist...)
+// UpdateGP a single Claim record using the global executor. Panics on error.
+// See Update for more documentation.
+func (o *Claim) UpdateGP(columns boil.Columns) {
+	err := o.Update(boil.GetDB(), columns)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // Update uses an executor to update the Claim.
-// Whitelist behavior: If a whitelist is provided, only the columns given are updated.
-// No whitelist behavior: Without a whitelist, columns are inferred by the following rules:
-// - All columns are inferred to start with
-// - All primary keys are subtracted from this set
-// Update does not automatically update the record in case of default values. Use .Reload()
-// to refresh the records.
-func (o *Claim) Update(exec boil.Executor, whitelist ...string) error {
+// See boil.Columns.UpdateColumnSet documentation to understand column list inference for updates.
+// Update does not automatically update the record in case of default values. Use .Reload() to refresh the records.
+func (o *Claim) Update(exec boil.Executor, columns boil.Columns) error {
 	var err error
-	key := makeCacheKey(whitelist, nil)
+	key := makeCacheKey(columns, nil)
 	claimUpdateCacheMut.RLock()
 	cache, cached := claimUpdateCache[key]
 	claimUpdateCacheMut.RUnlock()
 
 	if !cached {
-		wl := strmangle.UpdateColumnSet(
+		wl := columns.UpdateColumnSet(
 			claimColumns,
 			claimPrimaryKeyColumns,
-			whitelist,
 		)
 
 		if len(wl) == 0 {
@@ -773,17 +845,23 @@ func (o *Claim) Update(exec boil.Executor, whitelist ...string) error {
 }
 
 // UpdateAllP updates all rows with matching column names, and panics on error.
-func (q claimQuery) UpdateAllP(cols M) {
-	if err := q.UpdateAll(cols); err != nil {
+func (q claimQuery) UpdateAllP(exec boil.Executor, cols M) {
+	err := q.UpdateAll(exec, cols)
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
+// UpdateAllG updates all rows with the specified column values.
+func (q claimQuery) UpdateAllG(cols M) error {
+	return q.UpdateAll(boil.GetDB(), cols)
+}
+
 // UpdateAll updates all rows with the specified column values.
-func (q claimQuery) UpdateAll(cols M) error {
+func (q claimQuery) UpdateAll(exec boil.Executor, cols M) error {
 	queries.SetUpdate(q.Query, cols)
 
-	_, err := q.Query.Exec()
+	_, err := q.Query.Exec(exec)
 	if err != nil {
 		return errors.Wrap(err, "model: unable to update all for claim")
 	}
@@ -798,14 +876,16 @@ func (o ClaimSlice) UpdateAllG(cols M) error {
 
 // UpdateAllGP updates all rows with the specified column values, and panics on error.
 func (o ClaimSlice) UpdateAllGP(cols M) {
-	if err := o.UpdateAll(boil.GetDB(), cols); err != nil {
+	err := o.UpdateAll(boil.GetDB(), cols)
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // UpdateAllP updates all rows with the specified column values, and panics on error.
 func (o ClaimSlice) UpdateAllP(exec boil.Executor, cols M) {
-	if err := o.UpdateAll(exec, cols); err != nil {
+	err := o.UpdateAll(exec, cols)
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
@@ -855,44 +935,60 @@ func (o ClaimSlice) UpdateAll(exec boil.Executor, cols M) error {
 }
 
 // UpsertG attempts an insert, and does an update or ignore on conflict.
-func (o *Claim) UpsertG(updateColumns []string, whitelist ...string) error {
-	return o.Upsert(boil.GetDB(), updateColumns, whitelist...)
+func (o *Claim) UpsertG(updateColumns, insertColumns boil.Columns) error {
+	return o.Upsert(boil.GetDB(), updateColumns, insertColumns)
 }
 
 // UpsertGP attempts an insert, and does an update or ignore on conflict. Panics on error.
-func (o *Claim) UpsertGP(updateColumns []string, whitelist ...string) {
-	if err := o.Upsert(boil.GetDB(), updateColumns, whitelist...); err != nil {
+func (o *Claim) UpsertGP(updateColumns, insertColumns boil.Columns) {
+	if err := o.Upsert(boil.GetDB(), updateColumns, insertColumns); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // UpsertP attempts an insert using an executor, and does an update or ignore on conflict.
 // UpsertP panics on error.
-func (o *Claim) UpsertP(exec boil.Executor, updateColumns []string, whitelist ...string) {
-	if err := o.Upsert(exec, updateColumns, whitelist...); err != nil {
+func (o *Claim) UpsertP(exec boil.Executor, updateColumns, insertColumns boil.Columns) {
+	if err := o.Upsert(exec, updateColumns, insertColumns); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
+var mySQLClaimUniqueColumns = []string{
+	"id",
+}
+
 // Upsert attempts an insert using an executor, and does an update or ignore on conflict.
-func (o *Claim) Upsert(exec boil.Executor, updateColumns []string, whitelist ...string) error {
+// See boil.Columns documentation for how to properly use updateColumns and insertColumns.
+func (o *Claim) Upsert(exec boil.Executor, updateColumns, insertColumns boil.Columns) error {
 	if o == nil {
 		return errors.New("model: no claim provided for upsert")
 	}
 
 	nzDefaults := queries.NonZeroDefaultSet(claimColumnsWithDefault, o)
+	nzUniques := queries.NonZeroDefaultSet(mySQLClaimUniqueColumns, o)
 
-	// Build cache key in-line uglily - mysql vs postgres problems
+	if len(nzUniques) == 0 {
+		return errors.New("cannot upsert with a table that cannot conflict on a unique column")
+	}
+
+	// Build cache key in-line uglily - mysql vs psql problems
 	buf := strmangle.GetBuffer()
-	for _, c := range updateColumns {
+	buf.WriteString(strconv.Itoa(updateColumns.Kind))
+	for _, c := range updateColumns.Cols {
 		buf.WriteString(c)
 	}
 	buf.WriteByte('.')
-	for _, c := range whitelist {
+	buf.WriteString(strconv.Itoa(insertColumns.Kind))
+	for _, c := range insertColumns.Cols {
 		buf.WriteString(c)
 	}
 	buf.WriteByte('.')
 	for _, c := range nzDefaults {
+		buf.WriteString(c)
+	}
+	buf.WriteByte('.')
+	for _, c := range nzUniques {
 		buf.WriteString(c)
 	}
 	key := buf.String()
@@ -905,27 +1001,27 @@ func (o *Claim) Upsert(exec boil.Executor, updateColumns []string, whitelist ...
 	var err error
 
 	if !cached {
-		insert, ret := strmangle.InsertColumnSet(
+		insert, ret := insertColumns.InsertColumnSet(
 			claimColumns,
 			claimColumnsWithDefault,
 			claimColumnsWithoutDefault,
 			nzDefaults,
-			whitelist,
 		)
-
-		update := strmangle.UpdateColumnSet(
+		update := updateColumns.UpdateColumnSet(
 			claimColumns,
 			claimPrimaryKeyColumns,
-			updateColumns,
 		)
+
 		if len(update) == 0 {
 			return errors.New("model: unable to upsert claim, could not build update column list")
 		}
 
-		cache.query = queries.BuildUpsertQueryMySQL(dialect, "claim", update, insert)
+		ret = strmangle.SetComplement(ret, nzUniques)
+		cache.query = buildUpsertQueryMySQL(dialect, "claim", update, insert)
 		cache.retQuery = fmt.Sprintf(
-			"SELECT %s FROM `claim` WHERE `id`=?",
+			"SELECT %s FROM `claim` WHERE %s",
 			strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, ret), ","),
+			strmangle.WhereClause("`", "`", 0, nzUniques),
 		)
 
 		cache.valueMapping, err = queries.BindMapping(claimType, claimMapping, insert)
@@ -959,7 +1055,8 @@ func (o *Claim) Upsert(exec boil.Executor, updateColumns []string, whitelist ...
 	}
 
 	var lastID int64
-	var identifierCols []interface{}
+	var uniqueMap []uint64
+	var nzUniqueCols []interface{}
 
 	if len(cache.retMapping) == 0 {
 		goto CacheNoHooks
@@ -971,20 +1068,22 @@ func (o *Claim) Upsert(exec boil.Executor, updateColumns []string, whitelist ...
 	}
 
 	o.ID = uint64(lastID)
-	if lastID != 0 && len(cache.retMapping) == 1 && cache.retMapping[0] == claimMapping["ID"] {
+	if lastID != 0 && len(cache.retMapping) == 1 && cache.retMapping[0] == claimMapping["id"] {
 		goto CacheNoHooks
 	}
 
-	identifierCols = []interface{}{
-		o.ID,
+	uniqueMap, err = queries.BindMapping(claimType, claimMapping, nzUniques)
+	if err != nil {
+		return errors.Wrap(err, "model: unable to retrieve unique values for claim")
 	}
+	nzUniqueCols = queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), uniqueMap)
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, cache.retQuery)
-		fmt.Fprintln(boil.DebugWriter, identifierCols...)
+		fmt.Fprintln(boil.DebugWriter, nzUniqueCols...)
 	}
 
-	err = exec.QueryRow(cache.retQuery, identifierCols...).Scan(returns...)
+	err = exec.QueryRow(cache.retQuery, nzUniqueCols...).Scan(returns...)
 	if err != nil {
 		return errors.Wrap(err, "model: unable to populate default values for claim")
 	}
@@ -999,30 +1098,28 @@ CacheNoHooks:
 	return nil
 }
 
+// DeleteG deletes a single Claim record.
+// DeleteG will match against the primary key column to find the record to delete.
+func (o *Claim) DeleteG() error {
+	return o.Delete(boil.GetDB())
+}
+
 // DeleteP deletes a single Claim record with an executor.
 // DeleteP will match against the primary key column to find the record to delete.
 // Panics on error.
 func (o *Claim) DeleteP(exec boil.Executor) {
-	if err := o.Delete(exec); err != nil {
+	err := o.Delete(exec)
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
-}
-
-// DeleteG deletes a single Claim record.
-// DeleteG will match against the primary key column to find the record to delete.
-func (o *Claim) DeleteG() error {
-	if o == nil {
-		return errors.New("model: no Claim provided for deletion")
-	}
-
-	return o.Delete(boil.GetDB())
 }
 
 // DeleteGP deletes a single Claim record.
 // DeleteGP will match against the primary key column to find the record to delete.
 // Panics on error.
 func (o *Claim) DeleteGP() {
-	if err := o.DeleteG(); err != nil {
+	err := o.Delete(boil.GetDB())
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
@@ -1051,21 +1148,22 @@ func (o *Claim) Delete(exec boil.Executor) error {
 }
 
 // DeleteAllP deletes all rows, and panics on error.
-func (q claimQuery) DeleteAllP() {
-	if err := q.DeleteAll(); err != nil {
+func (q claimQuery) DeleteAllP(exec boil.Executor) {
+	err := q.DeleteAll(exec)
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // DeleteAll deletes all matching rows.
-func (q claimQuery) DeleteAll() error {
+func (q claimQuery) DeleteAll(exec boil.Executor) error {
 	if q.Query == nil {
 		return errors.New("model: no claimQuery provided for delete all")
 	}
 
 	queries.SetDelete(q.Query)
 
-	_, err := q.Query.Exec()
+	_, err := q.Query.Exec(exec)
 	if err != nil {
 		return errors.Wrap(err, "model: unable to delete all from claim")
 	}
@@ -1073,24 +1171,23 @@ func (q claimQuery) DeleteAll() error {
 	return nil
 }
 
-// DeleteAllGP deletes all rows in the slice, and panics on error.
-func (o ClaimSlice) DeleteAllGP() {
-	if err := o.DeleteAllG(); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
 // DeleteAllG deletes all rows in the slice.
 func (o ClaimSlice) DeleteAllG() error {
-	if o == nil {
-		return errors.New("model: no Claim slice provided for delete all")
-	}
 	return o.DeleteAll(boil.GetDB())
 }
 
 // DeleteAllP deletes all rows in the slice, using an executor, and panics on error.
 func (o ClaimSlice) DeleteAllP(exec boil.Executor) {
-	if err := o.DeleteAll(exec); err != nil {
+	err := o.DeleteAll(exec)
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// DeleteAllGP deletes all rows in the slice, and panics on error.
+func (o ClaimSlice) DeleteAllGP() {
+	err := o.DeleteAll(boil.GetDB())
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
@@ -1127,11 +1224,13 @@ func (o ClaimSlice) DeleteAll(exec boil.Executor) error {
 	return nil
 }
 
-// ReloadGP refetches the object from the database and panics on error.
-func (o *Claim) ReloadGP() {
-	if err := o.ReloadG(); err != nil {
-		panic(boil.WrapErr(err))
+// ReloadG refetches the object from the database using the primary keys.
+func (o *Claim) ReloadG() error {
+	if o == nil {
+		return errors.New("model: no Claim provided for reload")
 	}
+
+	return o.Reload(boil.GetDB())
 }
 
 // ReloadP refetches the object from the database with an executor. Panics on error.
@@ -1141,13 +1240,11 @@ func (o *Claim) ReloadP(exec boil.Executor) {
 	}
 }
 
-// ReloadG refetches the object from the database using the primary keys.
-func (o *Claim) ReloadG() error {
-	if o == nil {
-		return errors.New("model: no Claim provided for reload")
+// ReloadGP refetches the object from the database and panics on error.
+func (o *Claim) ReloadGP() {
+	if err := o.Reload(boil.GetDB()); err != nil {
+		panic(boil.WrapErr(err))
 	}
-
-	return o.Reload(boil.GetDB())
 }
 
 // Reload refetches the object from the database
@@ -1162,13 +1259,14 @@ func (o *Claim) Reload(exec boil.Executor) error {
 	return nil
 }
 
-// ReloadAllGP refetches every row with matching primary key column values
+// ReloadAllG refetches every row with matching primary key column values
 // and overwrites the original object slice with the newly updated slice.
-// Panics on error.
-func (o *ClaimSlice) ReloadAllGP() {
-	if err := o.ReloadAllG(); err != nil {
-		panic(boil.WrapErr(err))
+func (o *ClaimSlice) ReloadAllG() error {
+	if o == nil {
+		return errors.New("model: empty ClaimSlice provided for reload all")
 	}
+
+	return o.ReloadAll(boil.GetDB())
 }
 
 // ReloadAllP refetches every row with matching primary key column values
@@ -1180,14 +1278,13 @@ func (o *ClaimSlice) ReloadAllP(exec boil.Executor) {
 	}
 }
 
-// ReloadAllG refetches every row with matching primary key column values
+// ReloadAllGP refetches every row with matching primary key column values
 // and overwrites the original object slice with the newly updated slice.
-func (o *ClaimSlice) ReloadAllG() error {
-	if o == nil {
-		return errors.New("model: empty ClaimSlice provided for reload all")
+// Panics on error.
+func (o *ClaimSlice) ReloadAllGP() {
+	if err := o.ReloadAll(boil.GetDB()); err != nil {
+		panic(boil.WrapErr(err))
 	}
-
-	return o.ReloadAll(boil.GetDB())
 }
 
 // ReloadAll refetches every row with matching primary key column values
@@ -1197,7 +1294,7 @@ func (o *ClaimSlice) ReloadAll(exec boil.Executor) error {
 		return nil
 	}
 
-	claims := ClaimSlice{}
+	slice := ClaimSlice{}
 	var args []interface{}
 	for _, obj := range *o {
 		pkeyArgs := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(obj)), claimPrimaryKeyMapping)
@@ -1207,29 +1304,54 @@ func (o *ClaimSlice) ReloadAll(exec boil.Executor) error {
 	sql := "SELECT `claim`.* FROM `claim` WHERE " +
 		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, claimPrimaryKeyColumns, len(*o))
 
-	q := queries.Raw(exec, sql, args...)
+	q := queries.Raw(sql, args...)
 
-	err := q.Bind(&claims)
+	err := q.Bind(nil, exec, &slice)
 	if err != nil {
 		return errors.Wrap(err, "model: unable to reload all in ClaimSlice")
 	}
 
-	*o = claims
+	*o = slice
 
 	return nil
 }
 
+// ClaimExistsG checks if the Claim row exists.
+func ClaimExistsG(iD uint64) (bool, error) {
+	return ClaimExists(boil.GetDB(), iD)
+}
+
+// ClaimExistsP checks if the Claim row exists. Panics on error.
+func ClaimExistsP(exec boil.Executor, iD uint64) bool {
+	e, err := ClaimExists(exec, iD)
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return e
+}
+
+// ClaimExistsGP checks if the Claim row exists. Panics on error.
+func ClaimExistsGP(iD uint64) bool {
+	e, err := ClaimExists(boil.GetDB(), iD)
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return e
+}
+
 // ClaimExists checks if the Claim row exists.
-func ClaimExists(exec boil.Executor, id uint64) (bool, error) {
+func ClaimExists(exec boil.Executor, iD uint64) (bool, error) {
 	var exists bool
 	sql := "select exists(select 1 from `claim` where `id`=? limit 1)"
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, sql)
-		fmt.Fprintln(boil.DebugWriter, id)
+		fmt.Fprintln(boil.DebugWriter, iD)
 	}
 
-	row := exec.QueryRow(sql, id)
+	row := exec.QueryRow(sql, iD)
 
 	err := row.Scan(&exists)
 	if err != nil {
@@ -1237,29 +1359,4 @@ func ClaimExists(exec boil.Executor, id uint64) (bool, error) {
 	}
 
 	return exists, nil
-}
-
-// ClaimExistsG checks if the Claim row exists.
-func ClaimExistsG(id uint64) (bool, error) {
-	return ClaimExists(boil.GetDB(), id)
-}
-
-// ClaimExistsGP checks if the Claim row exists. Panics on error.
-func ClaimExistsGP(id uint64) bool {
-	e, err := ClaimExists(boil.GetDB(), id)
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return e
-}
-
-// ClaimExistsP checks if the Claim row exists. Panics on error.
-func ClaimExistsP(exec boil.Executor, id uint64) bool {
-	e, err := ClaimExists(exec, id)
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return e
 }

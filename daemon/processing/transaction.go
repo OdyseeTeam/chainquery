@@ -2,6 +2,7 @@ package processing
 
 import (
 	"runtime"
+	"strconv"
 	"sync"
 	"time"
 
@@ -11,7 +12,8 @@ import (
 	"github.com/lbryio/chainquery/util"
 	"github.com/lbryio/lbry.go/errors"
 
-	"github.com/sirupsen/logrus"
+	"github.com/lbryio/lbry.go/stop"
+	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
@@ -22,7 +24,7 @@ type txToProcess struct {
 	failcount   int
 }
 
-type txProcessError struct {
+type txProcessResult struct {
 	tx          *lbrycrd.TxRawResult
 	blockTime   uint64
 	blockHeight uint64
@@ -30,21 +32,42 @@ type txProcessError struct {
 	failcount   int
 }
 
-func initTxWorkers(nrWorkers int, jobs <-chan txToProcess, results chan<- txProcessError) {
+func initTxWorkers(s *stop.Group, nrWorkers int, jobs <-chan txToProcess, results chan<- txProcessResult) {
 	for i := 0; i < nrWorkers; i++ {
-		go txProcessor(jobs, results)
+		s.Add(1)
+		go func(worker int) {
+			defer s.Done()
+			txProcessor(s, jobs, results, worker)
+			q(strconv.Itoa(worker) + " - WORKER TX - Finished all jobs")
+		}(i)
 	}
 }
 
-func txProcessor(jobs <-chan txToProcess, results chan<- txProcessError) {
-	for job := range jobs {
-		err := ProcessTx(job.tx, job.blockTime, job.blockHeight)
-		results <- txProcessError{
-			tx:          job.tx,
-			blockTime:   job.blockTime,
-			blockHeight: job.blockHeight,
-			err:         err,
-			failcount:   job.failcount + 1}
+func txProcessor(s *stop.Group, jobs <-chan txToProcess, results chan<- txProcessResult, worker int) {
+	for {
+		select {
+		case <-s.Ch():
+			return
+		case job := <-jobs:
+			q(strconv.Itoa(worker) + " - WORKER TX - Start new job " + job.tx.Txid)
+			err := ProcessTx(job.tx, job.blockTime, job.blockHeight)
+			result := txProcessResult{
+				tx:          job.tx,
+				blockTime:   job.blockTime,
+				blockHeight: job.blockHeight,
+				err:         err,
+				failcount:   job.failcount + 1}
+			q(strconv.Itoa(worker) + " - WORKER TX - Finished new job " + job.tx.Txid)
+			select {
+			case <-s.Ch():
+				q(strconv.Itoa(worker) + " - WORKER TX - discard finished job and stop " + job.tx.Txid)
+				return
+			default:
+				q(strconv.Itoa(worker) + " - WORKER TX - Start sending result of job " + job.tx.Txid)
+				results <- result
+				q(strconv.Itoa(worker) + " - WORKER TX - End sending result of job " + job.tx.Txid)
+			}
+		}
 	}
 }
 
@@ -110,23 +133,29 @@ func ProcessTx(jsonTx *lbrycrd.TxRawResult, blockTime uint64, blockHeight uint64
 
 	_, err = createUpdateVoutAddresses(transaction, &jsonTx.Vout, blockTime)
 	if err != nil {
-		err := errors.Prefix("Vout Address Creation Error: ", err)
-		return err
+		return errors.Prefix("Vout Address Creation Error: ", err)
 	}
 	_, err = createUpdateVinAddresses(transaction, &jsonTx.Vin, blockTime)
 	if err != nil {
-		err := errors.Prefix("Vin Address Creation Error: ", err)
-		return err
+		return errors.Prefix("Vin Address Creation Error: ", err)
 	}
 
 	// Process the inputs of the tranasction
-	saveUpdateInputs(transaction, jsonTx, txDbCrAddrMap)
+	err = saveUpdateInputs(transaction, jsonTx, txDbCrAddrMap)
+	if err != nil {
+		return err
+	}
 
 	// Process the outputs of the transaction
-	saveUpdateOutputs(transaction, jsonTx, txDbCrAddrMap, blockHeight)
-
+	err = saveUpdateOutputs(transaction, jsonTx, txDbCrAddrMap, blockHeight)
+	if err != nil {
+		return err
+	}
 	//Set the send and receive values for the transaction
-	setSendReceive(transaction, txDbCrAddrMap)
+	err = setSendReceive(transaction, txDbCrAddrMap)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -134,17 +163,15 @@ func ProcessTx(jsonTx *lbrycrd.TxRawResult, blockTime uint64, blockHeight uint64
 func saveUpdateTransaction(jsonTx *lbrycrd.TxRawResult) (*model.Transaction, error) {
 	transaction := &model.Transaction{}
 	// Error is not helpful. It returns an error if there is nothing in the database.
-	foundTx, _ := model.TransactionsG(qm.Where(model.TransactionColumns.Hash+"=?", jsonTx.Txid)).One()
+	foundTx, _ := model.Transactions(qm.Where(model.TransactionColumns.Hash+"=?", jsonTx.Txid)).OneG()
 	if foundTx != nil {
 		transaction = foundTx
 	}
 	transaction.Hash = jsonTx.Txid
 	transaction.Version = int(jsonTx.Version)
-	transaction.BlockHashID.String = jsonTx.BlockHash
-	transaction.BlockHashID.Valid = true
+	transaction.BlockHashID.SetValid(jsonTx.BlockHash)
 	transaction.CreatedTime = time.Unix(jsonTx.Blocktime, 0)
-	transaction.TransactionTime.Uint64 = uint64(jsonTx.Time)
-	transaction.TransactionTime.Valid = true
+	transaction.TransactionTime.SetValid(uint64(jsonTx.Time))
 	transaction.LockTime = uint(jsonTx.LockTime)
 	transaction.InputCount = uint(len(jsonTx.Vin))
 	transaction.OutputCount = uint(len(jsonTx.Vout))
@@ -152,11 +179,11 @@ func saveUpdateTransaction(jsonTx *lbrycrd.TxRawResult) (*model.Transaction, err
 	transaction.TransactionSize = uint64(jsonTx.Size)
 
 	if foundTx != nil {
-		if err := transaction.UpdateG(); err != nil {
+		if err := transaction.UpdateG(boil.Infer()); err != nil {
 			return transaction, err
 		}
 	} else {
-		if err := transaction.InsertG(); err != nil {
+		if err := transaction.InsertG(boil.Infer()); err != nil {
 			return nil, err
 		}
 	}
@@ -164,49 +191,108 @@ func saveUpdateTransaction(jsonTx *lbrycrd.TxRawResult) (*model.Transaction, err
 	return transaction, nil
 }
 
-func saveUpdateInputs(transaction *model.Transaction, jsonTx *lbrycrd.TxRawResult, txDbCrAddrMap *txDebitCredits) {
+func saveUpdateInputs(transaction *model.Transaction, jsonTx *lbrycrd.TxRawResult, txDbCrAddrMap *txDebitCredits) error {
 	vins := jsonTx.Vin
-	vinjobs := make(chan vinToProcess, len(vins))
-	errorchan := make(chan error, len(vins))
+	vinjobs := make(chan vinToProcess)
+	errorchan := make(chan error)
 	workers := util.Min(len(vins), runtime.NumCPU())
-	initVinWorkers(workers, vinjobs, errorchan)
-	for i := range vins {
-		index := i
-		vinjobs <- vinToProcess{jsonVin: &vins[index], tx: transaction, txDC: txDbCrAddrMap}
-	}
-	close(vinjobs)
-	for i := 0; i < len(vins); i++ {
-		err := <-errorchan
-		if err != nil {
-			logrus.Error("Vin Error->", err)
-			panic(err)
+	sQ := stop.New(nil)
+	initVinWorkers(sQ, workers, vinjobs, errorchan)
+	// Queue
+	q("VIN SYNC started")
+	sQ.Add(1)
+	go func() {
+		defer sQ.Done()
+		//q("VIN start queueing")
+		for i := range vins {
+			select {
+			case <-sQ.Ch():
+				return
+			default:
+				//q("VIN start passing new job")
+				vinjobs <- vinToProcess{jsonVin: &vins[i], tx: transaction, txDC: txDbCrAddrMap}
+				//q("VIN end pass new job")
+			}
 		}
+		//q("VIN end queueing")
+		close(vinjobs)
+	}()
+
+	//Error check
+	leftToProcess := len(vins)
+	for err := range errorchan {
+		leftToProcess--
+		if err != nil {
+			q("VIN error..stopping")
+			sQ.StopAndWait()
+			q("VIN error..stopped")
+			return errors.Prefix("Vin Error->", err)
+		}
+		q("VIN processing..." + strconv.Itoa(leftToProcess))
+		if leftToProcess == 0 {
+			q("VIN stopping...")
+			sQ.StopAndWait()
+			q("VIN stopped...")
+			q("VIN returning")
+			return nil
+		}
+		continue
 	}
-	close(errorchan)
+	q("VIN SYNC ended")
+	return nil
 }
 
-func saveUpdateOutputs(transaction *model.Transaction, jsonTx *lbrycrd.TxRawResult, txDbCrAddrMap *txDebitCredits, blockHeight uint64) {
+func saveUpdateOutputs(transaction *model.Transaction, jsonTx *lbrycrd.TxRawResult, txDbCrAddrMap *txDebitCredits, blockHeight uint64) error {
 	vouts := jsonTx.Vout
-	voutjobs := make(chan voutToProcess, len(vouts))
-	errorchan := make(chan error, len(vouts))
 	workers := util.Min(len(vouts), runtime.NumCPU())
-	initVoutWorkers(workers, voutjobs, errorchan)
-	for i := range vouts {
-		index := i
-		voutjobs <- voutToProcess{jsonVout: &vouts[index], tx: transaction, txDC: txDbCrAddrMap, blockHeight: blockHeight}
-	}
-	close(voutjobs)
-	for i := 0; i < len(vouts); i++ {
-		err := <-errorchan
-		if err != nil {
-			logrus.Error("Vout Error->", err)
-			logrus.Panic(err)
+	voutjobs := make(chan voutToProcess)
+	errorchan := make(chan error)
+	sQ := stop.New(nil)
+	initVoutWorkers(sQ, workers, voutjobs, errorchan)
+	// Queue
+	q("VOUT SYNC started")
+	sQ.Add(1)
+	go func() {
+		sQ.Done()
+		q("VOUT start queueing")
+		for i := range vouts {
+			select {
+			case <-sQ.Ch():
+				return
+			default:
+				q("VOUT start passing new job")
+				voutjobs <- voutToProcess{jsonVout: &vouts[i], tx: transaction, txDC: txDbCrAddrMap, blockHeight: blockHeight}
+				q("VOUT end pass new job")
+			}
 		}
+		q("VOUT SYNC finished")
+		close(voutjobs)
+	}()
+
+	//Error check
+	leftToProcess := len(vouts)
+	for err := range errorchan {
+		leftToProcess--
+		if err != nil {
+			q("VOUT error..stopping")
+			sQ.StopAndWait()
+			q("VOUT error..stopped")
+			return errors.Prefix("Vout Error->", err)
+		}
+		if leftToProcess == 0 {
+			q("VOUT stopping...")
+			sQ.StopAndWait()
+			q("VOUT stopped")
+			q("VOUT returning")
+			return nil
+		}
+		continue
 	}
-	close(errorchan)
+	q("VOUT SYNC ended")
+	return nil
 }
 
-func setSendReceive(transaction *model.Transaction, txDbCrAddrMap *txDebitCredits) {
+func setSendReceive(transaction *model.Transaction, txDbCrAddrMap *txDebitCredits) error {
 	for addr, DC := range txDbCrAddrMap.addrDCMap {
 
 		address := datastore.GetAddress(addr)
@@ -217,7 +303,8 @@ func setSendReceive(transaction *model.Transaction, txDbCrAddrMap *txDebitCredit
 		txAddr.DebitAmount = DC.Debits()
 
 		if err := datastore.PutTxAddress(txAddr); err != nil {
-			logrus.Panic(err) //Should never happen or something is wrong
+			return err //Should never happen or something is wrong
 		}
 	}
+	return nil
 }

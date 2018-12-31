@@ -4,20 +4,20 @@
 package model
 
 import (
-	"bytes"
 	"database/sql"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"github.com/volatiletech/sqlboiler/strmangle"
-	"gopkg.in/volatiletech/null.v6"
 )
 
 // AbnormalClaim is an object representing the database table.
@@ -67,9 +67,21 @@ var AbnormalClaimColumns = struct {
 	ModifiedAt:      "modified_at",
 }
 
+// AbnormalClaimRels is where relationship names are stored.
+var AbnormalClaimRels = struct {
+	Output string
+}{
+	Output: "Output",
+}
+
 // abnormalClaimR is where relationships are stored.
 type abnormalClaimR struct {
 	Output *Output
+}
+
+// NewStruct creates a new relationship struct
+func (*abnormalClaimR) NewStruct() *abnormalClaimR {
+	return &abnormalClaimR{}
 }
 
 // abnormalClaimL is where Load methods for each relationship are stored.
@@ -108,13 +120,26 @@ var (
 var (
 	// Force time package dependency for automated UpdatedAt/CreatedAt.
 	_ = time.Second
-	// Force bytes in case of primary key column that uses []byte (for relationship compares)
-	_ = bytes.MinRead
 )
 
+// OneG returns a single abnormalClaim record from the query using the global executor.
+func (q abnormalClaimQuery) OneG() (*AbnormalClaim, error) {
+	return q.One(boil.GetDB())
+}
+
+// OneGP returns a single abnormalClaim record from the query using the global executor, and panics on error.
+func (q abnormalClaimQuery) OneGP() *AbnormalClaim {
+	o, err := q.One(boil.GetDB())
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return o
+}
+
 // OneP returns a single abnormalClaim record from the query, and panics on error.
-func (q abnormalClaimQuery) OneP() *AbnormalClaim {
-	o, err := q.One()
+func (q abnormalClaimQuery) OneP(exec boil.Executor) *AbnormalClaim {
+	o, err := q.One(exec)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -123,12 +148,12 @@ func (q abnormalClaimQuery) OneP() *AbnormalClaim {
 }
 
 // One returns a single abnormalClaim record from the query.
-func (q abnormalClaimQuery) One() (*AbnormalClaim, error) {
+func (q abnormalClaimQuery) One(exec boil.Executor) (*AbnormalClaim, error) {
 	o := &AbnormalClaim{}
 
 	queries.SetLimit(q.Query, 1)
 
-	err := q.Bind(o)
+	err := q.Bind(nil, exec, o)
 	if err != nil {
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
@@ -139,9 +164,24 @@ func (q abnormalClaimQuery) One() (*AbnormalClaim, error) {
 	return o, nil
 }
 
+// AllG returns all AbnormalClaim records from the query using the global executor.
+func (q abnormalClaimQuery) AllG() (AbnormalClaimSlice, error) {
+	return q.All(boil.GetDB())
+}
+
+// AllGP returns all AbnormalClaim records from the query using the global executor, and panics on error.
+func (q abnormalClaimQuery) AllGP() AbnormalClaimSlice {
+	o, err := q.All(boil.GetDB())
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return o
+}
+
 // AllP returns all AbnormalClaim records from the query, and panics on error.
-func (q abnormalClaimQuery) AllP() AbnormalClaimSlice {
-	o, err := q.All()
+func (q abnormalClaimQuery) AllP(exec boil.Executor) AbnormalClaimSlice {
+	o, err := q.All(exec)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -150,10 +190,10 @@ func (q abnormalClaimQuery) AllP() AbnormalClaimSlice {
 }
 
 // All returns all AbnormalClaim records from the query.
-func (q abnormalClaimQuery) All() (AbnormalClaimSlice, error) {
+func (q abnormalClaimQuery) All(exec boil.Executor) (AbnormalClaimSlice, error) {
 	var o []*AbnormalClaim
 
-	err := q.Bind(&o)
+	err := q.Bind(nil, exec, &o)
 	if err != nil {
 		return nil, errors.Wrap(err, "model: failed to assign all query results to AbnormalClaim slice")
 	}
@@ -161,9 +201,24 @@ func (q abnormalClaimQuery) All() (AbnormalClaimSlice, error) {
 	return o, nil
 }
 
+// CountG returns the count of all AbnormalClaim records in the query, and panics on error.
+func (q abnormalClaimQuery) CountG() (int64, error) {
+	return q.Count(boil.GetDB())
+}
+
+// CountGP returns the count of all AbnormalClaim records in the query using the global executor, and panics on error.
+func (q abnormalClaimQuery) CountGP() int64 {
+	c, err := q.Count(boil.GetDB())
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return c
+}
+
 // CountP returns the count of all AbnormalClaim records in the query, and panics on error.
-func (q abnormalClaimQuery) CountP() int64 {
-	c, err := q.Count()
+func (q abnormalClaimQuery) CountP(exec boil.Executor) int64 {
+	c, err := q.Count(exec)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -172,13 +227,13 @@ func (q abnormalClaimQuery) CountP() int64 {
 }
 
 // Count returns the count of all AbnormalClaim records in the query.
-func (q abnormalClaimQuery) Count() (int64, error) {
+func (q abnormalClaimQuery) Count(exec boil.Executor) (int64, error) {
 	var count int64
 
 	queries.SetSelect(q.Query, nil)
 	queries.SetCount(q.Query)
 
-	err := q.Query.QueryRow().Scan(&count)
+	err := q.Query.QueryRow(exec).Scan(&count)
 	if err != nil {
 		return 0, errors.Wrap(err, "model: failed to count abnormal_claim rows")
 	}
@@ -186,9 +241,24 @@ func (q abnormalClaimQuery) Count() (int64, error) {
 	return count, nil
 }
 
-// Exists checks if the row exists in the table, and panics on error.
-func (q abnormalClaimQuery) ExistsP() bool {
-	e, err := q.Exists()
+// ExistsG checks if the row exists in the table, and panics on error.
+func (q abnormalClaimQuery) ExistsG() (bool, error) {
+	return q.Exists(boil.GetDB())
+}
+
+// ExistsGP checks if the row exists in the table using the global executor, and panics on error.
+func (q abnormalClaimQuery) ExistsGP() bool {
+	e, err := q.Exists(boil.GetDB())
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return e
+}
+
+// ExistsP checks if the row exists in the table, and panics on error.
+func (q abnormalClaimQuery) ExistsP(exec boil.Executor) bool {
+	e, err := q.Exists(exec)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -197,13 +267,14 @@ func (q abnormalClaimQuery) ExistsP() bool {
 }
 
 // Exists checks if the row exists in the table.
-func (q abnormalClaimQuery) Exists() (bool, error) {
+func (q abnormalClaimQuery) Exists(exec boil.Executor) (bool, error) {
 	var count int64
 
+	queries.SetSelect(q.Query, nil)
 	queries.SetCount(q.Query)
 	queries.SetLimit(q.Query, 1)
 
-	err := q.Query.QueryRow().Scan(&count)
+	err := q.Query.QueryRow(exec).Scan(&count)
 	if err != nil {
 		return false, errors.Wrap(err, "model: failed to check if abnormal_claim exists")
 	}
@@ -211,70 +282,77 @@ func (q abnormalClaimQuery) Exists() (bool, error) {
 	return count > 0, nil
 }
 
-// OutputG pointed to by the foreign key.
-func (o *AbnormalClaim) OutputG(mods ...qm.QueryMod) outputQuery {
-	return o.Output(boil.GetDB(), mods...)
-}
-
 // Output pointed to by the foreign key.
-func (o *AbnormalClaim) Output(exec boil.Executor, mods ...qm.QueryMod) outputQuery {
+func (o *AbnormalClaim) Output(mods ...qm.QueryMod) outputQuery {
 	queryMods := []qm.QueryMod{
 		qm.Where("id=?", o.OutputID),
 	}
 
 	queryMods = append(queryMods, mods...)
 
-	query := Outputs(exec, queryMods...)
+	query := Outputs(queryMods...)
 	queries.SetFrom(query.Query, "`output`")
 
 	return query
-} // LoadOutput allows an eager lookup of values, cached into the
-// loaded structs of the objects.
-func (abnormalClaimL) LoadOutput(e boil.Executor, singular bool, maybeAbnormalClaim interface{}) error {
+}
+
+// LoadOutput allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for an N-1 relationship.
+func (abnormalClaimL) LoadOutput(e boil.Executor, singular bool, maybeAbnormalClaim interface{}, mods queries.Applicator) error {
 	var slice []*AbnormalClaim
 	var object *AbnormalClaim
 
-	count := 1
 	if singular {
 		object = maybeAbnormalClaim.(*AbnormalClaim)
 	} else {
 		slice = *maybeAbnormalClaim.(*[]*AbnormalClaim)
-		count = len(slice)
 	}
 
-	args := make([]interface{}, count)
+	args := make([]interface{}, 0, 1)
 	if singular {
 		if object.R == nil {
 			object.R = &abnormalClaimR{}
 		}
-		args[0] = object.OutputID
+		args = append(args, object.OutputID)
+
 	} else {
-		for i, obj := range slice {
+	Outer:
+		for _, obj := range slice {
 			if obj.R == nil {
 				obj.R = &abnormalClaimR{}
 			}
-			args[i] = obj.OutputID
+
+			for _, a := range args {
+				if a == obj.OutputID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.OutputID)
+
 		}
 	}
 
-	query := fmt.Sprintf(
-		"select * from `output` where `id` in (%s)",
-		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
-	)
-
-	if boil.DebugMode {
-		fmt.Fprintf(boil.DebugWriter, "%s\n%v\n", query, args)
+	query := NewQuery(qm.From(`output`), qm.WhereIn(`id in ?`, args...))
+	if mods != nil {
+		mods.Apply(query)
 	}
 
-	results, err := e.Query(query, args...)
+	results, err := query.Query(e)
 	if err != nil {
 		return errors.Wrap(err, "failed to eager load Output")
 	}
-	defer results.Close()
 
 	var resultSlice []*Output
 	if err = queries.Bind(results, &resultSlice); err != nil {
 		return errors.Wrap(err, "failed to bind eager loaded slice Output")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results of eager load for output")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for output")
 	}
 
 	if len(resultSlice) == 0 {
@@ -282,7 +360,12 @@ func (abnormalClaimL) LoadOutput(e boil.Executor, singular bool, maybeAbnormalCl
 	}
 
 	if singular {
-		object.R.Output = resultSlice[0]
+		foreign := resultSlice[0]
+		object.R.Output = foreign
+		if foreign.R == nil {
+			foreign.R = &outputR{}
+		}
+		foreign.R.AbnormalClaims = append(foreign.R.AbnormalClaims, object)
 		return nil
 	}
 
@@ -290,6 +373,10 @@ func (abnormalClaimL) LoadOutput(e boil.Executor, singular bool, maybeAbnormalCl
 		for _, foreign := range resultSlice {
 			if local.OutputID == foreign.ID {
 				local.R.Output = foreign
+				if foreign.R == nil {
+					foreign.R = &outputR{}
+				}
+				foreign.R.AbnormalClaims = append(foreign.R.AbnormalClaims, local)
 				break
 			}
 		}
@@ -298,7 +385,7 @@ func (abnormalClaimL) LoadOutput(e boil.Executor, singular bool, maybeAbnormalCl
 	return nil
 }
 
-// SetOutputG of the abnormal_claim to the related item.
+// SetOutputG of the abnormalClaim to the related item.
 // Sets o.R.Output to related.
 // Adds o to related.R.AbnormalClaims.
 // Uses the global database handle.
@@ -306,7 +393,7 @@ func (o *AbnormalClaim) SetOutputG(insert bool, related *Output) error {
 	return o.SetOutput(boil.GetDB(), insert, related)
 }
 
-// SetOutputP of the abnormal_claim to the related item.
+// SetOutputP of the abnormalClaim to the related item.
 // Sets o.R.Output to related.
 // Adds o to related.R.AbnormalClaims.
 // Panics on error.
@@ -316,7 +403,7 @@ func (o *AbnormalClaim) SetOutputP(exec boil.Executor, insert bool, related *Out
 	}
 }
 
-// SetOutputGP of the abnormal_claim to the related item.
+// SetOutputGP of the abnormalClaim to the related item.
 // Sets o.R.Output to related.
 // Adds o to related.R.AbnormalClaims.
 // Uses the global database handle and panics on error.
@@ -326,13 +413,13 @@ func (o *AbnormalClaim) SetOutputGP(insert bool, related *Output) {
 	}
 }
 
-// SetOutput of the abnormal_claim to the related item.
+// SetOutput of the abnormalClaim to the related item.
 // Sets o.R.Output to related.
 // Adds o to related.R.AbnormalClaims.
 func (o *AbnormalClaim) SetOutput(exec boil.Executor, insert bool, related *Output) error {
 	var err error
 	if insert {
-		if err = related.Insert(exec); err != nil {
+		if err = related.Insert(exec, boil.Infer()); err != nil {
 			return errors.Wrap(err, "failed to insert into foreign table")
 		}
 	}
@@ -354,7 +441,6 @@ func (o *AbnormalClaim) SetOutput(exec boil.Executor, insert bool, related *Outp
 	}
 
 	o.OutputID = related.ID
-
 	if o.R == nil {
 		o.R = &abnormalClaimR{
 			Output: related,
@@ -374,25 +460,30 @@ func (o *AbnormalClaim) SetOutput(exec boil.Executor, insert bool, related *Outp
 	return nil
 }
 
-// AbnormalClaimsG retrieves all records.
-func AbnormalClaimsG(mods ...qm.QueryMod) abnormalClaimQuery {
-	return AbnormalClaims(boil.GetDB(), mods...)
-}
-
 // AbnormalClaims retrieves all the records using an executor.
-func AbnormalClaims(exec boil.Executor, mods ...qm.QueryMod) abnormalClaimQuery {
+func AbnormalClaims(mods ...qm.QueryMod) abnormalClaimQuery {
 	mods = append(mods, qm.From("`abnormal_claim`"))
-	return abnormalClaimQuery{NewQuery(exec, mods...)}
+	return abnormalClaimQuery{NewQuery(mods...)}
 }
 
 // FindAbnormalClaimG retrieves a single record by ID.
-func FindAbnormalClaimG(id uint64, selectCols ...string) (*AbnormalClaim, error) {
-	return FindAbnormalClaim(boil.GetDB(), id, selectCols...)
+func FindAbnormalClaimG(iD uint64, selectCols ...string) (*AbnormalClaim, error) {
+	return FindAbnormalClaim(boil.GetDB(), iD, selectCols...)
+}
+
+// FindAbnormalClaimP retrieves a single record by ID with an executor, and panics on error.
+func FindAbnormalClaimP(exec boil.Executor, iD uint64, selectCols ...string) *AbnormalClaim {
+	retobj, err := FindAbnormalClaim(exec, iD, selectCols...)
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return retobj
 }
 
 // FindAbnormalClaimGP retrieves a single record by ID, and panics on error.
-func FindAbnormalClaimGP(id uint64, selectCols ...string) *AbnormalClaim {
-	retobj, err := FindAbnormalClaim(boil.GetDB(), id, selectCols...)
+func FindAbnormalClaimGP(iD uint64, selectCols ...string) *AbnormalClaim {
+	retobj, err := FindAbnormalClaim(boil.GetDB(), iD, selectCols...)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -402,7 +493,7 @@ func FindAbnormalClaimGP(id uint64, selectCols ...string) *AbnormalClaim {
 
 // FindAbnormalClaim retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindAbnormalClaim(exec boil.Executor, id uint64, selectCols ...string) (*AbnormalClaim, error) {
+func FindAbnormalClaim(exec boil.Executor, iD uint64, selectCols ...string) (*AbnormalClaim, error) {
 	abnormalClaimObj := &AbnormalClaim{}
 
 	sel := "*"
@@ -413,9 +504,9 @@ func FindAbnormalClaim(exec boil.Executor, id uint64, selectCols ...string) (*Ab
 		"select %s from `abnormal_claim` where `id`=?", sel,
 	)
 
-	q := queries.Raw(exec, query, id)
+	q := queries.Raw(query, iD)
 
-	err := q.Bind(abnormalClaimObj)
+	err := q.Bind(nil, exec, abnormalClaimObj)
 	if err != nil {
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
@@ -426,43 +517,30 @@ func FindAbnormalClaim(exec boil.Executor, id uint64, selectCols ...string) (*Ab
 	return abnormalClaimObj, nil
 }
 
-// FindAbnormalClaimP retrieves a single record by ID with an executor, and panics on error.
-func FindAbnormalClaimP(exec boil.Executor, id uint64, selectCols ...string) *AbnormalClaim {
-	retobj, err := FindAbnormalClaim(exec, id, selectCols...)
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return retobj
-}
-
 // InsertG a single record. See Insert for whitelist behavior description.
-func (o *AbnormalClaim) InsertG(whitelist ...string) error {
-	return o.Insert(boil.GetDB(), whitelist...)
-}
-
-// InsertGP a single record, and panics on error. See Insert for whitelist
-// behavior description.
-func (o *AbnormalClaim) InsertGP(whitelist ...string) {
-	if err := o.Insert(boil.GetDB(), whitelist...); err != nil {
-		panic(boil.WrapErr(err))
-	}
+func (o *AbnormalClaim) InsertG(columns boil.Columns) error {
+	return o.Insert(boil.GetDB(), columns)
 }
 
 // InsertP a single record using an executor, and panics on error. See Insert
 // for whitelist behavior description.
-func (o *AbnormalClaim) InsertP(exec boil.Executor, whitelist ...string) {
-	if err := o.Insert(exec, whitelist...); err != nil {
+func (o *AbnormalClaim) InsertP(exec boil.Executor, columns boil.Columns) {
+	if err := o.Insert(exec, columns); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// InsertGP a single record, and panics on error. See Insert for whitelist
+// behavior description.
+func (o *AbnormalClaim) InsertGP(columns boil.Columns) {
+	if err := o.Insert(boil.GetDB(), columns); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // Insert a single record using an executor.
-// Whitelist behavior: If a whitelist is provided, only those columns supplied are inserted
-// No whitelist behavior: Without a whitelist, columns are inferred by the following rules:
-// - All columns without a default value are included (i.e. name, age)
-// - All columns with a default, but non-zero are included (i.e. health = 75)
-func (o *AbnormalClaim) Insert(exec boil.Executor, whitelist ...string) error {
+// See boil.Columns.InsertColumnSet documentation to understand column list inference for inserts.
+func (o *AbnormalClaim) Insert(exec boil.Executor, columns boil.Columns) error {
 	if o == nil {
 		return errors.New("model: no abnormal_claim provided for insertion")
 	}
@@ -471,18 +549,17 @@ func (o *AbnormalClaim) Insert(exec boil.Executor, whitelist ...string) error {
 
 	nzDefaults := queries.NonZeroDefaultSet(abnormalClaimColumnsWithDefault, o)
 
-	key := makeCacheKey(whitelist, nzDefaults)
+	key := makeCacheKey(columns, nzDefaults)
 	abnormalClaimInsertCacheMut.RLock()
 	cache, cached := abnormalClaimInsertCache[key]
 	abnormalClaimInsertCacheMut.RUnlock()
 
 	if !cached {
-		wl, returnColumns := strmangle.InsertColumnSet(
+		wl, returnColumns := columns.InsertColumnSet(
 			abnormalClaimColumns,
 			abnormalClaimColumnsWithDefault,
 			abnormalClaimColumnsWithoutDefault,
 			nzDefaults,
-			whitelist,
 		)
 
 		cache.valueMapping, err = queries.BindMapping(abnormalClaimType, abnormalClaimMapping, wl)
@@ -494,9 +571,9 @@ func (o *AbnormalClaim) Insert(exec boil.Executor, whitelist ...string) error {
 			return err
 		}
 		if len(wl) != 0 {
-			cache.query = fmt.Sprintf("INSERT INTO `abnormal_claim` (`%s`) %%sVALUES (%s)%%s", strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.IndexPlaceholders, len(wl), 1, 1))
+			cache.query = fmt.Sprintf("INSERT INTO `abnormal_claim` (`%s`) %%sVALUES (%s)%%s", strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
 		} else {
-			cache.query = "INSERT INTO `abnormal_claim` () VALUES ()"
+			cache.query = "INSERT INTO `abnormal_claim` () VALUES ()%s%s"
 		}
 
 		var queryOutput, queryReturning string
@@ -505,9 +582,7 @@ func (o *AbnormalClaim) Insert(exec boil.Executor, whitelist ...string) error {
 			cache.retQuery = fmt.Sprintf("SELECT `%s` FROM `abnormal_claim` WHERE %s", strings.Join(returnColumns, "`,`"), strmangle.WhereClause("`", "`", 0, abnormalClaimPrimaryKeyColumns))
 		}
 
-		if len(wl) != 0 {
-			cache.query = fmt.Sprintf(cache.query, queryOutput, queryReturning)
-		}
+		cache.query = fmt.Sprintf(cache.query, queryOutput, queryReturning)
 	}
 
 	value := reflect.Indirect(reflect.ValueOf(o))
@@ -565,49 +640,44 @@ CacheNoHooks:
 	return nil
 }
 
-// UpdateG a single AbnormalClaim record. See Update for
-// whitelist behavior description.
-func (o *AbnormalClaim) UpdateG(whitelist ...string) error {
-	return o.Update(boil.GetDB(), whitelist...)
+// UpdateG a single AbnormalClaim record using the global executor.
+// See Update for more documentation.
+func (o *AbnormalClaim) UpdateG(columns boil.Columns) error {
+	return o.Update(boil.GetDB(), columns)
 }
 
-// UpdateGP a single AbnormalClaim record.
-// UpdateGP takes a whitelist of column names that should be updated.
-// Panics on error. See Update for whitelist behavior description.
-func (o *AbnormalClaim) UpdateGP(whitelist ...string) {
-	if err := o.Update(boil.GetDB(), whitelist...); err != nil {
+// UpdateP uses an executor to update the AbnormalClaim, and panics on error.
+// See Update for more documentation.
+func (o *AbnormalClaim) UpdateP(exec boil.Executor, columns boil.Columns) {
+	err := o.Update(exec, columns)
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
-// UpdateP uses an executor to update the AbnormalClaim, and panics on error.
-// See Update for whitelist behavior description.
-func (o *AbnormalClaim) UpdateP(exec boil.Executor, whitelist ...string) {
-	err := o.Update(exec, whitelist...)
+// UpdateGP a single AbnormalClaim record using the global executor. Panics on error.
+// See Update for more documentation.
+func (o *AbnormalClaim) UpdateGP(columns boil.Columns) {
+	err := o.Update(boil.GetDB(), columns)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // Update uses an executor to update the AbnormalClaim.
-// Whitelist behavior: If a whitelist is provided, only the columns given are updated.
-// No whitelist behavior: Without a whitelist, columns are inferred by the following rules:
-// - All columns are inferred to start with
-// - All primary keys are subtracted from this set
-// Update does not automatically update the record in case of default values. Use .Reload()
-// to refresh the records.
-func (o *AbnormalClaim) Update(exec boil.Executor, whitelist ...string) error {
+// See boil.Columns.UpdateColumnSet documentation to understand column list inference for updates.
+// Update does not automatically update the record in case of default values. Use .Reload() to refresh the records.
+func (o *AbnormalClaim) Update(exec boil.Executor, columns boil.Columns) error {
 	var err error
-	key := makeCacheKey(whitelist, nil)
+	key := makeCacheKey(columns, nil)
 	abnormalClaimUpdateCacheMut.RLock()
 	cache, cached := abnormalClaimUpdateCache[key]
 	abnormalClaimUpdateCacheMut.RUnlock()
 
 	if !cached {
-		wl := strmangle.UpdateColumnSet(
+		wl := columns.UpdateColumnSet(
 			abnormalClaimColumns,
 			abnormalClaimPrimaryKeyColumns,
-			whitelist,
 		)
 
 		if len(wl) == 0 {
@@ -646,17 +716,23 @@ func (o *AbnormalClaim) Update(exec boil.Executor, whitelist ...string) error {
 }
 
 // UpdateAllP updates all rows with matching column names, and panics on error.
-func (q abnormalClaimQuery) UpdateAllP(cols M) {
-	if err := q.UpdateAll(cols); err != nil {
+func (q abnormalClaimQuery) UpdateAllP(exec boil.Executor, cols M) {
+	err := q.UpdateAll(exec, cols)
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
+// UpdateAllG updates all rows with the specified column values.
+func (q abnormalClaimQuery) UpdateAllG(cols M) error {
+	return q.UpdateAll(boil.GetDB(), cols)
+}
+
 // UpdateAll updates all rows with the specified column values.
-func (q abnormalClaimQuery) UpdateAll(cols M) error {
+func (q abnormalClaimQuery) UpdateAll(exec boil.Executor, cols M) error {
 	queries.SetUpdate(q.Query, cols)
 
-	_, err := q.Query.Exec()
+	_, err := q.Query.Exec(exec)
 	if err != nil {
 		return errors.Wrap(err, "model: unable to update all for abnormal_claim")
 	}
@@ -671,14 +747,16 @@ func (o AbnormalClaimSlice) UpdateAllG(cols M) error {
 
 // UpdateAllGP updates all rows with the specified column values, and panics on error.
 func (o AbnormalClaimSlice) UpdateAllGP(cols M) {
-	if err := o.UpdateAll(boil.GetDB(), cols); err != nil {
+	err := o.UpdateAll(boil.GetDB(), cols)
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // UpdateAllP updates all rows with the specified column values, and panics on error.
 func (o AbnormalClaimSlice) UpdateAllP(exec boil.Executor, cols M) {
-	if err := o.UpdateAll(exec, cols); err != nil {
+	err := o.UpdateAll(exec, cols)
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
@@ -728,44 +806,60 @@ func (o AbnormalClaimSlice) UpdateAll(exec boil.Executor, cols M) error {
 }
 
 // UpsertG attempts an insert, and does an update or ignore on conflict.
-func (o *AbnormalClaim) UpsertG(updateColumns []string, whitelist ...string) error {
-	return o.Upsert(boil.GetDB(), updateColumns, whitelist...)
+func (o *AbnormalClaim) UpsertG(updateColumns, insertColumns boil.Columns) error {
+	return o.Upsert(boil.GetDB(), updateColumns, insertColumns)
 }
 
 // UpsertGP attempts an insert, and does an update or ignore on conflict. Panics on error.
-func (o *AbnormalClaim) UpsertGP(updateColumns []string, whitelist ...string) {
-	if err := o.Upsert(boil.GetDB(), updateColumns, whitelist...); err != nil {
+func (o *AbnormalClaim) UpsertGP(updateColumns, insertColumns boil.Columns) {
+	if err := o.Upsert(boil.GetDB(), updateColumns, insertColumns); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // UpsertP attempts an insert using an executor, and does an update or ignore on conflict.
 // UpsertP panics on error.
-func (o *AbnormalClaim) UpsertP(exec boil.Executor, updateColumns []string, whitelist ...string) {
-	if err := o.Upsert(exec, updateColumns, whitelist...); err != nil {
+func (o *AbnormalClaim) UpsertP(exec boil.Executor, updateColumns, insertColumns boil.Columns) {
+	if err := o.Upsert(exec, updateColumns, insertColumns); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
+var mySQLAbnormalClaimUniqueColumns = []string{
+	"id",
+}
+
 // Upsert attempts an insert using an executor, and does an update or ignore on conflict.
-func (o *AbnormalClaim) Upsert(exec boil.Executor, updateColumns []string, whitelist ...string) error {
+// See boil.Columns documentation for how to properly use updateColumns and insertColumns.
+func (o *AbnormalClaim) Upsert(exec boil.Executor, updateColumns, insertColumns boil.Columns) error {
 	if o == nil {
 		return errors.New("model: no abnormal_claim provided for upsert")
 	}
 
 	nzDefaults := queries.NonZeroDefaultSet(abnormalClaimColumnsWithDefault, o)
+	nzUniques := queries.NonZeroDefaultSet(mySQLAbnormalClaimUniqueColumns, o)
 
-	// Build cache key in-line uglily - mysql vs postgres problems
+	if len(nzUniques) == 0 {
+		return errors.New("cannot upsert with a table that cannot conflict on a unique column")
+	}
+
+	// Build cache key in-line uglily - mysql vs psql problems
 	buf := strmangle.GetBuffer()
-	for _, c := range updateColumns {
+	buf.WriteString(strconv.Itoa(updateColumns.Kind))
+	for _, c := range updateColumns.Cols {
 		buf.WriteString(c)
 	}
 	buf.WriteByte('.')
-	for _, c := range whitelist {
+	buf.WriteString(strconv.Itoa(insertColumns.Kind))
+	for _, c := range insertColumns.Cols {
 		buf.WriteString(c)
 	}
 	buf.WriteByte('.')
 	for _, c := range nzDefaults {
+		buf.WriteString(c)
+	}
+	buf.WriteByte('.')
+	for _, c := range nzUniques {
 		buf.WriteString(c)
 	}
 	key := buf.String()
@@ -778,27 +872,27 @@ func (o *AbnormalClaim) Upsert(exec boil.Executor, updateColumns []string, white
 	var err error
 
 	if !cached {
-		insert, ret := strmangle.InsertColumnSet(
+		insert, ret := insertColumns.InsertColumnSet(
 			abnormalClaimColumns,
 			abnormalClaimColumnsWithDefault,
 			abnormalClaimColumnsWithoutDefault,
 			nzDefaults,
-			whitelist,
 		)
-
-		update := strmangle.UpdateColumnSet(
+		update := updateColumns.UpdateColumnSet(
 			abnormalClaimColumns,
 			abnormalClaimPrimaryKeyColumns,
-			updateColumns,
 		)
+
 		if len(update) == 0 {
 			return errors.New("model: unable to upsert abnormal_claim, could not build update column list")
 		}
 
-		cache.query = queries.BuildUpsertQueryMySQL(dialect, "abnormal_claim", update, insert)
+		ret = strmangle.SetComplement(ret, nzUniques)
+		cache.query = buildUpsertQueryMySQL(dialect, "abnormal_claim", update, insert)
 		cache.retQuery = fmt.Sprintf(
-			"SELECT %s FROM `abnormal_claim` WHERE `id`=?",
+			"SELECT %s FROM `abnormal_claim` WHERE %s",
 			strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, ret), ","),
+			strmangle.WhereClause("`", "`", 0, nzUniques),
 		)
 
 		cache.valueMapping, err = queries.BindMapping(abnormalClaimType, abnormalClaimMapping, insert)
@@ -832,7 +926,8 @@ func (o *AbnormalClaim) Upsert(exec boil.Executor, updateColumns []string, white
 	}
 
 	var lastID int64
-	var identifierCols []interface{}
+	var uniqueMap []uint64
+	var nzUniqueCols []interface{}
 
 	if len(cache.retMapping) == 0 {
 		goto CacheNoHooks
@@ -844,20 +939,22 @@ func (o *AbnormalClaim) Upsert(exec boil.Executor, updateColumns []string, white
 	}
 
 	o.ID = uint64(lastID)
-	if lastID != 0 && len(cache.retMapping) == 1 && cache.retMapping[0] == abnormalClaimMapping["ID"] {
+	if lastID != 0 && len(cache.retMapping) == 1 && cache.retMapping[0] == abnormalClaimMapping["id"] {
 		goto CacheNoHooks
 	}
 
-	identifierCols = []interface{}{
-		o.ID,
+	uniqueMap, err = queries.BindMapping(abnormalClaimType, abnormalClaimMapping, nzUniques)
+	if err != nil {
+		return errors.Wrap(err, "model: unable to retrieve unique values for abnormal_claim")
 	}
+	nzUniqueCols = queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), uniqueMap)
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, cache.retQuery)
-		fmt.Fprintln(boil.DebugWriter, identifierCols...)
+		fmt.Fprintln(boil.DebugWriter, nzUniqueCols...)
 	}
 
-	err = exec.QueryRow(cache.retQuery, identifierCols...).Scan(returns...)
+	err = exec.QueryRow(cache.retQuery, nzUniqueCols...).Scan(returns...)
 	if err != nil {
 		return errors.Wrap(err, "model: unable to populate default values for abnormal_claim")
 	}
@@ -872,30 +969,28 @@ CacheNoHooks:
 	return nil
 }
 
+// DeleteG deletes a single AbnormalClaim record.
+// DeleteG will match against the primary key column to find the record to delete.
+func (o *AbnormalClaim) DeleteG() error {
+	return o.Delete(boil.GetDB())
+}
+
 // DeleteP deletes a single AbnormalClaim record with an executor.
 // DeleteP will match against the primary key column to find the record to delete.
 // Panics on error.
 func (o *AbnormalClaim) DeleteP(exec boil.Executor) {
-	if err := o.Delete(exec); err != nil {
+	err := o.Delete(exec)
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
-}
-
-// DeleteG deletes a single AbnormalClaim record.
-// DeleteG will match against the primary key column to find the record to delete.
-func (o *AbnormalClaim) DeleteG() error {
-	if o == nil {
-		return errors.New("model: no AbnormalClaim provided for deletion")
-	}
-
-	return o.Delete(boil.GetDB())
 }
 
 // DeleteGP deletes a single AbnormalClaim record.
 // DeleteGP will match against the primary key column to find the record to delete.
 // Panics on error.
 func (o *AbnormalClaim) DeleteGP() {
-	if err := o.DeleteG(); err != nil {
+	err := o.Delete(boil.GetDB())
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
@@ -924,21 +1019,22 @@ func (o *AbnormalClaim) Delete(exec boil.Executor) error {
 }
 
 // DeleteAllP deletes all rows, and panics on error.
-func (q abnormalClaimQuery) DeleteAllP() {
-	if err := q.DeleteAll(); err != nil {
+func (q abnormalClaimQuery) DeleteAllP(exec boil.Executor) {
+	err := q.DeleteAll(exec)
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // DeleteAll deletes all matching rows.
-func (q abnormalClaimQuery) DeleteAll() error {
+func (q abnormalClaimQuery) DeleteAll(exec boil.Executor) error {
 	if q.Query == nil {
 		return errors.New("model: no abnormalClaimQuery provided for delete all")
 	}
 
 	queries.SetDelete(q.Query)
 
-	_, err := q.Query.Exec()
+	_, err := q.Query.Exec(exec)
 	if err != nil {
 		return errors.Wrap(err, "model: unable to delete all from abnormal_claim")
 	}
@@ -946,24 +1042,23 @@ func (q abnormalClaimQuery) DeleteAll() error {
 	return nil
 }
 
-// DeleteAllGP deletes all rows in the slice, and panics on error.
-func (o AbnormalClaimSlice) DeleteAllGP() {
-	if err := o.DeleteAllG(); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
 // DeleteAllG deletes all rows in the slice.
 func (o AbnormalClaimSlice) DeleteAllG() error {
-	if o == nil {
-		return errors.New("model: no AbnormalClaim slice provided for delete all")
-	}
 	return o.DeleteAll(boil.GetDB())
 }
 
 // DeleteAllP deletes all rows in the slice, using an executor, and panics on error.
 func (o AbnormalClaimSlice) DeleteAllP(exec boil.Executor) {
-	if err := o.DeleteAll(exec); err != nil {
+	err := o.DeleteAll(exec)
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// DeleteAllGP deletes all rows in the slice, and panics on error.
+func (o AbnormalClaimSlice) DeleteAllGP() {
+	err := o.DeleteAll(boil.GetDB())
+	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
@@ -1000,11 +1095,13 @@ func (o AbnormalClaimSlice) DeleteAll(exec boil.Executor) error {
 	return nil
 }
 
-// ReloadGP refetches the object from the database and panics on error.
-func (o *AbnormalClaim) ReloadGP() {
-	if err := o.ReloadG(); err != nil {
-		panic(boil.WrapErr(err))
+// ReloadG refetches the object from the database using the primary keys.
+func (o *AbnormalClaim) ReloadG() error {
+	if o == nil {
+		return errors.New("model: no AbnormalClaim provided for reload")
 	}
+
+	return o.Reload(boil.GetDB())
 }
 
 // ReloadP refetches the object from the database with an executor. Panics on error.
@@ -1014,13 +1111,11 @@ func (o *AbnormalClaim) ReloadP(exec boil.Executor) {
 	}
 }
 
-// ReloadG refetches the object from the database using the primary keys.
-func (o *AbnormalClaim) ReloadG() error {
-	if o == nil {
-		return errors.New("model: no AbnormalClaim provided for reload")
+// ReloadGP refetches the object from the database and panics on error.
+func (o *AbnormalClaim) ReloadGP() {
+	if err := o.Reload(boil.GetDB()); err != nil {
+		panic(boil.WrapErr(err))
 	}
-
-	return o.Reload(boil.GetDB())
 }
 
 // Reload refetches the object from the database
@@ -1035,13 +1130,14 @@ func (o *AbnormalClaim) Reload(exec boil.Executor) error {
 	return nil
 }
 
-// ReloadAllGP refetches every row with matching primary key column values
+// ReloadAllG refetches every row with matching primary key column values
 // and overwrites the original object slice with the newly updated slice.
-// Panics on error.
-func (o *AbnormalClaimSlice) ReloadAllGP() {
-	if err := o.ReloadAllG(); err != nil {
-		panic(boil.WrapErr(err))
+func (o *AbnormalClaimSlice) ReloadAllG() error {
+	if o == nil {
+		return errors.New("model: empty AbnormalClaimSlice provided for reload all")
 	}
+
+	return o.ReloadAll(boil.GetDB())
 }
 
 // ReloadAllP refetches every row with matching primary key column values
@@ -1053,14 +1149,13 @@ func (o *AbnormalClaimSlice) ReloadAllP(exec boil.Executor) {
 	}
 }
 
-// ReloadAllG refetches every row with matching primary key column values
+// ReloadAllGP refetches every row with matching primary key column values
 // and overwrites the original object slice with the newly updated slice.
-func (o *AbnormalClaimSlice) ReloadAllG() error {
-	if o == nil {
-		return errors.New("model: empty AbnormalClaimSlice provided for reload all")
+// Panics on error.
+func (o *AbnormalClaimSlice) ReloadAllGP() {
+	if err := o.ReloadAll(boil.GetDB()); err != nil {
+		panic(boil.WrapErr(err))
 	}
-
-	return o.ReloadAll(boil.GetDB())
 }
 
 // ReloadAll refetches every row with matching primary key column values
@@ -1070,7 +1165,7 @@ func (o *AbnormalClaimSlice) ReloadAll(exec boil.Executor) error {
 		return nil
 	}
 
-	abnormalClaims := AbnormalClaimSlice{}
+	slice := AbnormalClaimSlice{}
 	var args []interface{}
 	for _, obj := range *o {
 		pkeyArgs := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(obj)), abnormalClaimPrimaryKeyMapping)
@@ -1080,29 +1175,54 @@ func (o *AbnormalClaimSlice) ReloadAll(exec boil.Executor) error {
 	sql := "SELECT `abnormal_claim`.* FROM `abnormal_claim` WHERE " +
 		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, abnormalClaimPrimaryKeyColumns, len(*o))
 
-	q := queries.Raw(exec, sql, args...)
+	q := queries.Raw(sql, args...)
 
-	err := q.Bind(&abnormalClaims)
+	err := q.Bind(nil, exec, &slice)
 	if err != nil {
 		return errors.Wrap(err, "model: unable to reload all in AbnormalClaimSlice")
 	}
 
-	*o = abnormalClaims
+	*o = slice
 
 	return nil
 }
 
+// AbnormalClaimExistsG checks if the AbnormalClaim row exists.
+func AbnormalClaimExistsG(iD uint64) (bool, error) {
+	return AbnormalClaimExists(boil.GetDB(), iD)
+}
+
+// AbnormalClaimExistsP checks if the AbnormalClaim row exists. Panics on error.
+func AbnormalClaimExistsP(exec boil.Executor, iD uint64) bool {
+	e, err := AbnormalClaimExists(exec, iD)
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return e
+}
+
+// AbnormalClaimExistsGP checks if the AbnormalClaim row exists. Panics on error.
+func AbnormalClaimExistsGP(iD uint64) bool {
+	e, err := AbnormalClaimExists(boil.GetDB(), iD)
+	if err != nil {
+		panic(boil.WrapErr(err))
+	}
+
+	return e
+}
+
 // AbnormalClaimExists checks if the AbnormalClaim row exists.
-func AbnormalClaimExists(exec boil.Executor, id uint64) (bool, error) {
+func AbnormalClaimExists(exec boil.Executor, iD uint64) (bool, error) {
 	var exists bool
 	sql := "select exists(select 1 from `abnormal_claim` where `id`=? limit 1)"
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, sql)
-		fmt.Fprintln(boil.DebugWriter, id)
+		fmt.Fprintln(boil.DebugWriter, iD)
 	}
 
-	row := exec.QueryRow(sql, id)
+	row := exec.QueryRow(sql, iD)
 
 	err := row.Scan(&exists)
 	if err != nil {
@@ -1110,29 +1230,4 @@ func AbnormalClaimExists(exec boil.Executor, id uint64) (bool, error) {
 	}
 
 	return exists, nil
-}
-
-// AbnormalClaimExistsG checks if the AbnormalClaim row exists.
-func AbnormalClaimExistsG(id uint64) (bool, error) {
-	return AbnormalClaimExists(boil.GetDB(), id)
-}
-
-// AbnormalClaimExistsGP checks if the AbnormalClaim row exists. Panics on error.
-func AbnormalClaimExistsGP(id uint64) bool {
-	e, err := AbnormalClaimExists(boil.GetDB(), id)
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return e
-}
-
-// AbnormalClaimExistsP checks if the AbnormalClaim row exists. Panics on error.
-func AbnormalClaimExistsP(exec boil.Executor, id uint64) bool {
-	e, err := AbnormalClaimExists(exec, id)
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return e
 }

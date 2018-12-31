@@ -1,11 +1,15 @@
 package jobs
 
 import (
+	"context"
+
 	"github.com/lbryio/chainquery/global"
 	"github.com/lbryio/chainquery/model"
 	"github.com/lbryio/lbry.go/errors"
 	c "github.com/lbryio/lbryschema.go/claim"
+
 	"github.com/sirupsen/logrus"
+	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 )
 
@@ -35,13 +39,13 @@ func CertificateSync() {
 			claim.IsCertProcessed = true
 			if certified {
 				claim.IsCertValid = true
-				err := claim.UpdateG(model.ClaimColumns.IsCertValid, model.ClaimColumns.IsCertProcessed)
+				err := claim.UpdateG(boil.Whitelist(model.ClaimColumns.IsCertValid, model.ClaimColumns.IsCertProcessed))
 				if err != nil {
 					logrus.Error(certificateSyncPrefix+" [claim.id= ", claimToBeSynced.ID, "]", errors.Err(err))
 				}
 				continue
 			}
-			err = claim.UpdateG(model.ClaimColumns.IsCertProcessed)
+			err = claim.UpdateG(boil.Whitelist(model.ClaimColumns.IsCertProcessed))
 			if err != nil {
 				logrus.Error(certificateSyncPrefix, errors.Err(err))
 			}
@@ -74,6 +78,7 @@ type claimToBeSynced struct {
 }
 
 func getClaimsToBeSynced() ([]claimToBeSynced, error) {
+	var context context.Context
 	claim := model.TableNames.Claim
 	claimID := claim + "." + model.ClaimColumns.ID
 	signedClaimHex := claim + "." + model.ClaimColumns.ValueAsHex + " as signed_claim_hex"
@@ -84,7 +89,7 @@ func getClaimsToBeSynced() ([]claimToBeSynced, error) {
 	isCertProcessed := claim + "." + model.ClaimColumns.IsCertProcessed
 
 	var claims []claimToBeSynced
-	err := queries.RawG(`
+	err := queries.Raw(`
 		SELECT 
 			`+claimID+`,
 			`+signedClaimHex+`,
@@ -93,7 +98,7 @@ func getClaimsToBeSynced() ([]claimToBeSynced, error) {
 			`+ChannelClaimID+` 
 		FROM `+claim+`
 		INNER JOIN `+claim+` channel ON `+ChannelClaimID+` = `+publisherID+`
-		WHERE `+isCertProcessed+`=? LIMIT ?`, false, certsProcessedPerIteration).Bind(&claims)
+		WHERE `+isCertProcessed+`=? LIMIT ?`, false, certsProcessedPerIteration).BindG(context, &claims)
 	if err != nil {
 		return nil, err
 	}
