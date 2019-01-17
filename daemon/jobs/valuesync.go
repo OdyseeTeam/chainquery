@@ -5,6 +5,7 @@ import (
 	"github.com/lbryio/lbry.go/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 const syncTransactionValues = "SyncTransactionValues: "
@@ -72,29 +73,58 @@ func SyncTransactionValue() (int64, error) {
 
 	transactionTbl := model.TableNames.Transaction
 	transactionAddressTbl := model.TableNames.TransactionAddress
+	blockTbl := model.TableNames.Block
 	transactionValue := transactionTbl + "." + model.TransactionColumns.Value
+	transactionBlockHashID := transactionTbl + "." + model.TransactionColumns.BlockHashID
 	transactionID := transactionTbl + "." + model.TransactionColumns.ID
 	taCreditAmount := model.TransactionAddressColumns.CreditAmount
-	taDebitAmount := model.TransactionAddressColumns.DebitAmount
 	taTransactionID := model.TransactionAddressColumns.TransactionID
+	blockHash := blockTbl + "." + model.BlockColumns.Hash
+	blockHeight := blockTbl + "." + model.BlockColumns.Height
 
-	result, err := boil.GetDB().Exec(`
-		UPDATE ` + transactionTbl + `
-		SET ` + transactionValue + ` = (
-				SELECT COALESCE( SUM( ta.` + taCreditAmount + ` - ta.` + taDebitAmount + ` ),0.0) 
-				FROM ` + transactionAddressTbl + ` ta 
-				WHERE ta.` + taTransactionID + ` = ` + transactionID + `)`)
+	query := `
+		UPDATE ` + transactionTbl + ` 
+		INNER JOIN ` + blockTbl + ` ON ` + blockHash + ` = ` + transactionBlockHashID + `
+		SET ` + transactionValue + ` =  (
+			SELECT COALESCE( SUM( ta.` + taCreditAmount + ` ),0.0) 
+			FROM ` + transactionAddressTbl + ` ta
+			WHERE ta.` + taTransactionID + ` = ` + transactionID + ` )
+		WHERE ` + blockHeight + ` BETWEEN ? AND ?`
+
+	var from int
+	var to int
+	var affected int64
+
+	latestBlock, err := model.Blocks(qm.Select(model.BlockColumns.Height), qm.OrderBy(model.BlockColumns.Height+" DESC")).OneG()
 	if err != nil {
 		return 0, errors.Prefix(syncTransactionValues, err)
 	}
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return 0, errors.Prefix(syncTransactionValues, err)
+	if latestBlock.Height == 0 {
+		return 0, errors.Prefix(syncTransactionValues, errors.Err("latest height = 0 "))
 	}
-	if rowsAffected > 0 {
-		logrus.Warn(syncTransactionValues+" rows affected ( ", rowsAffected, " )")
+	latestHeight := int(latestBlock.Height)
+	updateIncrement := 5000
+	for i := 0; i < latestHeight/updateIncrement; i++ {
+		from = i * updateIncrement
+		to = (i + 1) * updateIncrement
+		if to > latestHeight {
+			to = latestHeight
+		}
+		result, err := boil.GetDB().Exec(query, from, to)
+		if err != nil {
+			return 0, errors.Prefix(syncTransactionValues, err)
+		}
+		rowsAffected, err := result.RowsAffected()
+		if err != nil {
+			return 0, errors.Prefix(syncTransactionValues, err)
+		}
+		affected = affected + rowsAffected
 	}
 
-	return rowsAffected, nil
+	if affected > 0 {
+		logrus.Warn(syncTransactionValues+" rows affected ( ", affected, " )")
+	}
+
+	return affected, nil
 
 }
