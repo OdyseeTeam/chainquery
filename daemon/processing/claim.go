@@ -5,16 +5,18 @@ import (
 	"encoding/json"
 
 	"github.com/lbryio/chainquery/datastore"
+	"github.com/lbryio/chainquery/global"
 	"github.com/lbryio/chainquery/lbrycrd"
 	"github.com/lbryio/chainquery/model"
+
 	"github.com/lbryio/lbry.go/errors"
 	util "github.com/lbryio/lbry.go/lbrycrd"
 	"github.com/lbryio/lbryschema.go/address/base58"
 	c "github.com/lbryio/lbryschema.go/claim"
 	"github.com/lbryio/types/go"
 
-	"github.com/lbryio/chainquery/global"
 	"github.com/sirupsen/logrus"
+	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 )
 
@@ -201,6 +203,8 @@ func processUpdateClaim(pbClaim *pb.Claim, claim *model.Claim, value []byte) (*m
 func setPublisherInfo(claim *model.Claim, pbClaim *pb.Claim) {
 	claim.IsCertProcessed = true
 	claim.IsCertValid = false
+	claim.PublisherID = null.NewString("", false)
+	claim.PublisherSig = null.NewString("", false)
 	if pbClaim.GetPublisherSignature() != nil {
 		claim.IsCertProcessed = false
 		publisherClaimID := hex.EncodeToString(pbClaim.GetPublisherSignature().GetCertificateId())
@@ -210,7 +214,8 @@ func setPublisherInfo(claim *model.Claim, pbClaim *pb.Claim) {
 }
 
 func setCertificateInfo(claim *model.Claim, pbClaim *pb.Claim) {
-
+	claim.IsCertProcessed = false
+	claim.Certificate = null.NewString("", false)
 	if pbClaim.GetClaimType() == pb.Claim_certificateType {
 		claim.IsCertProcessed = true
 		certificate := pbClaim.GetCertificate()
@@ -223,16 +228,26 @@ func setCertificateInfo(claim *model.Claim, pbClaim *pb.Claim) {
 }
 
 func setMetaDataInfo(claim *model.Claim, pbClaim *pb.Claim) {
+	resetMetadata(claim)
 	stream := pbClaim.GetStream()
 	if stream != nil {
 		metadata := stream.GetMetadata()
 		if metadata != nil {
 			claim.Title.SetValid(metadata.GetTitle())
-
 			claim.Description.SetValid(metadata.GetDescription())
 			claim.Language.SetValid(metadata.GetLanguage().String())
 			claim.Author.SetValid(metadata.GetAuthor())
 			claim.ThumbnailURL.SetValid(metadata.GetThumbnail())
+			claim.IsNSFW = metadata.GetNsfw()
+			if metadata.License != nil {
+				claim.License.SetValid(metadata.GetLicense())
+			}
+			if metadata.LicenseUrl != nil {
+				claim.LicenseURL.SetValid(metadata.GetLicenseUrl())
+			}
+			if metadata.Preview != nil {
+				claim.Preview.SetValid(metadata.GetPreview())
+			}
 
 			fee := metadata.GetFee()
 			if fee != nil {
@@ -245,7 +260,24 @@ func setMetaDataInfo(claim *model.Claim, pbClaim *pb.Claim) {
 	}
 }
 
+func resetMetadata(claim *model.Claim) {
+	claim.Title = null.NewString("", false)
+	claim.Description = null.NewString("", false)
+	claim.Language = null.NewString("", false)
+	claim.Author = null.NewString("", false)
+	claim.ThumbnailURL = null.NewString("", false)
+	claim.IsNSFW = false
+	claim.FeeCurrency = null.NewString("", false)
+	claim.Fee = 0.0
+	claim.FeeAddress = ""
+	claim.License = null.NewString("", false)
+	claim.LicenseURL = null.NewString("", false)
+	claim.Preview = null.NewString("", false)
+}
+
 func setSourceInfo(claim *model.Claim, pbClaim *pb.Claim) {
+	claim.ContentType = null.NewString("", false)
+	claim.SDHash = null.NewString("", false)
 	stream := pbClaim.GetStream()
 	if stream != nil {
 		source := stream.GetSource()

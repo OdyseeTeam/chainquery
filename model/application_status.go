@@ -16,6 +16,7 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/queries/qmhelper"
 	"github.com/volatiletech/sqlboiler/strmangle"
 )
 
@@ -40,6 +41,29 @@ var ApplicationStatusColumns = struct {
 	AppVersion:  "app_version",
 	DataVersion: "data_version",
 	APIVersion:  "api_version",
+}
+
+// Generated where
+
+type whereHelperint struct{ field string }
+
+func (w whereHelperint) EQ(x int) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
+func (w whereHelperint) NEQ(x int) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
+func (w whereHelperint) LT(x int) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
+func (w whereHelperint) LTE(x int) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
+func (w whereHelperint) GT(x int) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
+func (w whereHelperint) GTE(x int) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
+
+var ApplicationStatusWhere = struct {
+	ID          whereHelperuint64
+	AppVersion  whereHelperint
+	DataVersion whereHelperint
+	APIVersion  whereHelperint
+}{
+	ID:          whereHelperuint64{field: `id`},
+	AppVersion:  whereHelperint{field: `app_version`},
+	DataVersion: whereHelperint{field: `data_version`},
+	APIVersion:  whereHelperint{field: `api_version`},
 }
 
 // ApplicationStatusRels is where relationship names are stored.
@@ -91,6 +115,9 @@ var (
 var (
 	// Force time package dependency for automated UpdatedAt/CreatedAt.
 	_ = time.Second
+	// Force qmhelper dependency for where clause generation (which doesn't
+	// always happen)
+	_ = qmhelper.Where
 )
 
 // OneG returns a single applicationStatus record from the query using the global executor.

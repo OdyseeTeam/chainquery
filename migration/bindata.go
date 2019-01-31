@@ -11,6 +11,7 @@
 // migration/008_schema_fix.sql
 // migration/009_certificate_validation.sql
 // migration/010_triggers.sql
+// migration/011_add_license.sql
 // DO NOT EDIT!
 
 package migration
@@ -298,6 +299,26 @@ func migration010_triggersSql() (*asset, error) {
 	return a, nil
 }
 
+var _migration011_add_licenseSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xd2\xd5\x55\xd0\xce\xcd\x4c\x2f\x4a\x2c\x49\x55\x08\x2d\xe0\xe2\x42\xe6\x07\x97\x24\x96\xa4\xe6\xa6\xe6\x95\x38\xa5\xa6\x67\xe6\x71\x39\xfa\x84\xb8\x06\x29\x84\x38\x3a\xf9\xb8\x2a\x24\xe7\x24\x66\xe6\x72\x29\x28\x38\xba\xb8\x28\x38\xfb\xfb\x84\xfa\xfa\x29\xe4\x64\x26\xa7\xe6\x15\xa7\x2a\xf8\x85\x39\x06\x39\x7b\x38\x06\x69\x18\x99\x9a\x6a\xea\x60\x55\x13\x5f\x5a\x94\x83\x57\x5d\x41\x51\x6a\x59\x66\x6a\x39\xaa\x1a\x6b\xec\x8e\x73\xcd\x4b\x21\xd9\xd9\x10\xcb\x3c\xfd\x5c\x5c\x23\x14\x3c\x53\x2a\xe2\x7d\xa0\x6e\xd7\x80\x3a\x10\xec\x1e\x1c\x8a\x42\x83\x7c\xe0\xea\x40\x1e\xc1\xaa\x36\x00\xea\x01\x0d\xa8\x4f\xf0\x38\x1e\x10\x00\x00\xff\xff\xda\x9e\xbc\xf1\x82\x01\x00\x00")
+
+func migration011_add_licenseSqlBytes() ([]byte, error) {
+	return bindataRead(
+		_migration011_add_licenseSql,
+		"migration/011_add_license.sql",
+	)
+}
+
+func migration011_add_licenseSql() (*asset, error) {
+	bytes, err := migration011_add_licenseSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "migration/011_add_license.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -361,6 +382,7 @@ var _bindata = map[string]func() (*asset, error){
 	"migration/008_schema_fix.sql":             migration008_schema_fixSql,
 	"migration/009_certificate_validation.sql": migration009_certificate_validationSql,
 	"migration/010_triggers.sql":               migration010_triggersSql,
+	"migration/011_add_license.sql":            migration011_add_licenseSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -416,6 +438,7 @@ var _bintree = &bintree{nil, map[string]*bintree{
 		"008_schema_fix.sql":             &bintree{migration008_schema_fixSql, map[string]*bintree{}},
 		"009_certificate_validation.sql": &bintree{migration009_certificate_validationSql, map[string]*bintree{}},
 		"010_triggers.sql":               &bintree{migration010_triggersSql, map[string]*bintree{}},
+		"011_add_license.sql":            &bintree{migration011_add_licenseSql, map[string]*bintree{}},
 	}},
 }}
 

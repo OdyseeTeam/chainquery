@@ -17,6 +17,7 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/queries/qmhelper"
 	"github.com/volatiletech/sqlboiler/strmangle"
 )
 
@@ -76,6 +77,88 @@ var InputColumns = struct {
 	Modified:            "modified",
 }
 
+// Generated where
+
+type whereHelpernull_Uint struct{ field string }
+
+func (w whereHelpernull_Uint) EQ(x null.Uint) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, false, x)
+}
+func (w whereHelpernull_Uint) NEQ(x null.Uint) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, true, x)
+}
+func (w whereHelpernull_Uint) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
+func (w whereHelpernull_Uint) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
+func (w whereHelpernull_Uint) LT(x null.Uint) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpernull_Uint) LTE(x null.Uint) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpernull_Uint) GT(x null.Uint) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpernull_Uint) GTE(x null.Uint) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+
+type whereHelpernull_Float64 struct{ field string }
+
+func (w whereHelpernull_Float64) EQ(x null.Float64) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, false, x)
+}
+func (w whereHelpernull_Float64) NEQ(x null.Float64) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, true, x)
+}
+func (w whereHelpernull_Float64) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
+func (w whereHelpernull_Float64) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
+func (w whereHelpernull_Float64) LT(x null.Float64) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpernull_Float64) LTE(x null.Float64) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpernull_Float64) GT(x null.Float64) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpernull_Float64) GTE(x null.Float64) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+
+var InputWhere = struct {
+	ID                  whereHelperuint64
+	TransactionID       whereHelperuint64
+	TransactionHash     whereHelperstring
+	InputAddressID      whereHelpernull_Uint64
+	IsCoinbase          whereHelperbool
+	Coinbase            whereHelpernull_String
+	PrevoutHash         whereHelpernull_String
+	PrevoutN            whereHelpernull_Uint
+	PrevoutSpendUpdated whereHelperbool
+	Sequence            whereHelperuint
+	Value               whereHelpernull_Float64
+	ScriptSigAsm        whereHelpernull_String
+	ScriptSigHex        whereHelpernull_String
+	Created             whereHelpertime_Time
+	Modified            whereHelpertime_Time
+}{
+	ID:                  whereHelperuint64{field: `id`},
+	TransactionID:       whereHelperuint64{field: `transaction_id`},
+	TransactionHash:     whereHelperstring{field: `transaction_hash`},
+	InputAddressID:      whereHelpernull_Uint64{field: `input_address_id`},
+	IsCoinbase:          whereHelperbool{field: `is_coinbase`},
+	Coinbase:            whereHelpernull_String{field: `coinbase`},
+	PrevoutHash:         whereHelpernull_String{field: `prevout_hash`},
+	PrevoutN:            whereHelpernull_Uint{field: `prevout_n`},
+	PrevoutSpendUpdated: whereHelperbool{field: `prevout_spend_updated`},
+	Sequence:            whereHelperuint{field: `sequence`},
+	Value:               whereHelpernull_Float64{field: `value`},
+	ScriptSigAsm:        whereHelpernull_String{field: `script_sig_asm`},
+	ScriptSigHex:        whereHelpernull_String{field: `script_sig_hex`},
+	Created:             whereHelpertime_Time{field: `created`},
+	Modified:            whereHelpertime_Time{field: `modified`},
+}
+
 // InputRels is where relationship names are stored.
 var InputRels = struct {
 	Transaction string
@@ -129,6 +212,9 @@ var (
 var (
 	// Force time package dependency for automated UpdatedAt/CreatedAt.
 	_ = time.Second
+	// Force qmhelper dependency for where clause generation (which doesn't
+	// always happen)
+	_ = qmhelper.Where
 )
 
 // OneG returns a single input record from the query using the global executor.
@@ -340,6 +426,10 @@ func (inputL) LoadTransaction(e boil.Executor, singular bool, maybeInput interfa
 			args = append(args, obj.TransactionID)
 
 		}
+	}
+
+	if len(args) == 0 {
+		return nil
 	}
 
 	query := NewQuery(qm.From(`transaction`), qm.WhereIn(`id in ?`, args...))

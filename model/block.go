@@ -17,6 +17,7 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/queries/qmhelper"
 	"github.com/volatiletech/sqlboiler/strmangle"
 )
 
@@ -91,6 +92,52 @@ var BlockColumns = struct {
 	ModifiedAt:            "modified_at",
 }
 
+// Generated where
+
+var BlockWhere = struct {
+	ID                    whereHelperuint64
+	Bits                  whereHelperstring
+	Chainwork             whereHelperstring
+	Confirmations         whereHelperuint
+	Difficulty            whereHelperfloat64
+	Hash                  whereHelperstring
+	Height                whereHelperuint64
+	MerkleRoot            whereHelperstring
+	NameClaimRoot         whereHelperstring
+	Nonce                 whereHelperuint64
+	PreviousBlockHash     whereHelpernull_String
+	NextBlockHash         whereHelpernull_String
+	BlockSize             whereHelperuint64
+	BlockTime             whereHelperuint64
+	Version               whereHelperuint64
+	VersionHex            whereHelperstring
+	TransactionHashes     whereHelpernull_String
+	TransactionsProcessed whereHelperbool
+	CreatedAt             whereHelpertime_Time
+	ModifiedAt            whereHelpertime_Time
+}{
+	ID:                    whereHelperuint64{field: `id`},
+	Bits:                  whereHelperstring{field: `bits`},
+	Chainwork:             whereHelperstring{field: `chainwork`},
+	Confirmations:         whereHelperuint{field: `confirmations`},
+	Difficulty:            whereHelperfloat64{field: `difficulty`},
+	Hash:                  whereHelperstring{field: `hash`},
+	Height:                whereHelperuint64{field: `height`},
+	MerkleRoot:            whereHelperstring{field: `merkle_root`},
+	NameClaimRoot:         whereHelperstring{field: `name_claim_root`},
+	Nonce:                 whereHelperuint64{field: `nonce`},
+	PreviousBlockHash:     whereHelpernull_String{field: `previous_block_hash`},
+	NextBlockHash:         whereHelpernull_String{field: `next_block_hash`},
+	BlockSize:             whereHelperuint64{field: `block_size`},
+	BlockTime:             whereHelperuint64{field: `block_time`},
+	Version:               whereHelperuint64{field: `version`},
+	VersionHex:            whereHelperstring{field: `version_hex`},
+	TransactionHashes:     whereHelpernull_String{field: `transaction_hashes`},
+	TransactionsProcessed: whereHelperbool{field: `transactions_processed`},
+	CreatedAt:             whereHelpertime_Time{field: `created_at`},
+	ModifiedAt:            whereHelpertime_Time{field: `modified_at`},
+}
+
 // BlockRels is where relationship names are stored.
 var BlockRels = struct {
 	BlockHashTransactions string
@@ -144,6 +191,9 @@ var (
 var (
 	// Force time package dependency for automated UpdatedAt/CreatedAt.
 	_ = time.Second
+	// Force qmhelper dependency for where clause generation (which doesn't
+	// always happen)
+	_ = qmhelper.Where
 )
 
 // OneG returns a single block record from the query using the global executor.
@@ -360,6 +410,10 @@ func (blockL) LoadBlockHashTransactions(e boil.Executor, singular bool, maybeBlo
 
 			args = append(args, obj.Hash)
 		}
+	}
+
+	if len(args) == 0 {
+		return nil
 	}
 
 	query := NewQuery(qm.From(`transaction`), qm.WhereIn(`block_hash_id in ?`, args...))

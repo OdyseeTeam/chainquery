@@ -16,6 +16,7 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/queries/qmhelper"
 	"github.com/volatiletech/sqlboiler/strmangle"
 )
 
@@ -40,6 +41,20 @@ var TransactionAddressColumns = struct {
 	AddressID:     "address_id",
 	DebitAmount:   "debit_amount",
 	CreditAmount:  "credit_amount",
+}
+
+// Generated where
+
+var TransactionAddressWhere = struct {
+	TransactionID whereHelperuint64
+	AddressID     whereHelperuint64
+	DebitAmount   whereHelperfloat64
+	CreditAmount  whereHelperfloat64
+}{
+	TransactionID: whereHelperuint64{field: `transaction_id`},
+	AddressID:     whereHelperuint64{field: `address_id`},
+	DebitAmount:   whereHelperfloat64{field: `debit_amount`},
+	CreditAmount:  whereHelperfloat64{field: `credit_amount`},
 }
 
 // TransactionAddressRels is where relationship names are stored.
@@ -98,6 +113,9 @@ var (
 var (
 	// Force time package dependency for automated UpdatedAt/CreatedAt.
 	_ = time.Second
+	// Force qmhelper dependency for where clause generation (which doesn't
+	// always happen)
+	_ = qmhelper.Where
 )
 
 // OneG returns a single transactionAddress record from the query using the global executor.
@@ -325,6 +343,10 @@ func (transactionAddressL) LoadTransaction(e boil.Executor, singular bool, maybe
 		}
 	}
 
+	if len(args) == 0 {
+		return nil
+	}
+
 	query := NewQuery(qm.From(`transaction`), qm.WhereIn(`id in ?`, args...))
 	if mods != nil {
 		mods.Apply(query)
@@ -412,6 +434,10 @@ func (transactionAddressL) LoadAddress(e boil.Executor, singular bool, maybeTran
 			args = append(args, obj.AddressID)
 
 		}
+	}
+
+	if len(args) == 0 {
+		return nil
 	}
 
 	query := NewQuery(qm.From(`address`), qm.WhereIn(`id in ?`, args...))

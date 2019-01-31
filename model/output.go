@@ -17,6 +17,7 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/queries/qmhelper"
 	"github.com/volatiletech/sqlboiler/strmangle"
 )
 
@@ -76,6 +77,42 @@ var OutputColumns = struct {
 	ClaimID:            "claim_id",
 }
 
+// Generated where
+
+var OutputWhere = struct {
+	ID                 whereHelperuint64
+	TransactionID      whereHelperuint64
+	TransactionHash    whereHelperstring
+	Value              whereHelpernull_Float64
+	Vout               whereHelperuint
+	Type               whereHelpernull_String
+	ScriptPubKeyAsm    whereHelpernull_String
+	ScriptPubKeyHex    whereHelpernull_String
+	RequiredSignatures whereHelpernull_Uint
+	AddressList        whereHelpernull_String
+	IsSpent            whereHelperbool
+	SpentByInputID     whereHelpernull_Uint64
+	CreatedAt          whereHelpertime_Time
+	ModifiedAt         whereHelpertime_Time
+	ClaimID            whereHelpernull_String
+}{
+	ID:                 whereHelperuint64{field: `id`},
+	TransactionID:      whereHelperuint64{field: `transaction_id`},
+	TransactionHash:    whereHelperstring{field: `transaction_hash`},
+	Value:              whereHelpernull_Float64{field: `value`},
+	Vout:               whereHelperuint{field: `vout`},
+	Type:               whereHelpernull_String{field: `type`},
+	ScriptPubKeyAsm:    whereHelpernull_String{field: `script_pub_key_asm`},
+	ScriptPubKeyHex:    whereHelpernull_String{field: `script_pub_key_hex`},
+	RequiredSignatures: whereHelpernull_Uint{field: `required_signatures`},
+	AddressList:        whereHelpernull_String{field: `address_list`},
+	IsSpent:            whereHelperbool{field: `is_spent`},
+	SpentByInputID:     whereHelpernull_Uint64{field: `spent_by_input_id`},
+	CreatedAt:          whereHelpertime_Time{field: `created_at`},
+	ModifiedAt:         whereHelpertime_Time{field: `modified_at`},
+	ClaimID:            whereHelpernull_String{field: `claim_id`},
+}
+
 // OutputRels is where relationship names are stored.
 var OutputRels = struct {
 	Transaction    string
@@ -132,6 +169,9 @@ var (
 var (
 	// Force time package dependency for automated UpdatedAt/CreatedAt.
 	_ = time.Second
+	// Force qmhelper dependency for where clause generation (which doesn't
+	// always happen)
+	_ = qmhelper.Where
 )
 
 // OneG returns a single output record from the query using the global executor.
@@ -366,6 +406,10 @@ func (outputL) LoadTransaction(e boil.Executor, singular bool, maybeOutput inter
 		}
 	}
 
+	if len(args) == 0 {
+		return nil
+	}
+
 	query := NewQuery(qm.From(`transaction`), qm.WhereIn(`id in ?`, args...))
 	if mods != nil {
 		mods.Apply(query)
@@ -451,6 +495,10 @@ func (outputL) LoadAbnormalClaims(e boil.Executor, singular bool, maybeOutput in
 
 			args = append(args, obj.ID)
 		}
+	}
+
+	if len(args) == 0 {
+		return nil
 	}
 
 	query := NewQuery(qm.From(`abnormal_claim`), qm.WhereIn(`output_id in ?`, args...))

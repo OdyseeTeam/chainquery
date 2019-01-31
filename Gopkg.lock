@@ -418,7 +418,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:4b803d6e4d2eae3c745a5063e82fbc14eca88945da36814f6b677cebf19fb088"
+  digest = "1:7bdc244c12fbdee05c975f0e352e343d562e5b7f62b2719c0d589b8870faffe0"
   name = "github.com/volatiletech/sqlboiler"
   packages = [
     "boil",
@@ -426,11 +426,12 @@
     "importers",
     "queries",
     "queries/qm",
+    "queries/qmhelper",
     "randomize",
     "strmangle",
   ]
   pruneopts = ""
-  revision = "4dea9a5f77e3ec6090ad455df3d408e47e077700"
+  revision = "df8550538fefdf62f2520e74dbfad73f1bcb84a2"
 
 [[projects]]
   branch = "master"
@@ -569,6 +570,7 @@
     "github.com/volatiletech/sqlboiler/drivers",
     "github.com/volatiletech/sqlboiler/queries",
     "github.com/volatiletech/sqlboiler/queries/qm",
+    "github.com/volatiletech/sqlboiler/queries/qmhelper",
     "github.com/volatiletech/sqlboiler/strmangle",
     "golang.org/x/net/context",
     "golang.org/x/oauth2",
