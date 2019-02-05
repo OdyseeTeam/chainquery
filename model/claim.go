@@ -17,6 +17,7 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/queries/qmhelper"
 	"github.com/volatiletech/sqlboiler/strmangle"
 )
 
@@ -56,6 +57,9 @@ type Claim struct {
 	ClaimAddress      string      `boil:"claim_address" json:"claim_address" toml:"claim_address" yaml:"claim_address"`
 	IsCertValid       bool        `boil:"is_cert_valid" json:"is_cert_valid" toml:"is_cert_valid" yaml:"is_cert_valid"`
 	IsCertProcessed   bool        `boil:"is_cert_processed" json:"is_cert_processed" toml:"is_cert_processed" yaml:"is_cert_processed"`
+	License           null.String `boil:"license" json:"license,omitempty" toml:"license" yaml:"license,omitempty"`
+	LicenseURL        null.String `boil:"license_url" json:"license_url,omitempty" toml:"license_url" yaml:"license_url,omitempty"`
+	Preview           null.String `boil:"preview" json:"preview,omitempty" toml:"preview" yaml:"preview,omitempty"`
 
 	R *claimR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L claimL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -96,6 +100,9 @@ var ClaimColumns = struct {
 	ClaimAddress      string
 	IsCertValid       string
 	IsCertProcessed   string
+	License           string
+	LicenseURL        string
+	Preview           string
 }{
 	ID:                "id",
 	TransactionHashID: "transaction_hash_id",
@@ -131,6 +138,121 @@ var ClaimColumns = struct {
 	ClaimAddress:      "claim_address",
 	IsCertValid:       "is_cert_valid",
 	IsCertProcessed:   "is_cert_processed",
+	License:           "license",
+	LicenseURL:        "license_url",
+	Preview:           "preview",
+}
+
+// Generated where
+
+type whereHelperint8 struct{ field string }
+
+func (w whereHelperint8) EQ(x int8) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
+func (w whereHelperint8) NEQ(x int8) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
+func (w whereHelperint8) LT(x int8) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
+func (w whereHelperint8) LTE(x int8) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
+func (w whereHelperint8) GT(x int8) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
+func (w whereHelperint8) GTE(x int8) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
+
+type whereHelpernull_Uint64 struct{ field string }
+
+func (w whereHelpernull_Uint64) EQ(x null.Uint64) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, false, x)
+}
+func (w whereHelpernull_Uint64) NEQ(x null.Uint64) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, true, x)
+}
+func (w whereHelpernull_Uint64) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
+func (w whereHelpernull_Uint64) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
+func (w whereHelpernull_Uint64) LT(x null.Uint64) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpernull_Uint64) LTE(x null.Uint64) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpernull_Uint64) GT(x null.Uint64) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpernull_Uint64) GTE(x null.Uint64) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+
+var ClaimWhere = struct {
+	ID                whereHelperuint64
+	TransactionHashID whereHelpernull_String
+	Vout              whereHelperuint
+	Name              whereHelperstring
+	ClaimID           whereHelperstring
+	ClaimType         whereHelperint8
+	PublisherID       whereHelpernull_String
+	PublisherSig      whereHelpernull_String
+	Certificate       whereHelpernull_String
+	SDHash            whereHelpernull_String
+	TransactionTime   whereHelpernull_Uint64
+	Version           whereHelperstring
+	ValueAsHex        whereHelperstring
+	ValueAsJSON       whereHelpernull_String
+	ValidAtHeight     whereHelperuint
+	Height            whereHelperuint
+	EffectiveAmount   whereHelperuint64
+	Author            whereHelpernull_String
+	Description       whereHelpernull_String
+	ContentType       whereHelpernull_String
+	IsNSFW            whereHelperbool
+	Language          whereHelpernull_String
+	ThumbnailURL      whereHelpernull_String
+	Title             whereHelpernull_String
+	Fee               whereHelperfloat64
+	FeeCurrency       whereHelpernull_String
+	FeeAddress        whereHelperstring
+	IsFiltered        whereHelperbool
+	BidState          whereHelperstring
+	CreatedAt         whereHelpertime_Time
+	ModifiedAt        whereHelpertime_Time
+	ClaimAddress      whereHelperstring
+	IsCertValid       whereHelperbool
+	IsCertProcessed   whereHelperbool
+	License           whereHelpernull_String
+	LicenseURL        whereHelpernull_String
+	Preview           whereHelpernull_String
+}{
+	ID:                whereHelperuint64{field: `id`},
+	TransactionHashID: whereHelpernull_String{field: `transaction_hash_id`},
+	Vout:              whereHelperuint{field: `vout`},
+	Name:              whereHelperstring{field: `name`},
+	ClaimID:           whereHelperstring{field: `claim_id`},
+	ClaimType:         whereHelperint8{field: `claim_type`},
+	PublisherID:       whereHelpernull_String{field: `publisher_id`},
+	PublisherSig:      whereHelpernull_String{field: `publisher_sig`},
+	Certificate:       whereHelpernull_String{field: `certificate`},
+	SDHash:            whereHelpernull_String{field: `sd_hash`},
+	TransactionTime:   whereHelpernull_Uint64{field: `transaction_time`},
+	Version:           whereHelperstring{field: `version`},
+	ValueAsHex:        whereHelperstring{field: `value_as_hex`},
+	ValueAsJSON:       whereHelpernull_String{field: `value_as_json`},
+	ValidAtHeight:     whereHelperuint{field: `valid_at_height`},
+	Height:            whereHelperuint{field: `height`},
+	EffectiveAmount:   whereHelperuint64{field: `effective_amount`},
+	Author:            whereHelpernull_String{field: `author`},
+	Description:       whereHelpernull_String{field: `description`},
+	ContentType:       whereHelpernull_String{field: `content_type`},
+	IsNSFW:            whereHelperbool{field: `is_nsfw`},
+	Language:          whereHelpernull_String{field: `language`},
+	ThumbnailURL:      whereHelpernull_String{field: `thumbnail_url`},
+	Title:             whereHelpernull_String{field: `title`},
+	Fee:               whereHelperfloat64{field: `fee`},
+	FeeCurrency:       whereHelpernull_String{field: `fee_currency`},
+	FeeAddress:        whereHelperstring{field: `fee_address`},
+	IsFiltered:        whereHelperbool{field: `is_filtered`},
+	BidState:          whereHelperstring{field: `bid_state`},
+	CreatedAt:         whereHelpertime_Time{field: `created_at`},
+	ModifiedAt:        whereHelpertime_Time{field: `modified_at`},
+	ClaimAddress:      whereHelperstring{field: `claim_address`},
+	IsCertValid:       whereHelperbool{field: `is_cert_valid`},
+	IsCertProcessed:   whereHelperbool{field: `is_cert_processed`},
+	License:           whereHelpernull_String{field: `license`},
+	LicenseURL:        whereHelpernull_String{field: `license_url`},
+	Preview:           whereHelpernull_String{field: `preview`},
 }
 
 // ClaimRels is where relationship names are stored.
@@ -154,8 +276,8 @@ func (*claimR) NewStruct() *claimR {
 type claimL struct{}
 
 var (
-	claimColumns               = []string{"id", "transaction_hash_id", "vout", "name", "claim_id", "claim_type", "publisher_id", "publisher_sig", "certificate", "sd_hash", "transaction_time", "version", "value_as_hex", "value_as_json", "valid_at_height", "height", "effective_amount", "author", "description", "content_type", "is_nsfw", "language", "thumbnail_url", "title", "fee", "fee_currency", "fee_address", "is_filtered", "bid_state", "created_at", "modified_at", "claim_address", "is_cert_valid", "is_cert_processed"}
-	claimColumnsWithoutDefault = []string{"transaction_hash_id", "vout", "name", "claim_id", "claim_type", "publisher_id", "publisher_sig", "certificate", "sd_hash", "transaction_time", "version", "value_as_hex", "value_as_json", "valid_at_height", "height", "author", "description", "content_type", "language", "thumbnail_url", "title", "fee_currency", "fee_address", "claim_address", "is_cert_valid", "is_cert_processed"}
+	claimColumns               = []string{"id", "transaction_hash_id", "vout", "name", "claim_id", "claim_type", "publisher_id", "publisher_sig", "certificate", "sd_hash", "transaction_time", "version", "value_as_hex", "value_as_json", "valid_at_height", "height", "effective_amount", "author", "description", "content_type", "is_nsfw", "language", "thumbnail_url", "title", "fee", "fee_currency", "fee_address", "is_filtered", "bid_state", "created_at", "modified_at", "claim_address", "is_cert_valid", "is_cert_processed", "license", "license_url", "preview"}
+	claimColumnsWithoutDefault = []string{"transaction_hash_id", "vout", "name", "claim_id", "claim_type", "publisher_id", "publisher_sig", "certificate", "sd_hash", "transaction_time", "version", "value_as_hex", "value_as_json", "valid_at_height", "height", "author", "description", "content_type", "language", "thumbnail_url", "title", "fee_currency", "fee_address", "claim_address", "is_cert_valid", "is_cert_processed", "license", "license_url", "preview"}
 	claimColumnsWithDefault    = []string{"id", "effective_amount", "is_nsfw", "fee", "is_filtered", "bid_state", "created_at", "modified_at"}
 	claimPrimaryKeyColumns     = []string{"id"}
 )
@@ -186,6 +308,9 @@ var (
 var (
 	// Force time package dependency for automated UpdatedAt/CreatedAt.
 	_ = time.Second
+	// Force qmhelper dependency for where clause generation (which doesn't
+	// always happen)
+	_ = qmhelper.Where
 )
 
 // OneG returns a single claim record from the query using the global executor.
@@ -401,6 +526,10 @@ func (claimL) LoadTransactionHash(e boil.Executor, singular bool, maybeClaim int
 			}
 
 		}
+	}
+
+	if len(args) == 0 {
+		return nil
 	}
 
 	query := NewQuery(qm.From(`transaction`), qm.WhereIn(`hash in ?`, args...))

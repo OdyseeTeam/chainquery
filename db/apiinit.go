@@ -63,12 +63,12 @@ func jsonify(rows *sql.Rows) rowSlice {
 		}
 
 		for i, value := range values {
-			switch value.(type) {
+			switch value := value.(type) {
 			case nil:
 				results[columns[i]] = nil
 
 			case []byte:
-				s := string(value.([]byte))
+				s := string(value)
 				x, err := strconv.Atoi(s)
 
 				if err != nil {

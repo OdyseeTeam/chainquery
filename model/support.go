@@ -17,6 +17,7 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/queries/qmhelper"
 	"github.com/volatiletech/sqlboiler/strmangle"
 )
 
@@ -53,6 +54,28 @@ var SupportColumns = struct {
 	Vout:              "vout",
 	CreatedAt:         "created_at",
 	ModifiedAt:        "modified_at",
+}
+
+// Generated where
+
+var SupportWhere = struct {
+	ID                whereHelperuint64
+	SupportedClaimID  whereHelperstring
+	SupportAmount     whereHelperfloat64
+	BidState          whereHelperstring
+	TransactionHashID whereHelpernull_String
+	Vout              whereHelperuint
+	CreatedAt         whereHelpertime_Time
+	ModifiedAt        whereHelpertime_Time
+}{
+	ID:                whereHelperuint64{field: `id`},
+	SupportedClaimID:  whereHelperstring{field: `supported_claim_id`},
+	SupportAmount:     whereHelperfloat64{field: `support_amount`},
+	BidState:          whereHelperstring{field: `bid_state`},
+	TransactionHashID: whereHelpernull_String{field: `transaction_hash_id`},
+	Vout:              whereHelperuint{field: `vout`},
+	CreatedAt:         whereHelpertime_Time{field: `created_at`},
+	ModifiedAt:        whereHelpertime_Time{field: `modified_at`},
 }
 
 // SupportRels is where relationship names are stored.
@@ -108,6 +131,9 @@ var (
 var (
 	// Force time package dependency for automated UpdatedAt/CreatedAt.
 	_ = time.Second
+	// Force qmhelper dependency for where clause generation (which doesn't
+	// always happen)
+	_ = qmhelper.Where
 )
 
 // OneG returns a single support record from the query using the global executor.
@@ -323,6 +349,10 @@ func (supportL) LoadTransactionHash(e boil.Executor, singular bool, maybeSupport
 			}
 
 		}
+	}
+
+	if len(args) == 0 {
+		return nil
 	}
 
 	query := NewQuery(qm.From(`transaction`), qm.WhereIn(`hash in ?`, args...))

@@ -13,9 +13,9 @@ import (
 )
 
 const (
-	appVersion  = 10
-	apiVersion  = 10
-	dataVersion = 10
+	appVersion  = 11
+	apiVersion  = 11
+	dataVersion = 11
 )
 
 // RunUpgradesForVersion - Migrations are for structure of the data. Upgrade Manager scripts are for the data itself.
@@ -48,6 +48,7 @@ func RunUpgradesForVersion() {
 		upgradeFrom7(appStatus.AppVersion)
 		upgradeFrom8(appStatus.AppVersion)
 		upgradeFrom9(appStatus.AppVersion)
+		upgradeFrom10(appStatus.AppVersion)
 		////Increment and save
 		//
 		logrus.Debug("Upgrading app status version to App-", appVersion, " Data-", dataVersion, " Api-", apiVersion)
@@ -170,5 +171,12 @@ func upgradeFrom9(version int) {
 				}
 			}
 		}
+	}
+}
+
+func upgradeFrom10(version int) {
+	if version < 10 {
+		logrus.Info("Re-Processing all claim outputs")
+		reProcessAllClaims()
 	}
 }

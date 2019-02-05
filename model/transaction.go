@@ -17,6 +17,7 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/queries/qmhelper"
 	"github.com/volatiletech/sqlboiler/strmangle"
 )
 
@@ -74,6 +75,42 @@ var TransactionColumns = struct {
 	ModifiedAt:      "modified_at",
 	CreatedTime:     "created_time",
 	Value:           "value",
+}
+
+// Generated where
+
+var TransactionWhere = struct {
+	ID              whereHelperuint64
+	BlockHashID     whereHelpernull_String
+	InputCount      whereHelperuint
+	OutputCount     whereHelperuint
+	Fee             whereHelperfloat64
+	TransactionTime whereHelpernull_Uint64
+	TransactionSize whereHelperuint64
+	Hash            whereHelperstring
+	Version         whereHelperint
+	LockTime        whereHelperuint
+	Raw             whereHelpernull_String
+	CreatedAt       whereHelpertime_Time
+	ModifiedAt      whereHelpertime_Time
+	CreatedTime     whereHelpertime_Time
+	Value           whereHelperfloat64
+}{
+	ID:              whereHelperuint64{field: `id`},
+	BlockHashID:     whereHelpernull_String{field: `block_hash_id`},
+	InputCount:      whereHelperuint{field: `input_count`},
+	OutputCount:     whereHelperuint{field: `output_count`},
+	Fee:             whereHelperfloat64{field: `fee`},
+	TransactionTime: whereHelpernull_Uint64{field: `transaction_time`},
+	TransactionSize: whereHelperuint64{field: `transaction_size`},
+	Hash:            whereHelperstring{field: `hash`},
+	Version:         whereHelperint{field: `version`},
+	LockTime:        whereHelperuint{field: `lock_time`},
+	Raw:             whereHelpernull_String{field: `raw`},
+	CreatedAt:       whereHelpertime_Time{field: `created_at`},
+	ModifiedAt:      whereHelpertime_Time{field: `modified_at`},
+	CreatedTime:     whereHelpertime_Time{field: `created_time`},
+	Value:           whereHelperfloat64{field: `value`},
 }
 
 // TransactionRels is where relationship names are stored.
@@ -144,6 +181,9 @@ var (
 var (
 	// Force time package dependency for automated UpdatedAt/CreatedAt.
 	_ = time.Second
+	// Force qmhelper dependency for where clause generation (which doesn't
+	// always happen)
+	_ = qmhelper.Where
 )
 
 // OneG returns a single transaction record from the query using the global executor.
@@ -466,6 +506,10 @@ func (transactionL) LoadBlockHash(e boil.Executor, singular bool, maybeTransacti
 		}
 	}
 
+	if len(args) == 0 {
+		return nil
+	}
+
 	query := NewQuery(qm.From(`block`), qm.WhereIn(`hash in ?`, args...))
 	if mods != nil {
 		mods.Apply(query)
@@ -553,6 +597,10 @@ func (transactionL) LoadTransactionHashClaims(e boil.Executor, singular bool, ma
 		}
 	}
 
+	if len(args) == 0 {
+		return nil
+	}
+
 	query := NewQuery(qm.From(`claim`), qm.WhereIn(`transaction_hash_id in ?`, args...))
 	if mods != nil {
 		mods.Apply(query)
@@ -635,6 +683,10 @@ func (transactionL) LoadInputs(e boil.Executor, singular bool, maybeTransaction 
 
 			args = append(args, obj.ID)
 		}
+	}
+
+	if len(args) == 0 {
+		return nil
 	}
 
 	query := NewQuery(qm.From(`input`), qm.WhereIn(`transaction_id in ?`, args...))
@@ -721,6 +773,10 @@ func (transactionL) LoadOutputs(e boil.Executor, singular bool, maybeTransaction
 		}
 	}
 
+	if len(args) == 0 {
+		return nil
+	}
+
 	query := NewQuery(qm.From(`output`), qm.WhereIn(`transaction_id in ?`, args...))
 	if mods != nil {
 		mods.Apply(query)
@@ -805,6 +861,10 @@ func (transactionL) LoadTransactionHashSupports(e boil.Executor, singular bool, 
 		}
 	}
 
+	if len(args) == 0 {
+		return nil
+	}
+
 	query := NewQuery(qm.From(`support`), qm.WhereIn(`transaction_hash_id in ?`, args...))
 	if mods != nil {
 		mods.Apply(query)
@@ -887,6 +947,10 @@ func (transactionL) LoadTransactionAddresses(e boil.Executor, singular bool, may
 
 			args = append(args, obj.ID)
 		}
+	}
+
+	if len(args) == 0 {
+		return nil
 	}
 
 	query := NewQuery(qm.From(`transaction_address`), qm.WhereIn(`transaction_id in ?`, args...))

@@ -17,6 +17,7 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/queries/qmhelper"
 	"github.com/volatiletech/sqlboiler/strmangle"
 )
 
@@ -41,6 +42,20 @@ var JobStatusColumns = struct {
 	LastSync:     "last_sync",
 	IsSuccess:    "is_success",
 	ErrorMessage: "error_message",
+}
+
+// Generated where
+
+var JobStatusWhere = struct {
+	JobName      whereHelperstring
+	LastSync     whereHelpertime_Time
+	IsSuccess    whereHelperbool
+	ErrorMessage whereHelpernull_String
+}{
+	JobName:      whereHelperstring{field: `job_name`},
+	LastSync:     whereHelpertime_Time{field: `last_sync`},
+	IsSuccess:    whereHelperbool{field: `is_success`},
+	ErrorMessage: whereHelpernull_String{field: `error_message`},
 }
 
 // JobStatusRels is where relationship names are stored.
@@ -92,6 +107,9 @@ var (
 var (
 	// Force time package dependency for automated UpdatedAt/CreatedAt.
 	_ = time.Second
+	// Force qmhelper dependency for where clause generation (which doesn't
+	// always happen)
+	_ = qmhelper.Where
 )
 
 // OneG returns a single jobStatus record from the query using the global executor.
