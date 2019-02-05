@@ -52,12 +52,14 @@ before_script:
   - GO_FILES=$(find . -iname '*.go' -type f | grep -v /vendor/ | grep -v /model/ | grep -v /swagger/ | grep -v /migration/)
   - go get golang.org/x/tools/cmd/goimports                     # Used in build script for generated files
   - go get golang.org/x/lint/golint                             # Linter
-  - go get honnef.co/go/tools/cmd/megacheck                     # Badass static analyzer/linter
+  - go get honnef.co/go/tools/cmd/staticcheck                     # Badass static analyzer/linter
   - go get github.com/jgautheron/gocyclo                        # Check against high complexity
   - go get github.com/mdempsky/unconvert                        # Identifies unnecessary type conversions
   - go get github.com/kisielk/errcheck                          # Checks for unhandled errors
   - go get github.com/opennota/check/cmd/varcheck               # Checks for unused vars
   - go get github.com/opennota/check/cmd/structcheck            # Checks for unused fields in structs
+  - go get github.com/jgautheron/goconst/cmd/goconst            # Checks for strings that should be constants
+
 
 
 
@@ -76,12 +78,13 @@ script:
   - structcheck ./...
   # go vet is the official Go static analyzer
   - go vet ./...
-  # forbid code with huge functions
+  -  goconst $(go list ./... | grep -v /vendor/ | grep -v /model | grep -v /swagger/ | grep -v /migration )
+# forbid code with huge functions
   - gocyclo -ignore "_test" -avg -over 19 $GO_FILES
   # checks for unhandled errors
   - errcheck $(go list ./... | grep -v /vendor/ | grep -v /model | grep -v /swagger/ | grep -v /migration )
   # "go vet on steroids" + linter - ignore autogen code
-  - megacheck -simple.exit-non-zero=true $(go list ./... | grep -v /vendor/ | grep -v /model | grep -v /swagger/ | grep -v /migration )
+  - staticcheck $(go list ./... | grep -v /vendor/ | grep -v /model | grep -v /swagger/ | grep -v /migration )
   # check for unnecessary conversions - ignore autogen code
   - unconvert -v $(go list ./... | grep -v /vendor/ | grep -v /model | grep -v /swagger/ | grep -v /migration )
   # one last linter - ignore autogen code
