@@ -49,6 +49,7 @@ func RunUpgradesForVersion() {
 		upgradeFrom8(appStatus.AppVersion)
 		upgradeFrom9(appStatus.AppVersion)
 		upgradeFrom10(appStatus.AppVersion)
+		upgradeFrom11(appStatus.AppVersion)
 		////Increment and save
 		//
 		logrus.Debug("Upgrading app status version to App-", appVersion, " Data-", dataVersion, " Api-", apiVersion)
@@ -184,6 +185,6 @@ func upgradeFrom10(version int) {
 func upgradeFrom11(version int) {
 	if version < 12 {
 		logrus.Info("Re-Processing all claim outputs")
-		reProcessAllClaims()
+		go reProcessAllClaims()
 	}
 }
