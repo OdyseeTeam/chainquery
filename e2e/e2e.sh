@@ -12,7 +12,7 @@ cd test
 echo 'lbrycrdurl="rpc://lbry:lbry@localhost:11337"' > chainqueryconfig.toml
 echo 'mysqldsn="lbry:lbry@tcp(localhost:3306)/chainquery_e2e_test"' >> chainqueryconfig.toml
 docker pull tiger5226/regtest
-curl https://raw.githubusercontent.com/lbryio/lbry-docker/regtest/lbrycrd/regtest/docker-compose.yml > docker-compose.yml
+curl https://raw.githubusercontent.com/lbryio/lbry-docker/master/lbrycrd/regtest/docker-compose.yml > docker-compose.yml
 docker-compose up -d lbrycrd
 docker ps
 sleep 2
