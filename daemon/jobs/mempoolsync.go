@@ -7,8 +7,11 @@ import (
 	"github.com/lbryio/chainquery/daemon/processing"
 	"github.com/lbryio/chainquery/lbrycrd"
 	"github.com/lbryio/chainquery/model"
+
 	"github.com/lbryio/lbry.go/errors"
+
 	"github.com/sirupsen/logrus"
+	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
@@ -26,6 +29,11 @@ var mempoolBlock *model.Block
 func MempoolSync() {
 	if !mempoolSyncIsRunning {
 		mempoolSyncIsRunning = true
+		// Need to lock block processing to avoid race condition where we are saving a mempool transaction after a block
+		// has already started processing transactions. The mempool transaction could overwrite the block transaction
+		// incorrectly.
+		processing.BlockLock.Lock()
+		defer processing.BlockLock.Unlock()
 		logrus.Debug("Mempool Sync Started")
 		if mempoolBlock == nil {
 			var err error
@@ -44,6 +52,15 @@ func MempoolSync() {
 		if err != nil {
 			logrus.Error("MempoolSync:", err)
 		}
+		currTxs, err := model.Transactions(model.TransactionWhere.BlockHashID.EQ(null.StringFrom("MEMPOOL"))).AllG()
+		if err != nil {
+			logrus.Error("MempoolSync:", err)
+		}
+		currTxMap := make(map[string]*model.Transaction)
+		for _, tx := range currTxs {
+			currTxMap[tx.Hash] = tx
+		}
+
 		for txid, txDetails := range txSet {
 			//Are we at the top of the chain?
 			shouldProcessMempoolTransaction := lastBlock.Height+1 >= uint64(txDetails.Height)
@@ -53,11 +70,13 @@ func MempoolSync() {
 					if err != nil {
 						logrus.Error("MempoolSync:", err)
 					}
+					delete(currTxMap, dependentTxID)
 				}
 				err := processMempoolTx(txid, *mempoolBlock)
 				if err != nil {
 					logrus.Error("MempoolSync:", err)
 				}
+				delete(currTxMap, txid)
 			} else {
 				go func() {
 					logrus.Info("Daemon is not caught up to mempool transactions, delaying mempool sync 1 minute...")
@@ -65,6 +84,12 @@ func MempoolSync() {
 					mempoolSyncIsRunning = false
 				}()
 				return
+			}
+		}
+		for _, tx := range currTxMap {
+			err := tx.DeleteG()
+			if err != nil {
+				logrus.Error("MempoolSync:", err)
 			}
 		}
 		mempoolSyncIsRunning = false
@@ -104,11 +129,6 @@ func getMempoolBlock() (*model.Block, error) {
 }
 
 func processMempoolTx(txid string, block model.Block) error {
-	// Need to lock block processing to avoid race condition where we are saving a mempool transaction after a block
-	// has already started processing transactions. The mempool transaction could overwrite the block transaction
-	// incorrectly.
-	processing.BlockLock.Lock()
-	defer processing.BlockLock.Unlock()
 	exists, err := model.Transactions(qm.Where(model.TransactionColumns.Hash+"=?", txid)).ExistsG()
 	if err != nil {
 		return errors.Err(err)
