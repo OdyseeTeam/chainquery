@@ -12,6 +12,7 @@
 // migration/009_certificate_validation.sql
 // migration/010_triggers.sql
 // migration/011_add_license.sql
+// migration/012_store_last_height.sql
 // DO NOT EDIT!
 
 package migration
@@ -319,6 +320,26 @@ func migration011_add_licenseSql() (*asset, error) {
 	return a, nil
 }
 
+var _migration012_store_last_heightSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xd2\xd5\x55\xd0\xce\xcd\x4c\x2f\x4a\x2c\x49\x55\x08\x2d\xe0\xe2\x42\xe6\x07\x97\x24\x96\xa4\xe6\xa6\xe6\x95\x38\xa5\xa6\x67\xe6\x71\x39\xfa\x84\xb8\x06\x29\x84\x38\x3a\xf9\xb8\x2a\x64\xe5\x27\xc5\x17\x97\x24\x96\x94\x16\x2b\x38\xba\xb8\x28\x38\xfb\xfb\x84\xfa\xfa\x29\x80\x44\x52\x15\xbc\x82\xfd\xfd\xac\xb1\x1b\xe4\x9a\x97\x02\x08\x00\x00\xff\xff\x00\xee\x2c\xf4\x71\x00\x00\x00")
+
+func migration012_store_last_heightSqlBytes() ([]byte, error) {
+	return bindataRead(
+		_migration012_store_last_heightSql,
+		"migration/012_store_last_height.sql",
+	)
+}
+
+func migration012_store_last_heightSql() (*asset, error) {
+	bytes, err := migration012_store_last_heightSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "migration/012_store_last_height.sql", size: 113, mode: os.FileMode(420), modTime: time.Unix(1550188374, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -383,6 +404,7 @@ var _bindata = map[string]func() (*asset, error){
 	"migration/009_certificate_validation.sql": migration009_certificate_validationSql,
 	"migration/010_triggers.sql":               migration010_triggersSql,
 	"migration/011_add_license.sql":            migration011_add_licenseSql,
+	"migration/012_store_last_height.sql":      migration012_store_last_heightSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -439,6 +461,7 @@ var _bintree = &bintree{nil, map[string]*bintree{
 		"009_certificate_validation.sql": &bintree{migration009_certificate_validationSql, map[string]*bintree{}},
 		"010_triggers.sql":               &bintree{migration010_triggersSql, map[string]*bintree{}},
 		"011_add_license.sql":            &bintree{migration011_add_licenseSql, map[string]*bintree{}},
+		"012_store_last_height.sql":      &bintree{migration012_store_last_heightSql, map[string]*bintree{}},
 	}},
 }}
 

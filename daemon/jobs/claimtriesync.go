@@ -1,6 +1,7 @@
 package jobs
 
 import (
+	"encoding/json"
 	"runtime"
 	"strconv"
 	"sync"
@@ -17,6 +18,7 @@ import (
 )
 
 const claimTrieSyncJob = "claimtriesyncjob"
+const debugClaimTrieSync = true
 
 var expirationHardForkHeight uint = 400155    // https://github.com/lbryio/lbrycrd/pull/137
 var hardForkBlocksToExpiration uint = 2102400 // https://github.com/lbryio/lbrycrd/pull/137
@@ -24,6 +26,14 @@ var blockHeight uint64
 var blocksToExpiration uint = 262974 //Hardcoded! https://lbry.io/faq/claimtrie-implementation
 // ClaimTrieSyncRunning is a variable used to show whether or not the job is running already.
 var claimTrieSyncRunning = false
+
+var lastSync *claimTrieSyncStatus
+
+type claimTrieSyncStatus struct {
+	JobStatus        *model.JobStatus `json:omit`
+	PreviousSyncTime time.Time        `json:"previous_sync"`
+	LastHeight       int64            `json:"last_height"`
+}
 
 // ClaimTrieSync synchronizes claimtrie information that is calculated and enforced by lbrycrd.
 func ClaimTrieSync() {
@@ -36,12 +46,15 @@ func ClaimTrieSync() {
 
 func claimTrieSync() {
 	//defer util.TimeTrack(time.Now(), "ClaimTrieSync", "always")
-	logrus.Debug("ClaimTrieSync: started... ")
+	printDebug("ClaimTrieSync: started... ")
+	if lastSync == nil {
+		lastSync = &claimTrieSyncStatus{}
+	}
 	jobStatus, err := getClaimTrieSyncJobStatus()
 	if err != nil {
 		logrus.Error(err)
 	}
-
+	printDebug("ClaimTrieSync: updating spent claims")
 	//For Updating claims that are spent ( no longer in claimtrie )
 	if err := updateSpentClaims(); err != nil {
 		logrus.Error("ClaimTrieSync:", err)
@@ -49,15 +62,7 @@ func claimTrieSync() {
 	}
 
 	started := time.Now()
-
-	updatedClaims, err := getUpdatedClaims(jobStatus)
-	if err != nil {
-		logrus.Error("ClaimTrieSync:", err)
-		saveJobError(jobStatus, err)
-		panic(err)
-	}
-	logrus.Debug("ClaimTrieSync: Claims to update " + strconv.Itoa(len(updatedClaims)))
-
+	printDebug("ClaimTrieSync: getting block height")
 	//Get blockheight for calculating expired status
 	count, err := lbrycrd.GetBlockCount()
 	if err != nil {
@@ -65,6 +70,18 @@ func claimTrieSync() {
 		return
 	}
 	blockHeight = *count
+
+	lastSync.PreviousSyncTime = jobStatus.LastSync
+	lastSync.LastHeight = int64(blockHeight)
+
+	printDebug("ClaimTrieSync: getting updated claims...")
+	updatedClaims, err := getUpdatedClaims(jobStatus)
+	if err != nil {
+		logrus.Error("ClaimTrieSync:", err)
+		saveJobError(jobStatus, err)
+		panic(err)
+	}
+	printDebug("ClaimTrieSync: Claims to update " + strconv.Itoa(len(updatedClaims)))
 
 	//For syncing the claims
 	if err := syncClaims(updatedClaims); err != nil {
@@ -80,10 +97,15 @@ func claimTrieSync() {
 
 	jobStatus.LastSync = started
 	jobStatus.IsSuccess = true
+	bytes, err := json.Marshal(&lastSync)
+	if err != nil {
+		logrus.Error(err)
+	}
+	jobStatus.State.SetValid(bytes)
 	if err := jobStatus.UpdateG(boil.Infer()); err != nil {
 		logrus.Panic(err)
 	}
-	logrus.Debug("ClaimTrieSync: Processed " + strconv.Itoa(len(updatedClaims)) + " claims.")
+	printDebug("ClaimTrieSync: Processed " + strconv.Itoa(len(updatedClaims)) + " claims.")
 	claimTrieSyncRunning = false
 }
 
@@ -118,16 +140,22 @@ func controllingProcessor(names <-chan string, wg *sync.WaitGroup) {
 }
 
 func setControllingClaimForNames(claims model.ClaimSlice) error {
-	logrus.Debug("ClaimTrieSync: controlling claim status update started... ")
+	printDebug("ClaimTrieSync: controlling claim status update started... ")
 	controlwg := sync.WaitGroup{}
+	names := make(map[string]string)
+	printDebug("ClaimTrieSync: Making name map...")
+	for _, claim := range claims {
+		names[claim.Name] = claim.Name
+	}
+	printDebug("ClaimTrieSync: Finished making name map...")
 	setControllingQueue := make(chan string, 100)
 	initControllingWorkers(runtime.NumCPU()-1, setControllingQueue, &controlwg)
-	for _, claim := range claims {
-		setControllingQueue <- claim.Name
+	for _, name := range names {
+		setControllingQueue <- name
 	}
 	close(setControllingQueue)
 	controlwg.Wait()
-	logrus.Debug("ClaimTrieSync: controlling claim status update complete... ")
+	printDebug("ClaimTrieSync: controlling claim status update complete... ")
 
 	return nil
 }
@@ -165,13 +193,13 @@ func setBidStateOfClaimsForName(name string) {
 
 func syncClaims(claims model.ClaimSlice) error {
 
-	logrus.Debug("ClaimTrieSync: claim  update started... ")
+	printDebug("ClaimTrieSync: claim  update started... ")
 	syncwg := sync.WaitGroup{}
 	processingQueue := make(chan lbrycrd.Claim, 100)
 	initSyncWorkers(runtime.NumCPU()-1, processingQueue, &syncwg)
 	for i, claim := range claims {
 		if i%1000 == 0 {
-			logrus.Debug("ClaimTrieSync: syncing ", i, " of ", len(claims), " queued - ", len(processingQueue))
+			printDebug("ClaimTrieSync: syncing ", i, " of ", len(claims), " queued - ", len(processingQueue))
 		}
 		claims, err := lbrycrd.GetClaimsForName(claim.Name)
 		if err != nil {
@@ -184,7 +212,7 @@ func syncClaims(claims model.ClaimSlice) error {
 	close(processingQueue)
 	syncwg.Wait()
 
-	logrus.Debug("ClaimTrieSync: claim  update complete... ")
+	printDebug("ClaimTrieSync: claim  update complete... ")
 
 	return nil
 }
@@ -195,7 +223,7 @@ func syncClaim(claimJSON *lbrycrd.Claim) {
 	if claim == nil {
 		unknown, _ := model.AbnormalClaims(qm.Where(model.AbnormalClaimColumns.ClaimID+"=?", claimJSON.ClaimID)).OneG()
 		if unknown == nil {
-			logrus.Debug("ClaimTrieSync: Missing Claim ", claimJSON.ClaimID, " ", claimJSON.TxID, " ", claimJSON.N)
+			printDebug("ClaimTrieSync: Missing Claim ", claimJSON.ClaimID, " ", claimJSON.TxID, " ", claimJSON.N)
 		}
 		return
 	}
@@ -210,7 +238,7 @@ func syncClaim(claimJSON *lbrycrd.Claim) {
 	if hasChanges {
 		if err := datastore.PutClaim(claim); err != nil {
 			logrus.Error("ClaimTrieSync: unable to sync claim ", claim.ClaimID, ". JSON-", claimJSON)
-			logrus.Debug("Error: ", err)
+			printDebug("Error: ", err)
 		}
 	}
 }
@@ -272,6 +300,7 @@ func getUpdatedClaims(jobStatus *model.JobStatus) (model.ClaimSlice, error) {
 	supportedIDCol := model.TableNames.Support + "." + model.SupportColumns.SupportedClaimID
 	supportModifiedCol := model.TableNames.Support + "." + model.SupportColumns.ModifiedAt
 	claimModifiedCol := model.TableNames.Claim + "." + model.ClaimColumns.ModifiedAt
+	claimValidAtHeight := model.TableNames.Claim + "." + model.ClaimColumns.ValidAtHeight
 	sqlFormat := "2006-01-02 15:04:05"
 	lastsync := jobStatus.LastSync.Format(sqlFormat)
 	lastSyncStr := "'" + lastsync + "'"
@@ -285,12 +314,14 @@ func getUpdatedClaims(jobStatus *model.JobStatus) (model.ClaimSlice, error) {
 			FROM ` + model.TableNames.Claim + ` 
 			LEFT JOIN ` + model.TableNames.Support + ` 
 				ON ( ` + supportedIDCol + ` = ` + claimIDCol + ` AND ` + supportModifiedCol + ` >= ` + lastSyncStr + ` )
-			WHERE ` + claimModifiedCol + ` >= ` + lastSyncStr + ` OR ` + supportedIDCol + ` IS NOT NULL
+			WHERE ` + claimModifiedCol + ` >= ` + lastSyncStr + ` 
+			OR ` + supportedIDCol + ` IS NOT NULL 
+			OR ` + claimValidAtHeight + ` >= ? 
 			GROUP BY  ` + claimNameCol + `
 		)
 `
-	logrus.Debug("Query: ", query)
-	return model.Claims(qm.SQL(query)).AllG()
+	printDebug(query)
+	return model.Claims(qm.SQL(query, lastSync.LastHeight)).AllG()
 
 }
 
@@ -307,18 +338,21 @@ func getSpentClaimsToUpdate() (model.ClaimSlice, error) {
 	output := model.TableNames.Output
 	outputTxHash := output + "." + model.OutputColumns.TransactionHash
 	outputVout := output + "." + model.OutputColumns.Vout
+	outputClaimId := output + "." + model.OutputColumns.ClaimID
 	outputIsSpent := output + "." + model.OutputColumns.IsSpent
+	outputModifiedAt := output + "." + model.OutputColumns.ModifiedAt
 
-	clause := qm.SQL(`
-		SELECT `+claimClaimID+`,`+claimID+` 
-		FROM `+claim+` 
-		INNER JOIN `+output+` 
-			ON `+outputTxHash+` = `+claimTxByHash+` 
-				AND `+outputVout+` = `+claimVout+` 
-				AND `+outputIsSpent+` = ? 
-		WHERE `+claimBidState+` != ? `, 1, "Spent")
-
-	return model.Claims(clause).AllG()
+	query := `
+		SELECT ` + claimClaimID + `,` + claimID + ` 
+		FROM ` + output + `
+		INNER JOIN ` + claim + ` ON ` + claimID + ` = ` + outputClaimId + ` 
+			AND ` + claimTxByHash + ` = ` + outputTxHash + ` 
+			AND ` + claimVout + ` = ` + outputVout + `
+		WHERE ` + outputModifiedAt + ` > ? 
+		AND ` + outputIsSpent + ` = ? 
+		AND ` + claimBidState + ` != ?`
+	printDebug(query)
+	return model.Claims(qm.SQL(query, lastSync.PreviousSyncTime, 1, "Spent")).AllG()
 }
 
 func updateSpentClaims() error {
@@ -337,12 +371,20 @@ func updateSpentClaims() error {
 }
 
 func getClaimTrieSyncJobStatus() (*model.JobStatus, error) {
-	jobStatus, _ := model.FindJobStatusG(claimTrieSyncJob)
+	jobStatus, err := model.FindJobStatusG(claimTrieSyncJob)
+	if err != nil {
+		return nil, errors.Err(err)
+	}
 	if jobStatus == nil {
 		jobStatus = &model.JobStatus{JobName: claimTrieSyncJob, LastSync: time.Time{}}
 		if err := jobStatus.InsertG(boil.Infer()); err != nil {
 			logrus.Panic("Cannot Retrieve/Create JobStatus for " + claimTrieSyncJob)
 		}
+	}
+
+	err = json.Unmarshal(jobStatus.State.JSON, lastSync)
+	if err != nil {
+		return nil, errors.Err(err)
 	}
 
 	return jobStatus, nil
@@ -353,5 +395,13 @@ func saveJobError(jobStatus *model.JobStatus, error error) {
 	jobStatus.IsSuccess = false
 	if err := jobStatus.UpsertG(boil.Infer(), boil.Infer()); err != nil {
 		logrus.Error(errors.Prefix("Saving Job Error Message "+error.Error(), err))
+	}
+}
+
+func printDebug(args ...interface{}) {
+	if debugClaimTrieSync {
+		logrus.Info(args...)
+	} else {
+		logrus.Debug(args...)
 	}
 }

@@ -13,9 +13,9 @@ import (
 )
 
 const (
-	appVersion  = 12
-	apiVersion  = 12
-	dataVersion = 12
+	appVersion  = 13
+	apiVersion  = 13
+	dataVersion = 13
 )
 
 // RunUpgradesForVersion - Migrations are for structure of the data. Upgrade Manager scripts are for the data itself.
@@ -50,6 +50,7 @@ func RunUpgradesForVersion() {
 		upgradeFrom9(appStatus.AppVersion)
 		upgradeFrom10(appStatus.AppVersion)
 		upgradeFrom11(appStatus.AppVersion)
+		upgradeFrom12(appStatus.AppVersion)
 		////Increment and save
 		//
 		logrus.Debug("Upgrading app status version to App-", appVersion, " Data-", dataVersion, " Api-", apiVersion)
@@ -186,5 +187,22 @@ func upgradeFrom11(version int) {
 	if version < 12 {
 		logrus.Info("Re-Processing all claim outputs")
 		go reProcessAllClaims()
+	}
+}
+
+func upgradeFrom12(version int) {
+	if version < 13 {
+		jobStatus := model.TableNames.JobStatus
+		state := model.JobStatusColumns.State
+		jobName := model.JobStatusColumns.JobName
+		startingJSON := `{\"JobStatus\": null, \"previous_sync\": \"2019-02-13T16:35:14Z\", \"last_height\": 530000}`
+		_, err := boil.GetDB().Exec(`
+			UPDATE `+jobStatus+` 
+			SET `+state+`= '`+startingJSON+`' 
+			WHERE `+jobName+`= ?
+		`, "claimtriesyncjob")
+		if err != nil {
+			logrus.Error("Upgrading to version 13:", err)
+		}
 	}
 }
