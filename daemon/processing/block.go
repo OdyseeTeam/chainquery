@@ -185,7 +185,7 @@ func q(a string) {
 	}
 }
 
-const maxFailures = 1000
+var MaxFailures int
 
 func handleTxResults(nrToHandle int, manager *txSyncManager) {
 	defer manager.syncStopper.Done()
@@ -200,7 +200,7 @@ func handleTxResults(nrToHandle int, manager *txSyncManager) {
 		case txResult := <-manager.resultsCh:
 			q("HANDLE: start handling new result.." + txResult.tx.Txid)
 			leftToProcess--
-			if txResult.failcount > maxFailures {
+			if txResult.failcount > MaxFailures {
 				handleFailure(txResult, manager)
 				continue
 			}
@@ -286,7 +286,7 @@ func handleFailure(txResult txProcessResult, manager *txSyncManager) {
 	q("HANDLE: stopping workers...")
 	manager.workerStopper.Stop()
 	q("HANDLE: stopped workers...")
-	manager.errorsCh <- errors.Prefix("transaction "+txResult.tx.Txid+" failed more than "+strconv.Itoa(maxFailures)+" times!", txResult.err)
+	manager.errorsCh <- errors.Prefix("transaction "+txResult.tx.Txid+" failed more than "+strconv.Itoa(MaxFailures)+" times!", txResult.err)
 	q("HANDLE: finish passing error.." + txResult.tx.Txid)
 }
 

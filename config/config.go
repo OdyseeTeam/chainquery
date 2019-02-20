@@ -6,6 +6,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/lbryio/chainquery/daemon/processing"
+
 	"github.com/lbryio/chainquery/auth"
 	"github.com/lbryio/chainquery/daemon"
 	"github.com/lbryio/chainquery/global"
@@ -47,6 +49,7 @@ const ( // config setting keys
 	smsrecipients        = "smsrecipients"
 	smsfromphonenumber   = "smsfromphonenumber"
 	apikeys              = "apikeys"
+	maxfailures          = "maxfailures"
 )
 
 const (
@@ -134,6 +137,7 @@ func initDefaults() {
 	viper.SetDefault(slackloglevel, 0)
 	viper.SetDefault(smsrecipients, []string{})
 	viper.SetDefault(smsfromphonenumber, "")
+	viper.SetDefault(maxfailures, 1000)
 }
 
 func processConfiguration() {
@@ -161,6 +165,7 @@ func processConfiguration() {
 	daemon.ApplySettings(settings)
 	lbrycrd.LBRYcrdURL = GetLBRYcrdURL()
 	auth.APIKeys = viper.GetStringSlice(apikeys)
+	processing.MaxFailures = viper.GetInt(maxfailures)
 
 }
 

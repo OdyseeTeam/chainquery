@@ -86,3 +86,9 @@
 #API Keys - Disallowed by default unless keys are entered.
 #DEFAULT: []
 #apikeys=
+
+#Max Failures - Specifies the  number of failures that can happen in processing a transaction. This is for parallel
+#transaction processing which puts a transaction to the back of the processing queue if it fails. It can fail say if its
+#source output to spend is not already processed.
+#DEFAULT: 1000
+#maxfailures=
