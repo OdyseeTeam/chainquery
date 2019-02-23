@@ -185,6 +185,11 @@ func q(a string) {
 	}
 }
 
+// MaxFailures tells Chainquery how many failures a transaction can have before we rollback the block and try to process it
+// it again. This is to stop an indefinite loop. Since transactions can be dependant on one another they can fail if not
+// processed in the right order. We allow parallel processing by putting transactions into a queue, and if they fail to
+// process, for example if its dependant transaction has not been processed yet, then we allow to go back into the queue
+// x times ( MaxFailures ).
 var MaxFailures int
 
 func handleTxResults(nrToHandle int, manager *txSyncManager) {
