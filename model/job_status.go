@@ -27,6 +27,7 @@ type JobStatus struct {
 	LastSync     time.Time   `boil:"last_sync" json:"last_sync" toml:"last_sync" yaml:"last_sync"`
 	IsSuccess    bool        `boil:"is_success" json:"is_success" toml:"is_success" yaml:"is_success"`
 	ErrorMessage null.String `boil:"error_message" json:"error_message,omitempty" toml:"error_message" yaml:"error_message,omitempty"`
+	State        null.JSON   `boil:"state" json:"state,omitempty" toml:"state" yaml:"state,omitempty"`
 
 	R *jobStatusR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L jobStatusL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -37,25 +38,52 @@ var JobStatusColumns = struct {
 	LastSync     string
 	IsSuccess    string
 	ErrorMessage string
+	State        string
 }{
 	JobName:      "job_name",
 	LastSync:     "last_sync",
 	IsSuccess:    "is_success",
 	ErrorMessage: "error_message",
+	State:        "state",
 }
 
 // Generated where
+
+type whereHelpernull_JSON struct{ field string }
+
+func (w whereHelpernull_JSON) EQ(x null.JSON) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, false, x)
+}
+func (w whereHelpernull_JSON) NEQ(x null.JSON) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, true, x)
+}
+func (w whereHelpernull_JSON) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
+func (w whereHelpernull_JSON) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
+func (w whereHelpernull_JSON) LT(x null.JSON) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpernull_JSON) LTE(x null.JSON) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpernull_JSON) GT(x null.JSON) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpernull_JSON) GTE(x null.JSON) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
 
 var JobStatusWhere = struct {
 	JobName      whereHelperstring
 	LastSync     whereHelpertime_Time
 	IsSuccess    whereHelperbool
 	ErrorMessage whereHelpernull_String
+	State        whereHelpernull_JSON
 }{
 	JobName:      whereHelperstring{field: `job_name`},
 	LastSync:     whereHelpertime_Time{field: `last_sync`},
 	IsSuccess:    whereHelperbool{field: `is_success`},
 	ErrorMessage: whereHelpernull_String{field: `error_message`},
+	State:        whereHelpernull_JSON{field: `state`},
 }
 
 // JobStatusRels is where relationship names are stored.
@@ -75,8 +103,8 @@ func (*jobStatusR) NewStruct() *jobStatusR {
 type jobStatusL struct{}
 
 var (
-	jobStatusColumns               = []string{"job_name", "last_sync", "is_success", "error_message"}
-	jobStatusColumnsWithoutDefault = []string{"job_name", "error_message"}
+	jobStatusColumns               = []string{"job_name", "last_sync", "is_success", "error_message", "state"}
+	jobStatusColumnsWithoutDefault = []string{"job_name", "error_message", "state"}
 	jobStatusColumnsWithDefault    = []string{"last_sync", "is_success"}
 	jobStatusPrimaryKeyColumns     = []string{"job_name"}
 )
