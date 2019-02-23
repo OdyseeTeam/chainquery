@@ -30,7 +30,7 @@ var claimTrieSyncRunning = false
 var lastSync *claimTrieSyncStatus
 
 type claimTrieSyncStatus struct {
-	JobStatus        *model.JobStatus `json:omit`
+	JobStatus        *model.JobStatus `json:"-"`
 	PreviousSyncTime time.Time        `json:"previous_sync"`
 	LastHeight       int64            `json:"last_height"`
 }
@@ -338,14 +338,14 @@ func getSpentClaimsToUpdate() (model.ClaimSlice, error) {
 	output := model.TableNames.Output
 	outputTxHash := output + "." + model.OutputColumns.TransactionHash
 	outputVout := output + "." + model.OutputColumns.Vout
-	outputClaimId := output + "." + model.OutputColumns.ClaimID
+	outputClaimID := output + "." + model.OutputColumns.ClaimID
 	outputIsSpent := output + "." + model.OutputColumns.IsSpent
 	outputModifiedAt := output + "." + model.OutputColumns.ModifiedAt
 
 	query := `
 		SELECT ` + claimClaimID + `,` + claimID + ` 
 		FROM ` + output + `
-		INNER JOIN ` + claim + ` ON ` + claimID + ` = ` + outputClaimId + ` 
+		INNER JOIN ` + claim + ` ON ` + claimID + ` = ` + outputClaimID + ` 
 			AND ` + claimTxByHash + ` = ` + outputTxHash + ` 
 			AND ` + claimVout + ` = ` + outputVout + `
 		WHERE ` + outputModifiedAt + ` > ? 

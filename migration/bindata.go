@@ -335,7 +335,7 @@ func migration012_store_last_heightSql() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "migration/012_store_last_height.sql", size: 113, mode: os.FileMode(420), modTime: time.Unix(1550188374, 0)}
+	info := bindataFileInfo{name: "migration/012_store_last_height.sql", size: 113, mode: os.FileMode(420), modTime: time.Unix(1550937422, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
