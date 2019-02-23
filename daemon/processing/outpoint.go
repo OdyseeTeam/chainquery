@@ -185,7 +185,7 @@ func processVout(jsonVout *lbrycrd.Vout, tx *m.Transaction, txDC *txDebitCredits
 			return err
 		}
 		address = ds.GetAddress(jsonAddress)
-
+		vout.AddressList.SetValid(`["` + jsonAddress + `"]`)
 	}
 	if err != nil {
 		logrus.Error("Could not marshall address list of Vout")
