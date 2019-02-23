@@ -56,43 +56,13 @@ func MempoolSync() {
 		if err != nil {
 			logrus.Error("MempoolSync:", err)
 		}
-		currTxMap := make(map[string]*model.Transaction)
-		for _, tx := range currTxs {
-			currTxMap[tx.Hash] = tx
+
+		running, err := processTxSet(txSet, lastBlock, currTxs)
+		if err != nil {
+			logrus.Error("MempoolSync:", err)
 		}
 
-		for txid, txDetails := range txSet {
-			//Are we at the top of the chain?
-			shouldProcessMempoolTransaction := lastBlock.Height+1 >= uint64(txDetails.Height)
-			if shouldProcessMempoolTransaction {
-				for _, dependentTxID := range txDetails.Depends {
-					err := processMempoolTx(dependentTxID, *mempoolBlock)
-					if err != nil {
-						logrus.Error("MempoolSync:", err)
-					}
-					delete(currTxMap, dependentTxID)
-				}
-				err := processMempoolTx(txid, *mempoolBlock)
-				if err != nil {
-					logrus.Error("MempoolSync:", err)
-				}
-				delete(currTxMap, txid)
-			} else {
-				go func() {
-					logrus.Info("Daemon is not caught up to mempool transactions, delaying mempool sync 1 minute...")
-					time.Sleep(1 * time.Minute)
-					mempoolSyncIsRunning = false
-				}()
-				return
-			}
-		}
-		for _, tx := range currTxMap {
-			err := tx.DeleteG()
-			if err != nil {
-				logrus.Error("MempoolSync:", err)
-			}
-		}
-		mempoolSyncIsRunning = false
+		mempoolSyncIsRunning = running
 	}
 }
 
@@ -126,6 +96,47 @@ func getMempoolBlock() (*model.Block, error) {
 	}
 
 	return mempoolBlock, nil
+}
+
+func processTxSet(txSet lbrycrd.RawMempoolVerboseResponse, lastBlock *model.Block, currTxs model.TransactionSlice) (bool, error) {
+	currTxMap := make(map[string]*model.Transaction)
+	for _, tx := range currTxs {
+		currTxMap[tx.Hash] = tx
+	}
+
+	for txid, txDetails := range txSet {
+		//Are we at the top of the chain?
+		shouldProcessMempoolTransaction := lastBlock.Height+1 >= uint64(txDetails.Height)
+		if shouldProcessMempoolTransaction {
+			for _, dependentTxID := range txDetails.Depends {
+				err := processMempoolTx(dependentTxID, *mempoolBlock)
+				if err != nil {
+					return false, errors.Err(err)
+				}
+				delete(currTxMap, dependentTxID)
+			}
+			err := processMempoolTx(txid, *mempoolBlock)
+			if err != nil {
+				return false, errors.Err(err)
+			}
+			delete(currTxMap, txid)
+		} else {
+			go func() {
+				logrus.Info("Daemon is not caught up to mempool transactions, delaying mempool sync 1 minute...")
+				time.Sleep(1 * time.Minute)
+				mempoolSyncIsRunning = false
+			}()
+			return true, nil
+		}
+	}
+	for _, tx := range currTxMap {
+		err := tx.DeleteG()
+		if err != nil {
+			return false, errors.Err(err)
+		}
+	}
+
+	return false, nil
 }
 
 func processMempoolTx(txid string, block model.Block) error {
