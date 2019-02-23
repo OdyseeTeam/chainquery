@@ -13,7 +13,7 @@ import (
 	util "github.com/lbryio/lbry.go/lbrycrd"
 	"github.com/lbryio/lbryschema.go/address/base58"
 	c "github.com/lbryio/lbryschema.go/claim"
-	"github.com/lbryio/types/go"
+	pb "github.com/lbryio/types/go"
 
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/null"
@@ -186,7 +186,7 @@ func processUpdateClaim(pbClaim *pb.Claim, claim *model.Claim, value []byte) (*m
 	claim.ValueAsHex = hex.EncodeToString(value)
 
 	// pbClaim JSON
-	if claimHelper, err := c.DecodeClaimHex(claim.ValueAsHex, "lbrycrd_main"); err == nil {
+	if claimHelper, err := c.DecodeClaimHex(claim.ValueAsHex, global.BlockChainName); err == nil {
 		if jsonvalue, err := claimHelper.RenderJSON(); err == nil {
 			claim.ValueAsJSON.SetValid(jsonvalue)
 		}
