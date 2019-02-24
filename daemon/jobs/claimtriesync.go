@@ -12,6 +12,7 @@ import (
 	"github.com/lbryio/chainquery/model"
 
 	"github.com/lbryio/lbry.go/errors"
+
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -84,13 +85,13 @@ func claimTrieSync() {
 	printDebug("ClaimTrieSync: Claims to update " + strconv.Itoa(len(updatedClaims)))
 
 	//For syncing the claims
-	if err := syncClaims(updatedClaims); err != nil {
+	if err := SyncClaims(updatedClaims); err != nil {
 		logrus.Error("ClaimTrieSync:", err)
 		saveJobError(jobStatus, err)
 	}
 
 	//For Setting Controlling Claims
-	if err := setControllingClaimForNames(updatedClaims); err != nil {
+	if err := SetControllingClaimForNames(updatedClaims, blockHeight); err != nil {
 		logrus.Error("ClaimTrieSync:", err)
 		saveJobError(jobStatus, err)
 	}
@@ -117,11 +118,11 @@ func initSyncWorkers(nrWorkers int, jobs <-chan lbrycrd.Claim, wg *sync.WaitGrou
 	}
 }
 
-func initControllingWorkers(nrWorkers int, jobs <-chan string, wg *sync.WaitGroup) {
+func initControllingWorkers(nrWorkers int, jobs <-chan string, wg *sync.WaitGroup, atHeight uint64) {
 
 	for i := 0; i < nrWorkers; i++ {
 		wg.Add(1)
-		go controllingProcessor(jobs, wg)
+		go controllingProcessor(jobs, wg, atHeight)
 	}
 }
 
@@ -132,14 +133,15 @@ func syncProcessor(jobs <-chan lbrycrd.Claim, wg *sync.WaitGroup) {
 	}
 }
 
-func controllingProcessor(names <-chan string, wg *sync.WaitGroup) {
+func controllingProcessor(names <-chan string, wg *sync.WaitGroup, atHeight uint64) {
 	defer wg.Done()
 	for name := range names {
-		setBidStateOfClaimsForName(name)
+		setBidStateOfClaimsForName(name, atHeight)
 	}
 }
 
-func setControllingClaimForNames(claims model.ClaimSlice) error {
+// SetControllingClaimForNames sets the bid state for claims with these names.
+func SetControllingClaimForNames(claims model.ClaimSlice, atHeight uint64) error {
 	printDebug("ClaimTrieSync: controlling claim status update started... ")
 	controlwg := sync.WaitGroup{}
 	names := make(map[string]string)
@@ -147,9 +149,9 @@ func setControllingClaimForNames(claims model.ClaimSlice) error {
 	for _, claim := range claims {
 		names[claim.Name] = claim.Name
 	}
-	printDebug("ClaimTrieSync: Finished making name map...")
+	printDebug("ClaimTrieSync: Finished making name map...[", len(names), "]")
 	setControllingQueue := make(chan string, 100)
-	initControllingWorkers(runtime.NumCPU()-1, setControllingQueue, &controlwg)
+	initControllingWorkers(runtime.NumCPU()-1, setControllingQueue, &controlwg, atHeight)
 	for _, name := range names {
 		setControllingQueue <- name
 	}
@@ -160,16 +162,16 @@ func setControllingClaimForNames(claims model.ClaimSlice) error {
 	return nil
 }
 
-func setBidStateOfClaimsForName(name string) {
+func setBidStateOfClaimsForName(name string, atHeight uint64) {
 	claims, _ := model.Claims(
 		qm.Where(model.ClaimColumns.Name+"=?", name),
 		qm.Where(model.ClaimColumns.BidState+"!=?", "Spent"),
-		qm.Where(model.ClaimColumns.ValidAtHeight+"<=?", blockHeight),
+		qm.Where(model.ClaimColumns.ValidAtHeight+"<=?", atHeight),
 		qm.OrderBy(model.ClaimColumns.EffectiveAmount+" DESC")).AllG()
-
+	printDebug("found ", len(claims), " claims matching the name ", name)
 	foundControlling := false
 	for _, claim := range claims {
-		if !foundControlling && getClaimStatus(claim) == "Active" {
+		if !foundControlling && getClaimStatus(claim, atHeight) == "Active" {
 			if claim.BidState != "Controlling" {
 				claim.BidState = "Controlling"
 				err := datastore.PutClaim(claim)
@@ -179,7 +181,7 @@ func setBidStateOfClaimsForName(name string) {
 			}
 			foundControlling = true
 		} else {
-			status := getClaimStatus(claim)
+			status := getClaimStatus(claim, atHeight)
 			if status != claim.BidState {
 				claim.BidState = status
 				err := datastore.PutClaim(claim)
@@ -191,7 +193,8 @@ func setBidStateOfClaimsForName(name string) {
 	}
 }
 
-func syncClaims(claims model.ClaimSlice) error {
+// SyncClaims syncs the claims' with these names effective amount and valid at height with the lbrycrd claimtrie.
+func SyncClaims(claims model.ClaimSlice) error {
 
 	printDebug("ClaimTrieSync: claim  update started... ")
 	syncwg := sync.WaitGroup{}
@@ -243,7 +246,7 @@ func syncClaim(claimJSON *lbrycrd.Claim) {
 	}
 }
 
-func getClaimStatus(claim *model.Claim) string {
+func getClaimStatus(claim *model.Claim, atHeight uint64) string {
 	status := "Accepted"
 	//Transaction and output should never be missing if the claim exists.
 	transaction, err := claim.TransactionHash().OneG()
@@ -262,7 +265,7 @@ func getClaimStatus(claim *model.Claim) string {
 		status = "Spent" //Should be unreachable because claim would be out of claimtrie if spent.
 	}
 	height := claim.Height
-	if GetIsExpiredAtHeight(height, uint(blockHeight)) {
+	if GetIsExpiredAtHeight(height, uint(atHeight)) {
 		status = "Expired"
 	}
 
@@ -276,6 +279,9 @@ func getClaimStatus(claim *model.Claim) string {
 
 //GetIsExpiredAtHeight checks the claim height compared to the current height to determine expiration.
 func GetIsExpiredAtHeight(height, blockHeight uint) bool {
+	if height == 0 {
+		return false
+	}
 	if height >= expirationHardForkHeight {
 		// https://github.com/lbryio/lbrycrd/pull/137 - HardFork extends claim expiration.
 		if height+hardForkBlocksToExpiration < blockHeight {

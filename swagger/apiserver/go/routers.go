@@ -102,6 +102,13 @@ var routes = Routes{
 	},
 
 	Route{
+		"SyncClaimName",
+		strings.ToUpper("Get"),
+		"/api/sync/name",
+		SyncName,
+	},
+
+	Route{
 		"SyncTransactionValue",
 		strings.ToUpper("Get"),
 		"/api/sync/txvalues",
