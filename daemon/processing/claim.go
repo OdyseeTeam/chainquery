@@ -126,6 +126,9 @@ func processClaimUpdateScript(script *[]byte, vout model.Output, tx model.Transa
 		claim.Height = uint(blockHeight)
 		claim.TransactionHashID.SetValid(tx.Hash)
 		claim.Vout = vout.Vout
+		if claim.BidState == "Spent" {
+			claim.BidState = "Accepted"
+		}
 		if err := datastore.PutClaim(claim); err != nil {
 			logrus.Debug("Claim updates to invalid certificate claim. ", claim.PublisherID)
 			if logrus.GetLevel() == logrus.DebugLevel {
