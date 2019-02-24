@@ -52,12 +52,19 @@ func MempoolSync() {
 		if err != nil {
 			logrus.Error("MempoolSync:", err)
 		}
-		currTxs, err := model.Transactions(model.TransactionWhere.BlockHashID.EQ(null.StringFrom("MEMPOOL"))).AllG()
+		// Grabbing stale transactions to clean up the mempool state in chainquery ie invalidated double spends.
+		staleTxs, err := model.Transactions(
+			model.TransactionWhere.BlockHashID.EQ(null.StringFrom("MEMPOOL")),
+			// We only want to get the old transactions sitting in mempool. Txs leave the mempool before they are sent as
+			// a block. So we could end up deleting a tx, before we process it in a block, which for a claim update would
+			// delete the original claim. There is still a change this could happen if a claim update tx sits in the
+			// mempool for more than an hour.
+			model.TransactionWhere.CreatedAt.LTE(time.Now().Add(-1*time.Hour))).AllG()
 		if err != nil {
 			logrus.Error("MempoolSync:", err)
 		}
 
-		running, err := processTxSet(txSet, lastBlock, currTxs)
+		running, err := processTxSet(txSet, lastBlock, staleTxs)
 		if err != nil {
 			logrus.Error("MempoolSync:", err)
 		}
@@ -98,13 +105,14 @@ func getMempoolBlock() (*model.Block, error) {
 	return mempoolBlock, nil
 }
 
-func processTxSet(txSet lbrycrd.RawMempoolVerboseResponse, lastBlock *model.Block, currTxs model.TransactionSlice) (bool, error) {
+func processTxSet(txSet lbrycrd.RawMempoolVerboseResponse, lastBlock *model.Block, staleTxs model.TransactionSlice) (bool, error) {
 	currTxMap := make(map[string]*model.Transaction)
-	for _, tx := range currTxs {
+	for _, tx := range staleTxs {
 		currTxMap[tx.Hash] = tx
 	}
 
 	for txid, txDetails := range txSet {
+		delete(currTxMap, txid)
 		//Are we at the top of the chain?
 		shouldProcessMempoolTransaction := lastBlock.Height+1 >= uint64(txDetails.Height)
 		if shouldProcessMempoolTransaction {
@@ -119,7 +127,6 @@ func processTxSet(txSet lbrycrd.RawMempoolVerboseResponse, lastBlock *model.Bloc
 			if err != nil {
 				return false, errors.Err(err)
 			}
-			delete(currTxMap, txid)
 		} else {
 			go func() {
 				logrus.Info("Daemon is not caught up to mempool transactions, delaying mempool sync 1 minute...")
