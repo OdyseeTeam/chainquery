@@ -18,7 +18,7 @@ import (
 )
 
 const claimTrieSyncJob = "claimtriesyncjob"
-const debugClaimTrieSync = true
+const debugClaimTrieSync = false
 
 var expirationHardForkHeight uint = 400155    // https://github.com/lbryio/lbrycrd/pull/137
 var hardForkBlocksToExpiration uint = 2102400 // https://github.com/lbryio/lbrycrd/pull/137
