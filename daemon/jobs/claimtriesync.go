@@ -1,6 +1,7 @@
 package jobs
 
 import (
+	"database/sql"
 	"encoding/json"
 	"runtime"
 	"strconv"
@@ -54,12 +55,14 @@ func claimTrieSync() {
 	jobStatus, err := getClaimTrieSyncJobStatus()
 	if err != nil {
 		logrus.Error(err)
+		return
 	}
 	printDebug("ClaimTrieSync: updating spent claims")
 	//For Updating claims that are spent ( no longer in claimtrie )
 	if err := updateSpentClaims(); err != nil {
 		logrus.Error("ClaimTrieSync:", err)
 		saveJobError(jobStatus, err)
+		return
 	}
 
 	started := time.Now()
@@ -80,7 +83,7 @@ func claimTrieSync() {
 	if err != nil {
 		logrus.Error("ClaimTrieSync:", err)
 		saveJobError(jobStatus, err)
-		panic(err)
+		return
 	}
 	printDebug("ClaimTrieSync: Claims to update " + strconv.Itoa(len(updatedClaims)))
 
@@ -88,12 +91,14 @@ func claimTrieSync() {
 	if err := SyncClaims(updatedClaims); err != nil {
 		logrus.Error("ClaimTrieSync:", err)
 		saveJobError(jobStatus, err)
+		return
 	}
 
 	//For Setting Controlling Claims
 	if err := SetControllingClaimForNames(updatedClaims, blockHeight); err != nil {
 		logrus.Error("ClaimTrieSync:", err)
 		saveJobError(jobStatus, err)
+		return
 	}
 
 	jobStatus.LastSync = started
@@ -101,6 +106,7 @@ func claimTrieSync() {
 	bytes, err := json.Marshal(&lastSync)
 	if err != nil {
 		logrus.Error(err)
+		return
 	}
 	jobStatus.State.SetValid(bytes)
 	if err := jobStatus.UpdateG(boil.Infer()); err != nil {
@@ -378,14 +384,13 @@ func updateSpentClaims() error {
 
 func getClaimTrieSyncJobStatus() (*model.JobStatus, error) {
 	jobStatus, err := model.FindJobStatusG(claimTrieSyncJob)
-	if err != nil {
-		return nil, errors.Err(err)
-	}
-	if jobStatus == nil {
+	if errors.Is(sql.ErrNoRows, err) {
 		jobStatus = &model.JobStatus{JobName: claimTrieSyncJob, LastSync: time.Time{}}
 		if err := jobStatus.InsertG(boil.Infer()); err != nil {
 			logrus.Panic("Cannot Retrieve/Create JobStatus for " + claimTrieSyncJob)
 		}
+	} else if err != nil {
+		return nil, errors.Err(err)
 	}
 
 	err = json.Unmarshal(jobStatus.State.JSON, lastSync)
