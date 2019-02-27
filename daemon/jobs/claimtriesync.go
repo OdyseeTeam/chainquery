@@ -15,6 +15,7 @@ import (
 	"github.com/lbryio/lbry.go/errors"
 
 	"github.com/sirupsen/logrus"
+	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
@@ -385,7 +386,12 @@ func updateSpentClaims() error {
 func getClaimTrieSyncJobStatus() (*model.JobStatus, error) {
 	jobStatus, err := model.FindJobStatusG(claimTrieSyncJob)
 	if errors.Is(sql.ErrNoRows, err) {
-		jobStatus = &model.JobStatus{JobName: claimTrieSyncJob, LastSync: time.Time{}}
+		syncState := claimTrieSyncStatus{PreviousSyncTime: time.Unix(458265600, 0), LastHeight: 0}
+		bytes, err := json.Marshal(syncState)
+		if err != nil {
+			return nil, errors.Err(err)
+		}
+		jobStatus = &model.JobStatus{JobName: claimTrieSyncJob, LastSync: time.Time{}, State: null.JSONFrom(bytes)}
 		if err := jobStatus.InsertG(boil.Infer()); err != nil {
 			logrus.Panic("Cannot Retrieve/Create JobStatus for " + claimTrieSyncJob)
 		}
