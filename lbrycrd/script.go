@@ -4,6 +4,8 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 
+	"github.com/lbryio/chainquery/global"
+
 	"github.com/lbryio/lbry.go/errors"
 
 	"github.com/btcsuite/btcd/chaincfg"
@@ -31,13 +33,37 @@ const (
 	// NonStandard is a transaction type, usually used for a claim.
 	NonStandard = "nonstandard" // Non Standard - Used for Claims in LBRY
 
+	lbrycrdMainPubkeyPrefix    = byte(85)
+	lbrycrdMainScriptPrefix    = byte(122)
+	lbrycrdTestnetPubkeyPrefix = byte(111)
+	lbrycrdTestnetScriptPrefix = byte(196)
+	lbrycrdRegtestPubkeyPrefix = byte(111)
+	lbrycrdRegtestScriptPrefix = byte(196)
+
+	lbrycrdMain    = "lbrycrd_main"
+	lbrycrdTestnet = "lbrycrd_testnet"
+	lbrycrdRegtest = "lbrycrd_regtest"
 )
 
 var mainNetParams = chaincfg.Params{
-	PubKeyHashAddrID: 0x55,
-	ScriptHashAddrID: 0x7a,
+	PubKeyHashAddrID: lbrycrdMainPubkeyPrefix,
+	ScriptHashAddrID: lbrycrdMainScriptPrefix,
 	PrivateKeyID:     0x1c,
 }
+
+var testNetParams = chaincfg.Params{
+	PubKeyHashAddrID: lbrycrdTestnetPubkeyPrefix,
+	ScriptHashAddrID: lbrycrdTestnetScriptPrefix,
+	PrivateKeyID:     0x1c,
+}
+
+var regTestNetParams = chaincfg.Params{
+	PubKeyHashAddrID: lbrycrdRegtestPubkeyPrefix,
+	ScriptHashAddrID: lbrycrdRegtestScriptPrefix,
+	PrivateKeyID:     0x1c,
+}
+
+var paramsMap = map[string]chaincfg.Params{lbrycrdMain: mainNetParams, lbrycrdTestnet: testNetParams, lbrycrdRegtest: regTestNetParams}
 
 // IsClaimScript return true if the script for the vout contains the right opt codes pertaining to a claim.
 func IsClaimScript(script []byte) bool {
@@ -276,7 +302,11 @@ func getAddressFromP2PK(hexstring string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	addr, err := btcutil.NewAddressPubKey(hexstringBytes, &mainNetParams)
+	chainParams, ok := paramsMap[global.BlockChainName]
+	if !ok {
+		return "", errors.Err("unknown chain name %s", global.BlockChainName)
+	}
+	addr, err := btcutil.NewAddressPubKey(hexstringBytes, &chainParams)
 	if err != nil {
 		return "", err
 	}
@@ -290,7 +320,11 @@ func getAddressFromP2PKH(hexstring string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	addr, err := btcutil.NewAddressPubKeyHash(hexstringBytes, &mainNetParams)
+	chainParams, ok := paramsMap[global.BlockChainName]
+	if !ok {
+		return "", errors.Err("unknown chain name %s", global.BlockChainName)
+	}
+	addr, err := btcutil.NewAddressPubKeyHash(hexstringBytes, &chainParams)
 	if err != nil {
 		return "", err
 	}
@@ -304,7 +338,12 @@ func getAddressFromP2SH(hexstring string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	addr, err := btcutil.NewAddressScriptHashFromHash(hexstringBytes, &mainNetParams)
+
+	chainParams, ok := paramsMap[global.BlockChainName]
+	if !ok {
+		return "", errors.Err("unknown chain name %s", global.BlockChainName)
+	}
+	addr, err := btcutil.NewAddressScriptHashFromHash(hexstringBytes, &chainParams)
 	if err != nil {
 		return "", err
 	}
