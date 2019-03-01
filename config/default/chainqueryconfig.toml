@@ -92,3 +92,8 @@
 #source output to spend is not already processed.
 #DEFAULT: 1000
 #maxfailures=
+
+#Block Chain Name - Specifies the chain params for parsing blocks, transactions, claims, and addresses. valid choices are
+#lbrycrd_main, lbrycrd_testnet, and lbrycrd_regtest.
+#DEFAULT: "lbrycrd_main"
+#blockchainname=

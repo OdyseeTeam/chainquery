@@ -10,5 +10,5 @@ type DaemonSettings struct {
 	IsReIndex       bool
 }
 
-//BlockChainName is the name of the blockchain. It is used to decode protobuf claims.
-const BlockChainName = "lbrycrd_main"
+// BlockChainName is the name of the blockchain. It is used to decode protobuf claims.
+var BlockChainName = "lbrycrd_main"
