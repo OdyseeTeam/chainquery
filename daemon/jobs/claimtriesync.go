@@ -361,7 +361,7 @@ func getSpentClaimsToUpdate() (model.ClaimSlice, error) {
 		INNER JOIN ` + claim + ` ON ` + claimID + ` = ` + outputClaimID + ` 
 			AND ` + claimTxByHash + ` = ` + outputTxHash + ` 
 			AND ` + claimVout + ` = ` + outputVout + `
-		WHERE ` + outputModifiedAt + ` > ? 
+		WHERE ` + outputModifiedAt + ` >= ? 
 		AND ` + outputIsSpent + ` = ? 
 		AND ` + claimBidState + ` != ?`
 	printDebug(query)
