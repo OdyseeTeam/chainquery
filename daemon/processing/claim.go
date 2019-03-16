@@ -78,7 +78,9 @@ func processClaimNameScript(script *[]byte, vout model.Output, tx model.Transact
 	claim.Name = name
 	claim.TransactionTime = tx.TransactionTime
 	claim.ClaimAddress = lbrycrd.GetAddressFromPublicKeyScript(pkscript)
-	claim.Height = uint(blockHeight)
+	if blockHeight > 0 {
+		claim.Height = uint(blockHeight)
+	}
 	err = datastore.PutClaim(claim)
 
 	return name, claimid, pkscript, err
@@ -123,7 +125,9 @@ func processClaimUpdateScript(script *[]byte, vout model.Output, tx model.Transa
 		}
 		claim.TransactionTime = tx.TransactionTime
 		claim.ClaimAddress = lbrycrd.GetAddressFromPublicKeyScript(pubkeyscript)
-		claim.Height = uint(blockHeight)
+		if blockHeight > 0 {
+			claim.Height = uint(blockHeight)
+		}
 		claim.TransactionHashID.SetValid(tx.Hash)
 		claim.Vout = vout.Vout
 		if claim.BidState == "Spent" {
