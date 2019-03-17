@@ -149,7 +149,7 @@ are foundation of the [upgrade manager](/daemon/upgrademanager/upgrade.go).
 
 ## Contributing
 
-Contributions to this project are welcome, encouraged, and compensated. For more details, see [lbry.io/faq/contributing](https://lbry.io/faq/contributing)
+Contributions to this project are welcome, encouraged, and compensated. For more details, see [lbry.com/faq/contributing](https://lbry.com/faq/contributing)
 
 The `master` branch is regularly built and tested, but is not guaranteed to be
 completely stable. [Releases](https://github.com/lbryio/chainquery/releases) are created

@@ -107,4 +107,4 @@ deploy:
 
 notifications:
   email: true
-  webhooks: https://chainquery.lbry.io/api/autoupdate
+  webhooks: https://chainquery.lbry.com/api/autoupdate

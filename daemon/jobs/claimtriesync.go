@@ -26,7 +26,7 @@ const debugClaimTrieSync = false
 var expirationHardForkHeight uint = 400155    // https://github.com/lbryio/lbrycrd/pull/137
 var hardForkBlocksToExpiration uint = 2102400 // https://github.com/lbryio/lbrycrd/pull/137
 var blockHeight uint64
-var blocksToExpiration uint = 262974 //Hardcoded! https://lbry.io/faq/claimtrie-implementation
+var blocksToExpiration uint = 262974 //Hardcoded! https://lbry.com/faq/claimtrie-implementation
 // ClaimTrieSyncRunning is a variable used to show whether or not the job is running already.
 var claimTrieSyncRunning = false
 

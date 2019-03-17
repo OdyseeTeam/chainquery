@@ -28,7 +28,7 @@ func InitApiServer(hostAndPort string) {
 	hs["Content-Type"] = "application/json; charset=utf-8; application/x-www-form-urlencoded"
 	hs["X-Content-Type-Options"] = "nosniff"
 	hs["Content-Security-Policy"] = "default-src 'none'"
-	hs["Server"] = "lbry.io"
+	hs["Server"] = "lbry.com"
 	hs["Access-Control-Allow-Origin"] = "*"
 	api.ResponseHeaders = hs
 	api.Log = func(request *http.Request, response *api.Response, err error) {
