@@ -9,8 +9,8 @@ import (
 	ds "github.com/lbryio/chainquery/datastore"
 	"github.com/lbryio/chainquery/lbrycrd"
 	m "github.com/lbryio/chainquery/model"
-	"github.com/lbryio/lbry.go/errors"
-	"github.com/lbryio/lbry.go/stop"
+	"github.com/lbryio/lbry.go/extras/errors"
+	"github.com/lbryio/lbry.go/extras/stop"
 
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/boil"

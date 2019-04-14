@@ -13,8 +13,8 @@ import (
 	"github.com/lbryio/chainquery/model"
 	"github.com/lbryio/chainquery/twilio"
 	"github.com/lbryio/chainquery/util"
-	"github.com/lbryio/lbry.go/errors"
-	"github.com/lbryio/lbry.go/stop"
+	"github.com/lbryio/lbry.go/extras/errors"
+	"github.com/lbryio/lbry.go/extras/stop"
 
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/boil"

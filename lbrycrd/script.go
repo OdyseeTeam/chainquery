@@ -6,7 +6,7 @@ import (
 
 	"github.com/lbryio/chainquery/global"
 
-	"github.com/lbryio/lbry.go/errors"
+	"github.com/lbryio/lbry.go/extras/errors"
 
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcutil"

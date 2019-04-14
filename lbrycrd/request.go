@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/lbryio/chainquery/util"
-	"github.com/lbryio/lbry.go/errors"
+	"github.com/lbryio/lbry.go/extras/errors"
 )
 
 //GetBlock performs a jsonrpc that returns the structured data as a GetBlockResponse.

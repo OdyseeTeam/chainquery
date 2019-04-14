@@ -8,9 +8,9 @@ import (
 
 	"github.com/lbryio/chainquery/db"
 	"github.com/lbryio/chainquery/meta"
-	"github.com/lbryio/lbry.go/api"
-	"github.com/lbryio/lbry.go/errors"
-	"github.com/lbryio/lbry.go/travis"
+	"github.com/lbryio/lbry.go/extras/api"
+	"github.com/lbryio/lbry.go/extras/errors"
+	"github.com/lbryio/lbry.go/extras/travis"
 
 	v "github.com/lbryio/ozzo-validation"
 	"github.com/sirupsen/logrus"

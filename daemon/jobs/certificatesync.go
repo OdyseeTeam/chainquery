@@ -5,7 +5,7 @@ import (
 
 	"github.com/lbryio/chainquery/global"
 	"github.com/lbryio/chainquery/model"
-	"github.com/lbryio/lbry.go/errors"
+	"github.com/lbryio/lbry.go/extras/errors"
 	c "github.com/lbryio/lbryschema.go/claim"
 
 	"github.com/sirupsen/logrus"

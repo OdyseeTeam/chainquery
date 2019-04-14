@@ -48,10 +48,6 @@
   name = "github.com/volatiletech/sqlboiler"
 
 [[constraint]]
-  name = "github.com/pkg/errors"
-  revision = "c605e284fe17294bda444b34710735b29d1a9d90"
-
-[[constraint]]
   name = "github.com/rubenv/sql-migrate"
   revision = "38004e7a77f2b350ea8467038dca66073d907725"
 

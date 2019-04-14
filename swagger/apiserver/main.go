@@ -15,7 +15,7 @@ import (
 	"github.com/lbryio/chainquery/config"
 	"github.com/lbryio/chainquery/db"
 	sw "github.com/lbryio/chainquery/swagger/apiserver/go"
-	"github.com/lbryio/lbry.go/api"
+	"github.com/lbryio/lbry.go/extras/api"
 
 	"github.com/fatih/color"
 	"github.com/sirupsen/logrus"

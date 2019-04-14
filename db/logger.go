@@ -4,8 +4,8 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/lbryio/lbry.go/errors"
-	querytools "github.com/lbryio/lbry.go/query"
+	"github.com/lbryio/lbry.go/extras/errors"
+	querytools "github.com/lbryio/lbry.go/extras/query"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/jteeuwen/go-bindata" // so it's detected by `dep ensure`

@@ -13,7 +13,7 @@ import (
 	"strings"
 
 	. "github.com/lbryio/chainquery/apiactions"
-	. "github.com/lbryio/lbry.go/api"
+	. "github.com/lbryio/lbry.go/extras/api"
 
 	"github.com/gorilla/mux"
 )

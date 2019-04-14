@@ -14,7 +14,7 @@ import (
 	"github.com/lbryio/chainquery/lbrycrd"
 	"github.com/lbryio/chainquery/twilio"
 
-	"github.com/lbryio/lbry.go/errors"
+	"github.com/lbryio/lbry.go/extras/errors"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/go-ini/ini"

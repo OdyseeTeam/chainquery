@@ -2,7 +2,7 @@ package datastore
 
 import (
 	"github.com/lbryio/chainquery/model"
-	"github.com/lbryio/lbry.go/errors"
+	"github.com/lbryio/lbry.go/extras/errors"
 
 	"time"
 

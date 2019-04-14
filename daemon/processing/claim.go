@@ -9,7 +9,7 @@ import (
 	"github.com/lbryio/chainquery/lbrycrd"
 	"github.com/lbryio/chainquery/model"
 
-	"github.com/lbryio/lbry.go/errors"
+	"github.com/lbryio/lbry.go/extras/errors"
 	util "github.com/lbryio/lbry.go/lbrycrd"
 	"github.com/lbryio/lbryschema.go/address/base58"
 	c "github.com/lbryio/lbryschema.go/claim"
@@ -170,6 +170,10 @@ func processClaim(helper *c.ClaimHelper, claim *model.Claim, value []byte, outpu
 	setPublisherInfo(claim, helper)
 	setCertificateInfo(claim, helper)
 
+	if helper.LegacyClaim != nil {
+		claim.Version = helper.LegacyClaim.GetVersion().String()
+	}
+
 	return claim, nil
 }
 
@@ -207,6 +211,10 @@ func processUpdateClaim(helper *c.ClaimHelper, claim *model.Claim, value []byte)
 	setMetaDataInfo(claim, helper)
 	setPublisherInfo(claim, helper)
 	setCertificateInfo(claim, helper)
+
+	if helper.LegacyClaim != nil {
+		claim.Version = helper.LegacyClaim.GetVersion().String()
+	}
 
 	return claim, nil
 }
@@ -257,12 +265,8 @@ func setMetaDataInfo(claim *model.Claim, helper *c.ClaimHelper) {
 				}
 			}
 		}
-		if helper.GetStream().GetLicense() != "" {
-			claim.License.SetValid(helper.GetStream().GetLicense())
-		}
-		if helper.GetStream().GetLicenseUrl() != "" {
-			claim.LicenseURL.SetValid(helper.GetStream().GetLicenseUrl())
-		}
+		claim.License.SetValid(helper.GetStream().GetLicense())
+		claim.LicenseURL.SetValid(helper.GetStream().GetLicenseUrl())
 		claim.Preview.SetValid("") //Never set
 
 		fee := helper.GetStream().GetFee()
