@@ -555,7 +555,6 @@
     "github.com/lbryio/lbryschema.go/address/base58",
     "github.com/lbryio/lbryschema.go/claim",
     "github.com/lbryio/ozzo-validation",
-    "github.com/lbryio/types/go",
     "github.com/mitchellh/mapstructure",
     "github.com/pkg/errors",
     "github.com/rubenv/sql-migrate",

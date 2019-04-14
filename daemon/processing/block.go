@@ -212,7 +212,7 @@ func handleTxResults(nrToHandle int, manager *txSyncManager) {
 			if txResult.err != nil { // Try again if fails this time.
 				leftToProcess++
 				q("HANDLE: start sending to worker..." + txResult.tx.Txid)
-				manager.redoJobsCh <- txToProcess{tx: txResult.tx, blockTime: txResult.blockTime, failcount: txResult.failcount}
+				manager.redoJobsCh <- txToProcess{tx: txResult.tx, blockTime: txResult.blockTime, failcount: txResult.failcount, blockHeight: txResult.blockHeight}
 				q("HANDLE: end sending to worker..." + txResult.tx.Txid)
 				q("HANDLE: finish handling new result.." + txResult.tx.Txid)
 				//continue
@@ -363,6 +363,9 @@ func reprocessQueue(manager *txSyncManager) {
 			return
 		case redoJob := <-manager.redoJobsCh:
 			q("REDO: start send new redo job - " + redoJob.tx.Txid)
+			if redoJob.blockHeight == 0 {
+				panic("no blockheight! - redo job!")
+			}
 			manager.jobsCh <- redoJob
 			q("REDO: end send new redo job - " + redoJob.tx.Txid)
 		}

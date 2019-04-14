@@ -8,8 +8,6 @@ import (
 
 	"github.com/lbryio/lbry.go/errors"
 	upstream "github.com/lbryio/lbry.go/lbrycrd"
-	lbryschema "github.com/lbryio/types/go"
-
 	"github.com/mitchellh/mapstructure"
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
@@ -114,21 +112,9 @@ type protoFunc func(interface{}) (interface{}, error)
 type protoMap map[reflect.Type]protoFunc
 
 var decodeMap = protoMap{
-	reflect.TypeOf(uint64(0)):                         decodeInt,
-	reflect.TypeOf([]byte{}):                          decodeBytes,
-	reflect.TypeOf(decimal.Decimal{}):                 decodeFloat,
-	reflect.TypeOf(lbryschema.Metadata_Version(0)):    decodeMetaDataVersion,
-	reflect.TypeOf(lbryschema.Metadata_Language(0)):   decodeMetaDataLanguage,
-	reflect.TypeOf(lbryschema.Stream_Version(0)):      decodeStreamVersion,
-	reflect.TypeOf(lbryschema.Claim_Version(0)):       decodeClaimVersion,
-	reflect.TypeOf(lbryschema.Claim_ClaimType(0)):     decodeClaimType,
-	reflect.TypeOf(lbryschema.Fee_Version(0)):         decodeFeeVersion,
-	reflect.TypeOf(lbryschema.Fee_Currency(0)):        decodeFeeCurrency,
-	reflect.TypeOf(lbryschema.Source_Version(0)):      decodeSourceVersion,
-	reflect.TypeOf(lbryschema.Source_SourceTypes(0)):  decodeSourceTypes,
-	reflect.TypeOf(lbryschema.KeyType(0)):             decodeKeyType,
-	reflect.TypeOf(lbryschema.Signature_Version(0)):   decodeSignatureVersion,
-	reflect.TypeOf(lbryschema.Certificate_Version(0)): decodeCertificateVersion,
+	reflect.TypeOf(uint64(0)):         decodeInt,
+	reflect.TypeOf([]byte{}):          decodeBytes,
+	reflect.TypeOf(decimal.Decimal{}): decodeFloat,
 }
 
 func fixDecodeProto(src, dest reflect.Type, data interface{}) (interface{}, error) {
@@ -187,64 +173,4 @@ func decodeBytes(data interface{}) (interface{}, error) {
 		return []byte(s), nil
 	}
 	return data, nil
-}
-
-func decodeMetaDataVersion(data interface{}) (interface{}, error) {
-	val, err := getEnumVal(lbryschema.Metadata_Version_value, data)
-	return lbryschema.Metadata_Version(val), err
-}
-
-func decodeMetaDataLanguage(data interface{}) (interface{}, error) {
-	val, err := getEnumVal(lbryschema.Metadata_Language_value, data)
-	return lbryschema.Metadata_Language(val), err
-}
-
-func decodeStreamVersion(data interface{}) (interface{}, error) {
-	val, err := getEnumVal(lbryschema.Stream_Version_value, data)
-	return lbryschema.Stream_Version(val), err
-}
-
-func decodeClaimVersion(data interface{}) (interface{}, error) {
-	val, err := getEnumVal(lbryschema.Claim_Version_value, data)
-	return lbryschema.Claim_Version(val), err
-}
-
-func decodeClaimType(data interface{}) (interface{}, error) {
-	val, err := getEnumVal(lbryschema.Claim_ClaimType_value, data)
-	return lbryschema.Claim_ClaimType(val), err
-}
-
-func decodeFeeVersion(data interface{}) (interface{}, error) {
-	val, err := getEnumVal(lbryschema.Fee_Version_value, data)
-	return lbryschema.Fee_Version(val), err
-}
-
-func decodeFeeCurrency(data interface{}) (interface{}, error) {
-	val, err := getEnumVal(lbryschema.Fee_Currency_value, data)
-	return lbryschema.Fee_Currency(val), err
-}
-
-func decodeSourceVersion(data interface{}) (interface{}, error) {
-	val, err := getEnumVal(lbryschema.Source_Version_value, data)
-	return lbryschema.Source_Version(val), err
-}
-
-func decodeSourceTypes(data interface{}) (interface{}, error) {
-	val, err := getEnumVal(lbryschema.Source_SourceTypes_value, data)
-	return lbryschema.Source_SourceTypes(val), err
-}
-
-func decodeKeyType(data interface{}) (interface{}, error) {
-	val, err := getEnumVal(lbryschema.KeyType_value, data)
-	return lbryschema.KeyType(val), err
-}
-
-func decodeSignatureVersion(data interface{}) (interface{}, error) {
-	val, err := getEnumVal(lbryschema.Signature_Version_value, data)
-	return lbryschema.Signature_Version(val), err
-}
-
-func decodeCertificateVersion(data interface{}) (interface{}, error) {
-	val, err := getEnumVal(lbryschema.Certificate_Version_value, data)
-	return lbryschema.Certificate_Version(val), err
 }

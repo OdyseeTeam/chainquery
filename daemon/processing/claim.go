@@ -13,8 +13,6 @@ import (
 	util "github.com/lbryio/lbry.go/lbrycrd"
 	"github.com/lbryio/lbryschema.go/address/base58"
 	c "github.com/lbryio/lbryschema.go/claim"
-	pb "github.com/lbryio/types/go"
-
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
@@ -70,7 +68,7 @@ func processClaimNameScript(script *[]byte, vout model.Output, tx model.Transact
 		return name, claimid, pkscript, err
 	}
 	claim := datastore.GetClaim(claimid)
-	claim, err = processClaim(helper.Claim, claim, value, vout, tx)
+	claim, err = processClaim(helper, claim, value, vout, tx)
 	if err != nil {
 		return name, claimid, pkscript, err
 	}
@@ -80,6 +78,8 @@ func processClaimNameScript(script *[]byte, vout model.Output, tx model.Transact
 	claim.ClaimAddress = lbrycrd.GetAddressFromPublicKeyScript(pkscript)
 	if blockHeight > 0 {
 		claim.Height = uint(blockHeight)
+	} else {
+		logrus.Info("ClaimNew: No blockheight!")
 	}
 	err = datastore.PutClaim(claim)
 
@@ -115,7 +115,7 @@ func processClaimUpdateScript(script *[]byte, vout model.Output, tx model.Transa
 	}
 	if helper.Claim != nil && err == nil {
 		claim := datastore.GetClaim(claimID)
-		claim, err := processUpdateClaim(helper.Claim, claim, value)
+		claim, err := processUpdateClaim(helper, claim, value)
 		if err != nil {
 			return name, claimID, pubkeyscript, err
 		}
@@ -127,6 +127,8 @@ func processClaimUpdateScript(script *[]byte, vout model.Output, tx model.Transa
 		claim.ClaimAddress = lbrycrd.GetAddressFromPublicKeyScript(pubkeyscript)
 		if blockHeight > 0 {
 			claim.Height = uint(blockHeight)
+		} else {
+			logrus.Info("ClaimUpdate: No blockheight!")
 		}
 		claim.TransactionHashID.SetValid(tx.Hash)
 		claim.Vout = vout.Vout
@@ -143,15 +145,18 @@ func processClaimUpdateScript(script *[]byte, vout model.Output, tx model.Transa
 	return name, claimID, pubkeyscript, err
 }
 
-func processClaim(pbClaim *pb.Claim, claim *model.Claim, value []byte, output model.Output, tx model.Transaction) (*model.Claim, error) {
+func processClaim(helper *c.ClaimHelper, claim *model.Claim, value []byte, output model.Output, tx model.Transaction) (*model.Claim, error) {
 	if claim == nil {
 		claim = &model.Claim{}
 	}
 	claim.TransactionHashID.SetValid(tx.Hash)
 	claim.Vout = output.Vout
-	claim.Version = pbClaim.GetVersion().String()
 	claim.ValueAsHex = hex.EncodeToString(value)
-	claim.ClaimType = int8(pb.Claim_ClaimType_value[pbClaim.GetClaimType().String()])
+	if helper.GetStream() != nil {
+		claim.ClaimType = 1
+	} else if helper.GetChannel() != nil {
+		claim.ClaimType = 2
+	}
 
 	// pbClaim JSON
 	if claimHelper, err := c.DecodeClaimHex(claim.ValueAsHex, global.BlockChainName); err == nil {
@@ -160,10 +165,10 @@ func processClaim(pbClaim *pb.Claim, claim *model.Claim, value []byte, output mo
 		}
 	}
 
-	setSourceInfo(claim, pbClaim)
-	setMetaDataInfo(claim, pbClaim)
-	setPublisherInfo(claim, pbClaim)
-	setCertificateInfo(claim, pbClaim)
+	setSourceInfo(claim, helper)
+	setMetaDataInfo(claim, helper)
+	setPublisherInfo(claim, helper)
+	setCertificateInfo(claim, helper)
 
 	return claim, nil
 }
@@ -185,11 +190,10 @@ func processSupport(claimID string, support *model.Support, output model.Output,
 
 }
 
-func processUpdateClaim(pbClaim *pb.Claim, claim *model.Claim, value []byte) (*model.Claim, error) {
+func processUpdateClaim(helper *c.ClaimHelper, claim *model.Claim, value []byte) (*model.Claim, error) {
 	if claim == nil {
 		return nil, nil
 	}
-	claim.Version = pbClaim.GetVersion().String()
 	claim.ValueAsHex = hex.EncodeToString(value)
 
 	// pbClaim JSON
@@ -199,70 +203,73 @@ func processUpdateClaim(pbClaim *pb.Claim, claim *model.Claim, value []byte) (*m
 		}
 	}
 
-	setSourceInfo(claim, pbClaim)
-	setMetaDataInfo(claim, pbClaim)
-	setPublisherInfo(claim, pbClaim)
-	setCertificateInfo(claim, pbClaim)
+	setSourceInfo(claim, helper)
+	setMetaDataInfo(claim, helper)
+	setPublisherInfo(claim, helper)
+	setCertificateInfo(claim, helper)
 
 	return claim, nil
 }
 
-func setPublisherInfo(claim *model.Claim, pbClaim *pb.Claim) {
+func setPublisherInfo(claim *model.Claim, helper *c.ClaimHelper) {
 	claim.IsCertProcessed = true
 	claim.IsCertValid = false
 	claim.PublisherID = null.NewString("", false)
 	claim.PublisherSig = null.NewString("", false)
-	if pbClaim.GetPublisherSignature() != nil {
+	if helper.Signature != nil {
 		claim.IsCertProcessed = false
-		publisherClaimID := hex.EncodeToString(pbClaim.GetPublisherSignature().GetCertificateId())
-		claim.PublisherID.SetValid(publisherClaimID)
-		claim.PublisherSig.SetValid(hex.EncodeToString(pbClaim.GetPublisherSignature().GetSignature()))
+		claim.PublisherID.SetValid(hex.EncodeToString(helper.ClaimID))
+		claim.PublisherSig.SetValid(hex.EncodeToString(helper.Signature))
 	}
 }
 
-func setCertificateInfo(claim *model.Claim, pbClaim *pb.Claim) {
+func setCertificateInfo(claim *model.Claim, helper *c.ClaimHelper) {
 	claim.IsCertProcessed = false
 	claim.Certificate = null.NewString("", false)
-	if pbClaim.GetClaimType() == pb.Claim_certificateType {
+	if helper.GetChannel() != nil {
 		claim.IsCertProcessed = true
-		certificate := pbClaim.GetCertificate()
-		certBytes, err := json.Marshal(certificate)
-		if err != nil {
-			logrus.Error("Could not form json from certificate")
+		if helper.LegacyClaim != nil {
+			certificate := helper.LegacyClaim.GetCertificate()
+			certBytes, err := json.Marshal(certificate)
+			if err != nil {
+				logrus.Error("Could not form json from certificate")
+			}
+			claim.Certificate.SetValid(string(certBytes))
 		}
-		claim.Certificate.SetValid(string(certBytes))
 	}
 }
 
-func setMetaDataInfo(claim *model.Claim, pbClaim *pb.Claim) {
+func setMetaDataInfo(claim *model.Claim, helper *c.ClaimHelper) {
 	resetMetadata(claim)
-	stream := pbClaim.GetStream()
+	stream := helper.GetStream()
 	if stream != nil {
-		metadata := stream.GetMetadata()
-		if metadata != nil {
-			claim.Title.SetValid(metadata.GetTitle())
-			claim.Description.SetValid(metadata.GetDescription())
-			claim.Language.SetValid(metadata.GetLanguage().String())
-			claim.Author.SetValid(metadata.GetAuthor())
-			claim.ThumbnailURL.SetValid(metadata.GetThumbnail())
-			claim.IsNSFW = metadata.GetNsfw()
-			if metadata.License != nil {
-				claim.License.SetValid(metadata.GetLicense())
+		claim.Title.SetValid(helper.GetStream().GetTitle())
+		claim.Description.SetValid(helper.GetStream().GetDescription())
+		if len(helper.GetStream().GetLanguages()) > 0 {
+			claim.Language.SetValid(helper.GetStream().GetLanguages()[0].Language.String())
+		}
+		claim.Author.SetValid(helper.GetStream().GetAuthor())
+		claim.ThumbnailURL.SetValid(helper.GetStream().GetThumbnailUrl())
+		if len(helper.GetStream().GetTags()) > 0 {
+			for _, tag := range helper.GetStream().GetTags() {
+				if tag == "mature" {
+					claim.IsNSFW = true
+				}
 			}
-			if metadata.LicenseUrl != nil {
-				claim.LicenseURL.SetValid(metadata.GetLicenseUrl())
-			}
-			if metadata.Preview != nil {
-				claim.Preview.SetValid(metadata.GetPreview())
-			}
+		}
+		if helper.GetStream().GetLicense() != "" {
+			claim.License.SetValid(helper.GetStream().GetLicense())
+		}
+		if helper.GetStream().GetLicenseUrl() != "" {
+			claim.LicenseURL.SetValid(helper.GetStream().GetLicenseUrl())
+		}
+		claim.Preview.SetValid("") //Never set
 
-			fee := metadata.GetFee()
-			if fee != nil {
-				claim.FeeCurrency.SetValid(fee.GetCurrency().String())
-
-				claim.Fee = float64(fee.GetAmount())
-				claim.FeeAddress = base58.EncodeBase58(fee.GetAddress())
-			}
+		fee := helper.GetStream().GetFee()
+		if fee != nil {
+			claim.FeeCurrency.SetValid(fee.GetCurrency().String())
+			claim.Fee = float64(fee.GetAmount())
+			claim.FeeAddress = base58.EncodeBase58(fee.GetAddress())
 		}
 	}
 }
@@ -282,21 +289,13 @@ func resetMetadata(claim *model.Claim) {
 	claim.Preview = null.NewString("", false)
 }
 
-func setSourceInfo(claim *model.Claim, pbClaim *pb.Claim) {
+func setSourceInfo(claim *model.Claim, helper *c.ClaimHelper) {
 	claim.ContentType = null.NewString("", false)
 	claim.SDHash = null.NewString("", false)
-	stream := pbClaim.GetStream()
+	stream := helper.GetStream()
 	if stream != nil {
-		source := stream.GetSource()
-		if source != nil {
-			contentType := source.GetContentType()
-			if contentType != "" {
-				claim.ContentType.SetValid(contentType)
-				if source.GetSourceType() == pb.Source_lbry_sd_hash {
-					claim.SDHash.SetValid(hex.EncodeToString(source.GetSource()))
-				}
-			}
-		}
+		claim.ContentType.SetValid(stream.GetMediaType())
+		claim.SDHash.SetValid(hex.EncodeToString(stream.GetSdHash()))
 	}
 }
 
