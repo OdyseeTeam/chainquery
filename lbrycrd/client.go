@@ -126,18 +126,6 @@ func fixDecodeProto(src, dest reflect.Type, data interface{}) (interface{}, erro
 	return data, nil
 }
 
-func getEnumVal(enum map[string]int32, data interface{}) (int32, error) {
-	s, ok := data.(string)
-	if !ok {
-		return 0, errors.Base("expected a string")
-	}
-	val, ok := enum[s]
-	if !ok {
-		return 0, errors.Base("invalid enum key")
-	}
-	return val, nil
-}
-
 func decodeInt(data interface{}) (interface{}, error) {
 	if n, ok := data.(json.Number); ok {
 		val, err := n.Int64()
