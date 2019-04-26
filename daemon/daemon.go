@@ -63,7 +63,7 @@ func DoYourThing() {
 }
 
 func initJobs() {
-	scheduleJob(jobs.ClaimTrieSync, "Claimtrie Sync", 15*time.Minute)
+	scheduleJob(jobs.ClaimTrieSyncAsync, "Claimtrie Sync", 15*time.Minute)
 	scheduleJob(jobs.MempoolSync, "Mempool Sync", 1*time.Second)
 	scheduleJob(jobs.CertificateSync, "Certificate Sync", 5*time.Second)
 	scheduleJob(jobs.ValidateChain, "Validate Chain", 24*time.Hour)

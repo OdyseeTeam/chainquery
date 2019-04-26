@@ -4,6 +4,8 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 
+	"github.com/lbryio/chainquery/util"
+
 	"github.com/lbryio/chainquery/global"
 
 	"github.com/lbryio/lbry.go/extras/errors"
@@ -64,6 +66,16 @@ var regTestNetParams = chaincfg.Params{
 }
 
 var paramsMap = map[string]chaincfg.Params{lbrycrdMain: mainNetParams, lbrycrdTestnet: testNetParams, lbrycrdRegtest: regTestNetParams}
+
+//GetChainParams returns the currently set blockchain name as the chain parameters. Set in the config.
+func GetChainParams() (*chaincfg.Params, error) {
+	chainParams, ok := paramsMap[global.BlockChainName]
+	if !ok {
+		return nil, errors.Err("unknown chain name %s", global.BlockChainName)
+	}
+
+	return &chainParams, nil
+}
 
 // IsClaimScript return true if the script for the vout contains the right opt codes pertaining to a claim.
 func IsClaimScript(script []byte) bool {
@@ -153,7 +165,7 @@ func ParseClaimSupportScript(script []byte) (name string, claimid string, pubkey
 	claimidBytesToRead := int(script[nameEnd])
 	claimidStart := nameEnd + 1
 	claimidEnd := claimidStart + claimidBytesToRead
-	bytes := reverseBytes(script[claimidStart:claimidEnd])
+	bytes := util.ReverseBytes(script[claimidStart:claimidEnd])
 	claimid = hex.EncodeToString(bytes)
 
 	//PubKeyScript
@@ -182,7 +194,7 @@ func ParseClaimUpdateScript(script []byte) (name string, claimid string, value [
 	claimidBytesToRead := int(script[nameEnd])
 	claimidStart := nameEnd + 1
 	claimidEnd := claimidStart + claimidBytesToRead
-	bytes := reverseBytes(script[claimidStart:claimidEnd])
+	bytes := util.ReverseBytes(script[claimidStart:claimidEnd])
 	claimid = hex.EncodeToString(bytes)
 
 	//Value
@@ -302,11 +314,11 @@ func getAddressFromP2PK(hexstring string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	chainParams, ok := paramsMap[global.BlockChainName]
-	if !ok {
-		return "", errors.Err("unknown chain name %s", global.BlockChainName)
+	chainParams, err := GetChainParams()
+	if err != nil {
+		return "", errors.Err(err)
 	}
-	addr, err := btcutil.NewAddressPubKey(hexstringBytes, &chainParams)
+	addr, err := btcutil.NewAddressPubKey(hexstringBytes, chainParams)
 	if err != nil {
 		return "", err
 	}
@@ -320,11 +332,11 @@ func getAddressFromP2PKH(hexstring string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	chainParams, ok := paramsMap[global.BlockChainName]
-	if !ok {
-		return "", errors.Err("unknown chain name %s", global.BlockChainName)
+	chainParams, err := GetChainParams()
+	if err != nil {
+		return "", errors.Err(err)
 	}
-	addr, err := btcutil.NewAddressPubKeyHash(hexstringBytes, &chainParams)
+	addr, err := btcutil.NewAddressPubKeyHash(hexstringBytes, chainParams)
 	if err != nil {
 		return "", err
 	}
@@ -339,23 +351,14 @@ func getAddressFromP2SH(hexstring string) (string, error) {
 		return "", err
 	}
 
-	chainParams, ok := paramsMap[global.BlockChainName]
-	if !ok {
-		return "", errors.Err("unknown chain name %s", global.BlockChainName)
+	chainParams, err := GetChainParams()
+	if err != nil {
+		return "", errors.Err(err)
 	}
-	addr, err := btcutil.NewAddressScriptHashFromHash(hexstringBytes, &chainParams)
+	addr, err := btcutil.NewAddressScriptHashFromHash(hexstringBytes, chainParams)
 	if err != nil {
 		return "", err
 	}
 	address := addr.EncodeAddress()
 	return address, nil
-}
-
-// rev reverses a byte slice. useful for switching endian-ness
-func reverseBytes(b []byte) []byte {
-	r := make([]byte, len(b))
-	for left, right := 0, len(b)-1; left < right; left, right = left+1, right-1 {
-		r[left], r[right] = b[right], b[left]
-	}
-	return r
 }

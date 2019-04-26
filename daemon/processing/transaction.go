@@ -210,7 +210,7 @@ func saveUpdateInputs(transaction *model.Transaction, jsonTx *lbrycrd.TxRawResul
 				return
 			default:
 				//q("VIN start passing new job")
-				vinjobs <- vinToProcess{jsonVin: &vins[i], tx: transaction, txDC: txDbCrAddrMap}
+				vinjobs <- vinToProcess{jsonVin: &vins[i], tx: transaction, txDC: txDbCrAddrMap, vin: uint64(i)}
 				//q("VIN end pass new job")
 			}
 		}

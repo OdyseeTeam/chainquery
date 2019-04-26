@@ -109,7 +109,7 @@ func SyncName(r *http.Request) api.Response {
 
 	count, err := lbrycrd.GetBlockCount()
 	if err != nil {
-		logrus.Error("ClaimTrieSync: Error getting block height", err)
+		logrus.Error("ClaimTrieSyncAsync: Error getting block height", err)
 		return api.Response{Error: errors.Err(err)}
 	}
 

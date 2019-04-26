@@ -66,6 +66,12 @@ func certifyClaim(claimToBeSynced claimToBeSynced) (bool, error) {
 		return false, errors.Err(errors.Prefix(certificateSyncPrefix, err))
 	}
 
+	if claimToBeSynced.FirstInputTxHash != "" {
+		if verified, err := signedHelper.ValidateClaimSignature(certHelper, claimToBeSynced.FirstInputTxHash, claimToBeSynced.ChannelClaimID, global.BlockChainName); verified {
+			return verified, err
+		}
+	}
+
 	return signedHelper.ValidateClaimSignature(certHelper, claimToBeSynced.SignedClaimAddress, claimToBeSynced.ChannelClaimID, global.BlockChainName)
 }
 
@@ -75,6 +81,7 @@ type claimToBeSynced struct {
 	SignedClaimAddress string `boil:"claim_address"`
 	ChannelHex         string `boil:"channel_hex"`
 	ChannelClaimID     string `boil:"claim_id"`
+	FirstInputTxHash   string `boil:"first_input_tx_hash"`
 }
 
 func getClaimsToBeSynced() ([]claimToBeSynced, error) {
@@ -95,9 +102,11 @@ func getClaimsToBeSynced() ([]claimToBeSynced, error) {
 			`+signedClaimHex+`,
 			`+claimAddress+`,
 			`+channelHex+`,
-			`+ChannelClaimID+` 
+			`+ChannelClaimID+`, 
+			COALESCE(input.prevout_hash, "") as first_input_tx_hash 
 		FROM `+claim+`
-		INNER JOIN `+claim+` channel ON `+ChannelClaimID+` = `+publisherID+`
+		INNER JOIN `+claim+` channel ON `+ChannelClaimID+` = `+publisherID+` 
+		LEFT JOIN input ON input.id = (SELECT id FROM input WHERE input.transaction_hash = claim.transaction_hash_id ORDER BY vin LIMIT 1 ) 
 		WHERE `+isCertProcessed+`=? LIMIT ?`, false, certsProcessedPerIteration).BindG(context, &claims)
 	if err != nil {
 		return nil, err

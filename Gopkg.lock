@@ -11,6 +11,7 @@
     "chaincfg",
     "chaincfg/chainhash",
     "rpcclient",
+    "txscript",
     "wire",
   ]
   pruneopts = ""
@@ -231,7 +232,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:934f4dcadd6535b7ce6dc3a23913e580f019aef849f0c08c8b9ffccd11730bcb"
+  digest = "1:c773049fa41658bcddd5c25cd560c14590ff00ab65ae14b943b4fda38cd23f98"
   name = "github.com/lbryio/lbryschema.go"
   packages = [
     "address",
@@ -239,7 +240,7 @@
     "claim",
   ]
   pruneopts = ""
-  revision = "bad2d869f55c7020169ac47697e7bb66da126b6a"
+  revision = "322c658307e0e1bda42b4bba25c862c11ac9266c"
 
 [[projects]]
   digest = "1:5e30b8342813a6a85a647f9277e34ffcd5872dc57ab590dd9b251b145b6ec88f"
@@ -251,14 +252,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:be8d9aa1230e75e42e7c97d7b79d964dbb29e08f9e5ea904cd1db40f6bb0a321"
+  digest = "1:931bd230e6095e73b6b8b75cdabe0d016d06924b613f360a2345c571b0c78edc"
   name = "github.com/lbryio/types"
   packages = [
     "v1/go",
     "v2/go",
   ]
   pruneopts = ""
-  revision = "54c3c28f676a920b8835bf345d509efbb2ababc2"
+  revision = "321fb2abda9cf6de68b679cc0fc95191191ec167"
 
 [[projects]]
   digest = "1:961dc3b1d11f969370533390fdf203813162980c858e1dabe827b60940c909a5"
@@ -543,7 +544,12 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/btcsuite/btcd/btcec",
+    "github.com/btcsuite/btcd/btcjson",
     "github.com/btcsuite/btcd/chaincfg",
+    "github.com/btcsuite/btcd/chaincfg/chainhash",
+    "github.com/btcsuite/btcd/txscript",
+    "github.com/btcsuite/btcd/wire",
     "github.com/btcsuite/btcutil",
     "github.com/fatih/color",
     "github.com/fsnotify/fsnotify",
@@ -562,6 +568,7 @@
     "github.com/lbryio/lbryschema.go/address/base58",
     "github.com/lbryio/lbryschema.go/claim",
     "github.com/lbryio/ozzo-validation",
+    "github.com/lbryio/types/v2/go",
     "github.com/mitchellh/mapstructure",
     "github.com/pkg/errors",
     "github.com/rubenv/sql-migrate",

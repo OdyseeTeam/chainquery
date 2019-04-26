@@ -16,7 +16,7 @@ docker pull tiger5226/regtest
 curl https://raw.githubusercontent.com/lbryio/lbry-docker/master/lbrycrd/regtest/docker-compose.yml > docker-compose.yml
 docker-compose up -d lbrycrd
 docker ps
-sleep 2
+sleep 3
 docker-compose exec lbrycrd lbrycrd-cli -conf=/data/.lbrycrd/lbrycrd.conf generate 200
 ../bin/chainquery e2e
 echo $?

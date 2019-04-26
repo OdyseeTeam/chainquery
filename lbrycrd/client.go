@@ -13,7 +13,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var defaultClient *upstream.Client
+//LBRYcrdClient is the client for communicating with LBRYcrd from Chainquery.
+var LBRYcrdClient *upstream.Client
 
 // LBRYcrdURL is the connection string for lbrycrd and is set from the configuration
 var LBRYcrdURL string
@@ -24,7 +25,7 @@ func Init() *upstream.Client {
 	if err != nil {
 		logrus.Panic("Initializing LBRYcrd Client: ", err)
 	}
-	defaultClient = lbrycrdClient
+	LBRYcrdClient = lbrycrdClient
 	_, err = GetBalance()
 	if err != nil {
 		logrus.Panicf("Error connecting to lbrycrd: %+v", err)
@@ -52,7 +53,7 @@ func callNoDecode(command string, params ...interface{}) (interface{}, error) {
 		}
 	}
 
-	encodedRes, err := defaultClient.RawRequest(command, encodedParams)
+	encodedRes, err := LBRYcrdClient.RawRequest(command, encodedParams)
 	if err != nil {
 		return nil, err
 	}
