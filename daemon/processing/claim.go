@@ -4,6 +4,8 @@ import (
 	"encoding/hex"
 	"encoding/json"
 
+	util2 "github.com/lbryio/chainquery/util"
+
 	"github.com/lbryio/chainquery/datastore"
 	"github.com/lbryio/chainquery/global"
 	"github.com/lbryio/chainquery/lbrycrd"
@@ -159,9 +161,12 @@ func processClaim(helper *c.ClaimHelper, claim *model.Claim, value []byte, outpu
 	}
 
 	// pbClaim JSON
-	if claimHelper, err := c.DecodeClaimHex(claim.ValueAsHex, global.BlockChainName); err == nil {
-		if jsonvalue, err := claimHelper.RenderJSON(); err == nil {
-			claim.ValueAsJSON.SetValid(jsonvalue)
+	if claimHelper, err := c.DecodeClaimHex(claim.ValueAsHex, global.BlockChainName); err == nil && claimHelper != nil {
+		json, err := GetValueAsJSON(*claimHelper)
+		if err != nil {
+			logrus.Error(err)
+		} else {
+			claim.ValueAsJSON.SetValid(json)
 		}
 	}
 
@@ -204,6 +209,11 @@ func processUpdateClaim(helper *c.ClaimHelper, claim *model.Claim, value []byte)
 	if claimHelper, err := c.DecodeClaimHex(claim.ValueAsHex, global.BlockChainName); err == nil {
 		if jsonvalue, err := claimHelper.RenderJSON(); err == nil {
 			claim.ValueAsJSON.SetValid(jsonvalue)
+			json, err := GetValueAsJSON(*claimHelper)
+			if err == nil {
+				logrus.Info(json)
+				claim.ValueAsJSON.SetValid(json)
+			}
 		}
 	}
 
@@ -226,7 +236,11 @@ func setPublisherInfo(claim *model.Claim, helper *c.ClaimHelper) {
 	claim.PublisherSig = null.NewString("", false)
 	if helper.Signature != nil {
 		claim.IsCertProcessed = false
-		claim.PublisherID.SetValid(hex.EncodeToString(helper.ClaimID))
+		if helper.LegacyClaim == nil {
+			claim.PublisherID.SetValid(hex.EncodeToString(util2.ReverseBytes(helper.ClaimID)))
+		} else {
+			claim.PublisherID.SetValid(hex.EncodeToString(helper.ClaimID))
+		}
 		claim.PublisherSig.SetValid(hex.EncodeToString(helper.Signature))
 	}
 }
@@ -251,15 +265,15 @@ func setMetaDataInfo(claim *model.Claim, helper *c.ClaimHelper) {
 	resetMetadata(claim)
 	stream := helper.GetStream()
 	if stream != nil {
-		claim.Title.SetValid(helper.GetStream().GetTitle())
-		claim.Description.SetValid(helper.GetStream().GetDescription())
-		if len(helper.GetStream().GetLanguages()) > 0 {
-			claim.Language.SetValid(helper.GetStream().GetLanguages()[0].Language.String())
+		claim.Title.SetValid(helper.GetTitle())
+		claim.Description.SetValid(helper.GetDescription())
+		if len(helper.GetLanguages()) > 0 {
+			claim.Language.SetValid(helper.GetLanguages()[0].Language.String())
 		}
 		claim.Author.SetValid(helper.GetStream().GetAuthor())
-		claim.ThumbnailURL.SetValid(helper.GetStream().GetThumbnailUrl())
-		if len(helper.GetStream().GetTags()) > 0 {
-			for _, tag := range helper.GetStream().GetTags() {
+		claim.ThumbnailURL.SetValid(helper.GetThumbnail().GetUrl())
+		if len(helper.GetTags()) > 0 {
+			for _, tag := range helper.GetTags() {
 				if tag == "mature" {
 					claim.IsNSFW = true
 				}
@@ -298,8 +312,11 @@ func setSourceInfo(claim *model.Claim, helper *c.ClaimHelper) {
 	claim.SDHash = null.NewString("", false)
 	stream := helper.GetStream()
 	if stream != nil {
-		claim.ContentType.SetValid(stream.GetMediaType())
-		claim.SDHash.SetValid(hex.EncodeToString(stream.GetSdHash()))
+		source := stream.GetSource()
+		if source != nil {
+			claim.ContentType.SetValid(source.GetMediaType())
+			claim.SDHash.SetValid(hex.EncodeToString(stream.GetSource().GetSdHash()))
+		}
 	}
 }
 

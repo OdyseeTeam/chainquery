@@ -38,16 +38,17 @@ type claimTrieSyncStatus struct {
 	LastHeight       int64            `json:"last_height"`
 }
 
-// ClaimTrieSync synchronizes claimtrie information that is calculated and enforced by lbrycrd.
-func ClaimTrieSync() {
+// ClaimTrieSyncAsync synchronizes claimtrie information that is calculated and enforced by lbrycrd.
+func ClaimTrieSyncAsync() {
 	if !claimTrieSyncRunning {
 		claimTrieSyncRunning = true
 		//Run in background so the application can shutdown properly.
-		go claimTrieSync()
+		go ClaimTrieSync()
 	}
 }
 
-func claimTrieSync() {
+// ClaimTrieSync syncs the claim trie bidstate, effective amount and effective height
+func ClaimTrieSync() {
 	//defer util.TimeTrack(time.Now(), "ClaimTrieSync", "always")
 	printDebug("ClaimTrieSync: started... ")
 	if lastSync == nil {

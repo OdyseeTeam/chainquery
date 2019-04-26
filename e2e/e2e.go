@@ -1,12 +1,17 @@
 package e2e
 
 import (
+	"os"
 	"time"
 
 	"github.com/lbryio/chainquery/daemon"
+	"github.com/lbryio/chainquery/daemon/jobs"
 	"github.com/lbryio/chainquery/lbrycrd"
+
 	"github.com/sirupsen/logrus"
 )
+
+const claimAmount = 0.5
 
 // StartE2ETesting launches the test suite
 func StartE2ETesting() {
@@ -21,6 +26,73 @@ func StartE2ETesting() {
 	logrus.Info(lbrycrd.ClaimName("channel001", "08011002225e0801100322583056301006072a8648ce3d020106052b8104000a0342000422ae63a64fd2cff5e698072c1a2af8117cc734b12458321946aec08081b78ce5498e9b4325b6d0352a7ab1dfe1b951a75f290f1321b26901886bb8a2fee59c0f", 0.01))
 	logrus.Info(lbrycrd.ClaimName("channel002", "08011002225e0801100322583056301006072a8648ce3d020106052b8104000a0342000490b9d5049a72bdf7ce6b6e11f9108a3b92fcaf431d29e6040f36a2786c95e4a42a81a859fd80951f1f459113c4d781cb3647222ce0cf0ba2d117d362e823510e", 0.01))
 	logrus.Info(lbrycrd.GenerateBlocks(10))
-	time.Sleep(10 * time.Second)
+	createChannelWithClaims()
+	logrus.Info(lbrycrd.GenerateBlocks(1))
+	time.Sleep(15 * time.Second)
+	jobs.ClaimTrieSync()
+	jobs.CertificateSync()
+	time.Sleep(2 * time.Second)
+	exitOnErr(checkCertValid([]string{"claim1", "claim2", "claim3"}))
 	daemon.ShutdownDaemon()
+}
+
+func createChannelWithClaims() {
+
+	channel, key, err := createChannel("@MyChannel")
+	if err != nil {
+		exit(1, err)
+	}
+
+	logrus.Info(lbrycrd.GenerateBlocks(1))
+
+	claimResponse, err := lbrycrd.GetClaimsForName("@MyChannel")
+	if err != nil {
+		exit(1, err)
+	}
+
+	claim1, err := newClaim("title1", "description2")
+	if err != nil {
+		exit(1, err)
+	}
+
+	claim2, err := newClaim("title1", "description2")
+	if err != nil {
+		exit(1, err)
+	}
+	claim3, err := newClaim("title1", "description2")
+	if err != nil {
+		exit(1, err)
+	}
+
+	rawTx, err := getEmptyTx(claimAmount * 3)
+	if err != nil {
+		exit(1, err)
+	}
+
+	exitOnErr(signClaim(rawTx, *key, claim1, channel, claimResponse.Claims[0].ClaimID))
+	exitOnErr(signClaim(rawTx, *key, claim2, channel, claimResponse.Claims[0].ClaimID))
+	exitOnErr(signClaim(rawTx, *key, claim3, channel, claimResponse.Claims[0].ClaimID))
+
+	exitOnErr(addClaimToTx(rawTx, claim1, "claim1"))
+	exitOnErr(addClaimToTx(rawTx, claim2, "claim2"))
+	exitOnErr(addClaimToTx(rawTx, claim3, "claim3"))
+
+	chainHash, err := signTxAndSend(rawTx)
+	if err != nil {
+		exit(1, err)
+	}
+
+	logrus.Info("Tx:", chainHash.String())
+
+}
+
+func exit(code int, err error) {
+	logrus.Error(err)
+	os.Exit(code)
+}
+
+func exitOnErr(err error) {
+	if err != nil {
+		exit(1, err)
+	}
 }

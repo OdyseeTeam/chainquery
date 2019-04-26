@@ -13,6 +13,7 @@
 // migration/010_triggers.sql
 // migration/011_add_license.sql
 // migration/012_store_last_height.sql
+// migration/013_add_input_vin.sql
 // DO NOT EDIT!
 
 package migration
@@ -340,6 +341,26 @@ func migration012_store_last_heightSql() (*asset, error) {
 	return a, nil
 }
 
+var _migration013_add_input_vinSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x94\x8e\xc1\x6a\x84\x30\x10\x86\xef\x3e\xc5\xdc\x6c\x29\x1e\x5a\xf0\xd4\xd3\x98\x4c\x55\x48\x53\x88\x49\xaf\x92\xda\x20\x01\x9d\x8a\xcd\xee\xf3\x2f\x2e\xc8\xee\x61\xf7\xb0\xb7\xf9\x87\x99\xef\xfb\x8b\x02\x5e\xe6\x38\xae\x3e\x05\x70\x4b\x96\x5d\xe7\x2e\xf9\x14\xe6\xc0\xa9\x0a\x63\xe4\x0c\x95\x25\x03\x16\x2b\x45\x10\x79\x39\x24\x40\x29\x41\x7c\x29\xf7\xa9\xe1\x18\x19\x5a\x6d\xa9\x26\x03\x4e\x77\x6d\xad\x49\xbe\xdf\xa6\x11\xff\x3e\xe8\x11\x0d\xea\x9a\x76\xd5\xf0\x17\xf9\xc7\xff\x87\xcb\xf0\x8d\x46\x34\x68\x9e\xde\xca\xf2\x79\x3b\x36\x28\x36\x44\x47\x16\xf2\xc9\xa7\xc8\xaf\xf9\xf6\xac\xd0\xd2\xbe\xe8\xc7\xc0\x61\xf5\x53\x3f\xc4\x1c\xb4\x53\x0a\x24\x7d\xa0\x53\xf6\x1c\xee\x37\x3f\x05\x00\x00\xff\xff\xb4\x34\x85\xa6\x30\x01\x00\x00")
+
+func migration013_add_input_vinSqlBytes() ([]byte, error) {
+	return bindataRead(
+		_migration013_add_input_vinSql,
+		"migration/013_add_input_vin.sql",
+	)
+}
+
+func migration013_add_input_vinSql() (*asset, error) {
+	bytes, err := migration013_add_input_vinSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "migration/013_add_input_vin.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -405,6 +426,7 @@ var _bindata = map[string]func() (*asset, error){
 	"migration/010_triggers.sql":               migration010_triggersSql,
 	"migration/011_add_license.sql":            migration011_add_licenseSql,
 	"migration/012_store_last_height.sql":      migration012_store_last_heightSql,
+	"migration/013_add_input_vin.sql":          migration013_add_input_vinSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -462,6 +484,7 @@ var _bintree = &bintree{nil, map[string]*bintree{
 		"010_triggers.sql":               &bintree{migration010_triggersSql, map[string]*bintree{}},
 		"011_add_license.sql":            &bintree{migration011_add_licenseSql, map[string]*bintree{}},
 		"012_store_last_height.sql":      &bintree{migration012_store_last_heightSql, map[string]*bintree{}},
+		"013_add_input_vin.sql":          &bintree{migration013_add_input_vinSql, map[string]*bintree{}},
 	}},
 }}
 
