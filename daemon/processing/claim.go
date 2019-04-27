@@ -206,14 +206,12 @@ func processUpdateClaim(helper *c.ClaimHelper, claim *model.Claim, value []byte)
 	claim.ValueAsHex = hex.EncodeToString(value)
 
 	// pbClaim JSON
-	if claimHelper, err := c.DecodeClaimHex(claim.ValueAsHex, global.BlockChainName); err == nil {
-		if jsonvalue, err := claimHelper.RenderJSON(); err == nil {
-			claim.ValueAsJSON.SetValid(jsonvalue)
-			json, err := GetValueAsJSON(*claimHelper)
-			if err == nil {
-				logrus.Info(json)
-				claim.ValueAsJSON.SetValid(json)
-			}
+	if claimHelper, err := c.DecodeClaimHex(claim.ValueAsHex, global.BlockChainName); err == nil && claimHelper != nil {
+		json, err := GetValueAsJSON(*claimHelper)
+		if err != nil {
+			logrus.Error(err)
+		} else {
+			claim.ValueAsJSON.SetValid(json)
 		}
 	}
 
@@ -246,7 +244,6 @@ func setPublisherInfo(claim *model.Claim, helper *c.ClaimHelper) {
 }
 
 func setCertificateInfo(claim *model.Claim, helper *c.ClaimHelper) {
-	claim.IsCertProcessed = false
 	claim.Certificate = null.NewString("", false)
 	if helper.GetChannel() != nil {
 		claim.IsCertProcessed = true
