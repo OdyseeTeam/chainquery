@@ -81,7 +81,7 @@ func processClaimNameScript(script *[]byte, vout model.Output, tx model.Transact
 	if blockHeight > 0 {
 		claim.Height = uint(blockHeight)
 	} else {
-		logrus.Info("ClaimNew: No blockheight!")
+		logrus.Debug("ClaimNew: No blockheight!")
 	}
 	err = datastore.PutClaim(claim)
 
@@ -130,7 +130,7 @@ func processClaimUpdateScript(script *[]byte, vout model.Output, tx model.Transa
 		if blockHeight > 0 {
 			claim.Height = uint(blockHeight)
 		} else {
-			logrus.Info("ClaimUpdate: No blockheight!")
+			logrus.Debug("ClaimUpdate: No blockheight!")
 		}
 		claim.TransactionHashID.SetValid(tx.Hash)
 		claim.Vout = vout.Vout

@@ -363,9 +363,6 @@ func reprocessQueue(manager *txSyncManager) {
 			return
 		case redoJob := <-manager.redoJobsCh:
 			q("REDO: start send new redo job - " + redoJob.tx.Txid)
-			if redoJob.blockHeight == 0 {
-				panic("no blockheight! - redo job!")
-			}
 			manager.jobsCh <- redoJob
 			q("REDO: end send new redo job - " + redoJob.tx.Txid)
 		}
