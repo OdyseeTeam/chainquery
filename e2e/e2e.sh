@@ -12,7 +12,7 @@ cd persist
 echo 'lbrycrdurl="rpc://lbry:lbry@localhost:11337"' > chainqueryconfig.toml
 echo 'mysqldsn="lbry:lbry@tcp(localhost:3306)/chainquery_e2e_test"' >> chainqueryconfig.toml
 echo 'blockchainname="lbrycrd_regtest"' >> chainqueryconfig.toml
-curl https://raw.githubusercontent.com/lbryio/lbry-docker/refactor/lbrycrd/compose/docker-compose.yml-regtest > docker-compose.yml
+curl https://raw.githubusercontent.com/lbryio/lbry-docker/master/lbrycrd/compose/docker-compose.yml-regtest > docker-compose.yml
 docker-compose pull
 docker-compose up -d lbrycrd
 docker ps
