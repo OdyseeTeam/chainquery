@@ -4,6 +4,9 @@ import (
 	"encoding/hex"
 	"encoding/json"
 
+	"github.com/lbryio/lbryschema.go/address/base58"
+	pb "github.com/lbryio/types/v2/go"
+
 	util2 "github.com/lbryio/chainquery/util"
 
 	"github.com/lbryio/chainquery/datastore"
@@ -13,7 +16,6 @@ import (
 
 	"github.com/lbryio/lbry.go/extras/errors"
 	util "github.com/lbryio/lbry.go/lbrycrd"
-	"github.com/lbryio/lbryschema.go/address/base58"
 	c "github.com/lbryio/lbryschema.go/claim"
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/null"
@@ -70,6 +72,13 @@ func processClaimNameScript(script *[]byte, vout model.Output, tx model.Transact
 		return name, claimid, pkscript, err
 	}
 	claim := datastore.GetClaim(claimid)
+	if claim == nil {
+		claim = &model.Claim{ClaimID: claimid, TransactionHashID: null.NewString(tx.Hash, true), Vout: vout.Vout}
+		err := datastore.PutClaim(claim)
+		if err != nil {
+			return name, claimid, pkscript, err
+		}
+	}
 	claim, err = processClaim(helper, claim, value, vout, tx)
 	if err != nil {
 		return name, claimid, pkscript, err
@@ -122,8 +131,11 @@ func processClaimUpdateScript(script *[]byte, vout model.Output, tx model.Transa
 			return name, claimID, pubkeyscript, err
 		}
 		if claim == nil {
-			logrus.Debug("ClaimUpdate for non-existent claim! ", claimID, " ", tx.Hash, " ", vout.Vout)
-			return name, claimID, pubkeyscript, err
+			claim = &model.Claim{ClaimID: claimID, TransactionHashID: null.NewString(tx.Hash, true), Vout: vout.Vout}
+			err := datastore.PutClaim(claim)
+			if err != nil {
+				return name, claimID, pubkeyscript, err
+			}
 		}
 		claim.TransactionTime = tx.TransactionTime
 		claim.ClaimAddress = lbrycrd.GetAddressFromPublicKeyScript(pubkeyscript)
@@ -148,11 +160,6 @@ func processClaimUpdateScript(script *[]byte, vout model.Output, tx model.Transa
 }
 
 func processClaim(helper *c.ClaimHelper, claim *model.Claim, value []byte, output model.Output, tx model.Transaction) (*model.Claim, error) {
-	if claim == nil {
-		claim = &model.Claim{}
-	}
-	claim.TransactionHashID.SetValid(tx.Hash)
-	claim.Vout = output.Vout
 	claim.ValueAsHex = hex.EncodeToString(value)
 	if helper.GetStream() != nil {
 		claim.ClaimType = 1
@@ -171,7 +178,10 @@ func processClaim(helper *c.ClaimHelper, claim *model.Claim, value []byte, outpu
 	}
 
 	setSourceInfo(claim, helper)
-	setMetaDataInfo(claim, helper)
+	err := setMetaDataInfo(claim, helper)
+	if err != nil {
+		return nil, err
+	}
 	setPublisherInfo(claim, helper)
 	setCertificateInfo(claim, helper)
 
@@ -216,7 +226,10 @@ func processUpdateClaim(helper *c.ClaimHelper, claim *model.Claim, value []byte)
 	}
 
 	setSourceInfo(claim, helper)
-	setMetaDataInfo(claim, helper)
+	err := setMetaDataInfo(claim, helper)
+	if err != nil {
+		return nil, err
+	}
 	setPublisherInfo(claim, helper)
 	setCertificateInfo(claim, helper)
 
@@ -258,38 +271,203 @@ func setCertificateInfo(claim *model.Claim, helper *c.ClaimHelper) {
 	}
 }
 
-func setMetaDataInfo(claim *model.Claim, helper *c.ClaimHelper) {
-	resetMetadata(claim)
+func setMetaDataInfo(claim *model.Claim, helper *c.ClaimHelper) error {
+	err := resetMetadata(claim)
+	if err != nil {
+		return err
+	}
+	claim.Title.SetValid(helper.GetTitle())
+	claim.Description.SetValid(helper.GetDescription())
+	claim.ThumbnailURL.SetValid(helper.GetThumbnail().GetUrl())
+	if len(helper.GetTags()) > 0 {
+		err := setTags(claim, helper.GetTags())
+		if err != nil {
+			return err
+		}
+	}
+	if len(helper.GetLanguages()) > 0 {
+		claim.Language.SetValid(helper.GetLanguages()[0].Language.String())
+	}
 	stream := helper.GetStream()
 	if stream != nil {
-		claim.Title.SetValid(helper.GetTitle())
-		claim.Description.SetValid(helper.GetDescription())
-		if len(helper.GetLanguages()) > 0 {
-			claim.Language.SetValid(helper.GetLanguages()[0].Language.String())
+		setStreamMetadata(claim, *stream)
+	}
+	channel := helper.GetChannel()
+	if channel != nil {
+		setChannelMetadata(claim, *channel)
+	}
+	list := helper.GetCollection()
+	if list != nil {
+		setCollectionMetadata(claim, *list)
+	}
+	reference := helper.GetRepost()
+	if reference != nil {
+		claim.Type.SetValid(global.ClaimReferenceClaimType)
+		if len(reference.GetClaimHash()) > 0 {
+			claim.ClaimReference.SetValid(hex.EncodeToString(reference.GetClaimHash()))
 		}
-		claim.Author.SetValid(helper.GetStream().GetAuthor())
-		claim.ThumbnailURL.SetValid(helper.GetThumbnail().GetUrl())
-		if len(helper.GetTags()) > 0 {
-			for _, tag := range helper.GetTags() {
-				if tag == "mature" {
-					claim.IsNSFW = true
-				}
+	}
+
+	return nil
+}
+
+func setTags(claim *model.Claim, tags []string) error {
+	for _, tag := range tags {
+		if tag == "mature" {
+			claim.IsNSFW = true
+		}
+		t := &model.Tag{Tag: tag}
+		err := t.UpsertG(boil.Infer(), boil.Infer())
+		if err != nil {
+			return err
+		}
+		ct := &model.ClaimTag{ClaimID: claim.ClaimID, TagID: null.NewUint64(t.ID, true)}
+		err = claim.AddClaimTagsG(true, ct)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func setStreamMetadata(claim *model.Claim, stream pb.Stream) {
+	claim.Type.SetValid(global.StreamClaimType)
+	claim.Author.SetValid(stream.GetAuthor())
+
+	claim.License.SetValid(stream.GetLicense())
+	claim.LicenseURL.SetValid(stream.GetLicenseUrl())
+	claim.Preview.SetValid("") //Never set
+
+	fee := stream.GetFee()
+	if fee != nil {
+		claim.FeeCurrency.SetValid(fee.GetCurrency().String())
+		claim.Fee = float64(fee.GetAmount())
+		claim.FeeAddress = base58.EncodeBase58(fee.GetAddress())
+	}
+	s := stream.GetSource()
+	if s != nil {
+		setSourceMetadata(claim, s)
+	}
+	if stream.GetReleaseTime() > 0 {
+		claim.ReleaseTime.SetValid(uint64(stream.GetReleaseTime()))
+	}
+	if stream.GetImage() != nil {
+		i := stream.GetImage()
+		if i.GetHeight() > 0 {
+			claim.FrameHeight.SetValid(uint64(i.GetHeight()))
+		}
+		if i.GetWidth() > 0 {
+			claim.FrameWidth.SetValid(uint64(i.GetWidth()))
+		}
+	}
+	if stream.GetVideo() != nil {
+		v := stream.GetVideo()
+		if v.GetHeight() > 0 {
+			claim.FrameHeight.SetValid(uint64(v.GetHeight()))
+		}
+		if v.GetWidth() > 0 {
+			claim.FrameWidth.SetValid(uint64(v.GetWidth()))
+		}
+		if v.GetDuration() > 0 {
+			claim.Duration.SetValid(uint64(v.GetDuration()))
+		}
+		if v.GetAudio() != nil {
+			if v.GetAudio().GetDuration() > 0 {
+				claim.AudioDuration.SetValid(uint64(v.GetAudio().GetDuration()))
 			}
 		}
-		claim.License.SetValid(helper.GetStream().GetLicense())
-		claim.LicenseURL.SetValid(helper.GetStream().GetLicenseUrl())
-		claim.Preview.SetValid("") //Never set
-
-		fee := helper.GetStream().GetFee()
-		if fee != nil {
-			claim.FeeCurrency.SetValid(fee.GetCurrency().String())
-			claim.Fee = float64(fee.GetAmount())
-			claim.FeeAddress = base58.EncodeBase58(fee.GetAddress())
+	}
+	if stream.GetAudio() != nil {
+		if stream.GetAudio().GetDuration() > 0 {
+			claim.AudioDuration.SetValid(uint64(stream.GetAudio().GetDuration()))
+		}
+	}
+	if stream.GetSoftware() != nil {
+		s := stream.GetSoftware()
+		if s.GetOs() != "" {
+			claim.Os.SetValid(s.GetOs())
 		}
 	}
 }
 
-func resetMetadata(claim *model.Claim) {
+func setChannelMetadata(claim *model.Claim, channel pb.Channel) {
+	claim.Type.SetValid(global.ChannelClaimType)
+	if channel.GetCover() != nil {
+		c := channel.GetCover()
+		if c.GetName() != "" {
+			claim.SourceName.SetValid(c.GetName())
+		}
+		if c.GetSize() > 0 {
+			claim.SourceSize.SetValid(c.GetSize())
+		}
+		if c.GetUrl() != "" {
+			claim.SourceURL.SetValid(c.GetUrl())
+		}
+		if len(c.GetHash()) > 0 {
+			claim.SourceHash.SetValid(hex.EncodeToString(c.GetHash()))
+		}
+		if c.GetMediaType() != "" {
+			claim.SourceMediaType.SetValid(c.GetMediaType())
+		}
+	}
+	if channel.GetEmail() != "" {
+		claim.Email.SetValid(channel.GetEmail())
+	}
+	if channel.GetFeatured() != nil {
+		claim.HasClaimList.SetValid(true)
+		claim.ListType.SetValid(int16(channel.GetFeatured().GetListType()))
+		claimList := make([]string, len(channel.GetFeatured().GetClaimReferences()))
+		for i, c := range channel.GetFeatured().GetClaimReferences() {
+			// No need to reverse bytes as lbrynet is fixed and should do this now
+			claimList[i] = hex.EncodeToString(c.ClaimHash)
+		}
+		jsonList, err := json.Marshal(claimList)
+		if err == nil {
+			claim.ClaimIDList.SetValid(jsonList)
+		} else {
+			logrus.Error("could not process claim list of channel [", claim.ClaimID, "]")
+		}
+		//ToDo - Create NM Table Entry for each
+	}
+}
+
+func setCollectionMetadata(claim *model.Claim, list pb.ClaimList) {
+	claim.Type.SetValid(global.ClaimListClaimType)
+	claim.HasClaimList.SetValid(true)
+	claim.ListType.SetValid(int16(list.GetListType()))
+	claimList := make([]string, len(list.GetClaimReferences()))
+	for i, c := range list.GetClaimReferences() {
+		// No need to reverse bytes as lbrynet is fixed and should do this now
+		claimList[i] = hex.EncodeToString(c.ClaimHash)
+	}
+	jsonList, err := json.Marshal(claimList)
+	if err == nil {
+		claim.ClaimIDList.SetValid(jsonList)
+	} else {
+		logrus.Error("could not process claim list of channel [", claim.ClaimID, "]")
+	}
+	//ToDo - Create NM Table Entry for each
+}
+
+func setSourceMetadata(claim *model.Claim, s *pb.Source) {
+	if s.GetUrl() != "" {
+		claim.SourceURL.SetValid(s.GetUrl())
+	}
+	if len(s.GetHash()) > 0 {
+		claim.SourceHash.SetValid(hex.EncodeToString(s.GetHash()))
+	}
+	if s.GetSize() > 0 {
+		claim.SourceSize.SetValid(s.GetSize())
+	}
+	if s.GetName() != "" {
+		claim.SourceName.SetValid(s.GetName())
+	}
+	if s.GetMediaType() != "" {
+		claim.SourceMediaType.SetValid(s.GetMediaType())
+	}
+}
+
+func resetMetadata(claim *model.Claim) error {
 	claim.Title = null.NewString("", false)
 	claim.Description = null.NewString("", false)
 	claim.Language = null.NewString("", false)
@@ -302,6 +480,41 @@ func resetMetadata(claim *model.Claim) {
 	claim.License = null.NewString("", false)
 	claim.LicenseURL = null.NewString("", false)
 	claim.Preview = null.NewString("", false)
+	claim.Type = null.NewString("", false)
+	claim.ReleaseTime = null.NewUint64(0, false)
+	claim.SourceHash = null.NewString("", false)
+	claim.SourceName = null.NewString("", false)
+	claim.SourceSize = null.NewUint64(0, false)
+	claim.SourceMediaType = null.NewString("", false)
+	claim.SourceURL = null.NewString("", false)
+	claim.FrameWidth = null.NewUint64(0, false)
+	claim.FrameHeight = null.NewUint64(0, false)
+	claim.Duration = null.NewUint64(0, false)
+	claim.AudioDuration = null.NewUint64(0, false)
+	claim.Os = null.NewString("", false)
+	claim.Email = null.NewString("", false)
+	claim.WebsiteURL = null.NewString("", false)
+	claim.HasClaimList = null.NewBool(false, false)
+	claim.ClaimReference = null.NewString("", false)
+	claim.ListType = null.NewInt16(0, false)
+	claim.ClaimIDList = null.NewJSON(nil, false)
+	claim.Country = null.NewString("", false)
+	claim.State = null.NewString("", false)
+	claim.Code = null.NewString("", false)
+	claim.City = null.NewString("", false)
+	claim.Longitude = null.NewInt64(0, false)
+	claim.Latitude = null.NewInt64(0, false)
+
+	err := claim.ListClaimClaimInLists().DeleteAll(boil.GetDB())
+	if err != nil {
+		return err
+	}
+	err = claim.ClaimTags().DeleteAll(boil.GetDB())
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func setSourceInfo(claim *model.Claim, helper *c.ClaimHelper) {

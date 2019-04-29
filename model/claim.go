@@ -60,6 +60,30 @@ type Claim struct {
 	License           null.String `boil:"license" json:"license,omitempty" toml:"license" yaml:"license,omitempty"`
 	LicenseURL        null.String `boil:"license_url" json:"license_url,omitempty" toml:"license_url" yaml:"license_url,omitempty"`
 	Preview           null.String `boil:"preview" json:"preview,omitempty" toml:"preview" yaml:"preview,omitempty"`
+	Type              null.String `boil:"type" json:"type,omitempty" toml:"type" yaml:"type,omitempty"`
+	ReleaseTime       null.Uint64 `boil:"release_time" json:"release_time,omitempty" toml:"release_time" yaml:"release_time,omitempty"`
+	SourceHash        null.String `boil:"source_hash" json:"source_hash,omitempty" toml:"source_hash" yaml:"source_hash,omitempty"`
+	SourceName        null.String `boil:"source_name" json:"source_name,omitempty" toml:"source_name" yaml:"source_name,omitempty"`
+	SourceSize        null.Uint64 `boil:"source_size" json:"source_size,omitempty" toml:"source_size" yaml:"source_size,omitempty"`
+	SourceMediaType   null.String `boil:"source_media_type" json:"source_media_type,omitempty" toml:"source_media_type" yaml:"source_media_type,omitempty"`
+	SourceURL         null.String `boil:"source_url" json:"source_url,omitempty" toml:"source_url" yaml:"source_url,omitempty"`
+	FrameWidth        null.Uint64 `boil:"frame_width" json:"frame_width,omitempty" toml:"frame_width" yaml:"frame_width,omitempty"`
+	FrameHeight       null.Uint64 `boil:"frame_height" json:"frame_height,omitempty" toml:"frame_height" yaml:"frame_height,omitempty"`
+	Duration          null.Uint64 `boil:"duration" json:"duration,omitempty" toml:"duration" yaml:"duration,omitempty"`
+	AudioDuration     null.Uint64 `boil:"audio_duration" json:"audio_duration,omitempty" toml:"audio_duration" yaml:"audio_duration,omitempty"`
+	Os                null.String `boil:"os" json:"os,omitempty" toml:"os" yaml:"os,omitempty"`
+	Email             null.String `boil:"email" json:"email,omitempty" toml:"email" yaml:"email,omitempty"`
+	WebsiteURL        null.String `boil:"website_url" json:"website_url,omitempty" toml:"website_url" yaml:"website_url,omitempty"`
+	HasClaimList      null.Bool   `boil:"has_claim_list" json:"has_claim_list,omitempty" toml:"has_claim_list" yaml:"has_claim_list,omitempty"`
+	ClaimReference    null.String `boil:"claim_reference" json:"claim_reference,omitempty" toml:"claim_reference" yaml:"claim_reference,omitempty"`
+	ListType          null.Int16  `boil:"list_type" json:"list_type,omitempty" toml:"list_type" yaml:"list_type,omitempty"`
+	ClaimIDList       null.JSON   `boil:"claim_id_list" json:"claim_id_list,omitempty" toml:"claim_id_list" yaml:"claim_id_list,omitempty"`
+	Country           null.String `boil:"country" json:"country,omitempty" toml:"country" yaml:"country,omitempty"`
+	State             null.String `boil:"state" json:"state,omitempty" toml:"state" yaml:"state,omitempty"`
+	City              null.String `boil:"city" json:"city,omitempty" toml:"city" yaml:"city,omitempty"`
+	Code              null.String `boil:"code" json:"code,omitempty" toml:"code" yaml:"code,omitempty"`
+	Latitude          null.Int64  `boil:"latitude" json:"latitude,omitempty" toml:"latitude" yaml:"latitude,omitempty"`
+	Longitude         null.Int64  `boil:"longitude" json:"longitude,omitempty" toml:"longitude" yaml:"longitude,omitempty"`
 
 	R *claimR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L claimL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -103,6 +127,30 @@ var ClaimColumns = struct {
 	License           string
 	LicenseURL        string
 	Preview           string
+	Type              string
+	ReleaseTime       string
+	SourceHash        string
+	SourceName        string
+	SourceSize        string
+	SourceMediaType   string
+	SourceURL         string
+	FrameWidth        string
+	FrameHeight       string
+	Duration          string
+	AudioDuration     string
+	Os                string
+	Email             string
+	WebsiteURL        string
+	HasClaimList      string
+	ClaimReference    string
+	ListType          string
+	ClaimIDList       string
+	Country           string
+	State             string
+	City              string
+	Code              string
+	Latitude          string
+	Longitude         string
 }{
 	ID:                "id",
 	TransactionHashID: "transaction_hash_id",
@@ -141,6 +189,30 @@ var ClaimColumns = struct {
 	License:           "license",
 	LicenseURL:        "license_url",
 	Preview:           "preview",
+	Type:              "type",
+	ReleaseTime:       "release_time",
+	SourceHash:        "source_hash",
+	SourceName:        "source_name",
+	SourceSize:        "source_size",
+	SourceMediaType:   "source_media_type",
+	SourceURL:         "source_url",
+	FrameWidth:        "frame_width",
+	FrameHeight:       "frame_height",
+	Duration:          "duration",
+	AudioDuration:     "audio_duration",
+	Os:                "os",
+	Email:             "email",
+	WebsiteURL:        "website_url",
+	HasClaimList:      "has_claim_list",
+	ClaimReference:    "claim_reference",
+	ListType:          "list_type",
+	ClaimIDList:       "claim_id_list",
+	Country:           "country",
+	State:             "state",
+	City:              "city",
+	Code:              "code",
+	Latitude:          "latitude",
+	Longitude:         "longitude",
 }
 
 // Generated where
@@ -174,6 +246,98 @@ func (w whereHelpernull_Uint64) GT(x null.Uint64) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.GT, x)
 }
 func (w whereHelpernull_Uint64) GTE(x null.Uint64) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+
+type whereHelpernull_Bool struct{ field string }
+
+func (w whereHelpernull_Bool) EQ(x null.Bool) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, false, x)
+}
+func (w whereHelpernull_Bool) NEQ(x null.Bool) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, true, x)
+}
+func (w whereHelpernull_Bool) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
+func (w whereHelpernull_Bool) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
+func (w whereHelpernull_Bool) LT(x null.Bool) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpernull_Bool) LTE(x null.Bool) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpernull_Bool) GT(x null.Bool) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpernull_Bool) GTE(x null.Bool) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+
+type whereHelpernull_Int16 struct{ field string }
+
+func (w whereHelpernull_Int16) EQ(x null.Int16) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, false, x)
+}
+func (w whereHelpernull_Int16) NEQ(x null.Int16) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, true, x)
+}
+func (w whereHelpernull_Int16) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
+func (w whereHelpernull_Int16) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
+func (w whereHelpernull_Int16) LT(x null.Int16) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpernull_Int16) LTE(x null.Int16) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpernull_Int16) GT(x null.Int16) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpernull_Int16) GTE(x null.Int16) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+
+type whereHelpernull_JSON struct{ field string }
+
+func (w whereHelpernull_JSON) EQ(x null.JSON) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, false, x)
+}
+func (w whereHelpernull_JSON) NEQ(x null.JSON) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, true, x)
+}
+func (w whereHelpernull_JSON) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
+func (w whereHelpernull_JSON) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
+func (w whereHelpernull_JSON) LT(x null.JSON) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpernull_JSON) LTE(x null.JSON) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpernull_JSON) GT(x null.JSON) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpernull_JSON) GTE(x null.JSON) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+
+type whereHelpernull_Int64 struct{ field string }
+
+func (w whereHelpernull_Int64) EQ(x null.Int64) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, false, x)
+}
+func (w whereHelpernull_Int64) NEQ(x null.Int64) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, true, x)
+}
+func (w whereHelpernull_Int64) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
+func (w whereHelpernull_Int64) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
+func (w whereHelpernull_Int64) LT(x null.Int64) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpernull_Int64) LTE(x null.Int64) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpernull_Int64) GT(x null.Int64) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpernull_Int64) GTE(x null.Int64) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.GTE, x)
 }
 
@@ -215,6 +379,30 @@ var ClaimWhere = struct {
 	License           whereHelpernull_String
 	LicenseURL        whereHelpernull_String
 	Preview           whereHelpernull_String
+	Type              whereHelpernull_String
+	ReleaseTime       whereHelpernull_Uint64
+	SourceHash        whereHelpernull_String
+	SourceName        whereHelpernull_String
+	SourceSize        whereHelpernull_Uint64
+	SourceMediaType   whereHelpernull_String
+	SourceURL         whereHelpernull_String
+	FrameWidth        whereHelpernull_Uint64
+	FrameHeight       whereHelpernull_Uint64
+	Duration          whereHelpernull_Uint64
+	AudioDuration     whereHelpernull_Uint64
+	Os                whereHelpernull_String
+	Email             whereHelpernull_String
+	WebsiteURL        whereHelpernull_String
+	HasClaimList      whereHelpernull_Bool
+	ClaimReference    whereHelpernull_String
+	ListType          whereHelpernull_Int16
+	ClaimIDList       whereHelpernull_JSON
+	Country           whereHelpernull_String
+	State             whereHelpernull_String
+	City              whereHelpernull_String
+	Code              whereHelpernull_String
+	Latitude          whereHelpernull_Int64
+	Longitude         whereHelpernull_Int64
 }{
 	ID:                whereHelperuint64{field: "`claim`.`id`"},
 	TransactionHashID: whereHelpernull_String{field: "`claim`.`transaction_hash_id`"},
@@ -253,18 +441,48 @@ var ClaimWhere = struct {
 	License:           whereHelpernull_String{field: "`claim`.`license`"},
 	LicenseURL:        whereHelpernull_String{field: "`claim`.`license_url`"},
 	Preview:           whereHelpernull_String{field: "`claim`.`preview`"},
+	Type:              whereHelpernull_String{field: "`claim`.`type`"},
+	ReleaseTime:       whereHelpernull_Uint64{field: "`claim`.`release_time`"},
+	SourceHash:        whereHelpernull_String{field: "`claim`.`source_hash`"},
+	SourceName:        whereHelpernull_String{field: "`claim`.`source_name`"},
+	SourceSize:        whereHelpernull_Uint64{field: "`claim`.`source_size`"},
+	SourceMediaType:   whereHelpernull_String{field: "`claim`.`source_media_type`"},
+	SourceURL:         whereHelpernull_String{field: "`claim`.`source_url`"},
+	FrameWidth:        whereHelpernull_Uint64{field: "`claim`.`frame_width`"},
+	FrameHeight:       whereHelpernull_Uint64{field: "`claim`.`frame_height`"},
+	Duration:          whereHelpernull_Uint64{field: "`claim`.`duration`"},
+	AudioDuration:     whereHelpernull_Uint64{field: "`claim`.`audio_duration`"},
+	Os:                whereHelpernull_String{field: "`claim`.`os`"},
+	Email:             whereHelpernull_String{field: "`claim`.`email`"},
+	WebsiteURL:        whereHelpernull_String{field: "`claim`.`website_url`"},
+	HasClaimList:      whereHelpernull_Bool{field: "`claim`.`has_claim_list`"},
+	ClaimReference:    whereHelpernull_String{field: "`claim`.`claim_reference`"},
+	ListType:          whereHelpernull_Int16{field: "`claim`.`list_type`"},
+	ClaimIDList:       whereHelpernull_JSON{field: "`claim`.`claim_id_list`"},
+	Country:           whereHelpernull_String{field: "`claim`.`country`"},
+	State:             whereHelpernull_String{field: "`claim`.`state`"},
+	City:              whereHelpernull_String{field: "`claim`.`city`"},
+	Code:              whereHelpernull_String{field: "`claim`.`code`"},
+	Latitude:          whereHelpernull_Int64{field: "`claim`.`latitude`"},
+	Longitude:         whereHelpernull_Int64{field: "`claim`.`longitude`"},
 }
 
 // ClaimRels is where relationship names are stored.
 var ClaimRels = struct {
-	TransactionHash string
+	TransactionHash       string
+	ListClaimClaimInLists string
+	ClaimTags             string
 }{
-	TransactionHash: "TransactionHash",
+	TransactionHash:       "TransactionHash",
+	ListClaimClaimInLists: "ListClaimClaimInLists",
+	ClaimTags:             "ClaimTags",
 }
 
 // claimR is where relationships are stored.
 type claimR struct {
-	TransactionHash *Transaction
+	TransactionHash       *Transaction
+	ListClaimClaimInLists ClaimInListSlice
+	ClaimTags             ClaimTagSlice
 }
 
 // NewStruct creates a new relationship struct
@@ -276,8 +494,8 @@ func (*claimR) NewStruct() *claimR {
 type claimL struct{}
 
 var (
-	claimColumns               = []string{"id", "transaction_hash_id", "vout", "name", "claim_id", "claim_type", "publisher_id", "publisher_sig", "certificate", "sd_hash", "transaction_time", "version", "value_as_hex", "value_as_json", "valid_at_height", "height", "effective_amount", "author", "description", "content_type", "is_nsfw", "language", "thumbnail_url", "title", "fee", "fee_currency", "fee_address", "is_filtered", "bid_state", "created_at", "modified_at", "claim_address", "is_cert_valid", "is_cert_processed", "license", "license_url", "preview"}
-	claimColumnsWithoutDefault = []string{"transaction_hash_id", "vout", "name", "claim_id", "claim_type", "publisher_id", "publisher_sig", "certificate", "sd_hash", "transaction_time", "version", "value_as_hex", "value_as_json", "valid_at_height", "height", "author", "description", "content_type", "language", "thumbnail_url", "title", "fee_currency", "fee_address", "claim_address", "is_cert_valid", "is_cert_processed", "license", "license_url", "preview"}
+	claimColumns               = []string{"id", "transaction_hash_id", "vout", "name", "claim_id", "claim_type", "publisher_id", "publisher_sig", "certificate", "sd_hash", "transaction_time", "version", "value_as_hex", "value_as_json", "valid_at_height", "height", "effective_amount", "author", "description", "content_type", "is_nsfw", "language", "thumbnail_url", "title", "fee", "fee_currency", "fee_address", "is_filtered", "bid_state", "created_at", "modified_at", "claim_address", "is_cert_valid", "is_cert_processed", "license", "license_url", "preview", "type", "release_time", "source_hash", "source_name", "source_size", "source_media_type", "source_url", "frame_width", "frame_height", "duration", "audio_duration", "os", "email", "website_url", "has_claim_list", "claim_reference", "list_type", "claim_id_list", "country", "state", "city", "code", "latitude", "longitude"}
+	claimColumnsWithoutDefault = []string{"transaction_hash_id", "vout", "name", "claim_id", "claim_type", "publisher_id", "publisher_sig", "certificate", "sd_hash", "transaction_time", "version", "value_as_hex", "value_as_json", "valid_at_height", "height", "author", "description", "content_type", "language", "thumbnail_url", "title", "fee_currency", "fee_address", "claim_address", "is_cert_valid", "is_cert_processed", "license", "license_url", "preview", "type", "release_time", "source_hash", "source_name", "source_size", "source_media_type", "source_url", "frame_width", "frame_height", "duration", "audio_duration", "os", "email", "website_url", "has_claim_list", "claim_reference", "list_type", "claim_id_list", "country", "state", "city", "code", "latitude", "longitude"}
 	claimColumnsWithDefault    = []string{"id", "effective_amount", "is_nsfw", "fee", "is_filtered", "bid_state", "created_at", "modified_at"}
 	claimPrimaryKeyColumns     = []string{"id"}
 )
@@ -487,6 +705,48 @@ func (o *Claim) TransactionHash(mods ...qm.QueryMod) transactionQuery {
 	return query
 }
 
+// ListClaimClaimInLists retrieves all the claim_in_list's ClaimInLists with an executor via list_claim_id column.
+func (o *Claim) ListClaimClaimInLists(mods ...qm.QueryMod) claimInListQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("`claim_in_list`.`list_claim_id`=?", o.ClaimID),
+	)
+
+	query := ClaimInLists(queryMods...)
+	queries.SetFrom(query.Query, "`claim_in_list`")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"`claim_in_list`.*"})
+	}
+
+	return query
+}
+
+// ClaimTags retrieves all the claim_tag's ClaimTags with an executor.
+func (o *Claim) ClaimTags(mods ...qm.QueryMod) claimTagQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("`claim_tag`.`claim_id`=?", o.ClaimID),
+	)
+
+	query := ClaimTags(queryMods...)
+	queries.SetFrom(query.Query, "`claim_tag`")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"`claim_tag`.*"})
+	}
+
+	return query
+}
+
 // LoadTransactionHash allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for an N-1 relationship.
 func (claimL) LoadTransactionHash(e boil.Executor, singular bool, maybeClaim interface{}, mods queries.Applicator) error {
@@ -576,6 +836,182 @@ func (claimL) LoadTransactionHash(e boil.Executor, singular bool, maybeClaim int
 					foreign.R = &transactionR{}
 				}
 				foreign.R.TransactionHashClaims = append(foreign.R.TransactionHashClaims, local)
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadListClaimClaimInLists allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (claimL) LoadListClaimClaimInLists(e boil.Executor, singular bool, maybeClaim interface{}, mods queries.Applicator) error {
+	var slice []*Claim
+	var object *Claim
+
+	if singular {
+		object = maybeClaim.(*Claim)
+	} else {
+		slice = *maybeClaim.(*[]*Claim)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &claimR{}
+		}
+		args = append(args, object.ClaimID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &claimR{}
+			}
+
+			for _, a := range args {
+				if a == obj.ClaimID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ClaimID)
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(qm.From(`claim_in_list`), qm.WhereIn(`list_claim_id in ?`, args...))
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.Query(e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load claim_in_list")
+	}
+
+	var resultSlice []*ClaimInList
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice claim_in_list")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on claim_in_list")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for claim_in_list")
+	}
+
+	if singular {
+		object.R.ListClaimClaimInLists = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &claimInListR{}
+			}
+			foreign.R.ListClaim = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ClaimID == foreign.ListClaimID {
+				local.R.ListClaimClaimInLists = append(local.R.ListClaimClaimInLists, foreign)
+				if foreign.R == nil {
+					foreign.R = &claimInListR{}
+				}
+				foreign.R.ListClaim = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadClaimTags allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (claimL) LoadClaimTags(e boil.Executor, singular bool, maybeClaim interface{}, mods queries.Applicator) error {
+	var slice []*Claim
+	var object *Claim
+
+	if singular {
+		object = maybeClaim.(*Claim)
+	} else {
+		slice = *maybeClaim.(*[]*Claim)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &claimR{}
+		}
+		args = append(args, object.ClaimID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &claimR{}
+			}
+
+			for _, a := range args {
+				if a == obj.ClaimID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ClaimID)
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(qm.From(`claim_tag`), qm.WhereIn(`claim_id in ?`, args...))
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.Query(e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load claim_tag")
+	}
+
+	var resultSlice []*ClaimTag
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice claim_tag")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on claim_tag")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for claim_tag")
+	}
+
+	if singular {
+		object.R.ClaimTags = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &claimTagR{}
+			}
+			foreign.R.Claim = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ClaimID == foreign.ClaimID {
+				local.R.ClaimTags = append(local.R.ClaimTags, foreign)
+				if foreign.R == nil {
+					foreign.R = &claimTagR{}
+				}
+				foreign.R.Claim = local
 				break
 			}
 		}
@@ -714,6 +1150,174 @@ func (o *Claim) RemoveTransactionHash(exec boil.Executor, related *Transaction) 
 		}
 		related.R.TransactionHashClaims = related.R.TransactionHashClaims[:ln-1]
 		break
+	}
+	return nil
+}
+
+// AddListClaimClaimInListsG adds the given related objects to the existing relationships
+// of the claim, optionally inserting them as new records.
+// Appends related to o.R.ListClaimClaimInLists.
+// Sets related.R.ListClaim appropriately.
+// Uses the global database handle.
+func (o *Claim) AddListClaimClaimInListsG(insert bool, related ...*ClaimInList) error {
+	return o.AddListClaimClaimInLists(boil.GetDB(), insert, related...)
+}
+
+// AddListClaimClaimInListsP adds the given related objects to the existing relationships
+// of the claim, optionally inserting them as new records.
+// Appends related to o.R.ListClaimClaimInLists.
+// Sets related.R.ListClaim appropriately.
+// Panics on error.
+func (o *Claim) AddListClaimClaimInListsP(exec boil.Executor, insert bool, related ...*ClaimInList) {
+	if err := o.AddListClaimClaimInLists(exec, insert, related...); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// AddListClaimClaimInListsGP adds the given related objects to the existing relationships
+// of the claim, optionally inserting them as new records.
+// Appends related to o.R.ListClaimClaimInLists.
+// Sets related.R.ListClaim appropriately.
+// Uses the global database handle and panics on error.
+func (o *Claim) AddListClaimClaimInListsGP(insert bool, related ...*ClaimInList) {
+	if err := o.AddListClaimClaimInLists(boil.GetDB(), insert, related...); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// AddListClaimClaimInLists adds the given related objects to the existing relationships
+// of the claim, optionally inserting them as new records.
+// Appends related to o.R.ListClaimClaimInLists.
+// Sets related.R.ListClaim appropriately.
+func (o *Claim) AddListClaimClaimInLists(exec boil.Executor, insert bool, related ...*ClaimInList) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.ListClaimID = o.ClaimID
+			if err = rel.Insert(exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE `claim_in_list` SET %s WHERE %s",
+				strmangle.SetParamNames("`", "`", 0, []string{"list_claim_id"}),
+				strmangle.WhereClause("`", "`", 0, claimInListPrimaryKeyColumns),
+			)
+			values := []interface{}{o.ClaimID, rel.ID}
+
+			if boil.DebugMode {
+				fmt.Fprintln(boil.DebugWriter, updateQuery)
+				fmt.Fprintln(boil.DebugWriter, values)
+			}
+
+			if _, err = exec.Exec(updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.ListClaimID = o.ClaimID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &claimR{
+			ListClaimClaimInLists: related,
+		}
+	} else {
+		o.R.ListClaimClaimInLists = append(o.R.ListClaimClaimInLists, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &claimInListR{
+				ListClaim: o,
+			}
+		} else {
+			rel.R.ListClaim = o
+		}
+	}
+	return nil
+}
+
+// AddClaimTagsG adds the given related objects to the existing relationships
+// of the claim, optionally inserting them as new records.
+// Appends related to o.R.ClaimTags.
+// Sets related.R.Claim appropriately.
+// Uses the global database handle.
+func (o *Claim) AddClaimTagsG(insert bool, related ...*ClaimTag) error {
+	return o.AddClaimTags(boil.GetDB(), insert, related...)
+}
+
+// AddClaimTagsP adds the given related objects to the existing relationships
+// of the claim, optionally inserting them as new records.
+// Appends related to o.R.ClaimTags.
+// Sets related.R.Claim appropriately.
+// Panics on error.
+func (o *Claim) AddClaimTagsP(exec boil.Executor, insert bool, related ...*ClaimTag) {
+	if err := o.AddClaimTags(exec, insert, related...); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// AddClaimTagsGP adds the given related objects to the existing relationships
+// of the claim, optionally inserting them as new records.
+// Appends related to o.R.ClaimTags.
+// Sets related.R.Claim appropriately.
+// Uses the global database handle and panics on error.
+func (o *Claim) AddClaimTagsGP(insert bool, related ...*ClaimTag) {
+	if err := o.AddClaimTags(boil.GetDB(), insert, related...); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// AddClaimTags adds the given related objects to the existing relationships
+// of the claim, optionally inserting them as new records.
+// Appends related to o.R.ClaimTags.
+// Sets related.R.Claim appropriately.
+func (o *Claim) AddClaimTags(exec boil.Executor, insert bool, related ...*ClaimTag) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.ClaimID = o.ClaimID
+			if err = rel.Insert(exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE `claim_tag` SET %s WHERE %s",
+				strmangle.SetParamNames("`", "`", 0, []string{"claim_id"}),
+				strmangle.WhereClause("`", "`", 0, claimTagPrimaryKeyColumns),
+			)
+			values := []interface{}{o.ClaimID, rel.ID}
+
+			if boil.DebugMode {
+				fmt.Fprintln(boil.DebugWriter, updateQuery)
+				fmt.Fprintln(boil.DebugWriter, values)
+			}
+
+			if _, err = exec.Exec(updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.ClaimID = o.ClaimID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &claimR{
+			ClaimTags: related,
+		}
+	} else {
+		o.R.ClaimTags = append(o.R.ClaimTags, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &claimTagR{
+				Claim: o,
+			}
+		} else {
+			rel.R.Claim = o
+		}
 	}
 	return nil
 }
