@@ -67,7 +67,11 @@ func certifyClaim(claimToBeSynced claimToBeSynced) (bool, error) {
 	}
 
 	if claimToBeSynced.FirstInputTxHash != "" {
-		if verified, err := signedHelper.ValidateClaimSignature(certHelper, claimToBeSynced.FirstInputTxHash, claimToBeSynced.ChannelClaimID, global.BlockChainName); verified {
+		firstInputHash, err := c.GetOutpointHash(claimToBeSynced.FirstInputTxHash, uint32(claimToBeSynced.FirstInputTxOPosition))
+		if err != nil {
+			return false, err
+		}
+		if verified, err := signedHelper.ValidateClaimSignature(certHelper, firstInputHash, claimToBeSynced.ChannelClaimID, global.BlockChainName); verified {
 			return verified, err
 		}
 	}
@@ -76,12 +80,13 @@ func certifyClaim(claimToBeSynced claimToBeSynced) (bool, error) {
 }
 
 type claimToBeSynced struct {
-	ID                 uint64 `boil:"id"`
-	SignedClaimHex     string `boil:"signed_claim_hex"`
-	SignedClaimAddress string `boil:"claim_address"`
-	ChannelHex         string `boil:"channel_hex"`
-	ChannelClaimID     string `boil:"claim_id"`
-	FirstInputTxHash   string `boil:"first_input_tx_hash"`
+	ID                    uint64 `boil:"id"`
+	SignedClaimHex        string `boil:"signed_claim_hex"`
+	SignedClaimAddress    string `boil:"claim_address"`
+	ChannelHex            string `boil:"channel_hex"`
+	ChannelClaimID        string `boil:"claim_id"`
+	FirstInputTxHash      string `boil:"first_input_tx_hash"`
+	FirstInputTxOPosition uint64 `boil:"first_input_txo_position"`
 }
 
 func getClaimsToBeSynced() ([]claimToBeSynced, error) {
@@ -103,7 +108,8 @@ func getClaimsToBeSynced() ([]claimToBeSynced, error) {
 			`+claimAddress+`,
 			`+channelHex+`,
 			`+ChannelClaimID+`, 
-			COALESCE(input.prevout_hash, "") as first_input_tx_hash 
+			COALESCE(input.prevout_hash, "") as first_input_tx_hash,
+			COALESCE(input.prevout_n, "") as first_input_txo_position
 		FROM `+claim+`
 		INNER JOIN `+claim+` channel ON `+ChannelClaimID+` = `+publisherID+` 
 		LEFT JOIN input ON input.id = (SELECT id FROM input WHERE input.transaction_hash = claim.transaction_hash_id ORDER BY vin LIMIT 1 ) 
