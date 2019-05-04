@@ -64,7 +64,11 @@ func signClaim(rawTx *wire.MsgTx, privKey btcec.PrivateKey, claim, channel *c.Cl
 	}
 	claim.Version = c.WithSig
 	claim.ClaimID = util.ReverseBytes(claimIDHexBytes)
-	sig, err := c.Sign(privKey, *channel, *claim, rawTx.TxIn[0].PreviousOutPoint.Hash.String())
+	hash, err := c.GetOutpointHash(rawTx.TxIn[0].PreviousOutPoint.Hash.String(), rawTx.TxIn[0].PreviousOutPoint.Index)
+	if err != nil {
+		return err
+	}
+	sig, err := c.Sign(privKey, *channel, *claim, hash)
 	if err != nil {
 		return err
 	}
