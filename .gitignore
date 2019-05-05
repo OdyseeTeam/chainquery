@@ -1,7 +1,7 @@
 /vendor
 /.idea
 /bin
-/test
+/persist
 swagger-codegen-cli.jar
 chainqueryconfig.toml
 cover.out
