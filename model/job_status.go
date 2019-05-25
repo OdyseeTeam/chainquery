@@ -79,11 +79,11 @@ var JobStatusWhere = struct {
 	ErrorMessage whereHelpernull_String
 	State        whereHelpernull_JSON
 }{
-	JobName:      whereHelperstring{field: `job_name`},
-	LastSync:     whereHelpertime_Time{field: `last_sync`},
-	IsSuccess:    whereHelperbool{field: `is_success`},
-	ErrorMessage: whereHelpernull_String{field: `error_message`},
-	State:        whereHelpernull_JSON{field: `state`},
+	JobName:      whereHelperstring{field: "`job_status`.`job_name`"},
+	LastSync:     whereHelpertime_Time{field: "`job_status`.`last_sync`"},
+	IsSuccess:    whereHelperbool{field: "`job_status`.`is_success`"},
+	ErrorMessage: whereHelpernull_String{field: "`job_status`.`error_message`"},
+	State:        whereHelpernull_JSON{field: "`job_status`.`state`"},
 }
 
 // JobStatusRels is where relationship names are stored.
@@ -883,10 +883,6 @@ func (o JobStatusSlice) DeleteAllGP() {
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o JobStatusSlice) DeleteAll(exec boil.Executor) error {
-	if o == nil {
-		return errors.New("model: no JobStatus slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return nil
 	}

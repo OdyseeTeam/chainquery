@@ -96,21 +96,21 @@ var TransactionWhere = struct {
 	CreatedTime     whereHelpertime_Time
 	Value           whereHelperfloat64
 }{
-	ID:              whereHelperuint64{field: `id`},
-	BlockHashID:     whereHelpernull_String{field: `block_hash_id`},
-	InputCount:      whereHelperuint{field: `input_count`},
-	OutputCount:     whereHelperuint{field: `output_count`},
-	Fee:             whereHelperfloat64{field: `fee`},
-	TransactionTime: whereHelpernull_Uint64{field: `transaction_time`},
-	TransactionSize: whereHelperuint64{field: `transaction_size`},
-	Hash:            whereHelperstring{field: `hash`},
-	Version:         whereHelperint{field: `version`},
-	LockTime:        whereHelperuint{field: `lock_time`},
-	Raw:             whereHelpernull_String{field: `raw`},
-	CreatedAt:       whereHelpertime_Time{field: `created_at`},
-	ModifiedAt:      whereHelpertime_Time{field: `modified_at`},
-	CreatedTime:     whereHelpertime_Time{field: `created_time`},
-	Value:           whereHelperfloat64{field: `value`},
+	ID:              whereHelperuint64{field: "`transaction`.`id`"},
+	BlockHashID:     whereHelpernull_String{field: "`transaction`.`block_hash_id`"},
+	InputCount:      whereHelperuint{field: "`transaction`.`input_count`"},
+	OutputCount:     whereHelperuint{field: "`transaction`.`output_count`"},
+	Fee:             whereHelperfloat64{field: "`transaction`.`fee`"},
+	TransactionTime: whereHelpernull_Uint64{field: "`transaction`.`transaction_time`"},
+	TransactionSize: whereHelperuint64{field: "`transaction`.`transaction_size`"},
+	Hash:            whereHelperstring{field: "`transaction`.`hash`"},
+	Version:         whereHelperint{field: "`transaction`.`version`"},
+	LockTime:        whereHelperuint{field: "`transaction`.`lock_time`"},
+	Raw:             whereHelpernull_String{field: "`transaction`.`raw`"},
+	CreatedAt:       whereHelpertime_Time{field: "`transaction`.`created_at`"},
+	ModifiedAt:      whereHelpertime_Time{field: "`transaction`.`modified_at`"},
+	CreatedTime:     whereHelpertime_Time{field: "`transaction`.`created_time`"},
+	Value:           whereHelperfloat64{field: "`transaction`.`value`"},
 }
 
 // TransactionRels is where relationship names are stored.
@@ -2432,10 +2432,6 @@ func (o TransactionSlice) DeleteAllGP() {
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o TransactionSlice) DeleteAll(exec boil.Executor) error {
-	if o == nil {
-		return errors.New("model: no Transaction slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return nil
 	}

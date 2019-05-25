@@ -68,14 +68,14 @@ var SupportWhere = struct {
 	CreatedAt         whereHelpertime_Time
 	ModifiedAt        whereHelpertime_Time
 }{
-	ID:                whereHelperuint64{field: `id`},
-	SupportedClaimID:  whereHelperstring{field: `supported_claim_id`},
-	SupportAmount:     whereHelperfloat64{field: `support_amount`},
-	BidState:          whereHelperstring{field: `bid_state`},
-	TransactionHashID: whereHelpernull_String{field: `transaction_hash_id`},
-	Vout:              whereHelperuint{field: `vout`},
-	CreatedAt:         whereHelpertime_Time{field: `created_at`},
-	ModifiedAt:        whereHelpertime_Time{field: `modified_at`},
+	ID:                whereHelperuint64{field: "`support`.`id`"},
+	SupportedClaimID:  whereHelperstring{field: "`support`.`supported_claim_id`"},
+	SupportAmount:     whereHelperfloat64{field: "`support`.`support_amount`"},
+	BidState:          whereHelperstring{field: "`support`.`bid_state`"},
+	TransactionHashID: whereHelpernull_String{field: "`support`.`transaction_hash_id`"},
+	Vout:              whereHelperuint{field: "`support`.`vout`"},
+	CreatedAt:         whereHelpertime_Time{field: "`support`.`created_at`"},
+	ModifiedAt:        whereHelpertime_Time{field: "`support`.`modified_at`"},
 }
 
 // SupportRels is where relationship names are stored.
@@ -1146,10 +1146,6 @@ func (o SupportSlice) DeleteAllGP() {
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o SupportSlice) DeleteAll(exec boil.Executor) error {
-	if o == nil {
-		return errors.New("model: no Support slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return nil
 	}

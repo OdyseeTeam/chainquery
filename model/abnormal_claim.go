@@ -164,18 +164,18 @@ var AbnormalClaimWhere = struct {
 	CreatedAt       whereHelpertime_Time
 	ModifiedAt      whereHelpertime_Time
 }{
-	ID:              whereHelperuint64{field: `id`},
-	Name:            whereHelperstring{field: `name`},
-	ClaimID:         whereHelperstring{field: `claim_id`},
-	IsUpdate:        whereHelperbool{field: `is_update`},
-	BlockHash:       whereHelpernull_String{field: `block_hash`},
-	TransactionHash: whereHelpernull_String{field: `transaction_hash`},
-	Vout:            whereHelperuint{field: `vout`},
-	OutputID:        whereHelperuint64{field: `output_id`},
-	ValueAsHex:      whereHelperstring{field: `value_as_hex`},
-	ValueAsJSON:     whereHelpernull_String{field: `value_as_json`},
-	CreatedAt:       whereHelpertime_Time{field: `created_at`},
-	ModifiedAt:      whereHelpertime_Time{field: `modified_at`},
+	ID:              whereHelperuint64{field: "`abnormal_claim`.`id`"},
+	Name:            whereHelperstring{field: "`abnormal_claim`.`name`"},
+	ClaimID:         whereHelperstring{field: "`abnormal_claim`.`claim_id`"},
+	IsUpdate:        whereHelperbool{field: "`abnormal_claim`.`is_update`"},
+	BlockHash:       whereHelpernull_String{field: "`abnormal_claim`.`block_hash`"},
+	TransactionHash: whereHelpernull_String{field: "`abnormal_claim`.`transaction_hash`"},
+	Vout:            whereHelperuint{field: "`abnormal_claim`.`vout`"},
+	OutputID:        whereHelperuint64{field: "`abnormal_claim`.`output_id`"},
+	ValueAsHex:      whereHelperstring{field: "`abnormal_claim`.`value_as_hex`"},
+	ValueAsJSON:     whereHelpernull_String{field: "`abnormal_claim`.`value_as_json`"},
+	CreatedAt:       whereHelpertime_Time{field: "`abnormal_claim`.`created_at`"},
+	ModifiedAt:      whereHelpertime_Time{field: "`abnormal_claim`.`modified_at`"},
 }
 
 // AbnormalClaimRels is where relationship names are stored.
@@ -1183,10 +1183,6 @@ func (o AbnormalClaimSlice) DeleteAllGP() {
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o AbnormalClaimSlice) DeleteAll(exec boil.Executor) error {
-	if o == nil {
-		return errors.New("model: no AbnormalClaim slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return nil
 	}

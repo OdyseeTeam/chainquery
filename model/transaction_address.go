@@ -51,10 +51,10 @@ var TransactionAddressWhere = struct {
 	DebitAmount   whereHelperfloat64
 	CreditAmount  whereHelperfloat64
 }{
-	TransactionID: whereHelperuint64{field: `transaction_id`},
-	AddressID:     whereHelperuint64{field: `address_id`},
-	DebitAmount:   whereHelperfloat64{field: `debit_amount`},
-	CreditAmount:  whereHelperfloat64{field: `credit_amount`},
+	TransactionID: whereHelperuint64{field: "`transaction_address`.`transaction_id`"},
+	AddressID:     whereHelperuint64{field: "`transaction_address`.`address_id`"},
+	DebitAmount:   whereHelperfloat64{field: "`transaction_address`.`debit_amount`"},
+	CreditAmount:  whereHelperfloat64{field: "`transaction_address`.`credit_amount`"},
 }
 
 // TransactionAddressRels is where relationship names are stored.
@@ -1224,10 +1224,6 @@ func (o TransactionAddressSlice) DeleteAllGP() {
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o TransactionAddressSlice) DeleteAll(exec boil.Executor) error {
-	if o == nil {
-		return errors.New("model: no TransactionAddress slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return nil
 	}

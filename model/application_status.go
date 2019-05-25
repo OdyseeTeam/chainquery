@@ -60,10 +60,10 @@ var ApplicationStatusWhere = struct {
 	DataVersion whereHelperint
 	APIVersion  whereHelperint
 }{
-	ID:          whereHelperuint64{field: `id`},
-	AppVersion:  whereHelperint{field: `app_version`},
-	DataVersion: whereHelperint{field: `data_version`},
-	APIVersion:  whereHelperint{field: `api_version`},
+	ID:          whereHelperuint64{field: "`application_status`.`id`"},
+	AppVersion:  whereHelperint{field: "`application_status`.`app_version`"},
+	DataVersion: whereHelperint{field: "`application_status`.`data_version`"},
+	APIVersion:  whereHelperint{field: "`application_status`.`api_version`"},
 }
 
 // ApplicationStatusRels is where relationship names are stored.
@@ -885,10 +885,6 @@ func (o ApplicationStatusSlice) DeleteAllGP() {
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o ApplicationStatusSlice) DeleteAll(exec boil.Executor) error {
-	if o == nil {
-		return errors.New("model: no ApplicationStatus slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return nil
 	}

@@ -96,21 +96,21 @@ var OutputWhere = struct {
 	ModifiedAt         whereHelpertime_Time
 	ClaimID            whereHelpernull_String
 }{
-	ID:                 whereHelperuint64{field: `id`},
-	TransactionID:      whereHelperuint64{field: `transaction_id`},
-	TransactionHash:    whereHelperstring{field: `transaction_hash`},
-	Value:              whereHelpernull_Float64{field: `value`},
-	Vout:               whereHelperuint{field: `vout`},
-	Type:               whereHelpernull_String{field: `type`},
-	ScriptPubKeyAsm:    whereHelpernull_String{field: `script_pub_key_asm`},
-	ScriptPubKeyHex:    whereHelpernull_String{field: `script_pub_key_hex`},
-	RequiredSignatures: whereHelpernull_Uint{field: `required_signatures`},
-	AddressList:        whereHelpernull_String{field: `address_list`},
-	IsSpent:            whereHelperbool{field: `is_spent`},
-	SpentByInputID:     whereHelpernull_Uint64{field: `spent_by_input_id`},
-	CreatedAt:          whereHelpertime_Time{field: `created_at`},
-	ModifiedAt:         whereHelpertime_Time{field: `modified_at`},
-	ClaimID:            whereHelpernull_String{field: `claim_id`},
+	ID:                 whereHelperuint64{field: "`output`.`id`"},
+	TransactionID:      whereHelperuint64{field: "`output`.`transaction_id`"},
+	TransactionHash:    whereHelperstring{field: "`output`.`transaction_hash`"},
+	Value:              whereHelpernull_Float64{field: "`output`.`value`"},
+	Vout:               whereHelperuint{field: "`output`.`vout`"},
+	Type:               whereHelpernull_String{field: "`output`.`type`"},
+	ScriptPubKeyAsm:    whereHelpernull_String{field: "`output`.`script_pub_key_asm`"},
+	ScriptPubKeyHex:    whereHelpernull_String{field: "`output`.`script_pub_key_hex`"},
+	RequiredSignatures: whereHelpernull_Uint{field: "`output`.`required_signatures`"},
+	AddressList:        whereHelpernull_String{field: "`output`.`address_list`"},
+	IsSpent:            whereHelperbool{field: "`output`.`is_spent`"},
+	SpentByInputID:     whereHelpernull_Uint64{field: "`output`.`spent_by_input_id`"},
+	CreatedAt:          whereHelpertime_Time{field: "`output`.`created_at`"},
+	ModifiedAt:         whereHelpertime_Time{field: "`output`.`modified_at`"},
+	ClaimID:            whereHelpernull_String{field: "`output`.`claim_id`"},
 }
 
 // OutputRels is where relationship names are stored.
@@ -1314,10 +1314,6 @@ func (o OutputSlice) DeleteAllGP() {
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o OutputSlice) DeleteAll(exec boil.Executor) error {
-	if o == nil {
-		return errors.New("model: no Output slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return nil
 	}

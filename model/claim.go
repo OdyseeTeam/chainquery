@@ -216,43 +216,43 @@ var ClaimWhere = struct {
 	LicenseURL        whereHelpernull_String
 	Preview           whereHelpernull_String
 }{
-	ID:                whereHelperuint64{field: `id`},
-	TransactionHashID: whereHelpernull_String{field: `transaction_hash_id`},
-	Vout:              whereHelperuint{field: `vout`},
-	Name:              whereHelperstring{field: `name`},
-	ClaimID:           whereHelperstring{field: `claim_id`},
-	ClaimType:         whereHelperint8{field: `claim_type`},
-	PublisherID:       whereHelpernull_String{field: `publisher_id`},
-	PublisherSig:      whereHelpernull_String{field: `publisher_sig`},
-	Certificate:       whereHelpernull_String{field: `certificate`},
-	SDHash:            whereHelpernull_String{field: `sd_hash`},
-	TransactionTime:   whereHelpernull_Uint64{field: `transaction_time`},
-	Version:           whereHelperstring{field: `version`},
-	ValueAsHex:        whereHelperstring{field: `value_as_hex`},
-	ValueAsJSON:       whereHelpernull_String{field: `value_as_json`},
-	ValidAtHeight:     whereHelperuint{field: `valid_at_height`},
-	Height:            whereHelperuint{field: `height`},
-	EffectiveAmount:   whereHelperuint64{field: `effective_amount`},
-	Author:            whereHelpernull_String{field: `author`},
-	Description:       whereHelpernull_String{field: `description`},
-	ContentType:       whereHelpernull_String{field: `content_type`},
-	IsNSFW:            whereHelperbool{field: `is_nsfw`},
-	Language:          whereHelpernull_String{field: `language`},
-	ThumbnailURL:      whereHelpernull_String{field: `thumbnail_url`},
-	Title:             whereHelpernull_String{field: `title`},
-	Fee:               whereHelperfloat64{field: `fee`},
-	FeeCurrency:       whereHelpernull_String{field: `fee_currency`},
-	FeeAddress:        whereHelperstring{field: `fee_address`},
-	IsFiltered:        whereHelperbool{field: `is_filtered`},
-	BidState:          whereHelperstring{field: `bid_state`},
-	CreatedAt:         whereHelpertime_Time{field: `created_at`},
-	ModifiedAt:        whereHelpertime_Time{field: `modified_at`},
-	ClaimAddress:      whereHelperstring{field: `claim_address`},
-	IsCertValid:       whereHelperbool{field: `is_cert_valid`},
-	IsCertProcessed:   whereHelperbool{field: `is_cert_processed`},
-	License:           whereHelpernull_String{field: `license`},
-	LicenseURL:        whereHelpernull_String{field: `license_url`},
-	Preview:           whereHelpernull_String{field: `preview`},
+	ID:                whereHelperuint64{field: "`claim`.`id`"},
+	TransactionHashID: whereHelpernull_String{field: "`claim`.`transaction_hash_id`"},
+	Vout:              whereHelperuint{field: "`claim`.`vout`"},
+	Name:              whereHelperstring{field: "`claim`.`name`"},
+	ClaimID:           whereHelperstring{field: "`claim`.`claim_id`"},
+	ClaimType:         whereHelperint8{field: "`claim`.`claim_type`"},
+	PublisherID:       whereHelpernull_String{field: "`claim`.`publisher_id`"},
+	PublisherSig:      whereHelpernull_String{field: "`claim`.`publisher_sig`"},
+	Certificate:       whereHelpernull_String{field: "`claim`.`certificate`"},
+	SDHash:            whereHelpernull_String{field: "`claim`.`sd_hash`"},
+	TransactionTime:   whereHelpernull_Uint64{field: "`claim`.`transaction_time`"},
+	Version:           whereHelperstring{field: "`claim`.`version`"},
+	ValueAsHex:        whereHelperstring{field: "`claim`.`value_as_hex`"},
+	ValueAsJSON:       whereHelpernull_String{field: "`claim`.`value_as_json`"},
+	ValidAtHeight:     whereHelperuint{field: "`claim`.`valid_at_height`"},
+	Height:            whereHelperuint{field: "`claim`.`height`"},
+	EffectiveAmount:   whereHelperuint64{field: "`claim`.`effective_amount`"},
+	Author:            whereHelpernull_String{field: "`claim`.`author`"},
+	Description:       whereHelpernull_String{field: "`claim`.`description`"},
+	ContentType:       whereHelpernull_String{field: "`claim`.`content_type`"},
+	IsNSFW:            whereHelperbool{field: "`claim`.`is_nsfw`"},
+	Language:          whereHelpernull_String{field: "`claim`.`language`"},
+	ThumbnailURL:      whereHelpernull_String{field: "`claim`.`thumbnail_url`"},
+	Title:             whereHelpernull_String{field: "`claim`.`title`"},
+	Fee:               whereHelperfloat64{field: "`claim`.`fee`"},
+	FeeCurrency:       whereHelpernull_String{field: "`claim`.`fee_currency`"},
+	FeeAddress:        whereHelperstring{field: "`claim`.`fee_address`"},
+	IsFiltered:        whereHelperbool{field: "`claim`.`is_filtered`"},
+	BidState:          whereHelperstring{field: "`claim`.`bid_state`"},
+	CreatedAt:         whereHelpertime_Time{field: "`claim`.`created_at`"},
+	ModifiedAt:        whereHelpertime_Time{field: "`claim`.`modified_at`"},
+	ClaimAddress:      whereHelperstring{field: "`claim`.`claim_address`"},
+	IsCertValid:       whereHelperbool{field: "`claim`.`is_cert_valid`"},
+	IsCertProcessed:   whereHelperbool{field: "`claim`.`is_cert_processed`"},
+	License:           whereHelpernull_String{field: "`claim`.`license`"},
+	LicenseURL:        whereHelpernull_String{field: "`claim`.`license_url`"},
+	Preview:           whereHelpernull_String{field: "`claim`.`preview`"},
 }
 
 // ClaimRels is where relationship names are stored.
@@ -1323,10 +1323,6 @@ func (o ClaimSlice) DeleteAllGP() {
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o ClaimSlice) DeleteAll(exec boil.Executor) error {
-	if o == nil {
-		return errors.New("model: no Claim slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return nil
 	}

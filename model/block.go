@@ -116,26 +116,26 @@ var BlockWhere = struct {
 	CreatedAt             whereHelpertime_Time
 	ModifiedAt            whereHelpertime_Time
 }{
-	ID:                    whereHelperuint64{field: `id`},
-	Bits:                  whereHelperstring{field: `bits`},
-	Chainwork:             whereHelperstring{field: `chainwork`},
-	Confirmations:         whereHelperuint{field: `confirmations`},
-	Difficulty:            whereHelperfloat64{field: `difficulty`},
-	Hash:                  whereHelperstring{field: `hash`},
-	Height:                whereHelperuint64{field: `height`},
-	MerkleRoot:            whereHelperstring{field: `merkle_root`},
-	NameClaimRoot:         whereHelperstring{field: `name_claim_root`},
-	Nonce:                 whereHelperuint64{field: `nonce`},
-	PreviousBlockHash:     whereHelpernull_String{field: `previous_block_hash`},
-	NextBlockHash:         whereHelpernull_String{field: `next_block_hash`},
-	BlockSize:             whereHelperuint64{field: `block_size`},
-	BlockTime:             whereHelperuint64{field: `block_time`},
-	Version:               whereHelperuint64{field: `version`},
-	VersionHex:            whereHelperstring{field: `version_hex`},
-	TransactionHashes:     whereHelpernull_String{field: `transaction_hashes`},
-	TransactionsProcessed: whereHelperbool{field: `transactions_processed`},
-	CreatedAt:             whereHelpertime_Time{field: `created_at`},
-	ModifiedAt:            whereHelpertime_Time{field: `modified_at`},
+	ID:                    whereHelperuint64{field: "`block`.`id`"},
+	Bits:                  whereHelperstring{field: "`block`.`bits`"},
+	Chainwork:             whereHelperstring{field: "`block`.`chainwork`"},
+	Confirmations:         whereHelperuint{field: "`block`.`confirmations`"},
+	Difficulty:            whereHelperfloat64{field: "`block`.`difficulty`"},
+	Hash:                  whereHelperstring{field: "`block`.`hash`"},
+	Height:                whereHelperuint64{field: "`block`.`height`"},
+	MerkleRoot:            whereHelperstring{field: "`block`.`merkle_root`"},
+	NameClaimRoot:         whereHelperstring{field: "`block`.`name_claim_root`"},
+	Nonce:                 whereHelperuint64{field: "`block`.`nonce`"},
+	PreviousBlockHash:     whereHelpernull_String{field: "`block`.`previous_block_hash`"},
+	NextBlockHash:         whereHelpernull_String{field: "`block`.`next_block_hash`"},
+	BlockSize:             whereHelperuint64{field: "`block`.`block_size`"},
+	BlockTime:             whereHelperuint64{field: "`block`.`block_time`"},
+	Version:               whereHelperuint64{field: "`block`.`version`"},
+	VersionHex:            whereHelperstring{field: "`block`.`version_hex`"},
+	TransactionHashes:     whereHelpernull_String{field: "`block`.`transaction_hashes`"},
+	TransactionsProcessed: whereHelperbool{field: "`block`.`transactions_processed`"},
+	CreatedAt:             whereHelpertime_Time{field: "`block`.`created_at`"},
+	ModifiedAt:            whereHelpertime_Time{field: "`block`.`modified_at`"},
 }
 
 // BlockRels is where relationship names are stored.
@@ -1290,10 +1290,6 @@ func (o BlockSlice) DeleteAllGP() {
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o BlockSlice) DeleteAll(exec boil.Executor) error {
-	if o == nil {
-		return errors.New("model: no Block slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return nil
 	}

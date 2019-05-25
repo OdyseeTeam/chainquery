@@ -146,22 +146,22 @@ var InputWhere = struct {
 	Modified            whereHelpertime_Time
 	Vin                 whereHelpernull_Uint
 }{
-	ID:                  whereHelperuint64{field: `id`},
-	TransactionID:       whereHelperuint64{field: `transaction_id`},
-	TransactionHash:     whereHelperstring{field: `transaction_hash`},
-	InputAddressID:      whereHelpernull_Uint64{field: `input_address_id`},
-	IsCoinbase:          whereHelperbool{field: `is_coinbase`},
-	Coinbase:            whereHelpernull_String{field: `coinbase`},
-	PrevoutHash:         whereHelpernull_String{field: `prevout_hash`},
-	PrevoutN:            whereHelpernull_Uint{field: `prevout_n`},
-	PrevoutSpendUpdated: whereHelperbool{field: `prevout_spend_updated`},
-	Sequence:            whereHelperuint{field: `sequence`},
-	Value:               whereHelpernull_Float64{field: `value`},
-	ScriptSigAsm:        whereHelpernull_String{field: `script_sig_asm`},
-	ScriptSigHex:        whereHelpernull_String{field: `script_sig_hex`},
-	Created:             whereHelpertime_Time{field: `created`},
-	Modified:            whereHelpertime_Time{field: `modified`},
-	Vin:                 whereHelpernull_Uint{field: `vin`},
+	ID:                  whereHelperuint64{field: "`input`.`id`"},
+	TransactionID:       whereHelperuint64{field: "`input`.`transaction_id`"},
+	TransactionHash:     whereHelperstring{field: "`input`.`transaction_hash`"},
+	InputAddressID:      whereHelpernull_Uint64{field: "`input`.`input_address_id`"},
+	IsCoinbase:          whereHelperbool{field: "`input`.`is_coinbase`"},
+	Coinbase:            whereHelpernull_String{field: "`input`.`coinbase`"},
+	PrevoutHash:         whereHelpernull_String{field: "`input`.`prevout_hash`"},
+	PrevoutN:            whereHelpernull_Uint{field: "`input`.`prevout_n`"},
+	PrevoutSpendUpdated: whereHelperbool{field: "`input`.`prevout_spend_updated`"},
+	Sequence:            whereHelperuint{field: "`input`.`sequence`"},
+	Value:               whereHelpernull_Float64{field: "`input`.`value`"},
+	ScriptSigAsm:        whereHelpernull_String{field: "`input`.`script_sig_asm`"},
+	ScriptSigHex:        whereHelpernull_String{field: "`input`.`script_sig_hex`"},
+	Created:             whereHelpertime_Time{field: "`input`.`created`"},
+	Modified:            whereHelpertime_Time{field: "`input`.`modified`"},
+	Vin:                 whereHelpernull_Uint{field: "`input`.`vin`"},
 }
 
 // InputRels is where relationship names are stored.
@@ -1169,10 +1169,6 @@ func (o InputSlice) DeleteAllGP() {
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o InputSlice) DeleteAll(exec boil.Executor) error {
-	if o == nil {
-		return errors.New("model: no Input slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return nil
 	}

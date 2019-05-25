@@ -98,12 +98,12 @@ var AddressWhere = struct {
 	ModifiedAt whereHelpertime_Time
 	Balance    whereHelperfloat64
 }{
-	ID:         whereHelperuint64{field: `id`},
-	Address:    whereHelperstring{field: `address`},
-	FirstSeen:  whereHelpernull_Time{field: `first_seen`},
-	CreatedAt:  whereHelpertime_Time{field: `created_at`},
-	ModifiedAt: whereHelpertime_Time{field: `modified_at`},
-	Balance:    whereHelperfloat64{field: `balance`},
+	ID:         whereHelperuint64{field: "`address`.`id`"},
+	Address:    whereHelperstring{field: "`address`.`address`"},
+	FirstSeen:  whereHelpernull_Time{field: "`address`.`first_seen`"},
+	CreatedAt:  whereHelpertime_Time{field: "`address`.`created_at`"},
+	ModifiedAt: whereHelpertime_Time{field: "`address`.`modified_at`"},
+	Balance:    whereHelperfloat64{field: "`address`.`balance`"},
 }
 
 // AddressRels is where relationship names are stored.
@@ -1123,10 +1123,6 @@ func (o AddressSlice) DeleteAllGP() {
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o AddressSlice) DeleteAll(exec boil.Executor) error {
-	if o == nil {
-		return errors.New("model: no Address slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return nil
 	}
