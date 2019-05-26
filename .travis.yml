@@ -59,6 +59,7 @@ before_script:
   - go get github.com/opennota/check/cmd/varcheck               # Checks for unused vars
   - go get github.com/opennota/check/cmd/structcheck            # Checks for unused fields in structs
   - go get github.com/jgautheron/goconst/cmd/goconst            # Checks for strings that should be constants
+  - "gem install travis-artifacts"
 
 
 
@@ -104,6 +105,15 @@ deploy:
   on:
     tags: true
     condition: $TRAVIS_OS_NAME = linux
+
+addons:
+  artifacts:
+    working_dir: bin
+    paths:
+      - ./bin/chainquery
+    target_paths:
+      - /chainquery/branch-${TRAVIS_BRANCH}/commit-${TRAVIS_COMMIT:0:7}/build-${TRAVIS_BUILD_NUMBER}
+      - /chainquery/branch-${TRAVIS_BRANCH}
 
 notifications:
   email: true
