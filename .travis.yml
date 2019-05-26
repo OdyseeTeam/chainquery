@@ -111,6 +111,7 @@ addons:
     working_dir: bin
     paths:
       - ./bin/chainquery
+      - ./bin/chainquery.txt
     target_paths:
       - /chainquery/branch-${TRAVIS_BRANCH}/commit-${TRAVIS_COMMIT:0:7}/build-${TRAVIS_BUILD_NUMBER}
       - /chainquery/branch-${TRAVIS_BRANCH}
