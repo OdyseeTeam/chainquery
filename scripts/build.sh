@@ -35,4 +35,5 @@
  CGO_ENABLED=0 go build -v -o "./bin/chainquery" -asmflags -trimpath="$DIR" -ldflags "-X ${IMPORTPATH}/meta.version=${VERSIONSHORT} -X ${IMPORTPATH}/meta.versionLong=${VERSIONLONG} -X \"${IMPORTPATH}/meta.commitMsg=${COMMITMSG}\""
 
  echo "== Done building linux version $("$DIR/bin/chainquery" version) =="
+ echo "$(git describe --tags --always --dirty)" > ./bin/chainquery.txt
  exit 0
