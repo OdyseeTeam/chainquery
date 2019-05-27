@@ -1,10 +1,9 @@
-CREATE DATABASE  IF NOT EXISTS `chainquery` /*!40100 DEFAULT CHARACTER SET latin1 COLLATE latin1_general_ci */;
-USE `chainquery`;
--- MySQL dump 10.13  Distrib 5.7.17, for macos10.12 (x86_64)
+-- Generated with mysqldump -u root -p --no-data chainquery > schema.sql
+-- MySQL dump 10.13  Distrib 5.7.25, for osx10.14 (x86_64)
 --
--- Host: localhost    Database: chainquery
+-- Host: localhost    Database: chainquery_e2e_test
 -- ------------------------------------------------------
--- Server version	5.7.22-22
+-- Server version	5.7.25
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -59,12 +58,14 @@ CREATE TABLE `address` (
   `first_seen` datetime DEFAULT NULL,
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `modified_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `balance` double(58,8) NOT NULL DEFAULT '0.00000000',
   PRIMARY KEY (`id`),
   UNIQUE KEY `id` (`id`),
   UNIQUE KEY `address` (`address`),
   UNIQUE KEY `Idx_AddressAddress` (`address`),
   KEY `Idx_AddressCreated` (`created_at`),
-  KEY `Idx_AddressModified` (`modified_at`)
+  KEY `Idx_AddressModified` (`modified_at`),
+  KEY `balance` (`balance`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2977769 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -158,12 +159,41 @@ CREATE TABLE `claim` (
   `title` text COLLATE utf8mb4_unicode_ci,
   `fee` double(58,8) NOT NULL DEFAULT '0.00000000',
   `fee_currency` char(30) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `fee_address` varchar(40) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
   `is_filtered` tinyint(1) NOT NULL DEFAULT '0',
   `bid_state` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Accepted',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `modified_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `fee_address` varchar(40) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
   `claim_address` varchar(40) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL DEFAULT '',
+  `is_cert_valid` tinyint(1) NOT NULL,
+  `is_cert_processed` tinyint(1) NOT NULL,
+  `license` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
+  `license_url` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
+  `preview` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
+  `type` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `release_time` bigint(20) unsigned DEFAULT NULL,
+  `source_hash` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `source_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `source_size` bigint(20) unsigned DEFAULT NULL,
+  `source_media_type` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `source_url` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `frame_width` bigint(20) unsigned DEFAULT NULL,
+  `frame_height` bigint(20) unsigned DEFAULT NULL,
+  `duration` bigint(20) unsigned DEFAULT NULL,
+  `audio_duration` bigint(20) unsigned DEFAULT NULL,
+  `os` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `email` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `website_url` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `has_claim_list` tinyint(1) DEFAULT NULL,
+  `claim_reference` varchar(160) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `list_type` smallint(6) DEFAULT NULL,
+  `claim_id_list` json DEFAULT NULL,
+  `country` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `state` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `city` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `code` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `latitude` bigint(20) DEFAULT NULL,
+  `longitude` bigint(20) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `id` (`id`),
   UNIQUE KEY `Idx_ClaimUnique` (`transaction_hash_id`,`vout`,`claim_id`),
@@ -183,8 +213,81 @@ CREATE TABLE `claim` (
   KEY `Idx_ClaimOutpoint` (`transaction_hash_id`,`vout`) COMMENT 'used for match claim to output with joins',
   KEY `Idx_ClaimAddress` (`claim_address`),
   KEY `Idx_Height` (`height`),
+  KEY `idx_cert_valid` (`is_cert_valid`),
+  KEY `idx_cert_processed` (`is_cert_processed`),
+  KEY `Idx_License` (`license`),
+  KEY `Idx_LicenseURL` (`license_url`),
+  KEY `Idx_Preview` (`preview`),
+  KEY `Idx_type` (`type`),
+  KEY `Idx_release_time` (`release_time`),
+  KEY `Idx_source_hash` (`source_hash`),
+  KEY `Idx_source_name` (`source_name`),
+  KEY `Idx_source_size` (`source_size`),
+  KEY `Idx_source_media_type` (`source_media_type`),
+  KEY `Idx_source_url` (`source_url`),
+  KEY `Idx_frame_width` (`frame_width`),
+  KEY `Idx_frame_height` (`frame_height`),
+  KEY `Idx_duration` (`duration`),
+  KEY `Idx_audio_duration` (`audio_duration`),
+  KEY `Idx_os` (`os`),
+  KEY `Idx_email` (`email`),
+  KEY `Idx_website_url` (`website_url`),
+  KEY `Idx_has_claim_list` (`has_claim_list`),
+  KEY `Idx_claim_reference` (`claim_reference`),
+  KEY `Idx_list_type` (`list_type`),
+  KEY `Idx_country` (`country`),
+  KEY `Idx_state` (`state`),
+  KEY `Idx_city` (`city`),
+  KEY `Idx_latitude` (`latitude`),
+  KEY `Idx_longitude` (`longitude`),
   CONSTRAINT `claim_ibfk_1` FOREIGN KEY (`transaction_hash_id`) REFERENCES `transaction` (`hash`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB AUTO_INCREMENT=274184 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `claim_in_list`
+--
+
+DROP TABLE IF EXISTS `claim_in_list`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `claim_in_list` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `list_claim_id` char(40) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
+  `claim_id` char(40) CHARACTER SET latin1 COLLATE latin1_general_ci DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `modified_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `id` (`id`),
+  UNIQUE KEY `Idx_claim_tag` (`list_claim_id`,`claim_id`),
+  KEY `Idx_OuptutCreated` (`created_at`),
+  KEY `Idx_OutputModified` (`modified_at`),
+  CONSTRAINT `claim_in_list_ibfk_1` FOREIGN KEY (`list_claim_id`) REFERENCES `claim` (`claim_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `claim_tag`
+--
+
+DROP TABLE IF EXISTS `claim_tag`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `claim_tag` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `tag_id` bigint(20) unsigned DEFAULT NULL,
+  `claim_id` char(40) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `modified_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `id` (`id`),
+  UNIQUE KEY `Idx_claim_tag` (`tag_id`,`claim_id`),
+  KEY `FK_claim` (`claim_id`),
+  KEY `Idx_OuptutCreated` (`created_at`),
+  KEY `Idx_OutputModified` (`modified_at`),
+  CONSTRAINT `claim_tag_ibfk_1` FOREIGN KEY (`claim_id`) REFERENCES `claim` (`claim_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  CONSTRAINT `claim_tag_ibfk_2` FOREIGN KEY (`tag_id`) REFERENCES `tag` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -214,7 +317,7 @@ CREATE TABLE `input` (
   `transaction_hash` varchar(70) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
   `input_address_id` bigint(20) unsigned DEFAULT NULL,
   `is_coinbase` tinyint(1) NOT NULL DEFAULT '0',
-  `coinbase` varchar(70) CHARACTER SET latin1 COLLATE latin1_general_ci DEFAULT NULL,
+  `coinbase` varchar(255) CHARACTER SET latin1 COLLATE latin1_general_ci DEFAULT NULL,
   `prevout_hash` varchar(70) CHARACTER SET latin1 COLLATE latin1_general_ci DEFAULT NULL,
   `prevout_n` int(10) unsigned DEFAULT NULL,
   `prevout_spend_updated` tinyint(1) NOT NULL DEFAULT '0',
@@ -224,6 +327,7 @@ CREATE TABLE `input` (
   `script_sig_hex` text CHARACTER SET latin1 COLLATE latin1_general_ci,
   `created` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `modified` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `vin` int(10) unsigned DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `id` (`id`),
   KEY `FK_InputAddress` (`input_address_id`),
@@ -249,6 +353,7 @@ CREATE TABLE `job_status` (
   `last_sync` datetime NOT NULL DEFAULT '0001-01-01 00:00:00',
   `is_success` tinyint(1) NOT NULL DEFAULT '0',
   `error_message` text COLLATE utf8mb4_unicode_ci,
+  `state` json DEFAULT NULL,
   PRIMARY KEY (`job_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -283,9 +388,9 @@ CREATE TABLE `output` (
   KEY `FK_OutputSpentByInput` (`spent_by_input_id`),
   KEY `Idx_OutputValue` (`value`),
   KEY `Idx_Oupoint` (`vout`,`transaction_hash`) COMMENT 'needed for references in this column order',
+  KEY `Idx_ASM` (`script_pub_key_asm`(255)) COMMENT 'needed in cases where the ASM needs to be parsed with speed',
   KEY `Idx_OuptutCreated` (`created_at`),
   KEY `Idx_OutputModified` (`modified_at`),
-  KEY `Idx_ASM` (`script_pub_key_asm`(255)),
   KEY `fk_claim` (`claim_id`),
   KEY `Idx_IsSpent` (`is_spent`),
   KEY `Idx_SpentOutput` (`transaction_hash`,`vout`,`is_spent`) COMMENT 'used for grabbing spent outputs with joins',
@@ -317,7 +422,27 @@ CREATE TABLE `support` (
   KEY `Idx_vout` (`vout`),
   KEY `Idx_outpoint` (`transaction_hash_id`,`vout`),
   CONSTRAINT `fk_transaction` FOREIGN KEY (`transaction_hash_id`) REFERENCES `transaction` (`hash`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB AUTO_INCREMENT=5920 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tag`
+--
+
+DROP TABLE IF EXISTS `tag`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `tag` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `tag` varchar(255) CHARACTER SET utf8 NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `modified_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `id` (`id`),
+  UNIQUE KEY `Idx_tag` (`tag`),
+  KEY `Idx_OuptutCreated` (`created_at`),
+  KEY `Idx_OutputModified` (`modified_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -342,6 +467,7 @@ CREATE TABLE `transaction` (
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `modified_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `created_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `value` double(58,8) NOT NULL DEFAULT '0.00000000',
   PRIMARY KEY (`id`),
   UNIQUE KEY `id` (`id`),
   UNIQUE KEY `Idx_TransactionHash` (`hash`),
@@ -350,6 +476,7 @@ CREATE TABLE `transaction` (
   KEY `Idx_TransactionCreated` (`created_at`),
   KEY `Idx_TransactionModified` (`modified_at`),
   KEY `transaction_ibfk_1` (`block_hash_id`),
+  KEY `value` (`value`),
   CONSTRAINT `transaction_ibfk_1` FOREIGN KEY (`block_hash_id`) REFERENCES `block` (`hash`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB AUTO_INCREMENT=3115133 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -374,6 +501,101 @@ CREATE TABLE `transaction_address` (
   CONSTRAINT `transaction_address_ibfk_2` FOREIGN KEY (`address_id`) REFERENCES `address` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4;
 /*!40101 SET character_set_client = @saved_cs_client */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_unicode_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`lbry`@`localhost`*/ /*!50003 TRIGGER tg_insert_value AFTER INSERT ON transaction_address
+  FOR EACH ROW
+  UPDATE transaction
+  SET transaction.value = transaction.value + NEW.credit_amount
+  WHERE transaction.id = NEW.transaction_id; */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_unicode_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`lbry`@`localhost`*/ /*!50003 TRIGGER tg_insert_balance AFTER INSERT ON transaction_address
+  FOR EACH ROW
+  UPDATE address
+  SET address.balance = address.balance + (NEW.credit_amount - NEW.debit_amount)
+  WHERE address.id = NEW.address_id; */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_unicode_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`lbry`@`localhost`*/ /*!50003 TRIGGER tg_update_value AFTER UPDATE ON transaction_address
+  FOR EACH ROW
+  UPDATE transaction
+  SET transaction.value = transaction.value - OLD.credit_amount + NEW.credit_amount
+  WHERE transaction.id = NEW.transaction_id; */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_unicode_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`lbry`@`localhost`*/ /*!50003 TRIGGER tg_update_balance AFTER UPDATE ON transaction_address
+  FOR EACH ROW
+  UPDATE address
+  SET address.balance = address.balance - (OLD.credit_amount - OLD.debit_amount) + (NEW.credit_amount - NEW.debit_amount)
+  WHERE address.id = NEW.address_id; */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_unicode_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`lbry`@`localhost`*/ /*!50003 TRIGGER tg_delete_balance AFTER DELETE ON transaction_address
+  FOR EACH ROW
+  UPDATE address
+  SET address.balance = address.balance - (OLD.credit_amount - OLD.debit_amount)
+  WHERE address.id = OLD.address_id; */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -384,4 +606,4 @@ CREATE TABLE `transaction_address` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2018-08-22 22:39:48
+-- Dump completed on 2019-04-28 23:35:14

@@ -9,10 +9,13 @@ var TableNames = struct {
 	ApplicationStatus  string
 	Block              string
 	Claim              string
+	ClaimInList        string
+	ClaimTag           string
 	Input              string
 	JobStatus          string
 	Output             string
 	Support            string
+	Tag                string
 	Transaction        string
 	TransactionAddress string
 }{
@@ -21,10 +24,13 @@ var TableNames = struct {
 	ApplicationStatus:  "application_status",
 	Block:              "block",
 	Claim:              "claim",
+	ClaimInList:        "claim_in_list",
+	ClaimTag:           "claim_tag",
 	Input:              "input",
 	JobStatus:          "job_status",
 	Output:             "output",
 	Support:            "support",
+	Tag:                "tag",
 	Transaction:        "transaction",
 	TransactionAddress: "transaction_address",
 }
