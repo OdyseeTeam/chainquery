@@ -173,7 +173,6 @@ func SetControllingClaimForNames(claims model.ClaimSlice, atHeight uint64) error
 func setBidStateOfClaimsForName(name string, atHeight uint64) {
 	claims, _ := model.Claims(
 		qm.Where(model.ClaimColumns.Name+"=?", name),
-		qm.Where(model.ClaimColumns.BidState+"!=?", "Spent"),
 		qm.Where(model.ClaimColumns.ValidAtHeight+"<=?", atHeight),
 		qm.OrderBy(model.ClaimColumns.EffectiveAmount+" DESC")).AllG()
 	printDebug("found ", len(claims), " claims matching the name ", name)
@@ -270,7 +269,7 @@ func getClaimStatus(claim *model.Claim, atHeight uint64) string {
 	}
 
 	if output.IsSpent {
-		status = "Spent" //Should be unreachable because claim would be out of claimtrie if spent.
+		status = "Spent"
 	}
 	height := claim.Height
 	if GetIsExpiredAtHeight(height, uint(atHeight)) {
@@ -361,7 +360,7 @@ func getSpentClaimsToUpdate() (model.ClaimSlice, error) {
 		FROM ` + output + `
 		INNER JOIN ` + claim + ` ON ` + claimID + ` = ` + outputClaimID + ` 
 			AND ` + claimTxByHash + ` = ` + outputTxHash + ` 
-			AND ` + claimVout + ` = ` + outputVout + `
+			AND ` + claimVout + ` = ` + outputVout + ` 
 		WHERE ` + outputModifiedAt + ` >= ? 
 		AND ` + outputIsSpent + ` = ? 
 		AND ` + claimBidState + ` != ?`
