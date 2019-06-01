@@ -127,7 +127,7 @@ func (*addressR) NewStruct() *addressR {
 type addressL struct{}
 
 var (
-	addressColumns               = []string{"id", "address", "first_seen", "created_at", "modified_at", "balance"}
+	addressAllColumns            = []string{"id", "address", "first_seen", "created_at", "modified_at", "balance"}
 	addressColumnsWithoutDefault = []string{"address", "first_seen"}
 	addressColumnsWithDefault    = []string{"id", "created_at", "modified_at", "balance"}
 	addressPrimaryKeyColumns     = []string{"id"}
@@ -613,7 +613,7 @@ func (o *Address) Insert(exec boil.Executor, columns boil.Columns) error {
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			addressColumns,
+			addressAllColumns,
 			addressColumnsWithDefault,
 			addressColumnsWithoutDefault,
 			nzDefaults,
@@ -733,7 +733,7 @@ func (o *Address) Update(exec boil.Executor, columns boil.Columns) error {
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			addressColumns,
+			addressAllColumns,
 			addressPrimaryKeyColumns,
 		)
 
@@ -931,13 +931,13 @@ func (o *Address) Upsert(exec boil.Executor, updateColumns, insertColumns boil.C
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			addressColumns,
+			addressAllColumns,
 			addressColumnsWithDefault,
 			addressColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			addressColumns,
+			addressAllColumns,
 			addressPrimaryKeyColumns,
 		)
 

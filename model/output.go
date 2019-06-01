@@ -137,7 +137,7 @@ func (*outputR) NewStruct() *outputR {
 type outputL struct{}
 
 var (
-	outputColumns               = []string{"id", "transaction_id", "transaction_hash", "value", "vout", "type", "script_pub_key_asm", "script_pub_key_hex", "required_signatures", "address_list", "is_spent", "spent_by_input_id", "created_at", "modified_at", "claim_id"}
+	outputAllColumns            = []string{"id", "transaction_id", "transaction_hash", "value", "vout", "type", "script_pub_key_asm", "script_pub_key_hex", "required_signatures", "address_list", "is_spent", "spent_by_input_id", "created_at", "modified_at", "claim_id"}
 	outputColumnsWithoutDefault = []string{"transaction_id", "transaction_hash", "value", "vout", "type", "script_pub_key_asm", "script_pub_key_hex", "required_signatures", "address_list", "spent_by_input_id", "claim_id"}
 	outputColumnsWithDefault    = []string{"id", "is_spent", "created_at", "modified_at"}
 	outputPrimaryKeyColumns     = []string{"id"}
@@ -805,7 +805,7 @@ func (o *Output) Insert(exec boil.Executor, columns boil.Columns) error {
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			outputColumns,
+			outputAllColumns,
 			outputColumnsWithDefault,
 			outputColumnsWithoutDefault,
 			nzDefaults,
@@ -925,7 +925,7 @@ func (o *Output) Update(exec boil.Executor, columns boil.Columns) error {
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			outputColumns,
+			outputAllColumns,
 			outputPrimaryKeyColumns,
 		)
 
@@ -1122,13 +1122,13 @@ func (o *Output) Upsert(exec boil.Executor, updateColumns, insertColumns boil.Co
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			outputColumns,
+			outputAllColumns,
 			outputColumnsWithDefault,
 			outputColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			outputColumns,
+			outputAllColumns,
 			outputPrimaryKeyColumns,
 		)
 

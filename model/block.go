@@ -159,7 +159,7 @@ func (*blockR) NewStruct() *blockR {
 type blockL struct{}
 
 var (
-	blockColumns               = []string{"id", "bits", "chainwork", "confirmations", "difficulty", "hash", "height", "merkle_root", "name_claim_root", "nonce", "previous_block_hash", "next_block_hash", "block_size", "block_time", "version", "version_hex", "transaction_hashes", "transactions_processed", "created_at", "modified_at"}
+	blockAllColumns            = []string{"id", "bits", "chainwork", "confirmations", "difficulty", "hash", "height", "merkle_root", "name_claim_root", "nonce", "previous_block_hash", "next_block_hash", "block_size", "block_time", "version", "version_hex", "transaction_hashes", "transactions_processed", "created_at", "modified_at"}
 	blockColumnsWithoutDefault = []string{"bits", "chainwork", "confirmations", "difficulty", "hash", "height", "merkle_root", "name_claim_root", "nonce", "previous_block_hash", "next_block_hash", "block_size", "block_time", "version", "version_hex", "transaction_hashes"}
 	blockColumnsWithDefault    = []string{"id", "transactions_processed", "created_at", "modified_at"}
 	blockPrimaryKeyColumns     = []string{"id"}
@@ -780,7 +780,7 @@ func (o *Block) Insert(exec boil.Executor, columns boil.Columns) error {
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			blockColumns,
+			blockAllColumns,
 			blockColumnsWithDefault,
 			blockColumnsWithoutDefault,
 			nzDefaults,
@@ -900,7 +900,7 @@ func (o *Block) Update(exec boil.Executor, columns boil.Columns) error {
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			blockColumns,
+			blockAllColumns,
 			blockPrimaryKeyColumns,
 		)
 
@@ -1098,13 +1098,13 @@ func (o *Block) Upsert(exec boil.Executor, updateColumns, insertColumns boil.Col
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			blockColumns,
+			blockAllColumns,
 			blockColumnsWithDefault,
 			blockColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			blockColumns,
+			blockAllColumns,
 			blockPrimaryKeyColumns,
 		)
 

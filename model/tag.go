@@ -78,7 +78,7 @@ func (*tagR) NewStruct() *tagR {
 type tagL struct{}
 
 var (
-	tagColumns               = []string{"id", "tag", "created_at", "modified_at"}
+	tagAllColumns            = []string{"id", "tag", "created_at", "modified_at"}
 	tagColumnsWithoutDefault = []string{"tag"}
 	tagColumnsWithDefault    = []string{"id", "created_at", "modified_at"}
 	tagPrimaryKeyColumns     = []string{"id"}
@@ -699,7 +699,7 @@ func (o *Tag) Insert(exec boil.Executor, columns boil.Columns) error {
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			tagColumns,
+			tagAllColumns,
 			tagColumnsWithDefault,
 			tagColumnsWithoutDefault,
 			nzDefaults,
@@ -819,7 +819,7 @@ func (o *Tag) Update(exec boil.Executor, columns boil.Columns) error {
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			tagColumns,
+			tagAllColumns,
 			tagPrimaryKeyColumns,
 		)
 
@@ -1017,13 +1017,13 @@ func (o *Tag) Upsert(exec boil.Executor, updateColumns, insertColumns boil.Colum
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			tagColumns,
+			tagAllColumns,
 			tagColumnsWithDefault,
 			tagColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			tagColumns,
+			tagAllColumns,
 			tagPrimaryKeyColumns,
 		)
 

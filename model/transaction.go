@@ -149,7 +149,7 @@ func (*transactionR) NewStruct() *transactionR {
 type transactionL struct{}
 
 var (
-	transactionColumns               = []string{"id", "block_hash_id", "input_count", "output_count", "fee", "transaction_time", "transaction_size", "hash", "version", "lock_time", "raw", "created_at", "modified_at", "created_time", "value"}
+	transactionAllColumns            = []string{"id", "block_hash_id", "input_count", "output_count", "fee", "transaction_time", "transaction_size", "hash", "version", "lock_time", "raw", "created_at", "modified_at", "created_time", "value"}
 	transactionColumnsWithoutDefault = []string{"block_hash_id", "input_count", "output_count", "transaction_time", "transaction_size", "hash", "version", "lock_time", "raw"}
 	transactionColumnsWithDefault    = []string{"id", "fee", "created_at", "modified_at", "created_time", "value"}
 	transactionPrimaryKeyColumns     = []string{"id"}
@@ -1922,7 +1922,7 @@ func (o *Transaction) Insert(exec boil.Executor, columns boil.Columns) error {
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			transactionColumns,
+			transactionAllColumns,
 			transactionColumnsWithDefault,
 			transactionColumnsWithoutDefault,
 			nzDefaults,
@@ -2042,7 +2042,7 @@ func (o *Transaction) Update(exec boil.Executor, columns boil.Columns) error {
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			transactionColumns,
+			transactionAllColumns,
 			transactionPrimaryKeyColumns,
 		)
 
@@ -2240,13 +2240,13 @@ func (o *Transaction) Upsert(exec boil.Executor, updateColumns, insertColumns bo
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			transactionColumns,
+			transactionAllColumns,
 			transactionColumnsWithDefault,
 			transactionColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			transactionColumns,
+			transactionAllColumns,
 			transactionPrimaryKeyColumns,
 		)
 
