@@ -87,7 +87,7 @@ func (*claimTagR) NewStruct() *claimTagR {
 type claimTagL struct{}
 
 var (
-	claimTagColumns               = []string{"id", "tag_id", "claim_id", "created_at", "modified_at"}
+	claimTagAllColumns            = []string{"id", "tag_id", "claim_id", "created_at", "modified_at"}
 	claimTagColumnsWithoutDefault = []string{"tag_id", "claim_id"}
 	claimTagColumnsWithDefault    = []string{"id", "created_at", "modified_at"}
 	claimTagPrimaryKeyColumns     = []string{"id"}
@@ -807,7 +807,7 @@ func (o *ClaimTag) Insert(exec boil.Executor, columns boil.Columns) error {
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			claimTagColumns,
+			claimTagAllColumns,
 			claimTagColumnsWithDefault,
 			claimTagColumnsWithoutDefault,
 			nzDefaults,
@@ -927,7 +927,7 @@ func (o *ClaimTag) Update(exec boil.Executor, columns boil.Columns) error {
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			claimTagColumns,
+			claimTagAllColumns,
 			claimTagPrimaryKeyColumns,
 		)
 
@@ -1124,13 +1124,13 @@ func (o *ClaimTag) Upsert(exec boil.Executor, updateColumns, insertColumns boil.
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			claimTagColumns,
+			claimTagAllColumns,
 			claimTagColumnsWithDefault,
 			claimTagColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			claimTagColumns,
+			claimTagAllColumns,
 			claimTagPrimaryKeyColumns,
 		)
 

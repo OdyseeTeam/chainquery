@@ -81,7 +81,7 @@ func (*transactionAddressR) NewStruct() *transactionAddressR {
 type transactionAddressL struct{}
 
 var (
-	transactionAddressColumns               = []string{"transaction_id", "address_id", "debit_amount", "credit_amount"}
+	transactionAddressAllColumns            = []string{"transaction_id", "address_id", "debit_amount", "credit_amount"}
 	transactionAddressColumnsWithoutDefault = []string{"transaction_id", "address_id"}
 	transactionAddressColumnsWithDefault    = []string{"debit_amount", "credit_amount"}
 	transactionAddressPrimaryKeyColumns     = []string{"transaction_id", "address_id"}
@@ -738,7 +738,7 @@ func (o *TransactionAddress) Insert(exec boil.Executor, columns boil.Columns) er
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			transactionAddressColumns,
+			transactionAddressAllColumns,
 			transactionAddressColumnsWithDefault,
 			transactionAddressColumnsWithoutDefault,
 			nzDefaults,
@@ -848,7 +848,7 @@ func (o *TransactionAddress) Update(exec boil.Executor, columns boil.Columns) er
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			transactionAddressColumns,
+			transactionAddressAllColumns,
 			transactionAddressPrimaryKeyColumns,
 		)
 
@@ -1043,13 +1043,13 @@ func (o *TransactionAddress) Upsert(exec boil.Executor, updateColumns, insertCol
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			transactionAddressColumns,
+			transactionAddressAllColumns,
 			transactionAddressColumnsWithDefault,
 			transactionAddressColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			transactionAddressColumns,
+			transactionAddressAllColumns,
 			transactionAddressPrimaryKeyColumns,
 		)
 

@@ -80,7 +80,7 @@ func (*jobStatusR) NewStruct() *jobStatusR {
 type jobStatusL struct{}
 
 var (
-	jobStatusColumns               = []string{"job_name", "last_sync", "is_success", "error_message", "state"}
+	jobStatusAllColumns            = []string{"job_name", "last_sync", "is_success", "error_message", "state"}
 	jobStatusColumnsWithoutDefault = []string{"job_name", "error_message", "state"}
 	jobStatusColumnsWithDefault    = []string{"last_sync", "is_success"}
 	jobStatusPrimaryKeyColumns     = []string{"job_name"}
@@ -373,7 +373,7 @@ func (o *JobStatus) Insert(exec boil.Executor, columns boil.Columns) error {
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			jobStatusColumns,
+			jobStatusAllColumns,
 			jobStatusColumnsWithDefault,
 			jobStatusColumnsWithoutDefault,
 			nzDefaults,
@@ -482,7 +482,7 @@ func (o *JobStatus) Update(exec boil.Executor, columns boil.Columns) error {
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			jobStatusColumns,
+			jobStatusAllColumns,
 			jobStatusPrimaryKeyColumns,
 		)
 
@@ -679,13 +679,13 @@ func (o *JobStatus) Upsert(exec boil.Executor, updateColumns, insertColumns boil
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			jobStatusColumns,
+			jobStatusAllColumns,
 			jobStatusColumnsWithDefault,
 			jobStatusColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			jobStatusColumns,
+			jobStatusAllColumns,
 			jobStatusPrimaryKeyColumns,
 		)
 

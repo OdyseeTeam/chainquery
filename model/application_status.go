@@ -83,7 +83,7 @@ func (*applicationStatusR) NewStruct() *applicationStatusR {
 type applicationStatusL struct{}
 
 var (
-	applicationStatusColumns               = []string{"id", "app_version", "data_version", "api_version"}
+	applicationStatusAllColumns            = []string{"id", "app_version", "data_version", "api_version"}
 	applicationStatusColumnsWithoutDefault = []string{"app_version", "data_version", "api_version"}
 	applicationStatusColumnsWithDefault    = []string{"id"}
 	applicationStatusPrimaryKeyColumns     = []string{"id"}
@@ -376,7 +376,7 @@ func (o *ApplicationStatus) Insert(exec boil.Executor, columns boil.Columns) err
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			applicationStatusColumns,
+			applicationStatusAllColumns,
 			applicationStatusColumnsWithDefault,
 			applicationStatusColumnsWithoutDefault,
 			nzDefaults,
@@ -496,7 +496,7 @@ func (o *ApplicationStatus) Update(exec boil.Executor, columns boil.Columns) err
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			applicationStatusColumns,
+			applicationStatusAllColumns,
 			applicationStatusPrimaryKeyColumns,
 		)
 
@@ -693,13 +693,13 @@ func (o *ApplicationStatus) Upsert(exec boil.Executor, updateColumns, insertColu
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			applicationStatusColumns,
+			applicationStatusAllColumns,
 			applicationStatusColumnsWithDefault,
 			applicationStatusColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			applicationStatusColumns,
+			applicationStatusAllColumns,
 			applicationStatusPrimaryKeyColumns,
 		)
 

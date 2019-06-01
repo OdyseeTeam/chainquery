@@ -99,7 +99,7 @@ func (*supportR) NewStruct() *supportR {
 type supportL struct{}
 
 var (
-	supportColumns               = []string{"id", "supported_claim_id", "support_amount", "bid_state", "transaction_hash_id", "vout", "created_at", "modified_at"}
+	supportAllColumns            = []string{"id", "supported_claim_id", "support_amount", "bid_state", "transaction_hash_id", "vout", "created_at", "modified_at"}
 	supportColumnsWithoutDefault = []string{"supported_claim_id", "transaction_hash_id", "vout"}
 	supportColumnsWithDefault    = []string{"id", "support_amount", "bid_state", "created_at", "modified_at"}
 	supportPrimaryKeyColumns     = []string{"id"}
@@ -637,7 +637,7 @@ func (o *Support) Insert(exec boil.Executor, columns boil.Columns) error {
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			supportColumns,
+			supportAllColumns,
 			supportColumnsWithDefault,
 			supportColumnsWithoutDefault,
 			nzDefaults,
@@ -757,7 +757,7 @@ func (o *Support) Update(exec boil.Executor, columns boil.Columns) error {
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			supportColumns,
+			supportAllColumns,
 			supportPrimaryKeyColumns,
 		)
 
@@ -954,13 +954,13 @@ func (o *Support) Upsert(exec boil.Executor, updateColumns, insertColumns boil.C
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			supportColumns,
+			supportAllColumns,
 			supportColumnsWithDefault,
 			supportColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			supportColumns,
+			supportAllColumns,
 			supportPrimaryKeyColumns,
 		)
 

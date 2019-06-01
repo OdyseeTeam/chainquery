@@ -84,7 +84,7 @@ func (*claimInListR) NewStruct() *claimInListR {
 type claimInListL struct{}
 
 var (
-	claimInListColumns               = []string{"id", "list_claim_id", "claim_id", "created_at", "modified_at"}
+	claimInListAllColumns            = []string{"id", "list_claim_id", "claim_id", "created_at", "modified_at"}
 	claimInListColumnsWithoutDefault = []string{"list_claim_id", "claim_id"}
 	claimInListColumnsWithDefault    = []string{"id", "created_at", "modified_at"}
 	claimInListPrimaryKeyColumns     = []string{"id"}
@@ -559,7 +559,7 @@ func (o *ClaimInList) Insert(exec boil.Executor, columns boil.Columns) error {
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			claimInListColumns,
+			claimInListAllColumns,
 			claimInListColumnsWithDefault,
 			claimInListColumnsWithoutDefault,
 			nzDefaults,
@@ -679,7 +679,7 @@ func (o *ClaimInList) Update(exec boil.Executor, columns boil.Columns) error {
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			claimInListColumns,
+			claimInListAllColumns,
 			claimInListPrimaryKeyColumns,
 		)
 
@@ -876,13 +876,13 @@ func (o *ClaimInList) Upsert(exec boil.Executor, updateColumns, insertColumns bo
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			claimInListColumns,
+			claimInListAllColumns,
 			claimInListColumnsWithDefault,
 			claimInListColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			claimInListColumns,
+			claimInListAllColumns,
 			claimInListPrimaryKeyColumns,
 		)
 

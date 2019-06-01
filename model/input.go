@@ -185,7 +185,7 @@ func (*inputR) NewStruct() *inputR {
 type inputL struct{}
 
 var (
-	inputColumns               = []string{"id", "transaction_id", "transaction_hash", "input_address_id", "is_coinbase", "coinbase", "prevout_hash", "prevout_n", "prevout_spend_updated", "sequence", "value", "script_sig_asm", "script_sig_hex", "created", "modified", "vin"}
+	inputAllColumns            = []string{"id", "transaction_id", "transaction_hash", "input_address_id", "is_coinbase", "coinbase", "prevout_hash", "prevout_n", "prevout_spend_updated", "sequence", "value", "script_sig_asm", "script_sig_hex", "created", "modified", "vin"}
 	inputColumnsWithoutDefault = []string{"transaction_id", "transaction_hash", "input_address_id", "coinbase", "prevout_hash", "prevout_n", "sequence", "value", "script_sig_asm", "script_sig_hex", "vin"}
 	inputColumnsWithDefault    = []string{"id", "is_coinbase", "prevout_spend_updated", "created", "modified"}
 	inputPrimaryKeyColumns     = []string{"id"}
@@ -660,7 +660,7 @@ func (o *Input) Insert(exec boil.Executor, columns boil.Columns) error {
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			inputColumns,
+			inputAllColumns,
 			inputColumnsWithDefault,
 			inputColumnsWithoutDefault,
 			nzDefaults,
@@ -780,7 +780,7 @@ func (o *Input) Update(exec boil.Executor, columns boil.Columns) error {
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			inputColumns,
+			inputAllColumns,
 			inputPrimaryKeyColumns,
 		)
 
@@ -977,13 +977,13 @@ func (o *Input) Upsert(exec boil.Executor, updateColumns, insertColumns boil.Col
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			inputColumns,
+			inputAllColumns,
 			inputColumnsWithDefault,
 			inputColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			inputColumns,
+			inputAllColumns,
 			inputPrimaryKeyColumns,
 		)
 

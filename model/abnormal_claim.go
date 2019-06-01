@@ -199,7 +199,7 @@ func (*abnormalClaimR) NewStruct() *abnormalClaimR {
 type abnormalClaimL struct{}
 
 var (
-	abnormalClaimColumns               = []string{"id", "name", "claim_id", "is_update", "block_hash", "transaction_hash", "vout", "output_id", "value_as_hex", "value_as_json", "created_at", "modified_at"}
+	abnormalClaimAllColumns            = []string{"id", "name", "claim_id", "is_update", "block_hash", "transaction_hash", "vout", "output_id", "value_as_hex", "value_as_json", "created_at", "modified_at"}
 	abnormalClaimColumnsWithoutDefault = []string{"name", "claim_id", "block_hash", "transaction_hash", "vout", "output_id", "value_as_hex", "value_as_json"}
 	abnormalClaimColumnsWithDefault    = []string{"id", "is_update", "created_at", "modified_at"}
 	abnormalClaimPrimaryKeyColumns     = []string{"id"}
@@ -674,7 +674,7 @@ func (o *AbnormalClaim) Insert(exec boil.Executor, columns boil.Columns) error {
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			abnormalClaimColumns,
+			abnormalClaimAllColumns,
 			abnormalClaimColumnsWithDefault,
 			abnormalClaimColumnsWithoutDefault,
 			nzDefaults,
@@ -794,7 +794,7 @@ func (o *AbnormalClaim) Update(exec boil.Executor, columns boil.Columns) error {
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			abnormalClaimColumns,
+			abnormalClaimAllColumns,
 			abnormalClaimPrimaryKeyColumns,
 		)
 
@@ -991,13 +991,13 @@ func (o *AbnormalClaim) Upsert(exec boil.Executor, updateColumns, insertColumns 
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			abnormalClaimColumns,
+			abnormalClaimAllColumns,
 			abnormalClaimColumnsWithDefault,
 			abnormalClaimColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			abnormalClaimColumns,
+			abnormalClaimAllColumns,
 			abnormalClaimPrimaryKeyColumns,
 		)
 

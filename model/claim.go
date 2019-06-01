@@ -494,7 +494,7 @@ func (*claimR) NewStruct() *claimR {
 type claimL struct{}
 
 var (
-	claimColumns               = []string{"id", "transaction_hash_id", "vout", "name", "claim_id", "claim_type", "publisher_id", "publisher_sig", "certificate", "sd_hash", "transaction_time", "version", "value_as_hex", "value_as_json", "valid_at_height", "height", "effective_amount", "author", "description", "content_type", "is_nsfw", "language", "thumbnail_url", "title", "fee", "fee_currency", "fee_address", "is_filtered", "bid_state", "created_at", "modified_at", "claim_address", "is_cert_valid", "is_cert_processed", "license", "license_url", "preview", "type", "release_time", "source_hash", "source_name", "source_size", "source_media_type", "source_url", "frame_width", "frame_height", "duration", "audio_duration", "os", "email", "website_url", "has_claim_list", "claim_reference", "list_type", "claim_id_list", "country", "state", "city", "code", "latitude", "longitude"}
+	claimAllColumns            = []string{"id", "transaction_hash_id", "vout", "name", "claim_id", "claim_type", "publisher_id", "publisher_sig", "certificate", "sd_hash", "transaction_time", "version", "value_as_hex", "value_as_json", "valid_at_height", "height", "effective_amount", "author", "description", "content_type", "is_nsfw", "language", "thumbnail_url", "title", "fee", "fee_currency", "fee_address", "is_filtered", "bid_state", "created_at", "modified_at", "claim_address", "is_cert_valid", "is_cert_processed", "license", "license_url", "preview", "type", "release_time", "source_hash", "source_name", "source_size", "source_media_type", "source_url", "frame_width", "frame_height", "duration", "audio_duration", "os", "email", "website_url", "has_claim_list", "claim_reference", "list_type", "claim_id_list", "country", "state", "city", "code", "latitude", "longitude"}
 	claimColumnsWithoutDefault = []string{"transaction_hash_id", "vout", "name", "claim_id", "claim_type", "publisher_id", "publisher_sig", "certificate", "sd_hash", "transaction_time", "version", "value_as_hex", "value_as_json", "valid_at_height", "height", "author", "description", "content_type", "language", "thumbnail_url", "title", "fee_currency", "fee_address", "claim_address", "is_cert_valid", "is_cert_processed", "license", "license_url", "preview", "type", "release_time", "source_hash", "source_name", "source_size", "source_media_type", "source_url", "frame_width", "frame_height", "duration", "audio_duration", "os", "email", "website_url", "has_claim_list", "claim_reference", "list_type", "claim_id_list", "country", "state", "city", "code", "latitude", "longitude"}
 	claimColumnsWithDefault    = []string{"id", "effective_amount", "is_nsfw", "fee", "is_filtered", "bid_state", "created_at", "modified_at"}
 	claimPrimaryKeyColumns     = []string{"id"}
@@ -1418,7 +1418,7 @@ func (o *Claim) Insert(exec boil.Executor, columns boil.Columns) error {
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			claimColumns,
+			claimAllColumns,
 			claimColumnsWithDefault,
 			claimColumnsWithoutDefault,
 			nzDefaults,
@@ -1538,7 +1538,7 @@ func (o *Claim) Update(exec boil.Executor, columns boil.Columns) error {
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			claimColumns,
+			claimAllColumns,
 			claimPrimaryKeyColumns,
 		)
 
@@ -1735,13 +1735,13 @@ func (o *Claim) Upsert(exec boil.Executor, updateColumns, insertColumns boil.Col
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			claimColumns,
+			claimAllColumns,
 			claimColumnsWithDefault,
 			claimColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			claimColumns,
+			claimAllColumns,
 			claimPrimaryKeyColumns,
 		)
 
