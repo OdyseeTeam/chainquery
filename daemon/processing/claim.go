@@ -316,15 +316,21 @@ func setTags(claim *model.Claim, tags []string) error {
 		if tag == "mature" {
 			claim.IsNSFW = true
 		}
-		t := &model.Tag{Tag: tag}
-		err := t.UpsertG(boil.Infer(), boil.Infer())
-		if err != nil {
-			return err
+		t := datastore.GetTag(tag)
+		if t == nil {
+			t = &model.Tag{Tag: tag}
+			err := datastore.PutTag(t)
+			if err != nil {
+				return err
+			}
 		}
-		ct := &model.ClaimTag{ClaimID: claim.ClaimID, TagID: null.NewUint64(t.ID, true)}
-		err = ct.UpsertG(boil.Infer(), boil.Infer())
-		if err != nil {
-			return err
+		ct := datastore.GetClaimTag(t.ID, claim.ClaimID)
+		if ct == nil {
+			ct = &model.ClaimTag{ClaimID: claim.ClaimID, TagID: null.NewUint64(t.ID, true)}
+			err := datastore.PutClaimTag(ct)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil

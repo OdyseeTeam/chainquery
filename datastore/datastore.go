@@ -256,3 +256,76 @@ func PutSupport(support *model.Support) error {
 	}
 	return nil
 }
+
+// GetTag makes creating,retrieving,updating the model type simplified.
+func GetTag(tag string) *model.Tag {
+	defer util.TimeTrack(time.Now(), "GetTag", "mysqlprofile")
+	tagMatch := qm.Where(model.TagColumns.Tag+"=?", tag)
+
+	if model.Tags(tagMatch).ExistsGP() {
+
+		tag, err := model.Tags(tagMatch).OneG()
+		if err != nil {
+			logrus.Error("Datastore(GETTAG): ", err)
+		}
+		return tag
+	}
+	return nil
+}
+
+// PutTag makes creating,retrieving,updating the model type simplified.
+func PutTag(tag *model.Tag) error {
+	defer util.TimeTrack(time.Now(), "PutTag", "mysqlprofile")
+	if tag != nil {
+
+		var err error
+		if model.TagExistsGP(tag.ID) {
+			tag.ModifiedAt = time.Now()
+			err = tag.UpdateG(boil.Infer())
+		} else {
+			err = tag.InsertG(boil.Infer())
+		}
+		if err != nil {
+			err = errors.Prefix("Datastore(PUTTAG): ", err)
+			return err
+		}
+	}
+	return nil
+}
+
+// GetClaimTag makes creating,retrieving,updating the model type simplified.
+func GetClaimTag(tagID uint64, claimID string) *model.ClaimTag {
+	defer util.TimeTrack(time.Now(), "GetClaimTag", "mysqlprofile")
+	tagIDMatch := qm.Where(model.ClaimTagColumns.TagID+"=?", tagID)
+	claimIDMatch := qm.Where(model.ClaimTagColumns.ClaimID+"=?", claimID)
+
+	if model.ClaimTags(tagIDMatch, claimIDMatch).ExistsGP() {
+
+		claimTag, err := model.ClaimTags(tagIDMatch, claimIDMatch).OneG()
+		if err != nil {
+			logrus.Error("Datastore(GETTAG): ", err)
+		}
+		return claimTag
+	}
+	return nil
+}
+
+// PutClaimTag makes creating,retrieving,updating the model type simplified.
+func PutClaimTag(claimTag *model.ClaimTag) error {
+	defer util.TimeTrack(time.Now(), "PutClaimTag", "mysqlprofile")
+	if claimTag != nil {
+
+		var err error
+		if model.ClaimTagExistsGP(claimTag.ID) {
+			claimTag.ModifiedAt = time.Now()
+			err = claimTag.UpdateG(boil.Infer())
+		} else {
+			err = claimTag.InsertG(boil.Infer())
+		}
+		if err != nil {
+			err = errors.Prefix("Datastore(PUTCLAIMTAG): ", err)
+			return err
+		}
+	}
+	return nil
+}
