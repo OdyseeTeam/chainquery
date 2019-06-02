@@ -322,7 +322,7 @@ func setTags(claim *model.Claim, tags []string) error {
 			return err
 		}
 		ct := &model.ClaimTag{ClaimID: claim.ClaimID, TagID: null.NewUint64(t.ID, true)}
-		err = claim.AddClaimTagsG(true, ct)
+		err = ct.UpsertG(boil.Infer(), boil.Infer())
 		if err != nil {
 			return err
 		}
