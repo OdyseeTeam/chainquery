@@ -232,7 +232,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:3bed697811cbe37210a02d6f1e9bed191b6c2aad63c1bb3fc9216ef6c7dceb65"
+  digest = "1:374c8090bc4f857bf3a550d533ffcd4ac9dfd0efd2ca351573770e407df09678"
   name = "github.com/lbryio/lbryschema.go"
   packages = [
     "address",
@@ -240,7 +240,7 @@
     "claim",
   ]
   pruneopts = ""
-  revision = "d701bab7f6238a5cda4e3410e45dfe745889560c"
+  revision = "6d2f69a36f467437e40075b6a27f288358af77eb"
 
 [[projects]]
   digest = "1:5e30b8342813a6a85a647f9277e34ffcd5872dc57ab590dd9b251b145b6ec88f"
