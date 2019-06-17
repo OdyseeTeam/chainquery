@@ -312,7 +312,11 @@ func setMetaDataInfo(claim *model.Claim, helper *c.ClaimHelper) error {
 }
 
 func setTags(claim *model.Claim, tags []string) error {
+	maxTagLength := 255
 	for _, tag := range tags {
+		if len(tag) > maxTagLength{
+			tag = tag[0:maxTagLength]
+		}
 		if tag == "mature" {
 			claim.IsNSFW = true
 		}
