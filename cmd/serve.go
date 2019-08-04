@@ -19,8 +19,8 @@ func init() {
 
 var serveCmd = &cobra.Command{
 	Use:   "serve",
-	Short: "Print the version number of Hugo",
-	Long:  `All software has versions. This is Hugo's`,
+	Short: "Run Daemon routines and the API Server",
+	Long:  `Run Daemon routines and the API Server, check github.com/lbryio/chainquery#what-does-chainquery-consist-of`,
 	Args:  cobra.OnlyValidArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 		config.InitSlack()
