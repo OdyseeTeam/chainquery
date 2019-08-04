@@ -18,8 +18,8 @@ func init() {
 
 var daemonCmd = &cobra.Command{
 	Use:   "daemon",
-	Short: "Print the version number of Hugo",
-	Long:  `All software has versions. This is Hugo's`,
+	Short: "Run only Daemon routines",
+	Long:  `Run only Daemon routines, without the API Server. Check github.com/lbryio/chainquery#what-does-chainquery-consist-of`,
 	Run: func(cmd *cobra.Command, args []string) {
 		config.InitSlack()
 		twilio.InitTwilio()
