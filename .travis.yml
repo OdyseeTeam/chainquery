@@ -53,16 +53,6 @@ before_install:
 before_script:
 # All the .go files, excluding vendor/ and model (auto generated)
   - GO_FILES=$(find . -iname '*.go' -type f | grep -v /vendor/ | grep -v /model/ | grep -v /swagger/ | grep -v /migration/)
-  - go get golang.org/x/tools/cmd/goimports                     # Used in build script for generated files
-  - go get golang.org/x/lint/golint                             # Linter
-  - go get honnef.co/go/tools/cmd/staticcheck                     # Badass static analyzer/linter
-  - go get github.com/jgautheron/gocyclo                        # Check against high complexity
-  - go get github.com/mdempsky/unconvert                        # Identifies unnecessary type conversions
-  - go get github.com/kisielk/errcheck                          # Checks for unhandled errors
-  - go get github.com/opennota/check/cmd/varcheck               # Checks for unused vars
-  - go get github.com/opennota/check/cmd/structcheck            # Checks for unused fields in structs
-  - go get github.com/jgautheron/goconst/cmd/goconst            # Checks for strings that should be constants
-
 
 
 
