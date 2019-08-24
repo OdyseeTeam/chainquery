@@ -4,8 +4,8 @@ go 1.12
 
 require (
 	github.com/BurntSushi/toml v0.3.1 // indirect
-	github.com/btcsuite/btcd v0.0.0-20190629003639-c26ffa870fd8
-	github.com/btcsuite/btcutil v0.0.0-20190425235716-9e5f4b9a998d
+	github.com/btcsuite/btcd v0.0.0-20190213025234-306aecffea32
+	github.com/btcsuite/btcutil v0.0.0-20190207003914-4c204d697803
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
 	github.com/fatih/color v1.7.0
 	github.com/fsnotify/fsnotify v1.4.7
@@ -22,7 +22,7 @@ require (
 	github.com/johntdyer/slack-go v0.0.0-20180213144715-95fac1160b22 // indirect
 	github.com/johntdyer/slackrus v0.0.0-20170926115001-3992f319fd0a
 	github.com/jteeuwen/go-bindata v3.0.7+incompatible
-	github.com/lbryio/lbry.go v0.0.2-0.20190712020916-f93451528d53
+	github.com/lbryio/lbry.go v1.1.1-0.20190820035946-9ac18d083579
 	github.com/lbryio/lbryschema.go v0.0.0-20190602173230-6d2f69a36f46
 	github.com/lbryio/ozzo-validation v0.0.0-20170323141101-d1008ad1fd04
 	github.com/lbryio/types v0.0.0-20190422033210-321fb2abda9c
@@ -53,5 +53,4 @@ require (
 	golang.org/x/sys v0.0.0-20190813064441-fde4db37ae7a // indirect
 	golang.org/x/text v0.3.2 // indirect
 	gopkg.in/gorp.v1 v1.7.1 // indirect
-	gotest.tools v2.2.0+incompatible // indirect
 )
