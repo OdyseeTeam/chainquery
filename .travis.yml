@@ -61,7 +61,6 @@ before_script:
 # in a modern Go project.
 script:
   # Build Chainquery successfully
-  - GO111MODULE=off go get -u golang.org/x/tools/cmd/goimports
   - ./scripts/build.sh
   # Fail if a .go file hasn't been formatted with gofmt
   - test -z $(gofmt -s -l $GO_FILES)

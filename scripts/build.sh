@@ -9,7 +9,8 @@
 
 
 echo "== Installing dependencies =="
-go get github.com/jteeuwen/go-bindata/...
+GO111MODULE=off go get -u golang.org/x/tools/cmd/goimports
+GO111MODULE=off go get -u github.com/jteeuwen/go-bindata/...
 go mod download
 
 
