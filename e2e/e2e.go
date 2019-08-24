@@ -87,20 +87,20 @@ func createChannelWithClaims() {
 }
 
 func exit(code int, err error) {
-	logrus.Error(err, "\n", errors.Trace(err))
+	logrus.Error(err, "\n", errors.FullTrace(err))
 	os.Exit(code)
 }
 
 func exitOnErr(err error) {
 	if err != nil {
-		exit(1, errors.Err(err))
+		exit(1, err)
 	}
 }
 
 func increment(blocks ...int) {
 	if len(blocks) > 0 {
 		_, err := lbrycrd.GenerateBlocks(int64(blocks[0]))
-		exitOnErr(errors.Err(err))
+		exitOnErr(err)
 	}
 }
 
