@@ -47,9 +47,11 @@ require (
 	github.com/volatiletech/null v8.0.0+incompatible
 	github.com/volatiletech/sqlboiler v3.4.0+incompatible
 	github.com/ziutek/mymysql v1.5.4 // indirect
-	golang.org/x/net v0.0.0-20181114220301-adae6a3d119a
+	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4 // indirect
+	golang.org/x/net v0.0.0-20190813141303-74dc4d7220e7
 	golang.org/x/oauth2 v0.0.0-20180821212333-d2e6202438be
-	golang.org/x/sys v0.0.0-20190520201301-c432e742b0af // indirect
+	golang.org/x/sys v0.0.0-20190813064441-fde4db37ae7a // indirect
+	golang.org/x/text v0.3.2 // indirect
 	gopkg.in/gorp.v1 v1.7.1 // indirect
 	gotest.tools v2.2.0+incompatible // indirect
 )
