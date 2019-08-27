@@ -4,6 +4,7 @@
 /persist
 swagger-codegen-cli.jar
 chainqueryconfig.toml
+!e2e/chainqueryconfig.toml
 cover.out
 .cover
 .DS_Store
