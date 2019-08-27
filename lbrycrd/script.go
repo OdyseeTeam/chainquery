@@ -34,6 +34,7 @@ const (
 	p2PKH = "pubkeyhash" // Pay to Public Key Hash
 	// NonStandard is a transaction type, usually used for a claim.
 	NonStandard = "nonstandard" // Non Standard - Used for Claims in LBRY
+	NullData    = "nulldata"
 
 	lbrycrdMainPubkeyPrefix    = byte(85)
 	lbrycrdMainScriptPrefix    = byte(122)
