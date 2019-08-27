@@ -12,7 +12,7 @@ import (
 
 func createBaseRawTx(inputs []btcjson.TransactionInput, change float64) (*wire.MsgTx, error) {
 	addresses := make(map[btcutil.Address]btcutil.Amount)
-	changeAddress, err := lbrycrd.LBRYcrdClient.GetRawChangeAddress("")
+	changeAddress, err := lbrycrd.LBRYcrdClient.GetNewAddress("")
 	if err != nil {
 		return nil, errors.Err(err)
 	}

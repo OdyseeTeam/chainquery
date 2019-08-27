@@ -9,12 +9,15 @@ language: go
 # in the next version of Go. Don't worry! Later we declare that test runs
 # are allowed to fail on Go tip.
 go:
-  - 1.12.1
+  - 1.12.7
   - master
 
 # Skip the install step. Don't `go get` dependencies. Only build with the
 # code in vendor/
 install: true
+
+env:
+  - GO111MODULE=on
 
 cache:
   directories:
@@ -50,16 +53,6 @@ before_install:
 before_script:
 # All the .go files, excluding vendor/ and model (auto generated)
   - GO_FILES=$(find . -iname '*.go' -type f | grep -v /vendor/ | grep -v /model/ | grep -v /swagger/ | grep -v /migration/)
-  - go get golang.org/x/tools/cmd/goimports                     # Used in build script for generated files
-  - go get golang.org/x/lint/golint                             # Linter
-  - go get honnef.co/go/tools/cmd/staticcheck                     # Badass static analyzer/linter
-  - go get github.com/jgautheron/gocyclo                        # Check against high complexity
-  - go get github.com/mdempsky/unconvert                        # Identifies unnecessary type conversions
-  - go get github.com/kisielk/errcheck                          # Checks for unhandled errors
-  - go get github.com/opennota/check/cmd/varcheck               # Checks for unused vars
-  - go get github.com/opennota/check/cmd/structcheck            # Checks for unused fields in structs
-  - go get github.com/jgautheron/goconst/cmd/goconst            # Checks for strings that should be constants
-
 
 
 
@@ -71,29 +64,15 @@ script:
   - ./scripts/build.sh
   # Fail if a .go file hasn't been formatted with gofmt
   - test -z $(gofmt -s -l $GO_FILES)
+  - ./scripts/lint.sh
   # Run unit tests
   - ./scripts/test.sh
-  # Checks for unused vars and fields on structs
-  - varcheck ./...
-  - structcheck ./...
-  # go vet is the official Go static analyzer
-  - go vet ./...
-  -  goconst $(go list ./... | grep -v /vendor/ | grep -v /model | grep -v /swagger/ | grep -v /migration )
-# forbid code with huge functions
-  - gocyclo -ignore "_test" -avg -over 19 $GO_FILES
-  # checks for unhandled errors
-  - errcheck $(go list ./... | grep -v /vendor/ | grep -v /model | grep -v /swagger/ | grep -v /migration )
-  # "go vet on steroids" + linter - ignore autogen code
-  - staticcheck $(go list ./... | grep -v /vendor/ | grep -v /model | grep -v /swagger/ | grep -v /migration )
-  # check for unnecessary conversions - ignore autogen code
-  - unconvert -v $(go list ./... | grep -v /vendor/ | grep -v /model | grep -v /swagger/ | grep -v /migration )
-  # one last linter - ignore autogen code
-  - golint -set_exit_status $(go list ./... | grep -v /vendor/ | grep -v /model/ | grep -v /swagger/ | grep -v /migration )
   # end to end testing
   - ./e2e/e2e.sh
   # check model generation...
   - ./bin/chainquery serve db && ./scripts/gen_models.sh
   # matches what was commited
+  - go mod tidy
   - git diff --exit-code
 
 deploy:
@@ -114,7 +93,7 @@ deploy:
     upload-dir: "chainquery/branch-${TRAVIS_BRANCH}/commit-${TRAVIS_COMMIT:0:7}/build-${TRAVIS_BUILD_NUMBER}"
     on:
       all_branches: true
-      go: '1.12.1'
+      go: '1.12.7'
   # upload latest successful build per branch
   - provider: s3
     bucket: "build.lbry.io"
@@ -125,7 +104,7 @@ deploy:
     upload-dir: "chainquery/branch-${TRAVIS_BRANCH}"
     on:
       all_branches: true
-      go: '1.12.1'
+      go: '1.12.7'
 
 notifications:
   email: true

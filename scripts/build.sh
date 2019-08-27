@@ -8,21 +8,15 @@
  DIR="$PWD"
 
 
- echo "== Installing dependencies =="
- go get github.com/jteeuwen/go-bindata/...
- go get github.com/golang/dep/cmd/dep
- dep ensure -v
+echo "== Installing dependencies =="
+GO111MODULE=off go get -u golang.org/x/tools/cmd/goimports
+GO111MODULE=off go get -u github.com/jteeuwen/go-bindata/...
+go mod download
 
 
- echo "== Checking dependencies =="
- go get github.com/FiloSottile/vendorcheck
- set +e
- vendorcheck
- if [ "$?" != "0" ]; then
-   echo "Not all dependencies are vendored"
-   exit 1
- fi
- set -e
+echo "== Checking dependencies =="
+go mod verify
+set -e
 
 
  echo "== Compiling =="

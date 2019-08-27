@@ -1,0 +1,17 @@
+version: '3.4'
+
+services:
+#############
+## Lbrycrd ##
+#############
+  lbrycrd:
+    image: lbry/lbrycrd:v0.17.2.1
+    restart: "no"
+    ports:
+      - "11336:29246"
+      - "11337:29245"
+    ## host volumes for persistent data such as wallet private keys.
+    volumes:
+      - "../persist/data:/data"
+    environment:
+      - RUN_MODE=regtest

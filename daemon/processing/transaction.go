@@ -253,7 +253,7 @@ func saveUpdateOutputs(transaction *model.Transaction, jsonTx *lbrycrd.TxRawResu
 	q("VOUT SYNC started")
 	sQ.Add(1)
 	go func() {
-		sQ.Done()
+		defer sQ.Done()
 		q("VOUT start queueing")
 		for i := range vouts {
 			select {

@@ -14,12 +14,5 @@ APP_DIR="$DIR"
 
   cd "$APP_DIR"
 
-  if [ ! -d "$APP_DIR/vendor" ]; then
-    hash dep 2>/dev/null || go get github.com/golang/dep/cmd/dep
-    echo "Installing vendor deps (this takes a while) ..."
-    go get
-    dep ensure
-  fi
-
   reflex --decoration=none --start-service=true --regex='\.go$' --inverse-regex='migration/bindata\.go' -- sh -c "go generate && go run *.go serve"
 )
