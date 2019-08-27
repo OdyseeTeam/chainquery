@@ -22,7 +22,7 @@ require (
 	github.com/johntdyer/slack-go v0.0.0-20180213144715-95fac1160b22 // indirect
 	github.com/johntdyer/slackrus v0.0.0-20170926115001-3992f319fd0a
 	github.com/jteeuwen/go-bindata v3.0.7+incompatible
-	github.com/lbryio/lbry.go v1.1.1-0.20190820035946-9ac18d083579
+	github.com/lbryio/lbry.go v1.1.1-0.20190825202001-8fa28d3d656f
 	github.com/lbryio/lbryschema.go v0.0.0-20190602173230-6d2f69a36f46
 	github.com/lbryio/ozzo-validation v0.0.0-20170323141101-d1008ad1fd04
 	github.com/lbryio/types v0.0.0-20190422033210-321fb2abda9c
@@ -40,7 +40,7 @@ require (
 	github.com/sirupsen/logrus v1.2.0
 	github.com/spf13/afero v1.1.1 // indirect
 	github.com/spf13/cobra v0.0.3
-	github.com/spf13/jwalterweatherman v0.0.0-20180109140146-7c0cea34c8ec // indirect
+	github.com/spf13/jwalterweatherman v0.0.0-20180109140146-7c0cea34c8ec
 	github.com/spf13/pflag v1.0.1
 	github.com/spf13/viper v1.0.2
 	github.com/volatiletech/inflect v0.0.0-20170731032912-e7201282ae8d // indirect

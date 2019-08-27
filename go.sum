@@ -91,6 +91,14 @@ github.com/lbryio/lbry.go v0.0.2-0.20190712020916-f93451528d53 h1:oVpkFgpQlUbcBD
 github.com/lbryio/lbry.go v0.0.2-0.20190712020916-f93451528d53/go.mod h1:3AfuCak7Np0/gm1ciH5yBjnp5DSVJ0nmWQkLMGc8AFE=
 github.com/lbryio/lbry.go v1.1.1-0.20190820035946-9ac18d083579 h1:3FKVv1m/J8mVQJTwIcF5BFv2E87y+nYqBqofJs6F720=
 github.com/lbryio/lbry.go v1.1.1-0.20190820035946-9ac18d083579/go.mod h1:JtyI30bU51rm0LZ/po3mQuzf++14OWb6kR/6mMRAmKU=
+github.com/lbryio/lbry.go v1.1.1-0.20190825200950-26b0c7356d09 h1:7fIAsjFqW+RvHwbu/WIkJC7ufTSnZnyEb2oq6XTza0s=
+github.com/lbryio/lbry.go v1.1.1-0.20190825200950-26b0c7356d09/go.mod h1:JtyI30bU51rm0LZ/po3mQuzf++14OWb6kR/6mMRAmKU=
+github.com/lbryio/lbry.go v1.1.1-0.20190825201221-ea5b70e8fc4d h1:U2SLxrX9r1TFDAyktFvBCMdaxOp7sRDO5kmOMoPxyNw=
+github.com/lbryio/lbry.go v1.1.1-0.20190825201221-ea5b70e8fc4d/go.mod h1:JtyI30bU51rm0LZ/po3mQuzf++14OWb6kR/6mMRAmKU=
+github.com/lbryio/lbry.go v1.1.1-0.20190825201450-f8a231286a3e h1:ERiCIeCnPFjMs5CbszgwRxANvyjbw56aobPY6f5tHQE=
+github.com/lbryio/lbry.go v1.1.1-0.20190825201450-f8a231286a3e/go.mod h1:JtyI30bU51rm0LZ/po3mQuzf++14OWb6kR/6mMRAmKU=
+github.com/lbryio/lbry.go v1.1.1-0.20190825202001-8fa28d3d656f h1:ovd2wPXzkT80vdP/FX5xcQeXu0i9RAo80SQ6qIsrAjM=
+github.com/lbryio/lbry.go v1.1.1-0.20190825202001-8fa28d3d656f/go.mod h1:JtyI30bU51rm0LZ/po3mQuzf++14OWb6kR/6mMRAmKU=
 github.com/lbryio/lbryschema.go v0.0.0-20190428231007-c54836bca002/go.mod h1:dAzPCBj3CKKWBGYBZxK6tKBP5SCgY2tqd9SnQd/OyKo=
 github.com/lbryio/lbryschema.go v0.0.0-20190602173230-6d2f69a36f46 h1:LemfR+rMxhf7nnOrzy2HqS7Me7SZ5gEwOcNFzKC8ySQ=
 github.com/lbryio/lbryschema.go v0.0.0-20190602173230-6d2f69a36f46/go.mod h1:dAzPCBj3CKKWBGYBZxK6tKBP5SCgY2tqd9SnQd/OyKo=

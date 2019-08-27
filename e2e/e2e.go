@@ -93,7 +93,7 @@ func exit(code int, err error) {
 
 func exitOnErr(err error) {
 	if err != nil {
-		exit(1, err)
+		exit(1, errors.Err(err))
 	}
 }
 

@@ -135,10 +135,6 @@ func daemonIteration() {
 		return
 	}
 	blockHeight = *height
-	if lastHeightProcessed == uint64(0) {
-		blockQueue <- lastHeightProcessed
-		lastHeightProcessed = <-blockProcessedChan
-	}
 	for {
 		select {
 		case <-stopper.Ch():

@@ -68,7 +68,7 @@ script:
   # Run unit tests
   - ./scripts/test.sh
   # end to end testing
-  #- ./e2e/e2e.sh
+  - ./e2e/e2e.sh
   # check model generation...
   - ./bin/chainquery serve db && ./scripts/gen_models.sh
   # matches what was commited
