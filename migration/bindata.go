@@ -97,7 +97,7 @@ func migration000_init_schemaSql() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "migration/000_init_schema.sql", size: 15364, mode: os.FileMode(420), modTime: time.Unix(1562894801, 0)}
+	info := bindataFileInfo{name: "migration/000_init_schema.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -117,7 +117,7 @@ func migration001_supportsSql() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "migration/001_supports.sql", size: 1128, mode: os.FileMode(420), modTime: time.Unix(1562894801, 0)}
+	info := bindataFileInfo{name: "migration/001_supports.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -137,7 +137,7 @@ func migration002_decimalsSql() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "migration/002_decimals.sql", size: 216, mode: os.FileMode(420), modTime: time.Unix(1562894801, 0)}
+	info := bindataFileInfo{name: "migration/002_decimals.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -157,7 +157,7 @@ func migration003_dht_trackingSql() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "migration/003_dht_tracking.sql", size: 2061, mode: os.FileMode(420), modTime: time.Unix(1562894801, 0)}
+	info := bindataFileInfo{name: "migration/003_dht_tracking.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -177,7 +177,7 @@ func migration004_new_indicesSql() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "migration/004_new_indices.sql", size: 961, mode: os.FileMode(420), modTime: time.Unix(1562894801, 0)}
+	info := bindataFileInfo{name: "migration/004_new_indices.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -197,7 +197,7 @@ func migration005_remove_foreign_keysSql() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "migration/005_remove_foreign_keys.sql", size: 760, mode: os.FileMode(420), modTime: time.Unix(1562894801, 0)}
+	info := bindataFileInfo{name: "migration/005_remove_foreign_keys.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -217,7 +217,7 @@ func migration006_add_height_indexSql() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "migration/006_add_height_index.sql", size: 126, mode: os.FileMode(420), modTime: time.Unix(1562894801, 0)}
+	info := bindataFileInfo{name: "migration/006_add_height_index.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -237,7 +237,7 @@ func migration007_more_decimalsSql() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "migration/007_more_decimals.sql", size: 92, mode: os.FileMode(420), modTime: time.Unix(1562894801, 0)}
+	info := bindataFileInfo{name: "migration/007_more_decimals.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -257,7 +257,7 @@ func migration008_schema_fixSql() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "migration/008_schema_fix.sql", size: 3655, mode: os.FileMode(420), modTime: time.Unix(1562894801, 0)}
+	info := bindataFileInfo{name: "migration/008_schema_fix.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -277,7 +277,7 @@ func migration009_certificate_validationSql() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "migration/009_certificate_validation.sql", size: 580, mode: os.FileMode(420), modTime: time.Unix(1562894801, 0)}
+	info := bindataFileInfo{name: "migration/009_certificate_validation.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -297,7 +297,7 @@ func migration010_triggersSql() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "migration/010_triggers.sql", size: 1886, mode: os.FileMode(420), modTime: time.Unix(1562894801, 0)}
+	info := bindataFileInfo{name: "migration/010_triggers.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -317,7 +317,7 @@ func migration011_add_licenseSql() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "migration/011_add_license.sql", size: 386, mode: os.FileMode(420), modTime: time.Unix(1562894801, 0)}
+	info := bindataFileInfo{name: "migration/011_add_license.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -337,7 +337,7 @@ func migration012_store_last_heightSql() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "migration/012_store_last_height.sql", size: 113, mode: os.FileMode(420), modTime: time.Unix(1562894801, 0)}
+	info := bindataFileInfo{name: "migration/012_store_last_height.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -357,7 +357,7 @@ func migration013_add_input_vinSql() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "migration/013_add_input_vin.sql", size: 304, mode: os.FileMode(420), modTime: time.Unix(1562894801, 0)}
+	info := bindataFileInfo{name: "migration/013_add_input_vin.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -377,7 +377,7 @@ func migration014_yay_new_metadataSql() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "migration/014_yay_new_metadata.sql", size: 3895, mode: os.FileMode(420), modTime: time.Unix(1562894801, 0)}
+	info := bindataFileInfo{name: "migration/014_yay_new_metadata.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
