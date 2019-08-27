@@ -157,10 +157,9 @@ func daemonIteration() {
 			if workToDo {
 				time.Sleep(processingDelay)
 				continue
-			} else if *height != 0 {
-				running = false
-				return
 			}
+			running = false
+			return
 		}
 	}
 }
