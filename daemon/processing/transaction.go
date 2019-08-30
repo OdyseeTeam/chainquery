@@ -271,25 +271,26 @@ func saveUpdateOutputs(transaction *model.Transaction, jsonTx *lbrycrd.TxRawResu
 
 	//Error check
 	leftToProcess := len(vouts)
+	var voutErr error
 	for err := range errorchan {
 		leftToProcess--
 		if err != nil {
-			q("VOUT error..stopping")
-			sQ.StopAndWait()
-			q("VOUT error..stopped")
-			return errors.Prefix("Vout Error->", err)
+			q("VOUT error found...")
+			if voutErr == nil {
+				voutErr = errors.Prefix("Vout Error->", err)
+			}
 		}
 		if leftToProcess == 0 {
 			q("VOUT stopping...")
 			sQ.StopAndWait()
 			q("VOUT stopped")
 			q("VOUT returning")
-			return nil
+			return voutErr
 		}
 		continue
 	}
 	q("VOUT SYNC ended")
-	return nil
+	return voutErr
 }
 
 func setSendReceive(transaction *model.Transaction, txDbCrAddrMap *txDebitCredits) error {

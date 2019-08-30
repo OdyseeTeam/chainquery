@@ -152,6 +152,8 @@ func daemonIteration() {
 			if next%50 == 0 && next != lastHeightLogged {
 				log.Info("running iteration at block height ", next, runtime.NumGoroutine(), " go routines")
 				lastHeightLogged = next
+			} else {
+				log.Debug("running iteration at block height ", next, runtime.NumGoroutine(), " go routines")
 			}
 			workToDo := lastHeightProcessed < blockHeight && lastHeightProcessed != 0
 			if workToDo {
