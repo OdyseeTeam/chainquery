@@ -183,6 +183,10 @@ func processVout(jsonVout *lbrycrd.Vout, tx *m.Transaction, txDC *txDebitCredits
 		vout.AddressList.SetValid(string(jsonAddresses))
 	} else if vout.Type.String == lbrycrd.NonStandard {
 		jsonAddress, err := getAddressFromNonStandardVout(vout.ScriptPubKeyHex.String)
+		if errors.Is(err, lbrycrd.ErrNotClaimScript) {
+			logrus.Warning(err)
+			return ds.PutOutput(vout, boil.Infer())
+		}
 		if err != nil {
 			return err
 		}

@@ -222,6 +222,9 @@ func ParseClaimUpdateScript(script []byte) (name string, claimid string, value [
 	return name, claimid, value, pubkeyscript, err
 }
 
+//ErrNotClaimScript is a base error for when a script cannot be parsed as a claim script.
+var ErrNotClaimScript = errors.Base("Script is not a claim script!")
+
 // GetPubKeyScriptFromClaimPKS gets the public key script at the end of a claim script.
 func GetPubKeyScriptFromClaimPKS(script []byte) (pubkeyscript []byte, err error) {
 	if IsClaimScript(script) {
@@ -245,7 +248,7 @@ func GetPubKeyScriptFromClaimPKS(script []byte) (pubkeyscript []byte, err error)
 			return
 		}
 	} else {
-		err = errors.Base("Script is not a claim script!")
+		err = ErrNotClaimScript
 	}
 	return
 }
