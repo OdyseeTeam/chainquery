@@ -7,6 +7,25 @@ import (
 	"github.com/lbryio/lbry.go/extras/errors"
 )
 
+//GetGenesisBlock performs a jsonrpc that returns the structured data as a GetBlockResponse.
+//If LBRYcrd contains this block it will be returned.
+func GetGenesisBlock() (*GetBlockVerboseResponse, *GetBlockResponse, error) {
+	genesisHash, err := GetBlockHash(0)
+	if err != nil {
+		return nil, nil, errors.Err(err)
+	}
+	defer util.TimeTrack(time.Now(), "getblock", "lbrycrdprofile")
+	verboseResponse := new(GetBlockVerboseResponse)
+	response := new(GetBlockResponse)
+
+	err = call(&verboseResponse, "getblock", genesisHash, 2)
+	if err != nil {
+		return nil, nil, errors.Err(err)
+	}
+
+	return verboseResponse, response, call(&response, "getblock", genesisHash)
+}
+
 //GetBlock performs a jsonrpc that returns the structured data as a GetBlockResponse.
 //If LBRYcrd contains this block it will be returned.
 func GetBlock(blockHash string) (*GetBlockResponse, error) {
