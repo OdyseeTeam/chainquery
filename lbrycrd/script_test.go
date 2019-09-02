@@ -3,6 +3,10 @@ package lbrycrd
 import (
 	"encoding/hex"
 	"testing"
+
+	"github.com/btcsuite/btcd/txscript"
+
+	"github.com/lbryio/chainquery/global"
 )
 
 type HashAddressPair struct {
@@ -25,6 +29,50 @@ var P2SHPairs = []HashAddressPair{
 	{"6c4aab30dc6cd9c07c40a598f2ee5f41bea3b750", "rG7BZ3EmPMLcggYYkRTveXv8pqedWPDG7p"},
 	{"599885176d5d868c72f7327f573f37b4f91d0fa6", "rEQKyb7nd7UUGyEEn5xRkk1fgXdTCf2ZCg"},
 	{"20b7bd1bc21a55cbf6b2d554eb48b669eb6d1263", "r9DarmxyPjWkF7ocyxMzaNZN3a9gJvNTZJ"},
+}
+
+var P2WPKHPairs = []HashAddressPair{ //From Testnet
+	{"1892d4c5b69ba764bcf68bc43a9359472c4e18a0", "tlbc1qrzfdf3dknwnkf08k30zr4y6egukyux9qe04vch"},
+}
+
+func TestAddressExtraction(t *testing.T) {
+	//Should add main net examples when live.
+	global.BlockChainName = lbrycrdTestnet
+	chainParams, err := GetChainParams()
+	if err != nil {
+		t.Error(err)
+	}
+	scriptHex := "00141892d4c5b69ba764bcf68bc43a9359472c4e18a0"
+	script, err := hex.DecodeString(scriptHex)
+	if err != nil {
+		t.Error(err)
+	}
+	class, address, reSigs, err := txscript.ExtractPkScriptAddrs(script, chainParams)
+	if reSigs != 1 {
+		t.Errorf("Expected 1 sig required but returned %d", reSigs)
+	}
+	if len(address) != 1 {
+		t.Error("expected on 1 address returned")
+	}
+	if address[0].EncodeAddress() != "tlbc1qrzfdf3dknwnkf08k30zr4y6egukyux9qe04vch" {
+		t.Errorf("expected address 'tlbc1qrzfdf3dknwnkf08k30zr4y6egukyux9qe04vch' but got '%s'", address)
+	}
+	println("Class:", class)
+}
+
+func TestGetAddressFromP2WPKH(t *testing.T) {
+	//Should add main net examples when live.
+	global.BlockChainName = lbrycrdTestnet
+	for _, pair := range P2WPKHPairs {
+		result, err := getAddressFromP2WPKH(pair.hash)
+		if err != nil {
+			t.Error(err)
+		}
+		if result != pair.address {
+			t.Errorf("expected '%s' but got '%s' instead", pair.address, result)
+		}
+	}
+	global.BlockChainName = lbrycrdMain
 }
 
 func TestGetAddressFromP2PKH(t *testing.T) {

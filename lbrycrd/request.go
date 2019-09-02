@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/lbryio/chainquery/util"
+
 	"github.com/lbryio/lbry.go/extras/errors"
 )
 
