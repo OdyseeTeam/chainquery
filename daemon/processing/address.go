@@ -18,23 +18,12 @@ import (
 func createUpdateVoutAddresses(tx *model.Transaction, outputs *[]lbrycrd.Vout, blockSeconds uint64) (map[string]uint64, error) {
 	addressIDMap := make(map[string]uint64)
 	for _, output := range *outputs {
-		if len(output.ScriptPubKey.Addresses) == 0 {
-			if output.ScriptPubKey.Type == lbrycrd.NonStandard {
-				scriptBytes, err := hex.DecodeString(output.ScriptPubKey.Hex)
-				if err != nil {
-					return nil, err
-				}
-				if lbrycrd.IsClaimScript(scriptBytes) {
-					pksBytes, err := lbrycrd.GetPubKeyScriptFromClaimPKS(scriptBytes)
-					if err != nil {
-						return nil, err
-					}
-					address := lbrycrd.GetAddressFromPublicKeyScript(pksBytes)
-					addrSet := append(output.ScriptPubKey.Addresses, address)
-					output.ScriptPubKey.Addresses = addrSet
-				}
-			}
+		address, err := getFirstAddressFromVout(output)
+		if err != nil {
+			return nil, err
 		}
+		addrSet := append(output.ScriptPubKey.Addresses, address)
+		output.ScriptPubKey.Addresses = addrSet
 		for _, address := range output.ScriptPubKey.Addresses {
 			foundAddress, _ := model.Addresses(qm.Where(model.AddressColumns.Address+"=?", address)).OneG()
 			if foundAddress != nil {
@@ -121,4 +110,25 @@ func createTxAddressIfNotExist(txID uint64, addressID uint64) error {
 		}
 	}
 	return nil
+}
+
+func getFirstAddressFromVout(vout lbrycrd.Vout) (scriptAddress string, err error) {
+	if vout.ScriptPubKey.Type == lbrycrd.NonStandard {
+		scriptAddress, err = getAddressFromNonStandardVout(vout.ScriptPubKey.Hex)
+		if errors.Is(err, lbrycrd.ErrNotClaimScript) {
+			logrus.Warning(err)
+			return "", nil
+		}
+		return
+	}
+
+	if vout.ScriptPubKey.Type == lbrycrd.NullData {
+		return
+	}
+
+	scriptBytes, err := hex.DecodeString(vout.ScriptPubKey.Hex)
+	if err != nil {
+		return "", errors.Err(err)
+	}
+	return lbrycrd.GetAddressFromPublicKeyScript(scriptBytes), err
 }

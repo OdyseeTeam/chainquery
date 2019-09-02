@@ -2,6 +2,7 @@
 /.idea
 /bin
 /persist
+/data
 swagger-codegen-cli.jar
 chainqueryconfig.toml
 !e2e/chainqueryconfig.toml

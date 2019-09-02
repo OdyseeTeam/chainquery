@@ -4,13 +4,13 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 
-	"github.com/lbryio/chainquery/util"
-
 	"github.com/lbryio/chainquery/global"
+	"github.com/lbryio/chainquery/util"
 
 	"github.com/lbryio/lbry.go/extras/errors"
 
 	"github.com/btcsuite/btcd/chaincfg"
+	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcutil"
 	log "github.com/sirupsen/logrus"
 )
@@ -35,6 +35,8 @@ const (
 	// NonStandard is a transaction type, usually used for a claim.
 	NonStandard = "nonstandard" // Non Standard - Used for Claims in LBRY
 	NullData    = "nulldata"
+	P2WPKH_V0   = "witness_v0_keyhash"    //Segwit Pub Key Hash
+	P2WSH_V0    = "witness_v0_scripthash" //Segwit Script Hash
 
 	lbrycrdMainPubkeyPrefix    = byte(85)
 	lbrycrdMainScriptPrefix    = byte(122)
@@ -52,18 +54,21 @@ var mainNetParams = chaincfg.Params{
 	PubKeyHashAddrID: lbrycrdMainPubkeyPrefix,
 	ScriptHashAddrID: lbrycrdMainScriptPrefix,
 	PrivateKeyID:     0x1c,
+	Bech32HRPSegwit:  "lbc",
 }
 
 var testNetParams = chaincfg.Params{
 	PubKeyHashAddrID: lbrycrdTestnetPubkeyPrefix,
 	ScriptHashAddrID: lbrycrdTestnetScriptPrefix,
 	PrivateKeyID:     0x1c,
+	Bech32HRPSegwit:  "tlbc",
 }
 
 var regTestNetParams = chaincfg.Params{
 	PubKeyHashAddrID: lbrycrdRegtestPubkeyPrefix,
 	ScriptHashAddrID: lbrycrdRegtestScriptPrefix,
 	PrivateKeyID:     0x1c,
+	Bech32HRPSegwit:  "rlbc",
 }
 
 var paramsMap = map[string]chaincfg.Params{lbrycrdMain: mainNetParams, lbrycrdTestnet: testNetParams, lbrycrdRegtest: regTestNetParams}
@@ -157,7 +162,8 @@ func ParseClaimSupportScript(script []byte) (name string, claimid string, pubkey
 		nameBytesToRead = int(script[2])
 		nameStart = 3
 	} else if nameBytesToRead > opPushdata1 {
-		panic(errors.Base("Bytes to read is more than next byte! "))
+		err = errors.Err("Bytes to read is more than next byte! ")
+		return
 	}
 	nameEnd := nameStart + nameBytesToRead
 	name = string(script[nameStart:nameEnd])
@@ -186,7 +192,8 @@ func ParseClaimUpdateScript(script []byte) (name string, claimid string, value [
 		nameBytesToRead = int(script[2])
 		nameStart = 3
 	} else if nameBytesToRead > opPushdata1 {
-		panic(errors.Base("Bytes to read is more than next byte! "))
+		err = errors.Err("ParseClaimUpdateScript: Bytes to read is more than next byte! ")
+		return
 	}
 	nameEnd := nameStart + nameBytesToRead
 	name = string(script[nameStart:nameEnd])
@@ -222,13 +229,16 @@ func ParseClaimUpdateScript(script []byte) (name string, claimid string, value [
 	return name, claimid, value, pubkeyscript, err
 }
 
+//ErrNotClaimScript is a base error for when a script cannot be parsed as a claim script.
+var ErrNotClaimScript = errors.Base("Script is not a claim script!")
+
 // GetPubKeyScriptFromClaimPKS gets the public key script at the end of a claim script.
 func GetPubKeyScriptFromClaimPKS(script []byte) (pubkeyscript []byte, err error) {
 	if IsClaimScript(script) {
 		if IsClaimNameScript(script) {
 			_, _, pubkeyscript, err = ParseClaimNameScript(script)
 			if err != nil {
-				return
+				return nil, errors.Err(err)
 			}
 			return pubkeyscript, nil
 		} else if IsClaimUpdateScript(script) {
@@ -245,35 +255,22 @@ func GetPubKeyScriptFromClaimPKS(script []byte) (pubkeyscript []byte, err error)
 			return
 		}
 	} else {
-		err = errors.Base("Script is not a claim script!")
+		err = ErrNotClaimScript
 	}
 	return
 }
 
 // GetAddressFromPublicKeyScript returns the address associated with a public key script.
 func GetAddressFromPublicKeyScript(script []byte) (address string) {
-	spkType := getPublicKeyScriptType(script)
-	var err error
-	switch spkType {
-	case p2PK:
-		// <pubkey> opChecksig
-		//log.Debug("sig p2PK ", hex.EncodeToString(script[0:len(script)-1]))
-		address, err = getAddressFromP2PK(hex.EncodeToString(script[0 : len(script)-1]))
-	case p2PKH:
-		// opDup opHash160 <bytes2read> <PubKeyHash> opEqualverify opChecksig
-		//log.Debug("sig p2PKH ", hex.EncodeToString(script[3:len(script)-2]))
-		address, err = getAddressFromP2PKH(hex.EncodeToString(script[3 : len(script)-2]))
-	case p2SH:
-		// opHash160 <bytes2read> <Hash160(redeemScript)> OP_EQUAL
-		//log.Debug("sig p2SH ", hex.EncodeToString(script[2:len(script)-1]))
-		address, err = getAddressFromP2SH(hex.EncodeToString(script[2 : len(script)-1]))
-	case NonStandard:
-		address = "UNKNOWN"
-	}
-
+	chainParams, err := GetChainParams()
 	if err != nil {
-		panic(err)
+		return ""
 	}
+	_, BTCAddress, _, err := txscript.ExtractPkScriptAddrs(script, chainParams)
+	if len(BTCAddress) < 1 {
+		return ""
+	}
+	address = BTCAddress[0].EncodeAddress()
 
 	return address
 }
@@ -285,6 +282,10 @@ func getPublicKeyScriptType(script []byte) string {
 		return p2PKH
 	} else if isPayToScriptHashScript(script) {
 		return p2SH
+	} else if txscript.IsPayToWitnessPubKeyHash(script) {
+		return P2WPKH_V0
+	} else if txscript.IsPayToWitnessScriptHash(script) {
+		return P2WSH_V0
 	}
 	return NonStandard
 }
@@ -357,6 +358,42 @@ func getAddressFromP2SH(hexstring string) (string, error) {
 		return "", errors.Err(err)
 	}
 	addr, err := btcutil.NewAddressScriptHashFromHash(hexstringBytes, chainParams)
+	if err != nil {
+		return "", err
+	}
+	address := addr.EncodeAddress()
+	return address, nil
+}
+
+func getAddressFromP2WPKH(hexstring string) (string, error) {
+	witnessProgram, err := hex.DecodeString(hexstring)
+	if err != nil {
+		return "", err
+	}
+
+	chainParams, err := GetChainParams()
+	if err != nil {
+		return "", errors.Err(err)
+	}
+	addr, err := btcutil.NewAddressWitnessPubKeyHash(witnessProgram, chainParams)
+	if err != nil {
+		return "", err
+	}
+	address := addr.EncodeAddress()
+	return address, nil
+}
+
+func getAddressFromP2WSH(hexstring string) (string, error) {
+	witnessProgram, err := hex.DecodeString(hexstring)
+	if err != nil {
+		return "", err
+	}
+
+	chainParams, err := GetChainParams()
+	if err != nil {
+		return "", errors.Err(err)
+	}
+	addr, err := btcutil.NewAddressWitnessScriptHash(witnessProgram, chainParams)
 	if err != nil {
 		return "", err
 	}

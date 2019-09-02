@@ -30,4 +30,5 @@ set -e
 
  echo "== Done building linux version $("$DIR/bin/chainquery" version) =="
  echo "$(git describe --tags --always --dirty)" > ./bin/chainquery.txt
+ chmod +x ./bin/chainquery
  exit 0

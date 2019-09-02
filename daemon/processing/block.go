@@ -29,6 +29,13 @@ var BlockLock = sync.Mutex{}
 // must be processed in order.
 func RunBlockProcessing(height uint64) uint64 {
 	defer util.TimeTrack(time.Now(), "runBlockProcessing", "daemonprofile")
+	if height == 0 {
+		err := processGenesisBlock()
+		if err != nil {
+			logrus.Fatal("Error processing Genesis block!", err)
+		}
+		return height
+	}
 	jsonBlock, err := getBlockToProcess(&height)
 	if err != nil {
 		logrus.Error("Get Block Error: ", err)
@@ -103,6 +110,26 @@ func parseBlockInfo(blockHeight uint64, jsonBlock *lbrycrd.GetBlockResponse) (bl
 	}
 
 	return block
+}
+
+func processGenesisBlock() error {
+	genesisVerbose, genesis, err := lbrycrd.GetGenesisBlock()
+	if err != nil {
+		return errors.Err(err)
+	}
+	//This is an important lock to make sure we don't concurrently save transaction inputs/outputs accidentally via the
+	// mempool sync.
+	BlockLock.Lock()
+	defer BlockLock.Unlock()
+	block := parseBlockInfo(0, genesis)
+	for _, tx := range genesisVerbose.Tx {
+		tx.BlockHash = genesis.Hash
+		err := ProcessTx(&tx, block.BlockTime, 0)
+		if err != nil {
+			return errors.Err(err)
+		}
+	}
+	return nil
 }
 
 type txSyncManager struct {

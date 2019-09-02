@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 
 	ds "github.com/lbryio/chainquery/datastore"
 	"github.com/lbryio/chainquery/lbrycrd"
@@ -78,6 +79,7 @@ func processVin(jsonVin *lbrycrd.Vin, tx *m.Transaction, txDC *txDebitCredits, n
 	vin.TransactionID = tx.ID
 	vin.TransactionHash = tx.Hash
 	vin.Sequence = uint(jsonVin.Sequence)
+	vin.Witness.String = strings.Join(jsonVin.Witness, ",")
 
 	if jsonVin.Coinbase != "" { //
 		// No Source Output - Generation of Coin
@@ -176,20 +178,21 @@ func processVout(jsonVout *lbrycrd.Vout, tx *m.Transaction, txDC *txDebitCredits
 	vout.ScriptPubKeyAsm.SetValid(jsonVout.ScriptPubKey.Asm)
 	vout.ScriptPubKeyHex.SetValid(jsonVout.ScriptPubKey.Hex)
 	vout.Type.SetValid(jsonVout.ScriptPubKey.Type)
-	jsonAddresses, err := json.Marshal(jsonVout.ScriptPubKey.Addresses)
 	var address *m.Address
+	jsonAddresses, err := json.Marshal(jsonVout.ScriptPubKey.Addresses)
 	if len(jsonVout.ScriptPubKey.Addresses) > 0 {
 		address = ds.GetAddress(jsonVout.ScriptPubKey.Addresses[0])
 		vout.AddressList.SetValid(string(jsonAddresses))
-	} else if vout.Type.String == lbrycrd.NonStandard {
-		jsonAddress, err := getAddressFromNonStandardVout(vout.ScriptPubKeyHex.String)
+	} else {
+		scriptAddress, err := getFirstAddressFromVout(*jsonVout)
 		if err != nil {
 			return err
 		}
-		address = ds.GetAddress(jsonAddress)
-		vout.AddressList.SetValid(`["` + jsonAddress + `"]`)
-	} else if vout.Type.String == lbrycrd.NullData {
-		return ds.PutOutput(vout, boil.Infer())
+		if len(scriptAddress) == 0 {
+			return ds.PutOutput(vout, boil.Infer())
+		}
+		address = ds.GetAddress(scriptAddress)
+		vout.AddressList.SetValid(`["` + scriptAddress + `"]`)
 	}
 	if err != nil {
 		logrus.Error("Could not marshall address list of Vout")
@@ -231,7 +234,7 @@ func processVout(jsonVout *lbrycrd.Vout, tx *m.Transaction, txDC *txDebitCredits
 func getAddressFromNonStandardVout(hexString string) (address string, err error) {
 	scriptBytes, err := hex.DecodeString(hexString)
 	if err != nil {
-		return "", err
+		return "", errors.Err(err)
 	}
 	pksBytes, err := lbrycrd.GetPubKeyScriptFromClaimPKS(scriptBytes)
 	if err != nil {

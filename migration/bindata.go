@@ -15,6 +15,7 @@
 // migration/012_store_last_height.sql
 // migration/013_add_input_vin.sql
 // migration/014_yay_new_metadata.sql
+// migration/015_adjust_column_sizes.sql
 // DO NOT EDIT!
 
 package migration
@@ -382,6 +383,26 @@ func migration014_yay_new_metadataSql() (*asset, error) {
 	return a, nil
 }
 
+var _migration015_adjust_column_sizesSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xac\xd0\xcf\x4a\xc4\x30\x10\x06\xf0\x7b\x9f\x62\x6e\x55\x64\x41\xc5\x82\xe0\x29\xdb\x0d\xae\x10\xb3\xd8\x4d\xc4\x5b\x13\xdb\xb1\x0c\x6c\xc7\xa5\x9d\xe2\xeb\x4b\x59\x5b\xa4\x88\x78\xf0\x92\xf0\x7d\xe4\xcf\x8f\x59\xad\xe0\xa2\xa5\xa6\x8b\x82\xe0\x8f\x49\xf2\x3d\xef\x25\x0a\xb6\xc8\xb2\xc6\x86\x38\x51\xc6\xe9\x02\x9c\x5a\x1b\x0d\x41\x62\x13\x12\x00\x80\x7c\xab\xec\xbd\x86\x7c\x67\xfc\xa3\x3d\xf5\x5f\xeb\xb3\x2a\xf2\xad\x2a\xce\xae\xb3\xec\x7c\x3c\x56\xa8\x7c\x7c\x60\xaf\x1d\xa4\x83\xbc\xdd\xb6\xaf\x37\xe9\x78\xcf\x28\xa7\xe7\xa6\x1c\x98\xaa\xf7\x1a\xcb\x8a\x52\xb0\x3b\x07\xd6\x1b\x73\xf7\x33\x4b\x73\xfd\x67\x70\xac\xeb\x0e\xfb\x7e\xc1\x9d\xda\x69\x9f\xc8\xd9\xe5\x52\x7c\x88\x42\x7c\x35\x73\x4f\xb1\x6c\x90\xb1\x8b\x87\xb2\x22\xf0\xf6\xe1\xc9\xeb\xff\x24\x07\xe2\xe3\x20\x01\xd4\x66\x33\x8f\xf7\x83\x84\xb1\xef\x03\x38\xfd\xe2\x7e\xfb\xe3\x33\x00\x00\xff\xff\x35\x45\xf8\x11\xd8\x01\x00\x00")
+
+func migration015_adjust_column_sizesSqlBytes() ([]byte, error) {
+	return bindataRead(
+		_migration015_adjust_column_sizesSql,
+		"migration/015_adjust_column_sizes.sql",
+	)
+}
+
+func migration015_adjust_column_sizesSql() (*asset, error) {
+	bytes, err := migration015_adjust_column_sizesSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "migration/015_adjust_column_sizes.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -449,6 +470,7 @@ var _bindata = map[string]func() (*asset, error){
 	"migration/012_store_last_height.sql":      migration012_store_last_heightSql,
 	"migration/013_add_input_vin.sql":          migration013_add_input_vinSql,
 	"migration/014_yay_new_metadata.sql":       migration014_yay_new_metadataSql,
+	"migration/015_adjust_column_sizes.sql":    migration015_adjust_column_sizesSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -508,6 +530,7 @@ var _bintree = &bintree{nil, map[string]*bintree{
 		"012_store_last_height.sql":      &bintree{migration012_store_last_heightSql, map[string]*bintree{}},
 		"013_add_input_vin.sql":          &bintree{migration013_add_input_vinSql, map[string]*bintree{}},
 		"014_yay_new_metadata.sql":       &bintree{migration014_yay_new_metadataSql, map[string]*bintree{}},
+		"015_adjust_column_sizes.sql":    &bintree{migration015_adjust_column_sizesSql, map[string]*bintree{}},
 	}},
 }}
 

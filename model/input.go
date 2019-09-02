@@ -39,6 +39,7 @@ type Input struct {
 	Created             time.Time    `boil:"created" json:"created" toml:"created" yaml:"created"`
 	Modified            time.Time    `boil:"modified" json:"modified" toml:"modified" yaml:"modified"`
 	Vin                 null.Uint    `boil:"vin" json:"vin,omitempty" toml:"vin" yaml:"vin,omitempty"`
+	Witness             null.String  `boil:"witness" json:"witness,omitempty" toml:"witness" yaml:"witness,omitempty"`
 
 	R *inputR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L inputL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -61,6 +62,7 @@ var InputColumns = struct {
 	Created             string
 	Modified            string
 	Vin                 string
+	Witness             string
 }{
 	ID:                  "id",
 	TransactionID:       "transaction_id",
@@ -78,6 +80,7 @@ var InputColumns = struct {
 	Created:             "created",
 	Modified:            "modified",
 	Vin:                 "vin",
+	Witness:             "witness",
 }
 
 // Generated where
@@ -145,6 +148,7 @@ var InputWhere = struct {
 	Created             whereHelpertime_Time
 	Modified            whereHelpertime_Time
 	Vin                 whereHelpernull_Uint
+	Witness             whereHelpernull_String
 }{
 	ID:                  whereHelperuint64{field: "`input`.`id`"},
 	TransactionID:       whereHelperuint64{field: "`input`.`transaction_id`"},
@@ -162,6 +166,7 @@ var InputWhere = struct {
 	Created:             whereHelpertime_Time{field: "`input`.`created`"},
 	Modified:            whereHelpertime_Time{field: "`input`.`modified`"},
 	Vin:                 whereHelpernull_Uint{field: "`input`.`vin`"},
+	Witness:             whereHelpernull_String{field: "`input`.`witness`"},
 }
 
 // InputRels is where relationship names are stored.
@@ -185,8 +190,8 @@ func (*inputR) NewStruct() *inputR {
 type inputL struct{}
 
 var (
-	inputAllColumns            = []string{"id", "transaction_id", "transaction_hash", "input_address_id", "is_coinbase", "coinbase", "prevout_hash", "prevout_n", "prevout_spend_updated", "sequence", "value", "script_sig_asm", "script_sig_hex", "created", "modified", "vin"}
-	inputColumnsWithoutDefault = []string{"transaction_id", "transaction_hash", "input_address_id", "coinbase", "prevout_hash", "prevout_n", "sequence", "value", "script_sig_asm", "script_sig_hex", "vin"}
+	inputAllColumns            = []string{"id", "transaction_id", "transaction_hash", "input_address_id", "is_coinbase", "coinbase", "prevout_hash", "prevout_n", "prevout_spend_updated", "sequence", "value", "script_sig_asm", "script_sig_hex", "created", "modified", "vin", "witness"}
+	inputColumnsWithoutDefault = []string{"transaction_id", "transaction_hash", "input_address_id", "coinbase", "prevout_hash", "prevout_n", "sequence", "value", "script_sig_asm", "script_sig_hex", "vin", "witness"}
 	inputColumnsWithDefault    = []string{"id", "is_coinbase", "prevout_spend_updated", "created", "modified"}
 	inputPrimaryKeyColumns     = []string{"id"}
 )
