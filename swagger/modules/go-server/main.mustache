@@ -3,11 +3,14 @@ package swagger
 
 import (
     "net/http"
+    "strconv"
 
     "github.com/lbryio/chainquery/config"
     "github.com/lbryio/chainquery/db"
     sw "github.com/lbryio/chainquery/swagger/apiserver/go"
+    "github.com/lbryio/lbry.go/extras/api"
 
+    "github.com/fatih/color"
     "github.com/sirupsen/logrus"
 )
 
@@ -20,7 +23,7 @@ func InitApiServer(hostAndPort string) {
     hs["Content-Security-Policy"] = "default-src 'none'"
     hs["Server"] = "lbry.com"
     hs["Access-Control-Allow-Origin"] = "*"
-    api.ResponseHeaders = &hs
+    api.ResponseHeaders = hs
     api.Log = func(request *http.Request, response *api.Response, err error) {
         if err != nil {
             logrus.Error(err)
