@@ -201,7 +201,7 @@ func processVout(jsonVout *lbrycrd.Vout, tx *m.Transaction, txDC *txDebitCredits
 		txDC.add(address.Address, jsonVout.Value)
 	} else {
 		//All addresses for transaction are created and inserted into the DB ahead of time
-		logrus.Panic("No address in db for \"", jsonAddresses[0], "\" txId: ", tx.ID)
+		return errors.Err("No address in db for \"", jsonAddresses[0], "\" txId: ", tx.ID)
 	}
 
 	// Save output
