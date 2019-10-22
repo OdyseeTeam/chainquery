@@ -44,6 +44,7 @@ var processingDelay time.Duration //Set by `applySettings`
 var daemonDelay time.Duration     //Set by `applySettings`
 var blockWorkers uint64 = 1       //ToDo Should be configurable
 var iteration int64
+var jobsInitialized = false
 
 var blockQueue = make(chan uint64)
 var blockProcessedChan = make(chan uint64)
@@ -53,7 +54,6 @@ var stopper = stop.New()
 func DoYourThing() {
 
 	upgrademanager.RunUpgradesForVersion()
-	asyncStoppable(initJobs)
 	asyncStoppable(runDaemon)
 
 	interruptChan := make(chan os.Signal, 1)
@@ -165,6 +165,10 @@ func daemonIteration() {
 				continue
 			}
 			running = false
+			if !jobsInitialized {
+				asyncStoppable(initJobs)
+				jobsInitialized = true
+			}
 			return
 		}
 	}
