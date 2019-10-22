@@ -16,6 +16,7 @@
 // migration/013_add_input_vin.sql
 // migration/014_yay_new_metadata.sql
 // migration/015_adjust_column_sizes.sql
+// migration/016_transaction_hashes_adjustment.sql
 // DO NOT EDIT!
 
 package migration
@@ -403,6 +404,26 @@ func migration015_adjust_column_sizesSql() (*asset, error) {
 	return a, nil
 }
 
+var _migration016_transaction_hashes_adjustmentSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xd2\xd5\x55\xd0\xce\xcd\x4c\x2f\x4a\x2c\x49\x55\x08\x2d\xe0\xe2\x42\xe6\x07\x97\x24\x96\xa4\xe6\xa6\xe6\x95\x38\xa5\xa6\x67\xe6\x71\x39\xfa\x84\xb8\x06\x29\x84\x38\x3a\xf9\xb8\x2a\x24\x24\xe5\xe4\x27\x67\x27\x70\x29\x28\x28\x28\x38\x7b\x38\xfa\xb9\xbb\x2a\x38\xfb\xfb\x84\xfa\xfa\x29\x24\x94\x14\x25\xe6\x15\x27\x26\x97\x64\xe6\xe7\xc5\x67\x24\x16\x67\xa4\x16\x27\x60\x17\xf4\x75\x75\xf1\x0c\xf5\x0d\x71\x8d\x08\xb1\xc6\x6e\xad\x6b\x5e\x0a\x17\x20\x00\x00\xff\xff\xc1\x35\x60\x51\xa0\x00\x00\x00")
+
+func migration016_transaction_hashes_adjustmentSqlBytes() ([]byte, error) {
+	return bindataRead(
+		_migration016_transaction_hashes_adjustmentSql,
+		"migration/016_transaction_hashes_adjustment.sql",
+	)
+}
+
+func migration016_transaction_hashes_adjustmentSql() (*asset, error) {
+	bytes, err := migration016_transaction_hashes_adjustmentSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "migration/016_transaction_hashes_adjustment.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -455,22 +476,23 @@ func AssetNames() []string {
 
 // _bindata is a table, holding each asset generator, mapped to its name.
 var _bindata = map[string]func() (*asset, error){
-	"migration/000_init_schema.sql":            migration000_init_schemaSql,
-	"migration/001_supports.sql":               migration001_supportsSql,
-	"migration/002_decimals.sql":               migration002_decimalsSql,
-	"migration/003_dht_tracking.sql":           migration003_dht_trackingSql,
-	"migration/004_new_indices.sql":            migration004_new_indicesSql,
-	"migration/005_remove_foreign_keys.sql":    migration005_remove_foreign_keysSql,
-	"migration/006_add_height_index.sql":       migration006_add_height_indexSql,
-	"migration/007_more_decimals.sql":          migration007_more_decimalsSql,
-	"migration/008_schema_fix.sql":             migration008_schema_fixSql,
-	"migration/009_certificate_validation.sql": migration009_certificate_validationSql,
-	"migration/010_triggers.sql":               migration010_triggersSql,
-	"migration/011_add_license.sql":            migration011_add_licenseSql,
-	"migration/012_store_last_height.sql":      migration012_store_last_heightSql,
-	"migration/013_add_input_vin.sql":          migration013_add_input_vinSql,
-	"migration/014_yay_new_metadata.sql":       migration014_yay_new_metadataSql,
-	"migration/015_adjust_column_sizes.sql":    migration015_adjust_column_sizesSql,
+	"migration/000_init_schema.sql":                   migration000_init_schemaSql,
+	"migration/001_supports.sql":                      migration001_supportsSql,
+	"migration/002_decimals.sql":                      migration002_decimalsSql,
+	"migration/003_dht_tracking.sql":                  migration003_dht_trackingSql,
+	"migration/004_new_indices.sql":                   migration004_new_indicesSql,
+	"migration/005_remove_foreign_keys.sql":           migration005_remove_foreign_keysSql,
+	"migration/006_add_height_index.sql":              migration006_add_height_indexSql,
+	"migration/007_more_decimals.sql":                 migration007_more_decimalsSql,
+	"migration/008_schema_fix.sql":                    migration008_schema_fixSql,
+	"migration/009_certificate_validation.sql":        migration009_certificate_validationSql,
+	"migration/010_triggers.sql":                      migration010_triggersSql,
+	"migration/011_add_license.sql":                   migration011_add_licenseSql,
+	"migration/012_store_last_height.sql":             migration012_store_last_heightSql,
+	"migration/013_add_input_vin.sql":                 migration013_add_input_vinSql,
+	"migration/014_yay_new_metadata.sql":              migration014_yay_new_metadataSql,
+	"migration/015_adjust_column_sizes.sql":           migration015_adjust_column_sizesSql,
+	"migration/016_transaction_hashes_adjustment.sql": migration016_transaction_hashes_adjustmentSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -515,22 +537,23 @@ type bintree struct {
 
 var _bintree = &bintree{nil, map[string]*bintree{
 	"migration": &bintree{nil, map[string]*bintree{
-		"000_init_schema.sql":            &bintree{migration000_init_schemaSql, map[string]*bintree{}},
-		"001_supports.sql":               &bintree{migration001_supportsSql, map[string]*bintree{}},
-		"002_decimals.sql":               &bintree{migration002_decimalsSql, map[string]*bintree{}},
-		"003_dht_tracking.sql":           &bintree{migration003_dht_trackingSql, map[string]*bintree{}},
-		"004_new_indices.sql":            &bintree{migration004_new_indicesSql, map[string]*bintree{}},
-		"005_remove_foreign_keys.sql":    &bintree{migration005_remove_foreign_keysSql, map[string]*bintree{}},
-		"006_add_height_index.sql":       &bintree{migration006_add_height_indexSql, map[string]*bintree{}},
-		"007_more_decimals.sql":          &bintree{migration007_more_decimalsSql, map[string]*bintree{}},
-		"008_schema_fix.sql":             &bintree{migration008_schema_fixSql, map[string]*bintree{}},
-		"009_certificate_validation.sql": &bintree{migration009_certificate_validationSql, map[string]*bintree{}},
-		"010_triggers.sql":               &bintree{migration010_triggersSql, map[string]*bintree{}},
-		"011_add_license.sql":            &bintree{migration011_add_licenseSql, map[string]*bintree{}},
-		"012_store_last_height.sql":      &bintree{migration012_store_last_heightSql, map[string]*bintree{}},
-		"013_add_input_vin.sql":          &bintree{migration013_add_input_vinSql, map[string]*bintree{}},
-		"014_yay_new_metadata.sql":       &bintree{migration014_yay_new_metadataSql, map[string]*bintree{}},
-		"015_adjust_column_sizes.sql":    &bintree{migration015_adjust_column_sizesSql, map[string]*bintree{}},
+		"000_init_schema.sql":                   &bintree{migration000_init_schemaSql, map[string]*bintree{}},
+		"001_supports.sql":                      &bintree{migration001_supportsSql, map[string]*bintree{}},
+		"002_decimals.sql":                      &bintree{migration002_decimalsSql, map[string]*bintree{}},
+		"003_dht_tracking.sql":                  &bintree{migration003_dht_trackingSql, map[string]*bintree{}},
+		"004_new_indices.sql":                   &bintree{migration004_new_indicesSql, map[string]*bintree{}},
+		"005_remove_foreign_keys.sql":           &bintree{migration005_remove_foreign_keysSql, map[string]*bintree{}},
+		"006_add_height_index.sql":              &bintree{migration006_add_height_indexSql, map[string]*bintree{}},
+		"007_more_decimals.sql":                 &bintree{migration007_more_decimalsSql, map[string]*bintree{}},
+		"008_schema_fix.sql":                    &bintree{migration008_schema_fixSql, map[string]*bintree{}},
+		"009_certificate_validation.sql":        &bintree{migration009_certificate_validationSql, map[string]*bintree{}},
+		"010_triggers.sql":                      &bintree{migration010_triggersSql, map[string]*bintree{}},
+		"011_add_license.sql":                   &bintree{migration011_add_licenseSql, map[string]*bintree{}},
+		"012_store_last_height.sql":             &bintree{migration012_store_last_heightSql, map[string]*bintree{}},
+		"013_add_input_vin.sql":                 &bintree{migration013_add_input_vinSql, map[string]*bintree{}},
+		"014_yay_new_metadata.sql":              &bintree{migration014_yay_new_metadataSql, map[string]*bintree{}},
+		"015_adjust_column_sizes.sql":           &bintree{migration015_adjust_column_sizesSql, map[string]*bintree{}},
+		"016_transaction_hashes_adjustment.sql": &bintree{migration016_transaction_hashes_adjustmentSql, map[string]*bintree{}},
 	}},
 }}
 
