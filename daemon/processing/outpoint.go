@@ -3,7 +3,6 @@ package processing
 import (
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -131,8 +130,7 @@ func processVin(jsonVin *lbrycrd.Vin, tx *m.Transaction, txDC *txDebitCredits, n
 					return err
 				}
 			} else {
-				errMessage := fmt.Sprintf("No Address created for Vin: %d of tx %d vout: %d Address: %s", vin.ID, tx.ID, srcOutput.ID, addresses[0])
-				logrus.Panic(errMessage)
+				return errors.Err("No Address created for Vin: %d of tx %d vout: %d Address: %s", vin.ID, tx.ID, srcOutput.ID, addresses[0])
 			}
 			// Update the srcOutput spent if successful
 			srcOutput.IsSpent = true
