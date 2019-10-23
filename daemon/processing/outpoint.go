@@ -117,7 +117,7 @@ func processVin(jsonVin *lbrycrd.Vin, tx *m.Transaction, txDC *txDebitCredits, n
 				}
 				address = ds.GetAddress(jsonAddress)
 				if address == nil {
-					logrus.Panic("No addresses for vout address list! ", srcOutput.ID, " -> ", srcOutput.AddressList.String)
+					return errors.Err("No addresses for vout address list! %d -> %s ", srcOutput.ID, srcOutput.AddressList.String)
 				}
 
 			}

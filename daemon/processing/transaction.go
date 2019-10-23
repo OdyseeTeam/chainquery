@@ -298,6 +298,9 @@ func setSendReceive(transaction *model.Transaction, txDbCrAddrMap *txDebitCredit
 	for addr, DC := range txDbCrAddrMap.addrDCMap {
 
 		address := datastore.GetAddress(addr)
+		if address == nil {
+			return errors.Err("missing address for setting amounts!")
+		}
 
 		txAddr := datastore.GetTxAddress(transaction.ID, address.ID)
 
