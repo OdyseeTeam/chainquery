@@ -34,6 +34,7 @@ require (
 	github.com/mitchellh/mapstructure v0.0.0-20180511142126-bb74f1db0675
 	github.com/pelletier/go-toml v1.2.0 // indirect
 	github.com/pkg/errors v0.8.1
+	github.com/pkg/profile v1.3.0
 	github.com/rubenv/sql-migrate v0.0.0-20170330050058-38004e7a77f2
 	github.com/sfreiberg/gotwilio v0.0.0-20180612161623-8fb7259ba8bf
 	github.com/shopspring/decimal v0.0.0-20180709203117-cd690d0c9e24

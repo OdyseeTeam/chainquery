@@ -134,6 +134,7 @@ func initDefaults() {
 	viper.SetDefault(daemonprofile, false)
 	viper.SetDefault(lbrycrdprofile, false)
 	viper.SetDefault(mysqlprofile, false)
+	viper.SetDefault("codeprofile", false)
 	viper.SetDefault(apihostport, "0.0.0.0:6300")
 	viper.SetDefault(slackloglevel, 0)
 	viper.SetDefault(smsrecipients, []string{})

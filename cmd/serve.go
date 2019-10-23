@@ -8,9 +8,12 @@ import (
 	"github.com/lbryio/chainquery/daemon"
 	"github.com/lbryio/chainquery/db"
 	"github.com/lbryio/chainquery/lbrycrd"
-	"github.com/lbryio/chainquery/swagger/apiserver"
+	swagger "github.com/lbryio/chainquery/swagger/apiserver"
 	"github.com/lbryio/chainquery/twilio"
+
+	"github.com/pkg/profile"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 func init() {
@@ -23,6 +26,9 @@ var serveCmd = &cobra.Command{
 	Long:  `Run Daemon routines and the API Server, check github.com/lbryio/chainquery#what-does-chainquery-consist-of`,
 	Args:  cobra.OnlyValidArgs,
 	Run: func(cmd *cobra.Command, args []string) {
+		if viper.GetBool("codeprofile") {
+			defer profile.Start(profile.NoShutdownHook).Stop()
+		}
 		config.InitSlack()
 		twilio.InitTwilio()
 		apiactions.AutoUpdateCommand = config.GetAutoUpdateCommand()
