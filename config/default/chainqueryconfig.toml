@@ -50,10 +50,11 @@
 #daemondelay=
 
 #Profiling options - will output the time take for certain opertions related to the below category
-#DEFAULT: false (for all 3 params)
+#DEFAULT: false (for all 4 params)
 #daemonprofile=
 #lbrycrdprofile=
 #mysqlprofile=
+#codeprofile=
 
 #Slack Hook URL allows slack integration. All logging info level and above is posted to a slack channel.
 #DEFAULT: ""

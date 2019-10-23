@@ -80,7 +80,7 @@ func createUpdateVinAddresses(tx *model.Transaction, inputs *[]lbrycrd.Vin, bloc
 		} else {
 			err := json.Unmarshal([]byte(srcOutput.AddressList.String), &addresses)
 			if err != nil {
-				logrus.Panic(errors.Prefix("Could not parse AddressList from source output", err))
+				return nil, errors.Prefix("Could not parse AddressList from source output", err)
 			}
 			if len(addresses) == 0 {
 				return nil, errors.Err("No addresses were found for inputs of %s", tx.Hash)
@@ -88,6 +88,13 @@ func createUpdateVinAddresses(tx *model.Transaction, inputs *[]lbrycrd.Vin, bloc
 		}
 		for _, address := range addresses {
 			addr := datastore.GetAddress(address)
+			if addr != nil {
+				addr := &model.Address{Address: address}
+				err := datastore.PutAddress(addr)
+				if err != nil {
+					return nil, errors.Prefix("Could not create missing address ", err)
+				}
+			}
 			addressIDMap[address] = addr.ID
 			err := createTxAddressIfNotExist(tx.ID, addr.ID)
 			if err != nil {
