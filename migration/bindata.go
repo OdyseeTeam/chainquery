@@ -16,6 +16,7 @@
 // migration/013_add_input_vin.sql
 // migration/014_yay_new_metadata.sql
 // migration/015_adjust_column_sizes.sql
+// migration/016_transaction_hashes_adjustment.sql
 // DO NOT EDIT!
 
 package migration
@@ -383,7 +384,7 @@ func migration014_yay_new_metadataSql() (*asset, error) {
 	return a, nil
 }
 
-var _migration015_adjust_column_sizesSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xac\xd0\xcf\x4a\xc4\x30\x10\x06\xf0\x7b\x9f\x62\x6e\x55\x64\x41\xc5\x82\xe0\x29\xdb\x0d\xae\x10\xb3\xd8\x4d\xc4\x5b\x13\xdb\xb1\x0c\x6c\xc7\xa5\x9d\xe2\xeb\x4b\x59\x5b\xa4\x88\x78\xf0\x92\xf0\x7d\xe4\xcf\x8f\x59\xad\xe0\xa2\xa5\xa6\x8b\x82\xe0\x8f\x49\xf2\x3d\xef\x25\x0a\xb6\xc8\xb2\xc6\x86\x38\x51\xc6\xe9\x02\x9c\x5a\x1b\x0d\x41\x62\x13\x12\x00\x80\x7c\xab\xec\xbd\x86\x7c\x67\xfc\xa3\x3d\xf5\x5f\xeb\xb3\x2a\xf2\xad\x2a\xce\xae\xb3\xec\x7c\x3c\x56\xa8\x7c\x7c\x60\xaf\x1d\xa4\x83\xbc\xdd\xb6\xaf\x37\xe9\x78\xcf\x28\xa7\xe7\xa6\x1c\x98\xaa\xf7\x1a\xcb\x8a\x52\xb0\x3b\x07\xd6\x1b\x73\xf7\x33\x4b\x73\xfd\x67\x70\xac\xeb\x0e\xfb\x7e\xc1\x9d\xda\x69\x9f\xc8\xd9\xe5\x52\x7c\x88\x42\x7c\x35\x73\x4f\xb1\x6c\x90\xb1\x8b\x87\xb2\x22\xf0\xf6\xe1\xc9\xeb\xff\x24\x07\xe2\xe3\x20\x01\xd4\x66\x33\x8f\xf7\x83\x84\xb1\xef\x03\x38\xfd\xe2\x7e\xfb\xe3\x33\x00\x00\xff\xff\x35\x45\xf8\x11\xd8\x01\x00\x00")
+var _migration015_adjust_column_sizesSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xac\xd0\xcf\x4a\xc4\x30\x10\x06\xf0\x7b\x9f\x62\x6e\x55\x64\x61\x05\x05\xc1\x53\xb6\x1b\x5c\x21\x66\xb1\x9b\x88\xb7\x26\xb6\x63\x19\xd8\x8e\x4b\x33\xc5\xd7\x97\xb2\x6e\x95\x22\xe2\xc1\x4b\xc2\xf7\x91\x3f\x3f\x66\xb1\x80\x8b\x8e\xda\x3e\x0a\x82\x3f\x64\xd9\xf7\xbc\x93\x28\xd8\x21\xcb\x0a\x5b\xe2\x4c\x19\xa7\x4b\x70\x6a\x65\x34\x04\x89\x6d\xc8\x00\x00\x8a\x8d\xb2\x77\x1a\x8a\xad\xf1\x0f\xf6\xd8\x7f\xae\x4f\xaa\x2c\x36\xaa\x3c\xbb\x5e\x2e\xcf\xc7\x63\xa5\x2a\xc6\x07\x76\xda\x41\x3e\xc8\xeb\x4d\xf7\x72\x95\x8f\xf7\x8c\x72\x7a\x6a\xaa\x81\xa9\x7e\x6b\xb0\xaa\x29\x07\xbb\x75\x60\xbd\x31\xb7\x3f\xb3\x34\x37\x7f\x06\xc7\xa6\xe9\x31\xa5\x19\xf7\xd4\x9e\xf6\x2f\xf2\x5c\xbc\x8f\x42\x7c\x39\x71\x8f\xb1\x6a\x91\xb1\x8f\xfb\xaa\x26\xf0\xf6\xfe\xd1\xeb\xff\x24\x07\xe2\xc3\x20\x01\xd4\x7a\x3d\x8d\xf7\x9d\x84\x31\xa5\x00\x4e\x3f\xbb\xdf\xfe\xf8\x08\x00\x00\xff\xff\x12\xb3\xf9\xad\xd8\x01\x00\x00")
 
 func migration015_adjust_column_sizesSqlBytes() ([]byte, error) {
 	return bindataRead(
@@ -399,6 +400,26 @@ func migration015_adjust_column_sizesSql() (*asset, error) {
 	}
 
 	info := bindataFileInfo{name: "migration/015_adjust_column_sizes.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var _migration016_transaction_hashes_adjustmentSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xac\xcf\xbd\xae\x83\x30\x0c\x05\xe0\x3d\x4f\xe1\xfd\x8a\x27\xb8\x13\x3f\x56\x8b\x14\xa0\xa2\x41\x62\x23\x69\xb0\x20\x2a\x84\x8a\x78\xe8\xe3\x57\xa2\x0b\x03\x52\x3b\x74\xb3\xcf\xf2\x9d\x13\x45\xf0\x37\xbb\x61\x35\x4c\xd0\x3c\x84\xd8\xff\x57\x36\x4c\x33\x79\x4e\x68\x70\x5e\xc4\x52\x61\x0d\x2a\x4e\x24\x82\xbe\x4d\x8b\xbd\x6b\x01\x00\x90\x9e\xe3\xf2\x84\x90\x56\xb2\x29\x4a\xd0\xbc\x1a\x1f\x8c\x65\xb7\xf8\x6e\x34\x61\xa4\xa0\x8f\xc3\x02\xb3\xbc\x29\x14\xb6\xea\xff\x98\x45\xdf\x7f\x5d\xc8\x4e\xc6\xcd\x5b\x9d\xac\xae\x2e\x90\x97\x19\xb6\x90\xf7\xcf\x4e\x3a\x4b\x3e\xd0\x0f\x08\xbd\x19\x87\x9b\xa7\x37\xa2\x77\xd7\x87\x5d\xaf\x00\x00\x00\xff\xff\x63\xcf\x20\x8c\x78\x01\x00\x00")
+
+func migration016_transaction_hashes_adjustmentSqlBytes() ([]byte, error) {
+	return bindataRead(
+		_migration016_transaction_hashes_adjustmentSql,
+		"migration/016_transaction_hashes_adjustment.sql",
+	)
+}
+
+func migration016_transaction_hashes_adjustmentSql() (*asset, error) {
+	bytes, err := migration016_transaction_hashes_adjustmentSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "migration/016_transaction_hashes_adjustment.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -455,22 +476,23 @@ func AssetNames() []string {
 
 // _bindata is a table, holding each asset generator, mapped to its name.
 var _bindata = map[string]func() (*asset, error){
-	"migration/000_init_schema.sql":            migration000_init_schemaSql,
-	"migration/001_supports.sql":               migration001_supportsSql,
-	"migration/002_decimals.sql":               migration002_decimalsSql,
-	"migration/003_dht_tracking.sql":           migration003_dht_trackingSql,
-	"migration/004_new_indices.sql":            migration004_new_indicesSql,
-	"migration/005_remove_foreign_keys.sql":    migration005_remove_foreign_keysSql,
-	"migration/006_add_height_index.sql":       migration006_add_height_indexSql,
-	"migration/007_more_decimals.sql":          migration007_more_decimalsSql,
-	"migration/008_schema_fix.sql":             migration008_schema_fixSql,
-	"migration/009_certificate_validation.sql": migration009_certificate_validationSql,
-	"migration/010_triggers.sql":               migration010_triggersSql,
-	"migration/011_add_license.sql":            migration011_add_licenseSql,
-	"migration/012_store_last_height.sql":      migration012_store_last_heightSql,
-	"migration/013_add_input_vin.sql":          migration013_add_input_vinSql,
-	"migration/014_yay_new_metadata.sql":       migration014_yay_new_metadataSql,
-	"migration/015_adjust_column_sizes.sql":    migration015_adjust_column_sizesSql,
+	"migration/000_init_schema.sql":                   migration000_init_schemaSql,
+	"migration/001_supports.sql":                      migration001_supportsSql,
+	"migration/002_decimals.sql":                      migration002_decimalsSql,
+	"migration/003_dht_tracking.sql":                  migration003_dht_trackingSql,
+	"migration/004_new_indices.sql":                   migration004_new_indicesSql,
+	"migration/005_remove_foreign_keys.sql":           migration005_remove_foreign_keysSql,
+	"migration/006_add_height_index.sql":              migration006_add_height_indexSql,
+	"migration/007_more_decimals.sql":                 migration007_more_decimalsSql,
+	"migration/008_schema_fix.sql":                    migration008_schema_fixSql,
+	"migration/009_certificate_validation.sql":        migration009_certificate_validationSql,
+	"migration/010_triggers.sql":                      migration010_triggersSql,
+	"migration/011_add_license.sql":                   migration011_add_licenseSql,
+	"migration/012_store_last_height.sql":             migration012_store_last_heightSql,
+	"migration/013_add_input_vin.sql":                 migration013_add_input_vinSql,
+	"migration/014_yay_new_metadata.sql":              migration014_yay_new_metadataSql,
+	"migration/015_adjust_column_sizes.sql":           migration015_adjust_column_sizesSql,
+	"migration/016_transaction_hashes_adjustment.sql": migration016_transaction_hashes_adjustmentSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -515,22 +537,23 @@ type bintree struct {
 
 var _bintree = &bintree{nil, map[string]*bintree{
 	"migration": &bintree{nil, map[string]*bintree{
-		"000_init_schema.sql":            &bintree{migration000_init_schemaSql, map[string]*bintree{}},
-		"001_supports.sql":               &bintree{migration001_supportsSql, map[string]*bintree{}},
-		"002_decimals.sql":               &bintree{migration002_decimalsSql, map[string]*bintree{}},
-		"003_dht_tracking.sql":           &bintree{migration003_dht_trackingSql, map[string]*bintree{}},
-		"004_new_indices.sql":            &bintree{migration004_new_indicesSql, map[string]*bintree{}},
-		"005_remove_foreign_keys.sql":    &bintree{migration005_remove_foreign_keysSql, map[string]*bintree{}},
-		"006_add_height_index.sql":       &bintree{migration006_add_height_indexSql, map[string]*bintree{}},
-		"007_more_decimals.sql":          &bintree{migration007_more_decimalsSql, map[string]*bintree{}},
-		"008_schema_fix.sql":             &bintree{migration008_schema_fixSql, map[string]*bintree{}},
-		"009_certificate_validation.sql": &bintree{migration009_certificate_validationSql, map[string]*bintree{}},
-		"010_triggers.sql":               &bintree{migration010_triggersSql, map[string]*bintree{}},
-		"011_add_license.sql":            &bintree{migration011_add_licenseSql, map[string]*bintree{}},
-		"012_store_last_height.sql":      &bintree{migration012_store_last_heightSql, map[string]*bintree{}},
-		"013_add_input_vin.sql":          &bintree{migration013_add_input_vinSql, map[string]*bintree{}},
-		"014_yay_new_metadata.sql":       &bintree{migration014_yay_new_metadataSql, map[string]*bintree{}},
-		"015_adjust_column_sizes.sql":    &bintree{migration015_adjust_column_sizesSql, map[string]*bintree{}},
+		"000_init_schema.sql":                   &bintree{migration000_init_schemaSql, map[string]*bintree{}},
+		"001_supports.sql":                      &bintree{migration001_supportsSql, map[string]*bintree{}},
+		"002_decimals.sql":                      &bintree{migration002_decimalsSql, map[string]*bintree{}},
+		"003_dht_tracking.sql":                  &bintree{migration003_dht_trackingSql, map[string]*bintree{}},
+		"004_new_indices.sql":                   &bintree{migration004_new_indicesSql, map[string]*bintree{}},
+		"005_remove_foreign_keys.sql":           &bintree{migration005_remove_foreign_keysSql, map[string]*bintree{}},
+		"006_add_height_index.sql":              &bintree{migration006_add_height_indexSql, map[string]*bintree{}},
+		"007_more_decimals.sql":                 &bintree{migration007_more_decimalsSql, map[string]*bintree{}},
+		"008_schema_fix.sql":                    &bintree{migration008_schema_fixSql, map[string]*bintree{}},
+		"009_certificate_validation.sql":        &bintree{migration009_certificate_validationSql, map[string]*bintree{}},
+		"010_triggers.sql":                      &bintree{migration010_triggersSql, map[string]*bintree{}},
+		"011_add_license.sql":                   &bintree{migration011_add_licenseSql, map[string]*bintree{}},
+		"012_store_last_height.sql":             &bintree{migration012_store_last_heightSql, map[string]*bintree{}},
+		"013_add_input_vin.sql":                 &bintree{migration013_add_input_vinSql, map[string]*bintree{}},
+		"014_yay_new_metadata.sql":              &bintree{migration014_yay_new_metadataSql, map[string]*bintree{}},
+		"015_adjust_column_sizes.sql":           &bintree{migration015_adjust_column_sizesSql, map[string]*bintree{}},
+		"016_transaction_hashes_adjustment.sql": &bintree{migration016_transaction_hashes_adjustmentSql, map[string]*bintree{}},
 	}},
 }}
 
