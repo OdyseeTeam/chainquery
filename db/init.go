@@ -7,7 +7,7 @@ import (
 	_ "github.com/go-sql-driver/mysql" // import mysql
 	"github.com/jmoiron/sqlx"
 	_ "github.com/jteeuwen/go-bindata" // so it's detected by `dep ensure`
-	"github.com/rubenv/sql-migrate"
+	migrate "github.com/rubenv/sql-migrate"
 	log "github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/boil"
 )

@@ -88,7 +88,7 @@ func createUpdateVinAddresses(tx *model.Transaction, inputs *[]lbrycrd.Vin, bloc
 		}
 		for _, address := range addresses {
 			addr := datastore.GetAddress(address)
-			if addr != nil {
+			if addr == nil {
 				addr := &model.Address{Address: address}
 				err := datastore.PutAddress(addr)
 				if err != nil {

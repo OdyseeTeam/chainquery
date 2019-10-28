@@ -73,12 +73,12 @@ func GetInput(txHash string, isCoinBase bool, prevHash string, prevN uint) *mode
 
 	exists, err := model.Inputs(txHashMatch, txCoinBaseMatch, prevHashMatch, prevNMatch).ExistsG()
 	if err != nil {
-		return nil
+		logrus.Warning("Datastore(GETINPUT): ", err)
 	}
 	if exists {
 		input, err := model.Inputs(txHashMatch, txCoinBaseMatch, prevHashMatch, prevNMatch).OneG()
 		if err != nil {
-			logrus.Error("Datastore(GETINPUT): ", err)
+			logrus.Warning("Datastore(GETINPUT): ", err)
 		}
 		return input
 	}
@@ -130,13 +130,13 @@ func GetAddress(addr string) *model.Address {
 
 	exists, err := model.Addresses(addrMatch).ExistsG()
 	if err != nil {
-		return nil
+		logrus.Warning("Datastore(GETADDRESS): ", err)
 	}
 	if exists {
 
 		address, err := model.Addresses(addrMatch).OneG()
 		if err != nil {
-			logrus.Error("Datastore(GETADDRESS): ", err)
+			logrus.Warning("Datastore(GETADDRESS): ", err)
 		}
 		return address
 	}
