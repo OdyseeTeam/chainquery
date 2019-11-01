@@ -42,7 +42,7 @@ func RunBlockProcessing(height uint64) uint64 {
 		//ToDo - Should just return error...that is for another day
 		return height - 1
 	}
-	reorgHeight, err := checkHandleReorg(height, jsonBlock.PreviousHash)
+	reorgHeight, err := checkHandleReorg(height, jsonBlock.PreviousBlockHash)
 	if err != nil {
 		logrus.Error("Reorg Handling Error: ", err)
 		//ToDo - Should just return error...that is for another day
@@ -93,8 +93,8 @@ func parseBlockInfo(blockHeight uint64, jsonBlock *lbrycrd.GetBlockResponse) (bl
 	block.MerkleRoot = jsonBlock.MerkleRoot
 	block.NameClaimRoot = jsonBlock.NameClaimRoot
 	block.Nonce = jsonBlock.Nonce
-	block.NextBlockHash.String = jsonBlock.NextHash
-	block.PreviousBlockHash.SetValid(jsonBlock.PreviousHash)
+	block.NextBlockHash.String = jsonBlock.NextBlockHash
+	block.PreviousBlockHash.SetValid(jsonBlock.PreviousBlockHash)
 	block.TransactionHashes.SetValid(strings.Join(jsonBlock.Tx, ","))
 	block.Version = uint64(jsonBlock.Version)
 	block.VersionHex = jsonBlock.VersionHex
@@ -360,7 +360,7 @@ func checkHandleReorg(height uint64, chainPrevHash string) (uint64, error) {
 			if err != nil {
 				return height, errors.Prefix("error getting block@"+strconv.Itoa(int(prevHeight))+" from lbrycrd: ", err)
 			}
-			chainPrevHash = jsonBlock.PreviousHash
+			chainPrevHash = jsonBlock.PreviousBlockHash
 
 			// Decrement height and set prevBlock to the new previous
 			prevHeight--
