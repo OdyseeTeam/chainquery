@@ -12,3 +12,4 @@ cover.out
 swagger/.DSStore
 swagger/apiserver/go/*_api.go
 chainquery.log
+/migration/bindata.go
