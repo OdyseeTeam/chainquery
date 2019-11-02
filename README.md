@@ -158,6 +158,8 @@ regularly to indicate new official, stable release versions.
 Developers are strongly encouraged to write unit tests for new code, and to
 submit new unit tests for old code. Unit tests can be compiled and run
  with: `go test ./...` from the source directory which should be `$GOPATH/github.com/lbryio/chainquery`.
+ 
+ All contributions should run the e2e test via `./e2e/ee2e.sh`. This requires Docker to be installed.
 
 ## Updating the generated models
 

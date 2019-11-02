@@ -5,7 +5,7 @@ services:
 ## Lbrycrd ##
 #############
   lbrycrd:
-    image: lbry/lbrycrd:v0.17.2.1
+    image: lbry/lbrycrd:v0.17.3.1
     restart: "no"
     ports:
       - "11336:29246"
