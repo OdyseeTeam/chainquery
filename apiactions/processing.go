@@ -76,7 +76,7 @@ func processBlocks(block, from, to *uint64) error {
 	}
 
 	for *from <= *to {
-		processing.RunBlockProcessing(*from)
+		processing.RunBlockProcessing(nil, *from)
 		*from++
 	}
 	return nil

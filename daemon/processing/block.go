@@ -24,10 +24,12 @@ import (
 // BlockLock is used to lock block processing to a single parent thread.
 var BlockLock = sync.Mutex{}
 
+var ManualShutDownError = errors.Err("Daemon stopped manually!")
+
 // RunBlockProcessing runs the processing of a block at a specific height. While any height can be passed in it is
 // important to note that if the previous block is not processed it will panic to prevent corruption because blocks
 // must be processed in order.
-func RunBlockProcessing(height uint64) uint64 {
+func RunBlockProcessing(stopper *stop.Group, height uint64) uint64 {
 	defer util.TimeTrack(time.Now(), "runBlockProcessing", "daemonprofile")
 	if height == 0 {
 		err := processGenesisBlock()
@@ -60,15 +62,20 @@ func RunBlockProcessing(height uint64) uint64 {
 	block := parseBlockInfo(height, jsonBlock)
 
 	txs := jsonBlock.Tx
-	err = syncTransactionsOfBlock(txs, block.BlockTime, block.Height)
+	err = syncTransactionsOfBlock(stopper, txs, block.BlockTime, block.Height)
 	if err != nil {
+		rollBackHeight := height - 1
 		blockRemovalError := block.DeleteG()
 		if blockRemovalError != nil {
-			logrus.Panicf("Could not delete block with bad data. Data corruption imminent at height %d. The block must be remove manually to continue. Reason: ", height)
+			logrus.Panicf("Could not delete block with bad data. Data corruption imminent at height %d. The block must be remove manually to continue.", height)
 		}
-		logrus.Warning("Ran into transaction sync error at height", height, ". Rolling block back to height", height-1, " with error: ", err)
+		if err.Error() == ManualShutDownError.Error() {
+			return rollBackHeight
+		}
+		logrus.Error("Block Processing Error: ", err)
+		logrus.Warning("Ran into transaction sync error at height", height, ". Rolling block back to height", height-1)
 		//ToDo - Should just return error...that is for another day
-		return height - 1
+		return rollBackHeight
 	}
 
 	return height
@@ -133,6 +140,7 @@ func processGenesisBlock() error {
 }
 
 type txSyncManager struct {
+	daemonStopper *stop.Group
 	queueStopper  *stop.Group
 	syncStopper   *stop.Group
 	workerStopper *stop.Group
@@ -142,12 +150,13 @@ type txSyncManager struct {
 	errorsCh      chan error
 }
 
-func syncTransactionsOfBlock(txs []string, blockTime uint64, blockHeight uint64) error {
+func syncTransactionsOfBlock(stopper *stop.Group, txs []string, blockTime uint64, blockHeight uint64) error {
 	q("SYNC: started - " + strconv.Itoa(int(blockHeight)))
 	// Initialization
 	const maxErrorsPerBlockSync = 2
 	// Error handling logic can be tested by decreasing the number of times a transaction can fail to 0.
 	manager := txSyncManager{
+		daemonStopper: stop.New(stopper),
 		queueStopper:  stop.New(nil),
 		syncStopper:   stop.New(nil),
 		workerStopper: stop.New(nil),
@@ -176,12 +185,9 @@ func syncTransactionsOfBlock(txs []string, blockTime uint64, blockHeight uint64)
 	}
 	q("SYNC: received 1st on errorCh")
 
-	// Wait for first handling error/nil
+	// Wait for first handling error/nil first error is sent when tx fails x times or daemon is shutdown
 	err = <-manager.errorsCh
 	q("SYNC: received 2nd on errorCh")
-	if err != nil {
-		logrus.Error(err)
-	}
 	q("SYNC: stop workers...")
 	manager.workerStopper.Stop()
 	q("SYNC: stop sync...")
@@ -226,6 +232,10 @@ func handleTxResults(nrToHandle int, manager *txSyncManager) {
 	for {
 		q("HANDLE: waiting for next result...")
 		select {
+		case <-manager.daemonStopper.Ch():
+			logrus.Info("stopping tx sync...")
+			handleFailure(errors.Err("Daemon stopped manually!"), manager)
+			return
 		case <-manager.syncStopper.Ch():
 			q("HANDLE: stopping handling...")
 			return
@@ -233,7 +243,8 @@ func handleTxResults(nrToHandle int, manager *txSyncManager) {
 			q("HANDLE: start handling new result.." + txResult.tx.Txid)
 			leftToProcess--
 			if txResult.failcount > MaxFailures {
-				handleFailure(txResult, manager)
+				err := errors.Prefix("transaction "+txResult.tx.Txid+" failed more than "+strconv.Itoa(MaxFailures)+" times!", txResult.err)
+				handleFailure(err, manager)
 				continue
 			}
 			if txResult.err != nil { // Try again if fails this time.
@@ -305,8 +316,8 @@ func flush(channel <-chan txProcessResult) {
 	}
 }
 
-func handleFailure(txResult txProcessResult, manager *txSyncManager) {
-	q("HANDLE: start passing error.." + txResult.tx.Txid)
+func handleFailure(err error, manager *txSyncManager) {
+	q("HANDLE: start passing error...")
 	manager.queueStopper.Stop()
 	q("HANDLE: flushing channel...")
 	//Clears queue if any additional finished jobs come in at this point.
@@ -318,8 +329,8 @@ func handleFailure(txResult txProcessResult, manager *txSyncManager) {
 	q("HANDLE: stopping workers...")
 	manager.workerStopper.Stop()
 	q("HANDLE: stopped workers...")
-	manager.errorsCh <- errors.Prefix("transaction "+txResult.tx.Txid+" failed more than "+strconv.Itoa(MaxFailures)+" times!", txResult.err)
-	q("HANDLE: finish passing error.." + txResult.tx.Txid)
+	manager.errorsCh <- err
+	q("HANDLE: finish passing error...")
 }
 
 func getBlockToProcess(height *uint64) (*lbrycrd.GetBlockResponse, error) {
