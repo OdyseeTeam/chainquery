@@ -29,14 +29,15 @@ const (
 	opPushdata4    = 0x4e //opPushdata4 		= 78
 
 	// Types of vOut scripts
-	p2SH  = "scripthash" // Pay to Script Hash
-	p2PK  = "pubkey"     // Pay to Public Key
-	p2PKH = "pubkeyhash" // Pay to Public Key Hash
+	p2SH   = "scripthash"            // Pay to Script Hash
+	p2PK   = "pubkey"                // Pay to Public Key
+	p2PKH  = "pubkeyhash"            // Pay to Public Key Hash
+	p2WPKH = "witness_v0_keyhash"    //Segwit Pub Key Hash
+	p2WSH  = "witness_v0_scripthash" //Segwit Script Hash
 	// NonStandard is a transaction type, usually used for a claim.
-	NonStandard = "nonstandard" // Non Standard - Used for Claims in LBRY
-	NullData    = "nulldata"
-	P2WPKH_V0   = "witness_v0_keyhash"    //Segwit Pub Key Hash
-	P2WSH_V0    = "witness_v0_scripthash" //Segwit Script Hash
+	NonStandard = "nonstandard"
+	// NullData Transaction type related to segwit outputs
+	NullData = "nulldata"
 
 	lbrycrdMainPubkeyPrefix    = byte(85)
 	lbrycrdMainScriptPrefix    = byte(122)
@@ -283,9 +284,9 @@ func getPublicKeyScriptType(script []byte) string {
 	} else if isPayToScriptHashScript(script) {
 		return p2SH
 	} else if txscript.IsPayToWitnessPubKeyHash(script) {
-		return P2WPKH_V0
+		return p2WPKH
 	} else if txscript.IsPayToWitnessScriptHash(script) {
-		return P2WSH_V0
+		return p2WSH
 	}
 	return NonStandard
 }

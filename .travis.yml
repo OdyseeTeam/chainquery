@@ -63,7 +63,8 @@ script:
   # Build Chainquery successfully
   - ./scripts/build.sh
   # Fail if a .go file hasn't been formatted with gofmt
-  - test -z $(gofmt -s -l $GO_FILES)
+  - gofmt -s -l -d $GO_FILES #List diff for debugging
+  - test -z $(gofmt -s -l -d $GO_FILES)
   - ./scripts/lint.sh
   # Run unit tests
   - ./scripts/test.sh

@@ -32,7 +32,7 @@ var runCmd = &cobra.Command{
 		job, ok := jobsMap[args[0]]
 		if !ok {
 			var jobs []string
-			for job, _ := range jobsMap {
+			for job := range jobsMap {
 				jobs = append(jobs, job)
 			}
 			logrus.Infof("Incorrect usage, should be: run <jobname>. Possible jobs are: %s", strings.Join(jobs, ", "))

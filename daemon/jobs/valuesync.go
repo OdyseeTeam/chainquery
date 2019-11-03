@@ -21,6 +21,8 @@ func SyncAddressBalancesJob() {
 	}()
 }
 
+//TransactionValueSync synchronizes the transaction value column due to a bug in mysql related to triggers.
+//https://bugs.mysql.com/bug.php?id=11472
 func TransactionValueSync() {
 	_, err := SyncTransactionValue()
 	if err != nil {
@@ -28,13 +30,13 @@ func TransactionValueSync() {
 	}
 }
 
-//SyncTransactionValueJob runs the SyncAddressBalances as a background job.
+//TransactionValueASync runs the SyncAddressBalances as a background job.
 func TransactionValueASync() {
 	go TransactionValueSync()
 }
 
 //SyncAddressBalances will update the balance for every address if needed based on the transaction address table and
-// returns the number of rows changed.
+// returns the number of rows changed. Due to mysql bug https://bugs.mysql.com/bug.php?id=11472
 func SyncAddressBalances() (int64, error) {
 
 	addressTbl := model.TableNames.Address
