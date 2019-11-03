@@ -23,196 +23,202 @@ import (
 
 // Claim is an object representing the database table.
 type Claim struct {
-	ID                uint64      `boil:"id" json:"id" toml:"id" yaml:"id"`
-	TransactionHashID null.String `boil:"transaction_hash_id" json:"transaction_hash_id,omitempty" toml:"transaction_hash_id" yaml:"transaction_hash_id,omitempty"`
-	Vout              uint        `boil:"vout" json:"vout" toml:"vout" yaml:"vout"`
-	Name              string      `boil:"name" json:"name" toml:"name" yaml:"name"`
-	ClaimID           string      `boil:"claim_id" json:"claim_id" toml:"claim_id" yaml:"claim_id"`
-	ClaimType         int8        `boil:"claim_type" json:"claim_type" toml:"claim_type" yaml:"claim_type"`
-	PublisherID       null.String `boil:"publisher_id" json:"publisher_id,omitempty" toml:"publisher_id" yaml:"publisher_id,omitempty"`
-	PublisherSig      null.String `boil:"publisher_sig" json:"publisher_sig,omitempty" toml:"publisher_sig" yaml:"publisher_sig,omitempty"`
-	Certificate       null.String `boil:"certificate" json:"certificate,omitempty" toml:"certificate" yaml:"certificate,omitempty"`
-	SDHash            null.String `boil:"sd_hash" json:"sd_hash,omitempty" toml:"sd_hash" yaml:"sd_hash,omitempty"`
-	TransactionTime   null.Uint64 `boil:"transaction_time" json:"transaction_time,omitempty" toml:"transaction_time" yaml:"transaction_time,omitempty"`
-	Version           string      `boil:"version" json:"version" toml:"version" yaml:"version"`
-	ValueAsHex        string      `boil:"value_as_hex" json:"value_as_hex" toml:"value_as_hex" yaml:"value_as_hex"`
-	ValueAsJSON       null.String `boil:"value_as_json" json:"value_as_json,omitempty" toml:"value_as_json" yaml:"value_as_json,omitempty"`
-	ValidAtHeight     uint        `boil:"valid_at_height" json:"valid_at_height" toml:"valid_at_height" yaml:"valid_at_height"`
-	Height            uint        `boil:"height" json:"height" toml:"height" yaml:"height"`
-	EffectiveAmount   uint64      `boil:"effective_amount" json:"effective_amount" toml:"effective_amount" yaml:"effective_amount"`
-	Author            null.String `boil:"author" json:"author,omitempty" toml:"author" yaml:"author,omitempty"`
-	Description       null.String `boil:"description" json:"description,omitempty" toml:"description" yaml:"description,omitempty"`
-	ContentType       null.String `boil:"content_type" json:"content_type,omitempty" toml:"content_type" yaml:"content_type,omitempty"`
-	IsNSFW            bool        `boil:"is_nsfw" json:"is_nsfw" toml:"is_nsfw" yaml:"is_nsfw"`
-	Language          null.String `boil:"language" json:"language,omitempty" toml:"language" yaml:"language,omitempty"`
-	ThumbnailURL      null.String `boil:"thumbnail_url" json:"thumbnail_url,omitempty" toml:"thumbnail_url" yaml:"thumbnail_url,omitempty"`
-	Title             null.String `boil:"title" json:"title,omitempty" toml:"title" yaml:"title,omitempty"`
-	Fee               float64     `boil:"fee" json:"fee" toml:"fee" yaml:"fee"`
-	FeeCurrency       null.String `boil:"fee_currency" json:"fee_currency,omitempty" toml:"fee_currency" yaml:"fee_currency,omitempty"`
-	FeeAddress        string      `boil:"fee_address" json:"fee_address" toml:"fee_address" yaml:"fee_address"`
-	IsFiltered        bool        `boil:"is_filtered" json:"is_filtered" toml:"is_filtered" yaml:"is_filtered"`
-	BidState          string      `boil:"bid_state" json:"bid_state" toml:"bid_state" yaml:"bid_state"`
-	CreatedAt         time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	ModifiedAt        time.Time   `boil:"modified_at" json:"modified_at" toml:"modified_at" yaml:"modified_at"`
-	ClaimAddress      string      `boil:"claim_address" json:"claim_address" toml:"claim_address" yaml:"claim_address"`
-	IsCertValid       bool        `boil:"is_cert_valid" json:"is_cert_valid" toml:"is_cert_valid" yaml:"is_cert_valid"`
-	IsCertProcessed   bool        `boil:"is_cert_processed" json:"is_cert_processed" toml:"is_cert_processed" yaml:"is_cert_processed"`
-	License           null.String `boil:"license" json:"license,omitempty" toml:"license" yaml:"license,omitempty"`
-	LicenseURL        null.String `boil:"license_url" json:"license_url,omitempty" toml:"license_url" yaml:"license_url,omitempty"`
-	Preview           null.String `boil:"preview" json:"preview,omitempty" toml:"preview" yaml:"preview,omitempty"`
-	Type              null.String `boil:"type" json:"type,omitempty" toml:"type" yaml:"type,omitempty"`
-	ReleaseTime       null.Uint64 `boil:"release_time" json:"release_time,omitempty" toml:"release_time" yaml:"release_time,omitempty"`
-	SourceHash        null.String `boil:"source_hash" json:"source_hash,omitempty" toml:"source_hash" yaml:"source_hash,omitempty"`
-	SourceName        null.String `boil:"source_name" json:"source_name,omitempty" toml:"source_name" yaml:"source_name,omitempty"`
-	SourceSize        null.Uint64 `boil:"source_size" json:"source_size,omitempty" toml:"source_size" yaml:"source_size,omitempty"`
-	SourceMediaType   null.String `boil:"source_media_type" json:"source_media_type,omitempty" toml:"source_media_type" yaml:"source_media_type,omitempty"`
-	SourceURL         null.String `boil:"source_url" json:"source_url,omitempty" toml:"source_url" yaml:"source_url,omitempty"`
-	FrameWidth        null.Uint64 `boil:"frame_width" json:"frame_width,omitempty" toml:"frame_width" yaml:"frame_width,omitempty"`
-	FrameHeight       null.Uint64 `boil:"frame_height" json:"frame_height,omitempty" toml:"frame_height" yaml:"frame_height,omitempty"`
-	Duration          null.Uint64 `boil:"duration" json:"duration,omitempty" toml:"duration" yaml:"duration,omitempty"`
-	AudioDuration     null.Uint64 `boil:"audio_duration" json:"audio_duration,omitempty" toml:"audio_duration" yaml:"audio_duration,omitempty"`
-	Os                null.String `boil:"os" json:"os,omitempty" toml:"os" yaml:"os,omitempty"`
-	Email             null.String `boil:"email" json:"email,omitempty" toml:"email" yaml:"email,omitempty"`
-	WebsiteURL        null.String `boil:"website_url" json:"website_url,omitempty" toml:"website_url" yaml:"website_url,omitempty"`
-	HasClaimList      null.Bool   `boil:"has_claim_list" json:"has_claim_list,omitempty" toml:"has_claim_list" yaml:"has_claim_list,omitempty"`
-	ClaimReference    null.String `boil:"claim_reference" json:"claim_reference,omitempty" toml:"claim_reference" yaml:"claim_reference,omitempty"`
-	ListType          null.Int16  `boil:"list_type" json:"list_type,omitempty" toml:"list_type" yaml:"list_type,omitempty"`
-	ClaimIDList       null.JSON   `boil:"claim_id_list" json:"claim_id_list,omitempty" toml:"claim_id_list" yaml:"claim_id_list,omitempty"`
-	Country           null.String `boil:"country" json:"country,omitempty" toml:"country" yaml:"country,omitempty"`
-	State             null.String `boil:"state" json:"state,omitempty" toml:"state" yaml:"state,omitempty"`
-	City              null.String `boil:"city" json:"city,omitempty" toml:"city" yaml:"city,omitempty"`
-	Code              null.String `boil:"code" json:"code,omitempty" toml:"code" yaml:"code,omitempty"`
-	Latitude          null.Int64  `boil:"latitude" json:"latitude,omitempty" toml:"latitude" yaml:"latitude,omitempty"`
-	Longitude         null.Int64  `boil:"longitude" json:"longitude,omitempty" toml:"longitude" yaml:"longitude,omitempty"`
+	ID                    uint64      `boil:"id" json:"id" toml:"id" yaml:"id"`
+	TransactionHashID     null.String `boil:"transaction_hash_id" json:"transaction_hash_id,omitempty" toml:"transaction_hash_id" yaml:"transaction_hash_id,omitempty"`
+	Vout                  uint        `boil:"vout" json:"vout" toml:"vout" yaml:"vout"`
+	Name                  string      `boil:"name" json:"name" toml:"name" yaml:"name"`
+	ClaimID               string      `boil:"claim_id" json:"claim_id" toml:"claim_id" yaml:"claim_id"`
+	ClaimType             int8        `boil:"claim_type" json:"claim_type" toml:"claim_type" yaml:"claim_type"`
+	PublisherID           null.String `boil:"publisher_id" json:"publisher_id,omitempty" toml:"publisher_id" yaml:"publisher_id,omitempty"`
+	PublisherSig          null.String `boil:"publisher_sig" json:"publisher_sig,omitempty" toml:"publisher_sig" yaml:"publisher_sig,omitempty"`
+	Certificate           null.String `boil:"certificate" json:"certificate,omitempty" toml:"certificate" yaml:"certificate,omitempty"`
+	SDHash                null.String `boil:"sd_hash" json:"sd_hash,omitempty" toml:"sd_hash" yaml:"sd_hash,omitempty"`
+	TransactionTime       null.Uint64 `boil:"transaction_time" json:"transaction_time,omitempty" toml:"transaction_time" yaml:"transaction_time,omitempty"`
+	Version               string      `boil:"version" json:"version" toml:"version" yaml:"version"`
+	ValueAsHex            string      `boil:"value_as_hex" json:"value_as_hex" toml:"value_as_hex" yaml:"value_as_hex"`
+	ValueAsJSON           null.String `boil:"value_as_json" json:"value_as_json,omitempty" toml:"value_as_json" yaml:"value_as_json,omitempty"`
+	ValidAtHeight         uint        `boil:"valid_at_height" json:"valid_at_height" toml:"valid_at_height" yaml:"valid_at_height"`
+	Height                uint        `boil:"height" json:"height" toml:"height" yaml:"height"`
+	EffectiveAmount       uint64      `boil:"effective_amount" json:"effective_amount" toml:"effective_amount" yaml:"effective_amount"`
+	Author                null.String `boil:"author" json:"author,omitempty" toml:"author" yaml:"author,omitempty"`
+	Description           null.String `boil:"description" json:"description,omitempty" toml:"description" yaml:"description,omitempty"`
+	ContentType           null.String `boil:"content_type" json:"content_type,omitempty" toml:"content_type" yaml:"content_type,omitempty"`
+	IsNSFW                bool        `boil:"is_nsfw" json:"is_nsfw" toml:"is_nsfw" yaml:"is_nsfw"`
+	Language              null.String `boil:"language" json:"language,omitempty" toml:"language" yaml:"language,omitempty"`
+	ThumbnailURL          null.String `boil:"thumbnail_url" json:"thumbnail_url,omitempty" toml:"thumbnail_url" yaml:"thumbnail_url,omitempty"`
+	Title                 null.String `boil:"title" json:"title,omitempty" toml:"title" yaml:"title,omitempty"`
+	Fee                   float64     `boil:"fee" json:"fee" toml:"fee" yaml:"fee"`
+	FeeCurrency           null.String `boil:"fee_currency" json:"fee_currency,omitempty" toml:"fee_currency" yaml:"fee_currency,omitempty"`
+	FeeAddress            string      `boil:"fee_address" json:"fee_address" toml:"fee_address" yaml:"fee_address"`
+	IsFiltered            bool        `boil:"is_filtered" json:"is_filtered" toml:"is_filtered" yaml:"is_filtered"`
+	BidState              string      `boil:"bid_state" json:"bid_state" toml:"bid_state" yaml:"bid_state"`
+	CreatedAt             time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	ModifiedAt            time.Time   `boil:"modified_at" json:"modified_at" toml:"modified_at" yaml:"modified_at"`
+	ClaimAddress          string      `boil:"claim_address" json:"claim_address" toml:"claim_address" yaml:"claim_address"`
+	IsCertValid           bool        `boil:"is_cert_valid" json:"is_cert_valid" toml:"is_cert_valid" yaml:"is_cert_valid"`
+	IsCertProcessed       bool        `boil:"is_cert_processed" json:"is_cert_processed" toml:"is_cert_processed" yaml:"is_cert_processed"`
+	License               null.String `boil:"license" json:"license,omitempty" toml:"license" yaml:"license,omitempty"`
+	LicenseURL            null.String `boil:"license_url" json:"license_url,omitempty" toml:"license_url" yaml:"license_url,omitempty"`
+	Preview               null.String `boil:"preview" json:"preview,omitempty" toml:"preview" yaml:"preview,omitempty"`
+	Type                  null.String `boil:"type" json:"type,omitempty" toml:"type" yaml:"type,omitempty"`
+	ReleaseTime           null.Uint64 `boil:"release_time" json:"release_time,omitempty" toml:"release_time" yaml:"release_time,omitempty"`
+	SourceHash            null.String `boil:"source_hash" json:"source_hash,omitempty" toml:"source_hash" yaml:"source_hash,omitempty"`
+	SourceName            null.String `boil:"source_name" json:"source_name,omitempty" toml:"source_name" yaml:"source_name,omitempty"`
+	SourceSize            null.Uint64 `boil:"source_size" json:"source_size,omitempty" toml:"source_size" yaml:"source_size,omitempty"`
+	SourceMediaType       null.String `boil:"source_media_type" json:"source_media_type,omitempty" toml:"source_media_type" yaml:"source_media_type,omitempty"`
+	SourceURL             null.String `boil:"source_url" json:"source_url,omitempty" toml:"source_url" yaml:"source_url,omitempty"`
+	FrameWidth            null.Uint64 `boil:"frame_width" json:"frame_width,omitempty" toml:"frame_width" yaml:"frame_width,omitempty"`
+	FrameHeight           null.Uint64 `boil:"frame_height" json:"frame_height,omitempty" toml:"frame_height" yaml:"frame_height,omitempty"`
+	Duration              null.Uint64 `boil:"duration" json:"duration,omitempty" toml:"duration" yaml:"duration,omitempty"`
+	AudioDuration         null.Uint64 `boil:"audio_duration" json:"audio_duration,omitempty" toml:"audio_duration" yaml:"audio_duration,omitempty"`
+	Os                    null.String `boil:"os" json:"os,omitempty" toml:"os" yaml:"os,omitempty"`
+	Email                 null.String `boil:"email" json:"email,omitempty" toml:"email" yaml:"email,omitempty"`
+	WebsiteURL            null.String `boil:"website_url" json:"website_url,omitempty" toml:"website_url" yaml:"website_url,omitempty"`
+	HasClaimList          null.Bool   `boil:"has_claim_list" json:"has_claim_list,omitempty" toml:"has_claim_list" yaml:"has_claim_list,omitempty"`
+	ClaimReference        null.String `boil:"claim_reference" json:"claim_reference,omitempty" toml:"claim_reference" yaml:"claim_reference,omitempty"`
+	ListType              null.Int16  `boil:"list_type" json:"list_type,omitempty" toml:"list_type" yaml:"list_type,omitempty"`
+	ClaimIDList           null.JSON   `boil:"claim_id_list" json:"claim_id_list,omitempty" toml:"claim_id_list" yaml:"claim_id_list,omitempty"`
+	Country               null.String `boil:"country" json:"country,omitempty" toml:"country" yaml:"country,omitempty"`
+	State                 null.String `boil:"state" json:"state,omitempty" toml:"state" yaml:"state,omitempty"`
+	City                  null.String `boil:"city" json:"city,omitempty" toml:"city" yaml:"city,omitempty"`
+	Code                  null.String `boil:"code" json:"code,omitempty" toml:"code" yaml:"code,omitempty"`
+	Latitude              null.Int64  `boil:"latitude" json:"latitude,omitempty" toml:"latitude" yaml:"latitude,omitempty"`
+	Longitude             null.Int64  `boil:"longitude" json:"longitude,omitempty" toml:"longitude" yaml:"longitude,omitempty"`
+	TransactionHashUpdate null.String `boil:"transaction_hash_update" json:"transaction_hash_update,omitempty" toml:"transaction_hash_update" yaml:"transaction_hash_update,omitempty"`
+	VoutUpdate            null.Uint   `boil:"vout_update" json:"vout_update,omitempty" toml:"vout_update" yaml:"vout_update,omitempty"`
 
 	R *claimR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L claimL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var ClaimColumns = struct {
-	ID                string
-	TransactionHashID string
-	Vout              string
-	Name              string
-	ClaimID           string
-	ClaimType         string
-	PublisherID       string
-	PublisherSig      string
-	Certificate       string
-	SDHash            string
-	TransactionTime   string
-	Version           string
-	ValueAsHex        string
-	ValueAsJSON       string
-	ValidAtHeight     string
-	Height            string
-	EffectiveAmount   string
-	Author            string
-	Description       string
-	ContentType       string
-	IsNSFW            string
-	Language          string
-	ThumbnailURL      string
-	Title             string
-	Fee               string
-	FeeCurrency       string
-	FeeAddress        string
-	IsFiltered        string
-	BidState          string
-	CreatedAt         string
-	ModifiedAt        string
-	ClaimAddress      string
-	IsCertValid       string
-	IsCertProcessed   string
-	License           string
-	LicenseURL        string
-	Preview           string
-	Type              string
-	ReleaseTime       string
-	SourceHash        string
-	SourceName        string
-	SourceSize        string
-	SourceMediaType   string
-	SourceURL         string
-	FrameWidth        string
-	FrameHeight       string
-	Duration          string
-	AudioDuration     string
-	Os                string
-	Email             string
-	WebsiteURL        string
-	HasClaimList      string
-	ClaimReference    string
-	ListType          string
-	ClaimIDList       string
-	Country           string
-	State             string
-	City              string
-	Code              string
-	Latitude          string
-	Longitude         string
+	ID                    string
+	TransactionHashID     string
+	Vout                  string
+	Name                  string
+	ClaimID               string
+	ClaimType             string
+	PublisherID           string
+	PublisherSig          string
+	Certificate           string
+	SDHash                string
+	TransactionTime       string
+	Version               string
+	ValueAsHex            string
+	ValueAsJSON           string
+	ValidAtHeight         string
+	Height                string
+	EffectiveAmount       string
+	Author                string
+	Description           string
+	ContentType           string
+	IsNSFW                string
+	Language              string
+	ThumbnailURL          string
+	Title                 string
+	Fee                   string
+	FeeCurrency           string
+	FeeAddress            string
+	IsFiltered            string
+	BidState              string
+	CreatedAt             string
+	ModifiedAt            string
+	ClaimAddress          string
+	IsCertValid           string
+	IsCertProcessed       string
+	License               string
+	LicenseURL            string
+	Preview               string
+	Type                  string
+	ReleaseTime           string
+	SourceHash            string
+	SourceName            string
+	SourceSize            string
+	SourceMediaType       string
+	SourceURL             string
+	FrameWidth            string
+	FrameHeight           string
+	Duration              string
+	AudioDuration         string
+	Os                    string
+	Email                 string
+	WebsiteURL            string
+	HasClaimList          string
+	ClaimReference        string
+	ListType              string
+	ClaimIDList           string
+	Country               string
+	State                 string
+	City                  string
+	Code                  string
+	Latitude              string
+	Longitude             string
+	TransactionHashUpdate string
+	VoutUpdate            string
 }{
-	ID:                "id",
-	TransactionHashID: "transaction_hash_id",
-	Vout:              "vout",
-	Name:              "name",
-	ClaimID:           "claim_id",
-	ClaimType:         "claim_type",
-	PublisherID:       "publisher_id",
-	PublisherSig:      "publisher_sig",
-	Certificate:       "certificate",
-	SDHash:            "sd_hash",
-	TransactionTime:   "transaction_time",
-	Version:           "version",
-	ValueAsHex:        "value_as_hex",
-	ValueAsJSON:       "value_as_json",
-	ValidAtHeight:     "valid_at_height",
-	Height:            "height",
-	EffectiveAmount:   "effective_amount",
-	Author:            "author",
-	Description:       "description",
-	ContentType:       "content_type",
-	IsNSFW:            "is_nsfw",
-	Language:          "language",
-	ThumbnailURL:      "thumbnail_url",
-	Title:             "title",
-	Fee:               "fee",
-	FeeCurrency:       "fee_currency",
-	FeeAddress:        "fee_address",
-	IsFiltered:        "is_filtered",
-	BidState:          "bid_state",
-	CreatedAt:         "created_at",
-	ModifiedAt:        "modified_at",
-	ClaimAddress:      "claim_address",
-	IsCertValid:       "is_cert_valid",
-	IsCertProcessed:   "is_cert_processed",
-	License:           "license",
-	LicenseURL:        "license_url",
-	Preview:           "preview",
-	Type:              "type",
-	ReleaseTime:       "release_time",
-	SourceHash:        "source_hash",
-	SourceName:        "source_name",
-	SourceSize:        "source_size",
-	SourceMediaType:   "source_media_type",
-	SourceURL:         "source_url",
-	FrameWidth:        "frame_width",
-	FrameHeight:       "frame_height",
-	Duration:          "duration",
-	AudioDuration:     "audio_duration",
-	Os:                "os",
-	Email:             "email",
-	WebsiteURL:        "website_url",
-	HasClaimList:      "has_claim_list",
-	ClaimReference:    "claim_reference",
-	ListType:          "list_type",
-	ClaimIDList:       "claim_id_list",
-	Country:           "country",
-	State:             "state",
-	City:              "city",
-	Code:              "code",
-	Latitude:          "latitude",
-	Longitude:         "longitude",
+	ID:                    "id",
+	TransactionHashID:     "transaction_hash_id",
+	Vout:                  "vout",
+	Name:                  "name",
+	ClaimID:               "claim_id",
+	ClaimType:             "claim_type",
+	PublisherID:           "publisher_id",
+	PublisherSig:          "publisher_sig",
+	Certificate:           "certificate",
+	SDHash:                "sd_hash",
+	TransactionTime:       "transaction_time",
+	Version:               "version",
+	ValueAsHex:            "value_as_hex",
+	ValueAsJSON:           "value_as_json",
+	ValidAtHeight:         "valid_at_height",
+	Height:                "height",
+	EffectiveAmount:       "effective_amount",
+	Author:                "author",
+	Description:           "description",
+	ContentType:           "content_type",
+	IsNSFW:                "is_nsfw",
+	Language:              "language",
+	ThumbnailURL:          "thumbnail_url",
+	Title:                 "title",
+	Fee:                   "fee",
+	FeeCurrency:           "fee_currency",
+	FeeAddress:            "fee_address",
+	IsFiltered:            "is_filtered",
+	BidState:              "bid_state",
+	CreatedAt:             "created_at",
+	ModifiedAt:            "modified_at",
+	ClaimAddress:          "claim_address",
+	IsCertValid:           "is_cert_valid",
+	IsCertProcessed:       "is_cert_processed",
+	License:               "license",
+	LicenseURL:            "license_url",
+	Preview:               "preview",
+	Type:                  "type",
+	ReleaseTime:           "release_time",
+	SourceHash:            "source_hash",
+	SourceName:            "source_name",
+	SourceSize:            "source_size",
+	SourceMediaType:       "source_media_type",
+	SourceURL:             "source_url",
+	FrameWidth:            "frame_width",
+	FrameHeight:           "frame_height",
+	Duration:              "duration",
+	AudioDuration:         "audio_duration",
+	Os:                    "os",
+	Email:                 "email",
+	WebsiteURL:            "website_url",
+	HasClaimList:          "has_claim_list",
+	ClaimReference:        "claim_reference",
+	ListType:              "list_type",
+	ClaimIDList:           "claim_id_list",
+	Country:               "country",
+	State:                 "state",
+	City:                  "city",
+	Code:                  "code",
+	Latitude:              "latitude",
+	Longitude:             "longitude",
+	TransactionHashUpdate: "transaction_hash_update",
+	VoutUpdate:            "vout_update",
 }
 
 // Generated where
@@ -341,130 +347,157 @@ func (w whereHelpernull_Int64) GTE(x null.Int64) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.GTE, x)
 }
 
+type whereHelpernull_Uint struct{ field string }
+
+func (w whereHelpernull_Uint) EQ(x null.Uint) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, false, x)
+}
+func (w whereHelpernull_Uint) NEQ(x null.Uint) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, true, x)
+}
+func (w whereHelpernull_Uint) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
+func (w whereHelpernull_Uint) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
+func (w whereHelpernull_Uint) LT(x null.Uint) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpernull_Uint) LTE(x null.Uint) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpernull_Uint) GT(x null.Uint) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpernull_Uint) GTE(x null.Uint) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+
 var ClaimWhere = struct {
-	ID                whereHelperuint64
-	TransactionHashID whereHelpernull_String
-	Vout              whereHelperuint
-	Name              whereHelperstring
-	ClaimID           whereHelperstring
-	ClaimType         whereHelperint8
-	PublisherID       whereHelpernull_String
-	PublisherSig      whereHelpernull_String
-	Certificate       whereHelpernull_String
-	SDHash            whereHelpernull_String
-	TransactionTime   whereHelpernull_Uint64
-	Version           whereHelperstring
-	ValueAsHex        whereHelperstring
-	ValueAsJSON       whereHelpernull_String
-	ValidAtHeight     whereHelperuint
-	Height            whereHelperuint
-	EffectiveAmount   whereHelperuint64
-	Author            whereHelpernull_String
-	Description       whereHelpernull_String
-	ContentType       whereHelpernull_String
-	IsNSFW            whereHelperbool
-	Language          whereHelpernull_String
-	ThumbnailURL      whereHelpernull_String
-	Title             whereHelpernull_String
-	Fee               whereHelperfloat64
-	FeeCurrency       whereHelpernull_String
-	FeeAddress        whereHelperstring
-	IsFiltered        whereHelperbool
-	BidState          whereHelperstring
-	CreatedAt         whereHelpertime_Time
-	ModifiedAt        whereHelpertime_Time
-	ClaimAddress      whereHelperstring
-	IsCertValid       whereHelperbool
-	IsCertProcessed   whereHelperbool
-	License           whereHelpernull_String
-	LicenseURL        whereHelpernull_String
-	Preview           whereHelpernull_String
-	Type              whereHelpernull_String
-	ReleaseTime       whereHelpernull_Uint64
-	SourceHash        whereHelpernull_String
-	SourceName        whereHelpernull_String
-	SourceSize        whereHelpernull_Uint64
-	SourceMediaType   whereHelpernull_String
-	SourceURL         whereHelpernull_String
-	FrameWidth        whereHelpernull_Uint64
-	FrameHeight       whereHelpernull_Uint64
-	Duration          whereHelpernull_Uint64
-	AudioDuration     whereHelpernull_Uint64
-	Os                whereHelpernull_String
-	Email             whereHelpernull_String
-	WebsiteURL        whereHelpernull_String
-	HasClaimList      whereHelpernull_Bool
-	ClaimReference    whereHelpernull_String
-	ListType          whereHelpernull_Int16
-	ClaimIDList       whereHelpernull_JSON
-	Country           whereHelpernull_String
-	State             whereHelpernull_String
-	City              whereHelpernull_String
-	Code              whereHelpernull_String
-	Latitude          whereHelpernull_Int64
-	Longitude         whereHelpernull_Int64
+	ID                    whereHelperuint64
+	TransactionHashID     whereHelpernull_String
+	Vout                  whereHelperuint
+	Name                  whereHelperstring
+	ClaimID               whereHelperstring
+	ClaimType             whereHelperint8
+	PublisherID           whereHelpernull_String
+	PublisherSig          whereHelpernull_String
+	Certificate           whereHelpernull_String
+	SDHash                whereHelpernull_String
+	TransactionTime       whereHelpernull_Uint64
+	Version               whereHelperstring
+	ValueAsHex            whereHelperstring
+	ValueAsJSON           whereHelpernull_String
+	ValidAtHeight         whereHelperuint
+	Height                whereHelperuint
+	EffectiveAmount       whereHelperuint64
+	Author                whereHelpernull_String
+	Description           whereHelpernull_String
+	ContentType           whereHelpernull_String
+	IsNSFW                whereHelperbool
+	Language              whereHelpernull_String
+	ThumbnailURL          whereHelpernull_String
+	Title                 whereHelpernull_String
+	Fee                   whereHelperfloat64
+	FeeCurrency           whereHelpernull_String
+	FeeAddress            whereHelperstring
+	IsFiltered            whereHelperbool
+	BidState              whereHelperstring
+	CreatedAt             whereHelpertime_Time
+	ModifiedAt            whereHelpertime_Time
+	ClaimAddress          whereHelperstring
+	IsCertValid           whereHelperbool
+	IsCertProcessed       whereHelperbool
+	License               whereHelpernull_String
+	LicenseURL            whereHelpernull_String
+	Preview               whereHelpernull_String
+	Type                  whereHelpernull_String
+	ReleaseTime           whereHelpernull_Uint64
+	SourceHash            whereHelpernull_String
+	SourceName            whereHelpernull_String
+	SourceSize            whereHelpernull_Uint64
+	SourceMediaType       whereHelpernull_String
+	SourceURL             whereHelpernull_String
+	FrameWidth            whereHelpernull_Uint64
+	FrameHeight           whereHelpernull_Uint64
+	Duration              whereHelpernull_Uint64
+	AudioDuration         whereHelpernull_Uint64
+	Os                    whereHelpernull_String
+	Email                 whereHelpernull_String
+	WebsiteURL            whereHelpernull_String
+	HasClaimList          whereHelpernull_Bool
+	ClaimReference        whereHelpernull_String
+	ListType              whereHelpernull_Int16
+	ClaimIDList           whereHelpernull_JSON
+	Country               whereHelpernull_String
+	State                 whereHelpernull_String
+	City                  whereHelpernull_String
+	Code                  whereHelpernull_String
+	Latitude              whereHelpernull_Int64
+	Longitude             whereHelpernull_Int64
+	TransactionHashUpdate whereHelpernull_String
+	VoutUpdate            whereHelpernull_Uint
 }{
-	ID:                whereHelperuint64{field: "`claim`.`id`"},
-	TransactionHashID: whereHelpernull_String{field: "`claim`.`transaction_hash_id`"},
-	Vout:              whereHelperuint{field: "`claim`.`vout`"},
-	Name:              whereHelperstring{field: "`claim`.`name`"},
-	ClaimID:           whereHelperstring{field: "`claim`.`claim_id`"},
-	ClaimType:         whereHelperint8{field: "`claim`.`claim_type`"},
-	PublisherID:       whereHelpernull_String{field: "`claim`.`publisher_id`"},
-	PublisherSig:      whereHelpernull_String{field: "`claim`.`publisher_sig`"},
-	Certificate:       whereHelpernull_String{field: "`claim`.`certificate`"},
-	SDHash:            whereHelpernull_String{field: "`claim`.`sd_hash`"},
-	TransactionTime:   whereHelpernull_Uint64{field: "`claim`.`transaction_time`"},
-	Version:           whereHelperstring{field: "`claim`.`version`"},
-	ValueAsHex:        whereHelperstring{field: "`claim`.`value_as_hex`"},
-	ValueAsJSON:       whereHelpernull_String{field: "`claim`.`value_as_json`"},
-	ValidAtHeight:     whereHelperuint{field: "`claim`.`valid_at_height`"},
-	Height:            whereHelperuint{field: "`claim`.`height`"},
-	EffectiveAmount:   whereHelperuint64{field: "`claim`.`effective_amount`"},
-	Author:            whereHelpernull_String{field: "`claim`.`author`"},
-	Description:       whereHelpernull_String{field: "`claim`.`description`"},
-	ContentType:       whereHelpernull_String{field: "`claim`.`content_type`"},
-	IsNSFW:            whereHelperbool{field: "`claim`.`is_nsfw`"},
-	Language:          whereHelpernull_String{field: "`claim`.`language`"},
-	ThumbnailURL:      whereHelpernull_String{field: "`claim`.`thumbnail_url`"},
-	Title:             whereHelpernull_String{field: "`claim`.`title`"},
-	Fee:               whereHelperfloat64{field: "`claim`.`fee`"},
-	FeeCurrency:       whereHelpernull_String{field: "`claim`.`fee_currency`"},
-	FeeAddress:        whereHelperstring{field: "`claim`.`fee_address`"},
-	IsFiltered:        whereHelperbool{field: "`claim`.`is_filtered`"},
-	BidState:          whereHelperstring{field: "`claim`.`bid_state`"},
-	CreatedAt:         whereHelpertime_Time{field: "`claim`.`created_at`"},
-	ModifiedAt:        whereHelpertime_Time{field: "`claim`.`modified_at`"},
-	ClaimAddress:      whereHelperstring{field: "`claim`.`claim_address`"},
-	IsCertValid:       whereHelperbool{field: "`claim`.`is_cert_valid`"},
-	IsCertProcessed:   whereHelperbool{field: "`claim`.`is_cert_processed`"},
-	License:           whereHelpernull_String{field: "`claim`.`license`"},
-	LicenseURL:        whereHelpernull_String{field: "`claim`.`license_url`"},
-	Preview:           whereHelpernull_String{field: "`claim`.`preview`"},
-	Type:              whereHelpernull_String{field: "`claim`.`type`"},
-	ReleaseTime:       whereHelpernull_Uint64{field: "`claim`.`release_time`"},
-	SourceHash:        whereHelpernull_String{field: "`claim`.`source_hash`"},
-	SourceName:        whereHelpernull_String{field: "`claim`.`source_name`"},
-	SourceSize:        whereHelpernull_Uint64{field: "`claim`.`source_size`"},
-	SourceMediaType:   whereHelpernull_String{field: "`claim`.`source_media_type`"},
-	SourceURL:         whereHelpernull_String{field: "`claim`.`source_url`"},
-	FrameWidth:        whereHelpernull_Uint64{field: "`claim`.`frame_width`"},
-	FrameHeight:       whereHelpernull_Uint64{field: "`claim`.`frame_height`"},
-	Duration:          whereHelpernull_Uint64{field: "`claim`.`duration`"},
-	AudioDuration:     whereHelpernull_Uint64{field: "`claim`.`audio_duration`"},
-	Os:                whereHelpernull_String{field: "`claim`.`os`"},
-	Email:             whereHelpernull_String{field: "`claim`.`email`"},
-	WebsiteURL:        whereHelpernull_String{field: "`claim`.`website_url`"},
-	HasClaimList:      whereHelpernull_Bool{field: "`claim`.`has_claim_list`"},
-	ClaimReference:    whereHelpernull_String{field: "`claim`.`claim_reference`"},
-	ListType:          whereHelpernull_Int16{field: "`claim`.`list_type`"},
-	ClaimIDList:       whereHelpernull_JSON{field: "`claim`.`claim_id_list`"},
-	Country:           whereHelpernull_String{field: "`claim`.`country`"},
-	State:             whereHelpernull_String{field: "`claim`.`state`"},
-	City:              whereHelpernull_String{field: "`claim`.`city`"},
-	Code:              whereHelpernull_String{field: "`claim`.`code`"},
-	Latitude:          whereHelpernull_Int64{field: "`claim`.`latitude`"},
-	Longitude:         whereHelpernull_Int64{field: "`claim`.`longitude`"},
+	ID:                    whereHelperuint64{field: "`claim`.`id`"},
+	TransactionHashID:     whereHelpernull_String{field: "`claim`.`transaction_hash_id`"},
+	Vout:                  whereHelperuint{field: "`claim`.`vout`"},
+	Name:                  whereHelperstring{field: "`claim`.`name`"},
+	ClaimID:               whereHelperstring{field: "`claim`.`claim_id`"},
+	ClaimType:             whereHelperint8{field: "`claim`.`claim_type`"},
+	PublisherID:           whereHelpernull_String{field: "`claim`.`publisher_id`"},
+	PublisherSig:          whereHelpernull_String{field: "`claim`.`publisher_sig`"},
+	Certificate:           whereHelpernull_String{field: "`claim`.`certificate`"},
+	SDHash:                whereHelpernull_String{field: "`claim`.`sd_hash`"},
+	TransactionTime:       whereHelpernull_Uint64{field: "`claim`.`transaction_time`"},
+	Version:               whereHelperstring{field: "`claim`.`version`"},
+	ValueAsHex:            whereHelperstring{field: "`claim`.`value_as_hex`"},
+	ValueAsJSON:           whereHelpernull_String{field: "`claim`.`value_as_json`"},
+	ValidAtHeight:         whereHelperuint{field: "`claim`.`valid_at_height`"},
+	Height:                whereHelperuint{field: "`claim`.`height`"},
+	EffectiveAmount:       whereHelperuint64{field: "`claim`.`effective_amount`"},
+	Author:                whereHelpernull_String{field: "`claim`.`author`"},
+	Description:           whereHelpernull_String{field: "`claim`.`description`"},
+	ContentType:           whereHelpernull_String{field: "`claim`.`content_type`"},
+	IsNSFW:                whereHelperbool{field: "`claim`.`is_nsfw`"},
+	Language:              whereHelpernull_String{field: "`claim`.`language`"},
+	ThumbnailURL:          whereHelpernull_String{field: "`claim`.`thumbnail_url`"},
+	Title:                 whereHelpernull_String{field: "`claim`.`title`"},
+	Fee:                   whereHelperfloat64{field: "`claim`.`fee`"},
+	FeeCurrency:           whereHelpernull_String{field: "`claim`.`fee_currency`"},
+	FeeAddress:            whereHelperstring{field: "`claim`.`fee_address`"},
+	IsFiltered:            whereHelperbool{field: "`claim`.`is_filtered`"},
+	BidState:              whereHelperstring{field: "`claim`.`bid_state`"},
+	CreatedAt:             whereHelpertime_Time{field: "`claim`.`created_at`"},
+	ModifiedAt:            whereHelpertime_Time{field: "`claim`.`modified_at`"},
+	ClaimAddress:          whereHelperstring{field: "`claim`.`claim_address`"},
+	IsCertValid:           whereHelperbool{field: "`claim`.`is_cert_valid`"},
+	IsCertProcessed:       whereHelperbool{field: "`claim`.`is_cert_processed`"},
+	License:               whereHelpernull_String{field: "`claim`.`license`"},
+	LicenseURL:            whereHelpernull_String{field: "`claim`.`license_url`"},
+	Preview:               whereHelpernull_String{field: "`claim`.`preview`"},
+	Type:                  whereHelpernull_String{field: "`claim`.`type`"},
+	ReleaseTime:           whereHelpernull_Uint64{field: "`claim`.`release_time`"},
+	SourceHash:            whereHelpernull_String{field: "`claim`.`source_hash`"},
+	SourceName:            whereHelpernull_String{field: "`claim`.`source_name`"},
+	SourceSize:            whereHelpernull_Uint64{field: "`claim`.`source_size`"},
+	SourceMediaType:       whereHelpernull_String{field: "`claim`.`source_media_type`"},
+	SourceURL:             whereHelpernull_String{field: "`claim`.`source_url`"},
+	FrameWidth:            whereHelpernull_Uint64{field: "`claim`.`frame_width`"},
+	FrameHeight:           whereHelpernull_Uint64{field: "`claim`.`frame_height`"},
+	Duration:              whereHelpernull_Uint64{field: "`claim`.`duration`"},
+	AudioDuration:         whereHelpernull_Uint64{field: "`claim`.`audio_duration`"},
+	Os:                    whereHelpernull_String{field: "`claim`.`os`"},
+	Email:                 whereHelpernull_String{field: "`claim`.`email`"},
+	WebsiteURL:            whereHelpernull_String{field: "`claim`.`website_url`"},
+	HasClaimList:          whereHelpernull_Bool{field: "`claim`.`has_claim_list`"},
+	ClaimReference:        whereHelpernull_String{field: "`claim`.`claim_reference`"},
+	ListType:              whereHelpernull_Int16{field: "`claim`.`list_type`"},
+	ClaimIDList:           whereHelpernull_JSON{field: "`claim`.`claim_id_list`"},
+	Country:               whereHelpernull_String{field: "`claim`.`country`"},
+	State:                 whereHelpernull_String{field: "`claim`.`state`"},
+	City:                  whereHelpernull_String{field: "`claim`.`city`"},
+	Code:                  whereHelpernull_String{field: "`claim`.`code`"},
+	Latitude:              whereHelpernull_Int64{field: "`claim`.`latitude`"},
+	Longitude:             whereHelpernull_Int64{field: "`claim`.`longitude`"},
+	TransactionHashUpdate: whereHelpernull_String{field: "`claim`.`transaction_hash_update`"},
+	VoutUpdate:            whereHelpernull_Uint{field: "`claim`.`vout_update`"},
 }
 
 // ClaimRels is where relationship names are stored.
@@ -494,8 +527,8 @@ func (*claimR) NewStruct() *claimR {
 type claimL struct{}
 
 var (
-	claimAllColumns            = []string{"id", "transaction_hash_id", "vout", "name", "claim_id", "claim_type", "publisher_id", "publisher_sig", "certificate", "sd_hash", "transaction_time", "version", "value_as_hex", "value_as_json", "valid_at_height", "height", "effective_amount", "author", "description", "content_type", "is_nsfw", "language", "thumbnail_url", "title", "fee", "fee_currency", "fee_address", "is_filtered", "bid_state", "created_at", "modified_at", "claim_address", "is_cert_valid", "is_cert_processed", "license", "license_url", "preview", "type", "release_time", "source_hash", "source_name", "source_size", "source_media_type", "source_url", "frame_width", "frame_height", "duration", "audio_duration", "os", "email", "website_url", "has_claim_list", "claim_reference", "list_type", "claim_id_list", "country", "state", "city", "code", "latitude", "longitude"}
-	claimColumnsWithoutDefault = []string{"transaction_hash_id", "vout", "name", "claim_id", "claim_type", "publisher_id", "publisher_sig", "certificate", "sd_hash", "transaction_time", "version", "value_as_hex", "value_as_json", "valid_at_height", "height", "author", "description", "content_type", "language", "thumbnail_url", "title", "fee_currency", "fee_address", "claim_address", "is_cert_valid", "is_cert_processed", "license", "license_url", "preview", "type", "release_time", "source_hash", "source_name", "source_size", "source_media_type", "source_url", "frame_width", "frame_height", "duration", "audio_duration", "os", "email", "website_url", "has_claim_list", "claim_reference", "list_type", "claim_id_list", "country", "state", "city", "code", "latitude", "longitude"}
+	claimAllColumns            = []string{"id", "transaction_hash_id", "vout", "name", "claim_id", "claim_type", "publisher_id", "publisher_sig", "certificate", "sd_hash", "transaction_time", "version", "value_as_hex", "value_as_json", "valid_at_height", "height", "effective_amount", "author", "description", "content_type", "is_nsfw", "language", "thumbnail_url", "title", "fee", "fee_currency", "fee_address", "is_filtered", "bid_state", "created_at", "modified_at", "claim_address", "is_cert_valid", "is_cert_processed", "license", "license_url", "preview", "type", "release_time", "source_hash", "source_name", "source_size", "source_media_type", "source_url", "frame_width", "frame_height", "duration", "audio_duration", "os", "email", "website_url", "has_claim_list", "claim_reference", "list_type", "claim_id_list", "country", "state", "city", "code", "latitude", "longitude", "transaction_hash_update", "vout_update"}
+	claimColumnsWithoutDefault = []string{"transaction_hash_id", "vout", "name", "claim_id", "claim_type", "publisher_id", "publisher_sig", "certificate", "sd_hash", "transaction_time", "version", "value_as_hex", "value_as_json", "valid_at_height", "height", "author", "description", "content_type", "language", "thumbnail_url", "title", "fee_currency", "fee_address", "claim_address", "is_cert_valid", "is_cert_processed", "license", "license_url", "preview", "type", "release_time", "source_hash", "source_name", "source_size", "source_media_type", "source_url", "frame_width", "frame_height", "duration", "audio_duration", "os", "email", "website_url", "has_claim_list", "claim_reference", "list_type", "claim_id_list", "country", "state", "city", "code", "latitude", "longitude", "transaction_hash_update", "vout_update"}
 	claimColumnsWithDefault    = []string{"id", "effective_amount", "is_nsfw", "fee", "is_filtered", "bid_state", "created_at", "modified_at"}
 	claimPrimaryKeyColumns     = []string{"id"}
 )

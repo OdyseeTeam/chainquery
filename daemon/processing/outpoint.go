@@ -224,6 +224,11 @@ func processVout(jsonVout *lbrycrd.Vout, tx *m.Transaction, txDC *txDebitCredits
 		if claim != nil {
 			vout.ClaimID.SetValid(claim.ClaimID)
 		}
+		// Save output with claim_id
+		err = ds.PutOutput(vout, boil.Infer())
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

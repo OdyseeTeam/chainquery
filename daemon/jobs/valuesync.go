@@ -21,14 +21,16 @@ func SyncAddressBalancesJob() {
 	}()
 }
 
+func TransactionValueSync() {
+	_, err := SyncTransactionValue()
+	if err != nil {
+		logrus.Error(syncTransactionValues, err)
+	}
+}
+
 //SyncTransactionValueJob runs the SyncAddressBalances as a background job.
-func SyncTransactionValueJob() {
-	go func() {
-		_, err := SyncTransactionValue()
-		if err != nil {
-			logrus.Error(syncTransactionValues, err)
-		}
-	}()
+func TransactionValueASync() {
+	go TransactionValueSync()
 }
 
 //SyncAddressBalances will update the balance for every address if needed based on the transaction address table and
