@@ -1,6 +1,7 @@
 package e2e
 
 import (
+	"database/sql"
 	"os"
 	"time"
 
@@ -26,7 +27,6 @@ func StartE2ETesting() {
 	increment(10)
 	createChannelWithClaims()
 	increment(1)
-	time.Sleep(15 * time.Second)
 	jobs.ClaimTrieSync()
 	jobs.CertificateSync()
 	time.Sleep(2 * time.Second)
@@ -99,7 +99,9 @@ func exitOnErr(err error) {
 
 func increment(blocks ...int) {
 	if len(blocks) > 0 {
-		_, err := lbrycrd.GenerateBlocks(int64(blocks[0]))
+		hash, err := lbrycrd.GenerateBlocks(int64(blocks[0]))
+		exitOnErr(err)
+		_, err = checkForBlock(hash[len(hash)-1])
 		exitOnErr(err)
 	}
 }
@@ -133,4 +135,23 @@ func verify(test bool, message string) {
 		err = errors.Err(message)
 	}
 	exitOnErr(err)
+}
+
+func checkForBlock(blockHash string) (bool, error) {
+	start := time.Now()
+	ticker := time.NewTicker(500 * time.Millisecond)
+	for t := range ticker.C {
+		tx, err := model.Blocks(model.BlockWhere.Hash.EQ(blockHash)).OneG()
+		if err != nil && err != sql.ErrNoRows {
+			return false, errors.Err(err)
+		}
+		if tx != nil {
+			ticker.Stop()
+			return true, nil
+		}
+		if start.Add(5 * time.Minute).Before(t) {
+			return false, nil
+		}
+	}
+	return false, nil
 }

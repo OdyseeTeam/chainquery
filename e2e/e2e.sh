@@ -15,8 +15,8 @@ docker-compose pull
 docker-compose up -d lbrycrd
 docker ps
 sleep 20
-echo "Generating 200 blocks"
-docker-compose exec lbrycrd lbrycrd-cli --conf=/etc/lbry/lbrycrd.conf generate 200
+echo "Generating 800 blocks"
+docker-compose exec lbrycrd lbrycrd-cli --conf=/etc/lbry/lbrycrd.conf generate 800
 echo "Running Chainquery e2e test"
 ../bin/chainquery e2e --configpath=$PWD/e2e
 echo $?
