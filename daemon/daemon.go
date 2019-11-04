@@ -68,7 +68,7 @@ func initJobs() {
 	scheduleJob(jobs.CertificateSync, "Certificate Sync", 5*time.Second)
 	scheduleJob(jobs.ValidateChain, "Validate Chain", 24*time.Hour)
 	scheduleJob(jobs.SyncAddressBalancesJob, "Address Balance Sync", 24*time.Hour)
-	scheduleJob(jobs.SyncTransactionValueJob, "Transaction Value Sync", 24*time.Hour)
+	scheduleJob(jobs.TransactionValueASync, "Transaction Value Sync", 24*time.Hour)
 }
 
 // ShutdownDaemon shuts the daemon down gracefully without corrupting the data.

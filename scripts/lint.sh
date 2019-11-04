@@ -29,5 +29,5 @@ echo "Running gocyclo..." && gocyclo -ignore "_test" -avg -over 19 $GO_FILES
 # forbid code with huge functions
 # "go vet on steroids" + linter - ignore autogen code
 # one last linter - ignore autogen code
-#echo "Running golint..." && golint -set_exit_status $(go list ./... | grep -v /vendor/ | grep -v /model/ | grep -v /migration )
+echo "Running golint..." && golint -set_exit_status $(go list ./... | grep -v /vendor/ | grep -v /model/ | grep -v /swagger/ | grep -v /migration )
 test $err = 0 # Return non-zero if any command failed

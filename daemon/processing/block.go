@@ -24,6 +24,7 @@ import (
 // BlockLock is used to lock block processing to a single parent thread.
 var BlockLock = sync.Mutex{}
 
+// ManualShutDownError Error with special handling. Used to stop the concurrency pipeline for processing blocks midway.
 var ManualShutDownError = errors.Err("Daemon stopped manually!")
 
 // RunBlockProcessing runs the processing of a block at a specific height. While any height can be passed in it is

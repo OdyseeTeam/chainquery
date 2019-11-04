@@ -85,29 +85,6 @@ var InputColumns = struct {
 
 // Generated where
 
-type whereHelpernull_Uint struct{ field string }
-
-func (w whereHelpernull_Uint) EQ(x null.Uint) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, false, x)
-}
-func (w whereHelpernull_Uint) NEQ(x null.Uint) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, true, x)
-}
-func (w whereHelpernull_Uint) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
-func (w whereHelpernull_Uint) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
-func (w whereHelpernull_Uint) LT(x null.Uint) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LT, x)
-}
-func (w whereHelpernull_Uint) LTE(x null.Uint) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LTE, x)
-}
-func (w whereHelpernull_Uint) GT(x null.Uint) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GT, x)
-}
-func (w whereHelpernull_Uint) GTE(x null.Uint) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GTE, x)
-}
-
 type whereHelpernull_Float64 struct{ field string }
 
 func (w whereHelpernull_Float64) EQ(x null.Float64) qm.QueryMod {

@@ -87,6 +87,8 @@ func processClaimNameScript(script *[]byte, vout model.Output, tx model.Transact
 	claim.Name = name
 	claim.TransactionTime = tx.TransactionTime
 	claim.ClaimAddress = lbrycrd.GetAddressFromPublicKeyScript(pkscript)
+	claim.TransactionHashUpdate.SetValid(tx.Hash)
+	claim.VoutUpdate.SetValid(vout.Vout)
 	if blockHeight > 0 {
 		claim.Height = uint(blockHeight)
 	} else {
@@ -144,8 +146,8 @@ func processClaimUpdateScript(script *[]byte, vout model.Output, tx model.Transa
 		} else {
 			logrus.Debug("ClaimUpdate: No blockheight!")
 		}
-		claim.TransactionHashID.SetValid(tx.Hash)
-		claim.Vout = vout.Vout
+		claim.TransactionHashUpdate.SetValid(tx.Hash)
+		claim.VoutUpdate.SetValid(vout.Vout)
 		if claim.BidState == "Spent" {
 			claim.BidState = "Accepted"
 		}

@@ -255,8 +255,14 @@ func syncClaim(claimJSON *lbrycrd.Claim) {
 
 func getClaimStatus(claim *model.Claim, atHeight uint64) string {
 	status := "Accepted"
-	//Transaction and output should never be missing if the claim exists.
-	transaction, err := claim.TransactionHash().OneG()
+	var transaction *model.Transaction
+	var err error
+	if !claim.TransactionHashUpdate.IsZero() {
+		transaction, err = model.Transactions(model.TransactionWhere.Hash.EQ(claim.TransactionHashUpdate.String)).OneG()
+	} else { //Transaction and output should never be missing if the claim exists.
+		transaction, err = claim.TransactionHash().OneG()
+	}
+
 	if err != nil {
 		logrus.Error("could not find transaction ", claim.TransactionHashID, " : ", err)
 		return status
@@ -338,11 +344,13 @@ func getUpdatedClaims(jobStatus *model.JobStatus) (model.ClaimSlice, error) {
 
 }
 
-func getSpentClaimsToUpdate() (model.ClaimSlice, error) {
+func getSpentClaimsToUpdate(hasUpdate bool) (model.ClaimSlice, error) {
 
 	claim := model.TableNames.Claim
 
 	claimID := claim + "." + model.ClaimColumns.ID
+	claimTxByHashUpdate := claim + "." + model.ClaimColumns.TransactionHashUpdate
+	claimVoutUpdate := claim + "." + model.ClaimColumns.VoutUpdate
 	claimClaimID := claim + "." + model.ClaimColumns.ClaimID
 	claimTxByHash := claim + "." + model.ClaimColumns.TransactionHashID
 	claimVout := claim + "." + model.ClaimColumns.Vout
@@ -351,16 +359,21 @@ func getSpentClaimsToUpdate() (model.ClaimSlice, error) {
 	output := model.TableNames.Output
 	outputTxHash := output + "." + model.OutputColumns.TransactionHash
 	outputVout := output + "." + model.OutputColumns.Vout
-	outputClaimID := output + "." + model.OutputColumns.ClaimID
 	outputIsSpent := output + "." + model.OutputColumns.IsSpent
 	outputModifiedAt := output + "." + model.OutputColumns.ModifiedAt
 
+	claimJoin := `INNER JOIN ` + claim + ` ON ` + claimTxByHash + ` = ` + outputTxHash + `
+	AND ` + claimVout + ` = ` + outputVout
+
+	if hasUpdate {
+		claimJoin = `INNER JOIN ` + claim + ` ON ` + claimTxByHashUpdate + ` = ` + outputTxHash + `
+		AND ` + claimVoutUpdate + ` = ` + outputVout
+	}
+
 	query := `
-		SELECT ` + claimClaimID + `,` + claimID + ` 
+		SELECT ` + claimClaimID + `,` + claimID + `,` + claimTxByHashUpdate + ` 
 		FROM ` + output + `
-		INNER JOIN ` + claim + ` ON ` + claimID + ` = ` + outputClaimID + ` 
-			AND ` + claimTxByHash + ` = ` + outputTxHash + ` 
-			AND ` + claimVout + ` = ` + outputVout + ` 
+		` + claimJoin + `
 		WHERE ` + outputModifiedAt + ` >= ? 
 		AND ` + outputIsSpent + ` = ? 
 		AND ` + claimBidState + ` != ?`
@@ -369,7 +382,24 @@ func getSpentClaimsToUpdate() (model.ClaimSlice, error) {
 }
 
 func updateSpentClaims() error {
-	claims, err := getSpentClaimsToUpdate()
+
+	//Claims without updates
+	claims, err := getSpentClaimsToUpdate(false)
+	if err != nil {
+		return err
+	}
+	for _, claim := range claims {
+		if !claim.TransactionHashUpdate.IsZero() {
+			continue
+		}
+		claim.BidState = "Spent"
+		claim.ModifiedAt = time.Now()
+		if err := claim.UpdateG(boil.Whitelist(model.ClaimColumns.BidState, model.ClaimColumns.ModifiedAt)); err != nil {
+			return err
+		}
+	}
+	//Claims without updates
+	claims, err = getSpentClaimsToUpdate(true)
 	if err != nil {
 		return err
 	}
