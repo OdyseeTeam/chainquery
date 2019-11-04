@@ -133,7 +133,7 @@ func processClaimUpdateScript(script *[]byte, vout model.Output, tx model.Transa
 			return name, claimID, pubkeyscript, err
 		}
 		if claim == nil {
-			claim = &model.Claim{ClaimID: claimID, TransactionHashID: null.NewString(tx.Hash, true), Vout: vout.Vout}
+			claim = &model.Claim{Name: name, ClaimID: claimID, TransactionHashID: null.NewString(tx.Hash, true), Vout: vout.Vout}
 			err := datastore.PutClaim(claim)
 			if err != nil {
 				return name, claimID, pubkeyscript, err
