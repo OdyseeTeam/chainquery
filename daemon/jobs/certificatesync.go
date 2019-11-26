@@ -112,7 +112,7 @@ func getClaimsToBeSynced() ([]claimToBeSynced, error) {
 			COALESCE(input.prevout_n, "") as first_input_txo_position
 		FROM `+claim+`
 		INNER JOIN `+claim+` channel ON `+ChannelClaimID+` = `+publisherID+` 
-		LEFT JOIN input ON input.id = (SELECT id FROM input WHERE input.transaction_hash = claim.transaction_hash_id ORDER BY vin LIMIT 1 ) 
+		LEFT JOIN input ON input.id = (SELECT id FROM input WHERE input.transaction_hash = claim.transaction_hash_update ORDER BY vin LIMIT 1 ) 
 		WHERE `+isCertProcessed+`=? LIMIT ?`, false, certsProcessedPerIteration).BindG(context, &claims)
 	if err != nil {
 		return nil, err
