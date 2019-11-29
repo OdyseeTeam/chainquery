@@ -5,7 +5,7 @@ services:
 ## Lbrycrd ##
 #############
   lbrycrd:
-    image: lbry/lbrycrd:v0.17.3.1
+    image: lbry/lbrycrd:v0.17.3.1-deprecatedrpc
     restart: "no"
     ports:
       - "11336:29246"
