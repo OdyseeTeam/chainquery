@@ -4,6 +4,9 @@ import (
 	"log"
 	"strings"
 
+	"github.com/pkg/profile"
+	"github.com/spf13/viper"
+
 	"github.com/lbryio/chainquery/config"
 	"github.com/lbryio/chainquery/daemon/jobs"
 	"github.com/lbryio/chainquery/db"
@@ -29,6 +32,9 @@ var runCmd = &cobra.Command{
 	Short: "Runs Specific Chainquery Jobs",
 	Long:  `Allows for running different chainquery jobs without having to run the rest of the application`,
 	Run: func(cmd *cobra.Command, args []string) {
+		if viper.GetBool("codeprofile") {
+			defer profile.Start(profile.NoShutdownHook).Stop()
+		}
 		job, ok := jobsMap[args[0]]
 		if !ok {
 			var jobs []string

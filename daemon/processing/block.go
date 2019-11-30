@@ -60,10 +60,7 @@ func RunBlockProcessing(stopper *stop.Group, height uint64) uint64 {
 	BlockLock.Lock()
 	defer BlockLock.Unlock()
 
-	block := parseBlockInfo(height, jsonBlock)
-
-	txs := jsonBlock.Tx
-	err = syncTransactionsOfBlock(stopper, txs, block.BlockTime, block.Height)
+	block, err := ProcessBlock(height, stopper, jsonBlock)
 	if err != nil {
 		rollBackHeight := height - 1
 		blockRemovalError := block.DeleteG()
@@ -80,6 +77,12 @@ func RunBlockProcessing(stopper *stop.Group, height uint64) uint64 {
 	}
 
 	return height
+}
+
+func ProcessBlock(height uint64, stopper *stop.Group, jsonBlock *lbrycrd.GetBlockResponse) (*model.Block, error) {
+	block := parseBlockInfo(height, jsonBlock)
+	txs := jsonBlock.Tx
+	return block, syncTransactionsOfBlock(stopper, txs, block.BlockTime, block.Height)
 }
 
 func parseBlockInfo(blockHeight uint64, jsonBlock *lbrycrd.GetBlockResponse) (block *model.Block) {
