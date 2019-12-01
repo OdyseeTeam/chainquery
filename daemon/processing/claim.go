@@ -3,6 +3,7 @@ package processing
 import (
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 
 	"github.com/lbryio/lbryschema.go/address/base58"
 	pb "github.com/lbryio/types/v2/go"
@@ -327,7 +328,8 @@ func setTags(claim *model.Claim, tags []string) error {
 			t = &model.Tag{Tag: tag}
 			err := datastore.PutTag(t)
 			if err != nil {
-				return err
+				logrus.Error(errors.Prefix(fmt.Sprintf("Could not save tag %s, skipping: ", tag), err))
+				return nil
 			}
 		}
 		ct := datastore.GetClaimTag(t.ID, claim.ClaimID)
