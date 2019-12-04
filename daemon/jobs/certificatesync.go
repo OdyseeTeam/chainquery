@@ -25,9 +25,7 @@ func CertificateSync() {
 	if !certificateSyncRunning {
 		logrus.Debug("Running Certificate Sync...")
 		certificateSyncRunning = true
-		defer func() {
-			certificateSyncRunning = false
-		}()
+		defer endCertificateSync()
 		claims, err := getClaimsToBeSynced()
 		if err != nil {
 			logrus.Error(certificateSyncPrefix+" Unable to get claims that need certificates checked", errors.Err(err))
@@ -54,6 +52,10 @@ func CertificateSync() {
 			}
 		}
 	}
+}
+
+func endCertificateSync() {
+	certificateSyncRunning = false
 }
 
 func certifyClaim(claimToBeSynced claimToBeSynced) (bool, error) {
