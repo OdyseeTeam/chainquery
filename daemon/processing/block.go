@@ -79,6 +79,8 @@ func RunBlockProcessing(stopper *stop.Group, height uint64) uint64 {
 	return height
 }
 
+// ProcessBlock processing a specific block and returns an error. Use this to process a block having a custom handling
+// of the error.
 func ProcessBlock(height uint64, stopper *stop.Group, jsonBlock *lbrycrd.GetBlockResponse) (*model.Block, error) {
 	block := parseBlockInfo(height, jsonBlock)
 	txs := jsonBlock.Tx
