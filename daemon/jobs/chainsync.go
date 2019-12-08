@@ -42,6 +42,9 @@ func ChainSyncAsync() {
 
 func endChainSync() {
 	chainSyncRunning = false
+	if r := recover(); r != nil {
+		logrus.Error("Recovered From: ", r)
+	}
 }
 
 // ChainSync synchronizes the chain data when it does not match lbrycrd. It runs for x duration before it stores state.
