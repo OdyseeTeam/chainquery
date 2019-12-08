@@ -6,10 +6,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/lbryio/chainquery/daemon/processing"
-
 	"github.com/lbryio/chainquery/auth"
 	"github.com/lbryio/chainquery/daemon"
+	"github.com/lbryio/chainquery/daemon/jobs"
+	"github.com/lbryio/chainquery/daemon/processing"
 	"github.com/lbryio/chainquery/global"
 	"github.com/lbryio/chainquery/lbrycrd"
 	"github.com/lbryio/chainquery/twilio"
@@ -51,6 +51,8 @@ const ( // config setting keys
 	apikeys              = "apikeys"
 	maxfailures          = "maxfailures"
 	blockchainname       = "blockchainname"
+	chainsyncrunduration = "chainsyncrunduration"
+	chainsyncdelay       = "chainsyncdelay"
 )
 
 const (
@@ -58,6 +60,8 @@ const (
 	configpathflag  = "configpath"
 	reindexflag     = "reindex"
 	reindexwipeflag = "reindexwipe"
+	debugmodeflag   = "debug"
+	tracemodeflag   = "trace"
 )
 
 // InitializeConfiguration is the main entry point from outside the package. This initializes the configuration and watcher.
@@ -95,6 +99,8 @@ func initFlags() {
 	pflag.BoolP(reindexflag, "r", false, "Rebuilds the database from the 1st block. Does not wipe the database")
 	pflag.BoolP(reindexwipeflag, "w", false, "Drops all tables and rebuilds the database from the 1st block.")
 	pflag.StringP(configpathflag, "c", "", "Specify non-default location of the configuration of chainquery. The precedence is $HOME, working directory, and lastly the branch path to the default configuration 'path/to/chainquery/config/default/'")
+	pflag.BoolP(debugmodeflag, "d", false, "turns on debug mode for the application command.")
+	pflag.BoolP(tracemodeflag, "t", false, "turns on trace mode for the application command, very verbose logging.")
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
 	pflag.Parse()
 	if err := viper.BindPFlags(pflag.CommandLine); err != nil {
@@ -141,6 +147,8 @@ func initDefaults() {
 	viper.SetDefault(smsfromphonenumber, "")
 	viper.SetDefault(maxfailures, 1000)
 	viper.SetDefault(blockchainname, "lbrycrd_main")
+	viper.SetDefault(chainsyncrunduration, 60)
+	viper.SetDefault(chainsyncdelay, 100)
 }
 
 func processConfiguration() {
@@ -170,6 +178,16 @@ func processConfiguration() {
 	auth.APIKeys = viper.GetStringSlice(apikeys)
 	processing.MaxFailures = viper.GetInt(maxfailures)
 	global.BlockChainName = viper.GetString(blockchainname)
+	jobs.ChainSyncDelay = viper.GetInt(chainsyncdelay)
+	jobs.ChainSyncRunDuration = viper.GetInt(chainsyncrunduration)
+
+	//Flags last so they override everything before, even config
+	if viper.IsSet(debugmodeflag) {
+		logrus.SetLevel(logrus.DebugLevel)
+	}
+	if viper.IsSet(tracemodeflag) {
+		logrus.SetLevel(logrus.TraceLevel)
+	}
 
 }
 

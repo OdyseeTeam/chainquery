@@ -98,3 +98,13 @@
 #lbrycrd_main, lbrycrd_testnet, and lbrycrd_regtest.
 #DEFAULT: "lbrycrd_main"
 #blockchainname=
+
+#Chain Sync Run Duration - Specifies the duration, in seconds, the chain sync job will run at a time before stopping and storing
+#state. It will get triggered periodically.
+#DEFAULT: 60
+#chainsyncrunduration=
+
+#Chain Sync Delay - Specifies the duration, in milliseconds, between each block it synchronizes. Depending on the
+#usage of the database you will want to add some delay between blocks so it does not overload the db server.
+#DEFAULT: 100
+#chainsyncdelay=

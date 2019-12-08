@@ -2,6 +2,7 @@ package util
 
 import (
 	"database/sql"
+	"math"
 	"time"
 
 	"github.com/lbryio/lbry.go/extras/errors"
@@ -56,4 +57,13 @@ func ReverseBytes(b []byte) []byte {
 		r[left], r[right] = b[right], b[left]
 	}
 	return r
+}
+
+func Round(num float64) int {
+	return int(num + math.Copysign(0.5, num))
+}
+
+func ToFixed(num float64, precision int) float64 {
+	output := math.Pow(10, float64(precision))
+	return float64(Round(num*output)) / output
 }

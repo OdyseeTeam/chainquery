@@ -3,6 +3,7 @@ package cmd
 import (
 	"log"
 	"strings"
+	"time"
 
 	"github.com/pkg/profile"
 	"github.com/spf13/viper"
@@ -25,6 +26,7 @@ var jobsMap = map[string]func(){
 	"certificate":      jobs.CertificateSync,
 	"mempool":          jobs.MempoolSync,
 	"transactionvalue": jobs.TransactionValueSync,
+	"chain":            jobs.ChainSync,
 }
 
 var runCmd = &cobra.Command{
@@ -51,7 +53,10 @@ var runCmd = &cobra.Command{
 		if err != nil {
 			log.Panic(err)
 		}
+		logrus.Debugf("Starting job '%s'", args[0])
+		start := time.Now()
 		job()
+		logrus.Debugf("Finished job '%s', it took %s", args[0], time.Since(start))
 
 		db.CloseDB(dbInstance)
 	},
