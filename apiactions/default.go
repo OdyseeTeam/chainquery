@@ -90,6 +90,11 @@ func AutoUpdateAction(r *http.Request) api.Response {
 	if err != nil {
 		return api.Response{Error: err}
 	}
+
+	if webHook.Commit == meta.GetVersion() {
+		return api.Response{Data: "same commit version, skipping automatic update."}
+	}
+
 	shouldUpdate := webHook.Status == 0 && !webHook.PullRequest && webHook.Tag != "" && webHook.Tag != meta.GetVersion()
 	if shouldUpdate { // webHook.ShouldDeploy() doesn't work for chainquery autoupdate.
 		if AutoUpdateCommand == "" {
