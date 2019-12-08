@@ -1,9 +1,11 @@
 package apiactions
 
 import (
+	"fmt"
 	"net/http"
 	"os/exec"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/lbryio/chainquery/db"
@@ -44,12 +46,24 @@ func AddressSummaryAction(r *http.Request) api.Response {
 	return api.Response{Data: summary}
 }
 
+//MaxSQLAPITimeout sets a timeout, in seconds, on queries placed against the SQL API.
+var MaxSQLAPITimeout int
+
 // SQLQueryAction returns an array of structured data matching the queried results.
 func SQLQueryAction(r *http.Request) api.Response {
 	query := r.FormValue("query")
+	query = strings.Replace(strings.ToLower(query), "select ", fmt.Sprintf("select /*+ MAX_EXECUTION_TIME(%d) */", MaxSQLAPITimeout*1000), 1)
+	logrus.Debugf("Query: %s", query)
+	start := time.Now()
 	result, err := db.APIQuery(query)
 	if err != nil {
 		return api.Response{Error: err, Status: http.StatusBadRequest}
+	}
+	if time.Since(start) > time.Duration(MaxSQLAPITimeout)*time.Second {
+		return api.Response{Error: errors.Err(``+
+			`Queries must take less than %d seconds or they are cancelled, to give everyone a chance to use the API since this is a `+
+			`public API. If you have a query you really want/need please create an issue in the chainquery repo. We are always happy `+
+			`to add indices to make queries faster.`, MaxSQLAPITimeout), Status: http.StatusBadRequest}
 	}
 	return api.Response{Data: result}
 }

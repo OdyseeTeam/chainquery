@@ -7,19 +7,20 @@ import (
 	"github.com/lbryio/chainquery/config"
 	"github.com/lbryio/chainquery/db"
 	"github.com/lbryio/chainquery/lbrycrd"
-	"github.com/lbryio/chainquery/swagger/apiserver"
+	swagger "github.com/lbryio/chainquery/swagger/apiserver"
 	"github.com/lbryio/chainquery/twilio"
+
 	"github.com/spf13/cobra"
 )
 
 func init() {
-	serveCmd.AddCommand(apiCmd)
+	rootCmd.AddCommand(apiCmd)
 }
 
 var apiCmd = &cobra.Command{
-	Use:   "version",
-	Short: "Print the version number of Hugo",
-	Long:  `All software has versions. This is Hugo's`,
+	Use:   "api",
+	Short: "Start only the api server",
+	Long:  `This runs the API Server for chainquery only. The daemon does not run, however, the db is still required and all APIs are available.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		config.InitSlack()
 		twilio.InitTwilio()
@@ -33,7 +34,6 @@ var apiCmd = &cobra.Command{
 
 		lbrycrdClient := lbrycrd.Init()
 		defer lbrycrdClient.Shutdown()
-
 		swagger.InitApiServer(config.GetAPIHostAndPort())
 	},
 }

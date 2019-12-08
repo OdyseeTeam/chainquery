@@ -108,3 +108,7 @@
 #usage of the database you will want to add some delay between blocks so it does not overload the db server.
 #DEFAULT: 100
 #chainsyncdelay=
+
+#Max SQL API Timeout - Specifies a timeout, in seconds, on queries placed against the SQL API.
+#DEFAULT: 5
+#maxsqlapitimeout=

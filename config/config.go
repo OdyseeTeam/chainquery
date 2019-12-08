@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/lbryio/chainquery/apiactions"
 	"github.com/lbryio/chainquery/auth"
 	"github.com/lbryio/chainquery/daemon"
 	"github.com/lbryio/chainquery/daemon/jobs"
@@ -53,6 +54,7 @@ const ( // config setting keys
 	blockchainname       = "blockchainname"
 	chainsyncrunduration = "chainsyncrunduration"
 	chainsyncdelay       = "chainsyncdelay"
+	maxsqlapitimeout     = "maxsqlapitimeout"
 )
 
 const (
@@ -149,6 +151,7 @@ func initDefaults() {
 	viper.SetDefault(blockchainname, "lbrycrd_main")
 	viper.SetDefault(chainsyncrunduration, 60)
 	viper.SetDefault(chainsyncdelay, 100)
+	viper.SetDefault(maxsqlapitimeout, 5)
 }
 
 func processConfiguration() {
@@ -180,6 +183,7 @@ func processConfiguration() {
 	global.BlockChainName = viper.GetString(blockchainname)
 	jobs.ChainSyncDelay = viper.GetInt(chainsyncdelay)
 	jobs.ChainSyncRunDuration = viper.GetInt(chainsyncrunduration)
+	apiactions.MaxSQLAPITimeout = viper.GetInt(maxsqlapitimeout)
 
 	//Flags last so they override everything before, even config
 	if viper.IsSet(debugmodeflag) {
