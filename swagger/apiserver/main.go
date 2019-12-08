@@ -32,8 +32,11 @@ func InitApiServer(hostAndPort string) {
 	hs["Access-Control-Allow-Origin"] = "*"
 	api.ResponseHeaders = hs
 	api.Log = func(request *http.Request, response *api.Response, err error) {
-		if err != nil {
+		if response.Status >= http.StatusInternalServerError {
 			logrus.Error(err)
+		}
+		if err != nil {
+			logrus.Debug("Error: ", err)
 		}
 		consoleText := request.RemoteAddr + " [" + strconv.Itoa(response.Status) + "]: " + request.Method + " " + request.URL.Path
 		logrus.Debug(color.GreenString(consoleText))
