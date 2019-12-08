@@ -176,7 +176,7 @@ func saveUpdateTransaction(jsonTx *lbrycrd.TxRawResult) (*model.Transaction, err
 	transaction.LockTime = uint(jsonTx.LockTime)
 	transaction.InputCount = uint(len(jsonTx.Vin))
 	transaction.OutputCount = uint(len(jsonTx.Vout))
-	transaction.Raw.String = jsonTx.Hex
+	transaction.Raw.SetValid(jsonTx.Hex)
 	transaction.TransactionSize = uint64(jsonTx.Size)
 
 	if foundTx != nil {

@@ -79,10 +79,12 @@ func ChainSync() {
 }
 
 type chainSyncStatus struct {
-	JobStatus       *model.JobStatus `json:"-"`
-	LastHeight      int64            `json:"last_height"`
-	MaxHeightStored int64            `json:"max_height_stored"`
-	Errors          []syncError      `json:"errors"`
+	JobStatus       *model.JobStatus   `json:"-"`
+	RecordedBlock   *model.Block       `json:"-"`
+	RecordedTx      *model.Transaction `json:"-"`
+	LastHeight      int64              `json:"last_height"`
+	MaxHeightStored int64              `json:"max_height_stored"`
+	Errors          []syncError        `json:"errors"`
 }
 
 type syncError struct {
@@ -95,11 +97,11 @@ func (c *chainSyncStatus) processNextBlock() error {
 	c.LastHeight = c.LastHeight + 1
 	blockHash, err := lbrycrd.LBRYcrdClient.GetBlockHash(c.LastHeight)
 	if err != nil {
-		return c.recordError(c.LastHeight, "lbrycrd-getblockhash", err)
+		return c.recordAndReturnError(c.LastHeight, "lbrycrd-getblockhash", err)
 	}
 	lbrycrdBlock, err := lbrycrd.GetBlock(blockHash.String())
 	if err != nil {
-		return c.recordError(c.LastHeight, "mysql-getblock", err)
+		return c.recordAndReturnError(c.LastHeight, "mysql-getblock", err)
 	}
 	recordedBlock, err := model.Blocks(model.BlockWhere.Hash.EQ(blockHash.String())).OneG()
 	if err != nil {
@@ -107,75 +109,146 @@ func (c *chainSyncStatus) processNextBlock() error {
 			logrus.Warningf("Missing block %d, populating it now", c.LastHeight)
 			_, err = processing.ProcessBlock(uint64(c.LastHeight), nil, lbrycrdBlock)
 			if err != nil {
-				return c.recordError(c.LastHeight, "daemon-process-block", err)
+				return c.recordAndReturnError(c.LastHeight, "daemon-process-block", err)
 			}
 		}
-		return c.recordError(c.LastHeight, "mysql-getblock", err)
+		return c.recordAndReturnError(c.LastHeight, "mysql-getblock", err)
 	}
-	if err := c.alignBlocks(recordedBlock, lbrycrdBlock); err != nil {
-		return c.recordError(c.LastHeight, "block-alignment", err)
+	c.RecordedBlock = recordedBlock
+	if err := c.alignBlock(lbrycrdBlock); err != nil {
+		return c.recordAndReturnError(c.LastHeight, "block-alignment", err)
+	}
+	if err := c.alignTxs(recordedBlock, lbrycrdBlock.Tx); err != nil {
+		return c.recordAndReturnError(c.LastHeight, "tx-alignment", err)
 	}
 	return nil
 }
 
-func (c *chainSyncStatus) alignBlocks(r *model.Block, l *lbrycrd.GetBlockResponse) error {
+func (c *chainSyncStatus) alignTxs(block *model.Block, txHashes []string) error {
+	for _, txHash := range txHashes {
+		lbrycrdTx, err := lbrycrd.GetRawTransactionResponse(txHash)
+		if err != nil {
+			return c.recordAndReturnError(c.LastHeight, "tx-hash-creation", err)
+		}
+		w := model.TransactionWhere
+		recordedTx, err := model.Transactions(w.BlockHashID.EQ(null.StringFrom(block.Hash)), w.Hash.EQ(txHash)).OneG()
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				err = processing.ProcessTx(lbrycrdTx, block.BlockTime, uint64(c.LastHeight))
+				if err != nil {
+					c.recordError(c.LastHeight, "tx-processing", err)
+					continue
+				}
+			}
+			return c.recordAndReturnError(c.LastHeight, "mysql-tx", err)
+		}
+		c.RecordedTx = recordedTx
+		if err := c.alignTx(lbrycrdTx); err != nil {
+			return c.recordAndReturnError(c.LastHeight, "tx-alignment", err)
+		}
+	}
+	return nil
+}
+
+func (c *chainSyncStatus) alignTx(l *lbrycrd.TxRawResult) error {
 	colsToUpdate := make([]string, 0)
-	if r.Hash != l.Hash {
-		r.Hash = l.Hash
+	if c.RecordedTx.Version != int(l.Version) {
+		c.RecordedTx.Version = int(l.Version)
+		colsToUpdate = append(colsToUpdate, model.TransactionColumns.Version)
+	}
+	if c.RecordedTx.TransactionTime.Uint64 != uint64(l.Time) {
+		c.RecordedTx.TransactionTime.Uint64 = uint64(l.Time)
+		colsToUpdate = append(colsToUpdate, model.TransactionColumns.TransactionTime)
+	}
+	if c.RecordedTx.TransactionSize != uint64(l.Size) {
+		c.RecordedTx.TransactionSize = uint64(l.Size)
+		colsToUpdate = append(colsToUpdate, model.TransactionColumns.TransactionSize)
+	}
+	if c.RecordedTx.LockTime != uint(l.LockTime) {
+		c.RecordedTx.LockTime = uint(l.LockTime)
+		colsToUpdate = append(colsToUpdate, model.TransactionColumns.LockTime)
+	}
+	if c.RecordedTx.InputCount != uint(len(l.Vin)) {
+		c.RecordedTx.InputCount = uint(len(l.Vin))
+		colsToUpdate = append(colsToUpdate, model.TransactionColumns.InputCount)
+	}
+	if c.RecordedTx.OutputCount != uint(len(l.Vout)) {
+		c.RecordedTx.OutputCount = uint(len(l.Vout))
+		colsToUpdate = append(colsToUpdate, model.TransactionColumns.OutputCount)
+	}
+	if c.RecordedTx.Raw.String != l.Hex {
+		c.RecordedTx.Raw.SetValid(l.Hex)
+		colsToUpdate = append(colsToUpdate, model.TransactionColumns.Raw)
+	}
+	if len(colsToUpdate) > 0 {
+		logrus.Debugf("found unaligned tx @%d and hash %s with the following columns out of alignment: %s", c.LastHeight, c.RecordedTx.Hash, strings.Join(colsToUpdate, ","))
+		err := c.RecordedTx.UpdateG(boil.Whitelist(colsToUpdate...))
+		if err != nil {
+			return errors.Err(err)
+		}
+	}
+	return nil
+
+}
+
+func (c *chainSyncStatus) alignBlock(l *lbrycrd.GetBlockResponse) error {
+	colsToUpdate := make([]string, 0)
+	if c.RecordedBlock.Hash != l.Hash {
+		c.RecordedBlock.Hash = l.Hash
 		colsToUpdate = append(colsToUpdate, model.BlockColumns.Hash)
 	}
-	if r.BlockTime != uint64(l.Time) {
-		r.BlockTime = uint64(l.Time)
+	if c.RecordedBlock.BlockTime != uint64(l.Time) {
+		c.RecordedBlock.BlockTime = uint64(l.Time)
 		colsToUpdate = append(colsToUpdate, model.BlockColumns.BlockTime)
 	}
-	if r.Version != uint64(l.Version) {
-		r.Version = uint64(l.Version)
+	if c.RecordedBlock.Version != uint64(l.Version) {
+		c.RecordedBlock.Version = uint64(l.Version)
 		colsToUpdate = append(colsToUpdate, model.BlockColumns.Version)
 	}
-	if r.Bits != l.Bits {
-		r.Bits = l.Bits
+	if c.RecordedBlock.Bits != l.Bits {
+		c.RecordedBlock.Bits = l.Bits
 		colsToUpdate = append(colsToUpdate, model.BlockColumns.Bits)
 	}
-	if r.BlockSize != uint64(l.Size) {
-		r.BlockSize = uint64(l.Size)
+	if c.RecordedBlock.BlockSize != uint64(l.Size) {
+		c.RecordedBlock.BlockSize = uint64(l.Size)
 		colsToUpdate = append(colsToUpdate, model.BlockColumns.BlockSize)
 	}
-	if r.Chainwork != l.ChainWork {
-		r.Chainwork = l.ChainWork
+	if c.RecordedBlock.Chainwork != l.ChainWork {
+		c.RecordedBlock.Chainwork = l.ChainWork
 		colsToUpdate = append(colsToUpdate, model.BlockColumns.Chainwork)
 	}
 	difficultyPrecision := 8 //MySQL DOUBLE(50,8)
-	if util.ToFixed(r.Difficulty, difficultyPrecision) != util.ToFixed(l.Difficulty, difficultyPrecision) {
-		r.Difficulty = util.ToFixed(l.Difficulty, difficultyPrecision)
+	if util.ToFixed(c.RecordedBlock.Difficulty, difficultyPrecision) != util.ToFixed(l.Difficulty, difficultyPrecision) {
+		c.RecordedBlock.Difficulty = util.ToFixed(l.Difficulty, difficultyPrecision)
 		colsToUpdate = append(colsToUpdate, model.BlockColumns.Difficulty)
 	}
-	if r.MerkleRoot != l.MerkleRoot {
-		r.MerkleRoot = l.MerkleRoot
+	if c.RecordedBlock.MerkleRoot != l.MerkleRoot {
+		c.RecordedBlock.MerkleRoot = l.MerkleRoot
 		colsToUpdate = append(colsToUpdate, model.BlockColumns.MerkleRoot)
 	}
-	if r.NameClaimRoot != l.NameClaimRoot {
-		r.NameClaimRoot = l.NameClaimRoot
+	if c.RecordedBlock.NameClaimRoot != l.NameClaimRoot {
+		c.RecordedBlock.NameClaimRoot = l.NameClaimRoot
 		colsToUpdate = append(colsToUpdate, model.BlockColumns.NameClaimRoot)
 	}
-	if r.PreviousBlockHash.String != l.PreviousBlockHash {
-		r.PreviousBlockHash.SetValid(l.PreviousBlockHash)
+	if c.RecordedBlock.PreviousBlockHash.String != l.PreviousBlockHash {
+		c.RecordedBlock.PreviousBlockHash.SetValid(l.PreviousBlockHash)
 		colsToUpdate = append(colsToUpdate, model.BlockColumns.PreviousBlockHash)
 	}
-	if r.TransactionHashes.String != strings.Join(l.Tx, ",") {
-		r.TransactionHashes.SetValid(strings.Join(l.Tx, ","))
+	if c.RecordedBlock.TransactionHashes.String != strings.Join(l.Tx, ",") {
+		c.RecordedBlock.TransactionHashes.SetValid(strings.Join(l.Tx, ","))
 		colsToUpdate = append(colsToUpdate, model.BlockColumns.TransactionHashes)
 	}
-	if r.Nonce != l.Nonce {
-		r.Nonce = l.Nonce
+	if c.RecordedBlock.Nonce != l.Nonce {
+		c.RecordedBlock.Nonce = l.Nonce
 		colsToUpdate = append(colsToUpdate, model.BlockColumns.Nonce)
 	}
-	if r.VersionHex != l.VersionHex {
-		r.VersionHex = l.VersionHex
+	if c.RecordedBlock.VersionHex != l.VersionHex {
+		c.RecordedBlock.VersionHex = l.VersionHex
 		colsToUpdate = append(colsToUpdate, model.BlockColumns.VersionHex)
 	}
 	if len(colsToUpdate) > 0 {
 		logrus.Debugf("found unaligned block @%d with the following columns out of alignment: %s", c.LastHeight, strings.Join(colsToUpdate, ","))
-		err := r.UpdateG(boil.Whitelist(colsToUpdate...))
+		err := c.RecordedBlock.UpdateG(boil.Whitelist(colsToUpdate...))
 		if err != nil {
 			return errors.Err(err)
 		}
@@ -183,7 +256,7 @@ func (c *chainSyncStatus) alignBlocks(r *model.Block, l *lbrycrd.GetBlockRespons
 	return nil
 }
 
-func (c *chainSyncStatus) recordError(height int64, area string, err error) error {
+func (c *chainSyncStatus) recordAndReturnError(height int64, area string, err error) error {
 	for _, e := range c.Errors {
 		if area == e.Area && e.Error == err.Error() {
 			e.HeightFound = append(e.HeightFound, height)
@@ -196,6 +269,10 @@ func (c *chainSyncStatus) recordError(height int64, area string, err error) erro
 	})
 
 	return err
+}
+
+func (c *chainSyncStatus) recordError(height int64, area string, err error) {
+	_ = c.recordAndReturnError(height, area, err)
 }
 
 func (c *chainSyncStatus) updateMaxHeightStored() error {
