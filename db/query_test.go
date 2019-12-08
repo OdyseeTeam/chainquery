@@ -4,15 +4,13 @@ import (
 	"os"
 	"testing"
 
-	"github.com/lbryio/chainquery/config"
 	"github.com/lbryio/chainquery/model"
 
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 func TestMain(m *testing.M) {
-	config.InitializeConfiguration()
-	dbInstance, err := Init(config.GetMySQLDSN(), false)
+	dbInstance, err := Init("lbry:lbry@tcp(localhost:3306)/chainquery", false)
 	if err != nil {
 		panic(err)
 	}
