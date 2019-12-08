@@ -59,10 +59,12 @@ func ReverseBytes(b []byte) []byte {
 	return r
 }
 
+//Round will round based on 0.5 any float passed to it.
 func Round(num float64) int {
 	return int(num + math.Copysign(0.5, num))
 }
 
+//ToFixed will fix the precision of a float rounding if needed.
 func ToFixed(num float64, precision int) float64 {
 	output := math.Pow(10, float64(precision))
 	return float64(Round(num*output)) / output

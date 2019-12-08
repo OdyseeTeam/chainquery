@@ -69,7 +69,10 @@ func ChainSync() {
 
 	timeLimit := time.Now().Add(time.Duration(ChainSyncRunDuration) * time.Second)
 	for time.Now().Before(timeLimit) && chainSync.LastHeight < chainSync.MaxHeightStored {
-		chainSync.processNextBlock()
+		err := chainSync.processNextBlock()
+		if err != nil {
+			logrus.Debugf("FAILURE @%d: %s", chainSync.LastHeight, err.Error())
+		}
 		time.Sleep(time.Duration(ChainSyncDelay) * time.Millisecond)
 	}
 	doneChainSyncJob(job)
@@ -79,7 +82,7 @@ type chainSyncStatus struct {
 	JobStatus       *model.JobStatus `json:"-"`
 	LastHeight      int64            `json:"last_height"`
 	MaxHeightStored int64            `json:"max_height_stored"`
-	Errors          []syncError      `json:"errors""`
+	Errors          []syncError      `json:"errors"`
 }
 
 type syncError struct {
