@@ -3,14 +3,14 @@ package jobs
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/lbryio/chainquery/daemon/processing"
 	"github.com/lbryio/chainquery/lbrycrd"
 	"github.com/lbryio/chainquery/model"
-	"github.com/lbryio/chainquery/util"
-
 	"github.com/lbryio/lbry.go/extras/errors"
 
 	"github.com/sirupsen/logrus"
@@ -220,9 +220,10 @@ func (c *chainSyncStatus) alignBlock(l *lbrycrd.GetBlockResponse) error {
 		c.RecordedBlock.Chainwork = l.ChainWork
 		colsToUpdate = append(colsToUpdate, model.BlockColumns.Chainwork)
 	}
-	difficultyPrecision := 8 //MySQL DOUBLE(50,8)
-	if util.ToFixed(c.RecordedBlock.Difficulty, difficultyPrecision) != util.ToFixed(l.Difficulty, difficultyPrecision) {
-		c.RecordedBlock.Difficulty = util.ToFixed(l.Difficulty, difficultyPrecision)
+	lDifficulty, _ := strconv.ParseFloat(fmt.Sprintf("%.6f", l.Difficulty), 64)
+	rDifficulty, _ := strconv.ParseFloat(fmt.Sprintf("%.6f", c.RecordedBlock.Difficulty), 64)
+	if rDifficulty != lDifficulty {
+		c.RecordedBlock.Difficulty = lDifficulty
 		colsToUpdate = append(colsToUpdate, model.BlockColumns.Difficulty)
 	}
 	if c.RecordedBlock.MerkleRoot != l.MerkleRoot {
@@ -286,6 +287,7 @@ func (c *chainSyncStatus) updateMaxHeightStored() error {
 	if lastBlock != nil {
 		if c.LastHeight >= int64(lastBlock.Height) {
 			c.LastHeight = 0 //Reset
+			c.Errors = make([]syncError, 0)
 		} else {
 			c.MaxHeightStored = int64(lastBlock.Height)
 		}

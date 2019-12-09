@@ -102,7 +102,8 @@ func parseBlockInfo(blockHeight uint64, jsonBlock *lbrycrd.GetBlockResponse) (bl
 	block.Bits = jsonBlock.Bits
 	block.BlockSize = uint64(jsonBlock.Size)
 	block.Chainwork = jsonBlock.ChainWork
-	block.Difficulty = util.ToFixed(jsonBlock.Difficulty, 8)
+	difficulty, _ := strconv.ParseFloat(fmt.Sprintf("%.6f", jsonBlock.Difficulty), 64)
+	block.Difficulty = difficulty
 	block.MerkleRoot = jsonBlock.MerkleRoot
 	block.NameClaimRoot = jsonBlock.NameClaimRoot
 	block.Nonce = jsonBlock.Nonce
