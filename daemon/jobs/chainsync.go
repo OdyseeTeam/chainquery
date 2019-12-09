@@ -87,7 +87,7 @@ type chainSyncStatus struct {
 	RecordedTx      *model.Transaction `json:"-"`
 	LastHeight      int64              `json:"last_height"`
 	MaxHeightStored int64              `json:"max_height_stored"`
-	Errors          []syncError        `json:"errors"`
+	Errors          []syncError        `json:"z_errors"`
 }
 
 type syncError struct {
