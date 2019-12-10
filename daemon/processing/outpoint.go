@@ -43,7 +43,7 @@ func initVinWorkers(s *stop.Group, nrWorkers int, jobs <-chan vinToProcess, resu
 func vinProcessor(worker int, jobs <-chan vinToProcess, results chan<- error) {
 	for job := range jobs {
 		q(strconv.Itoa(worker) + " - WORKER VIN start new job " + strconv.Itoa(int(job.jsonVin.Sequence)))
-		result := processVin(job.jsonVin, job.tx, job.txDC, job.vin)
+		result := ProcessVin(job.jsonVin, job.tx, job.txDC, job.vin)
 		q(strconv.Itoa(worker) + " - WORKER VIN passing result " + strconv.Itoa(int(job.jsonVin.Sequence)))
 		results <- result
 		q(strconv.Itoa(worker) + " - WORKER VIN passed result " + strconv.Itoa(int(job.jsonVin.Sequence)))
@@ -68,7 +68,8 @@ func voutProcessor(worker int, jobs <-chan voutToProcess, results chan<- error) 
 	q(strconv.Itoa(worker) + " - WORKER VOUT finished all jobs")
 }
 
-func processVin(jsonVin *lbrycrd.Vin, tx *m.Transaction, txDC *txDebitCredits, n uint64) error {
+//ProcessVin handles the processing of an input to a transaction.
+func ProcessVin(jsonVin *lbrycrd.Vin, tx *m.Transaction, txDC *txDebitCredits, n uint64) error {
 	vin := &m.Input{}
 	foundVin := ds.GetInput(tx.Hash, len(jsonVin.Coinbase) > 0, jsonVin.TxID, uint(jsonVin.Vout))
 	if foundVin != nil {
