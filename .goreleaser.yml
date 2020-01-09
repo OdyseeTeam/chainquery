@@ -12,7 +12,7 @@ builds:
     - amd64
   ldflags:
     - -X "{{ .Env.IMPORTPATH }}/meta.semVersion={{ .Tag }}" -X "{{ .Env.IMPORTPATH }}/meta.version={{ .Env.VERSIONSHORT }}" -X "{{ .Env.IMPORTPATH }}/meta.versionLong={{ .Env.VERSIONLONG }}" -X "{{ .Env.IMPORTPATH }}/meta.commitMsg={{ .Env.COMMITMSG }}"
-archive:
+archives:
   name_template: '{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}'
   replacements:
     darwin: Darwin
