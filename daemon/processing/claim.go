@@ -347,8 +347,11 @@ func setTags(claim *model.Claim, tags []string) error {
 func setStreamMetadata(claim *model.Claim, stream pb.Stream) {
 	claim.Type.SetValid(global.StreamClaimType)
 	claim.Author.SetValid(stream.GetAuthor())
-
-	claim.License.SetValid(stream.GetLicense())
+	license := stream.GetLicense()
+	if len(license) > 500 {
+		license = license[:500]
+	}
+	claim.License.SetValid(license)
 	claim.LicenseURL.SetValid(stream.GetLicenseUrl())
 	claim.Preview.SetValid("") //Never set
 
