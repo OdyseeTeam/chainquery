@@ -13,14 +13,15 @@ builds:
   ldflags:
     - -X "{{ .Env.IMPORTPATH }}/meta.semVersion={{ .Tag }}" -X "{{ .Env.IMPORTPATH }}/meta.version={{ .Env.VERSIONSHORT }}" -X "{{ .Env.IMPORTPATH }}/meta.versionLong={{ .Env.VERSIONLONG }}" -X "{{ .Env.IMPORTPATH }}/meta.commitMsg={{ .Env.COMMITMSG }}"
 archives:
-  name_template: '{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}'
-  replacements:
-    darwin: Darwin
-    linux: Linux
-    windows: Windows
-    386: i386
-    amd64: x86_64
-  format: zip
+  - id: zip
+    name_template: '{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}'
+    replacements:
+      darwin: Darwin
+      linux: Linux
+      windows: Windows
+      386: i386
+      amd64: x86_64
+    format: zip
 checksum:
   name_template: 'checksums.txt'
 snapshot:
