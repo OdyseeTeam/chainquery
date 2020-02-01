@@ -106,6 +106,14 @@ deploy:
     on:
       all_branches: true
       go: '1.12.7'
+  # Docker images - must be after upload
+  - provider: script
+    skip_cleanup: true
+    script: ./docker/build.sh $TRAVIS_BRANCH
+    on:
+      all_branches: true
+      condition: $TRAVIS_OS_NAME = linux
+      go: '1.12.7'
 
 notifications:
   email: true
