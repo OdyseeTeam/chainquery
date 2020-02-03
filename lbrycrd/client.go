@@ -7,7 +7,7 @@ import (
 	"reflect"
 
 	"github.com/lbryio/lbry.go/extras/errors"
-	upstream "github.com/lbryio/lbry.go/lbrycrd"
+	upstream "github.com/lbryio/lbry.go/v2/lbrycrd"
 	"github.com/mitchellh/mapstructure"
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
@@ -21,7 +21,11 @@ var LBRYcrdURL string
 
 // Init initializes a client with settings from the configuration of chainquery
 func Init() *upstream.Client {
-	lbrycrdClient, err := upstream.New(LBRYcrdURL)
+	chain, err := GetChainParams()
+	if err != nil {
+		panic(err)
+	}
+	lbrycrdClient, err := upstream.New(LBRYcrdURL, chain)
 	if err != nil {
 		logrus.Panic("Initializing LBRYcrd Client: ", err)
 	}

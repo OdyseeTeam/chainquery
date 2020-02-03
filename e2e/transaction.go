@@ -52,7 +52,7 @@ func getEmptyTx(totalOutputSpend float64) (*wire.MsgTx, error) {
 }
 
 func signTxAndSend(rawTx *wire.MsgTx) (*chainhash.Hash, error) {
-	signedTx, allInputsSigned, err := lbrycrd.LBRYcrdClient.SignRawTransaction(rawTx)
+	signedTx, allInputsSigned, err := lbrycrd.LBRYcrdClient.SignRawTransactionWithWallet(rawTx)
 	if err != nil {
 		return nil, errors.Err(err)
 	}
