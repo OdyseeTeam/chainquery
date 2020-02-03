@@ -22,7 +22,7 @@ require (
 	github.com/johntdyer/slackrus v0.0.0-20170926115001-3992f319fd0a
 	github.com/jteeuwen/go-bindata v3.0.7+incompatible
 	github.com/lbryio/lbry.go v1.1.2
-	github.com/lbryio/lbry.go/v2 v2.4.7-0.20200203051245-9541d765a920
+	github.com/lbryio/lbry.go/v2 v2.4.7-0.20200203053542-c4772e61c565
 	github.com/lbryio/lbryschema.go v0.0.0-20190602173230-6d2f69a36f46
 	github.com/lbryio/ozzo-validation v0.0.0-20170323141101-d1008ad1fd04
 	github.com/lbryio/types v0.0.0-20191009145016-1bb8107e04f8
