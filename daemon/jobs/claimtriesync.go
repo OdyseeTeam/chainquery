@@ -268,7 +268,7 @@ func getClaimStatus(claim *model.Claim, atHeight uint64) string {
 		return status
 	}
 
-	output, err := transaction.Outputs(qm.Where(model.OutputColumns.Vout+"=?", claim.Vout)).OneG()
+	output, err := transaction.Outputs(qm.Where(model.OutputColumns.Vout+"=?", claim.VoutUpdate)).OneG()
 	if err != nil {
 		logrus.Error("could not find output ", claim.TransactionHashID, "-", claim.Vout, " : ", err)
 		return "ERROR"
