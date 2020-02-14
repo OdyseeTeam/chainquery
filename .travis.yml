@@ -94,7 +94,7 @@ deploy:
     upload-dir: "chainquery/branch-${TRAVIS_BRANCH}/commit-${TRAVIS_COMMIT:0:7}/build-${TRAVIS_BUILD_NUMBER}"
     on:
       all_branches: true
-      go: '1.12.7'
+      go: '1.13.4'
   # upload latest successful build per branch
   - provider: s3
     bucket: "build.lbry.io"
@@ -105,7 +105,7 @@ deploy:
     upload-dir: "chainquery/branch-${TRAVIS_BRANCH}"
     on:
       all_branches: true
-      go: '1.12.7'
+      go: '1.13.4'
   # Docker images - must be after upload
   - provider: script
     skip_cleanup: true
@@ -113,7 +113,7 @@ deploy:
     on:
       all_branches: true
       condition: $TRAVIS_OS_NAME = linux
-      go: '1.12.7'
+      go: '1.13.4'
 
 notifications:
   email: true
