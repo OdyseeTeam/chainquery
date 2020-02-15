@@ -18,6 +18,7 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
+//MaxParallelTxProcessing sets the maximum concurrent transactions to process in a block.
 var MaxParallelTxProcessing = runtime.NumCPU()
 
 type txToProcess struct {
