@@ -199,7 +199,7 @@ func saveUpdateInputs(transaction *model.Transaction, jsonTx *lbrycrd.TxRawResul
 	vins := jsonTx.Vin
 	vinjobs := make(chan vinToProcess)
 	errorchan := make(chan error)
-	workers := util.Min(len(vins), runtime.NumCPU())
+	workers := util.Min(len(vins), MaxParallelVinProcessing)
 	sQ := stop.New(nil)
 	initVinWorkers(sQ, workers, vinjobs, errorchan)
 	// Queue
@@ -248,7 +248,7 @@ func saveUpdateInputs(transaction *model.Transaction, jsonTx *lbrycrd.TxRawResul
 
 func saveUpdateOutputs(transaction *model.Transaction, jsonTx *lbrycrd.TxRawResult, txDbCrAddrMap *txDebitCredits, blockHeight uint64) error {
 	vouts := jsonTx.Vout
-	workers := util.Min(len(vouts), runtime.NumCPU())
+	workers := util.Min(len(vouts), MaxParallelVoutProcessing)
 	voutjobs := make(chan voutToProcess)
 	errorchan := make(chan error)
 	sQ := stop.New(nil)

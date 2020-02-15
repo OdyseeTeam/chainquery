@@ -28,35 +28,37 @@ import (
 )
 
 const ( // config setting keys
-	debugmode               = "debugmode"
-	debugquerymode          = "debugquerymode"
-	mysqldsn                = "mysqldsn"
-	apimysqldsn             = "apimysqldsn"
-	lbrycrdurl              = "lbrycrdurl"
-	profilemode             = "profilemode"
-	daemonmode              = "daemonmode"
-	processingdelay         = "processingdelay"
-	daemondelay             = "daemondelay"
-	defaultclienttimeout    = "defaultclienttimeout"
-	daemonprofile           = "daemonprofile"
-	lbrycrdprofile          = "lbrycrdprofile"
-	mysqlprofile            = "mysqlprofile"
-	apihostport             = "apihostport"
-	slackhookurl            = "slackhookurl"
-	slackchannel            = "slackchannel"
-	slackloglevel           = "slackloglevel"
-	autoupdatecommand       = "autoupdatecommand"
-	twiliosid               = "twiliosid"
-	twilioauthtoken         = "twilioauthtoken"
-	smsrecipients           = "smsrecipients"
-	smsfromphonenumber      = "smsfromphonenumber"
-	apikeys                 = "apikeys"
-	maxfailures             = "maxfailures"
-	blockchainname          = "blockchainname"
-	chainsyncrunduration    = "chainsyncrunduration"
-	chainsyncdelay          = "chainsyncdelay"
-	maxsqlapitimeout        = "maxsqlapitimeout"
-	maxparalleltxprocessing = "maxparalleltxprocessing"
+	debugmode                 = "debugmode"
+	debugquerymode            = "debugquerymode"
+	mysqldsn                  = "mysqldsn"
+	apimysqldsn               = "apimysqldsn"
+	lbrycrdurl                = "lbrycrdurl"
+	profilemode               = "profilemode"
+	daemonmode                = "daemonmode"
+	processingdelay           = "processingdelay"
+	daemondelay               = "daemondelay"
+	defaultclienttimeout      = "defaultclienttimeout"
+	daemonprofile             = "daemonprofile"
+	lbrycrdprofile            = "lbrycrdprofile"
+	mysqlprofile              = "mysqlprofile"
+	apihostport               = "apihostport"
+	slackhookurl              = "slackhookurl"
+	slackchannel              = "slackchannel"
+	slackloglevel             = "slackloglevel"
+	autoupdatecommand         = "autoupdatecommand"
+	twiliosid                 = "twiliosid"
+	twilioauthtoken           = "twilioauthtoken"
+	smsrecipients             = "smsrecipients"
+	smsfromphonenumber        = "smsfromphonenumber"
+	apikeys                   = "apikeys"
+	maxfailures               = "maxfailures"
+	blockchainname            = "blockchainname"
+	chainsyncrunduration      = "chainsyncrunduration"
+	chainsyncdelay            = "chainsyncdelay"
+	maxsqlapitimeout          = "maxsqlapitimeout"
+	maxparalleltxprocessing   = "maxparalleltxprocessing"
+	maxparallelvinprocessing  = "maxparallelvinprocessing"
+	maxparallelvoutprocessing = "maxparallelvoutprocessing"
 )
 
 const (
@@ -155,6 +157,8 @@ func initDefaults() {
 	viper.SetDefault(chainsyncdelay, 100)
 	viper.SetDefault(maxsqlapitimeout, 5)
 	viper.SetDefault(maxparalleltxprocessing, runtime.NumCPU())
+	viper.SetDefault(maxparallelvinprocessing, runtime.NumCPU())
+	viper.SetDefault(maxparallelvoutprocessing, runtime.NumCPU())
 }
 
 func processConfiguration() {
@@ -184,6 +188,8 @@ func processConfiguration() {
 	auth.APIKeys = viper.GetStringSlice(apikeys)
 	processing.MaxFailures = viper.GetInt(maxfailures)
 	processing.MaxParallelTxProcessing = viper.GetInt(maxparalleltxprocessing)
+	processing.MaxParallelVinProcessing = viper.GetInt(maxparallelvinprocessing)
+	processing.MaxParallelVoutProcessing = viper.GetInt(maxparallelvoutprocessing)
 	global.BlockChainName = viper.GetString(blockchainname)
 	jobs.ChainSyncDelay = viper.GetInt(chainsyncdelay)
 	jobs.ChainSyncRunDuration = viper.GetInt(chainsyncrunduration)

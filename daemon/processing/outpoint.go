@@ -3,6 +3,7 @@ package processing
 import (
 	"encoding/hex"
 	"encoding/json"
+	"runtime"
 	"strconv"
 	"strings"
 
@@ -15,6 +16,10 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/boil"
 )
+
+var MaxParallelVoutProcessing = runtime.NumCPU()
+
+var MaxParallelVinProcessing = runtime.NumCPU()
 
 type vinToProcess struct {
 	jsonVin *lbrycrd.Vin
@@ -99,54 +104,52 @@ func ProcessVin(jsonVin *lbrycrd.Vin, tx *m.Transaction, txDC *txDebitCredits, n
 			err := errors.Base("No source output for vin in tx: (" + id + ") - (" + sequence + ")")
 			return err
 		}
-		if srcOutput != nil {
-			vin.Value = srcOutput.Value
-			var addresses []string
-			if srcOutput.AddressList.Valid {
-				if err := json.Unmarshal([]byte(srcOutput.AddressList.String), &addresses); err != nil {
-					return errors.Err("Error unmarshalling source output address list: ", err)
-				}
+		vin.Value = srcOutput.Value
+		var addresses []string
+		if srcOutput.AddressList.Valid {
+			if err := json.Unmarshal([]byte(srcOutput.AddressList.String), &addresses); err != nil {
+				return errors.Err("Error unmarshalling source output address list: ", err)
 			}
-			var address *m.Address
-			if len(addresses) > 0 {
-				address = ds.GetAddress(addresses[0])
-			} else if srcOutput.Type.String == lbrycrd.NonStandard {
+		}
+		var address *m.Address
+		if len(addresses) > 0 {
+			address = ds.GetAddress(addresses[0])
+		} else if srcOutput.Type.String == lbrycrd.NonStandard {
 
-				jsonAddress, err := getAddressFromNonStandardVout(srcOutput.ScriptPubKeyHex.String)
-				if err != nil {
-					return err
-				}
-				address = ds.GetAddress(jsonAddress)
-				if address == nil {
-					return errors.Err("No addresses for vout address list! %d -> %s ", srcOutput.ID, srcOutput.AddressList.String)
-				}
-
-			}
-			if address != nil {
-				txDC.subtract(address.Address, srcOutput.Value.Float64)
-				vin.InputAddressID.SetValid(address.ID)
-				// Store input - Needed to store input address below
-				err := ds.PutInput(vin)
-				if err != nil {
-					return err
-				}
-			} else {
-				return errors.Err("No Address created for Vin: %d of tx %d vout: %d Address: %s", vin.ID, tx.ID, srcOutput.ID, addresses[0])
-			}
-			// Update the srcOutput spent if successful
-			srcOutput.IsSpent = true
-			srcOutput.SpentByInputID.SetValid(vin.ID)
-			c := m.OutputColumns
-			err := ds.PutOutput(srcOutput, boil.Whitelist(c.IsSpent, c.SpentByInputID))
+			jsonAddress, err := getAddressFromNonStandardVout(srcOutput.ScriptPubKeyHex.String)
 			if err != nil {
 				return err
 			}
-
-			//Make sure there is a transaction address
-
-			if ds.GetTxAddress(tx.ID, vin.InputAddressID.Uint64) == nil {
-				return errors.Err("Missing txAddress for Tx: " + strconv.Itoa(int(tx.ID)) + " - Addr: " + strconv.Itoa(int(vin.InputAddressID.Uint64)) + "[" + address.Address + "]")
+			address = ds.GetAddress(jsonAddress)
+			if address == nil {
+				return errors.Err("No addresses for vout address list! %d -> %s ", srcOutput.ID, srcOutput.AddressList.String)
 			}
+
+		}
+		if address != nil {
+			txDC.subtract(address.Address, srcOutput.Value.Float64)
+			vin.InputAddressID.SetValid(address.ID)
+			// Store input - Needed to store input address below
+			err := ds.PutInput(vin)
+			if err != nil {
+				return err
+			}
+		} else {
+			return errors.Err("No Address created for Vin: %d of tx %d vout: %d Address: %s", vin.ID, tx.ID, srcOutput.ID, addresses[0])
+		}
+		// Update the srcOutput spent if successful
+		srcOutput.IsSpent = true
+		srcOutput.SpentByInputID.SetValid(vin.ID)
+		c := m.OutputColumns
+		err := ds.PutOutput(srcOutput, boil.Whitelist(c.IsSpent, c.SpentByInputID))
+		if err != nil {
+			return err
+		}
+
+		//Make sure there is a transaction address
+
+		if ds.GetTxAddress(tx.ID, vin.InputAddressID.Uint64) == nil {
+			return errors.Err("Missing txAddress for Tx: " + strconv.Itoa(int(tx.ID)) + " - Addr: " + strconv.Itoa(int(vin.InputAddressID.Uint64)) + "[" + address.Address + "]")
 		}
 	}
 	return nil

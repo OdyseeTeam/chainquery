@@ -116,3 +116,11 @@
 #Max Parallel Tx Processing - Specifies the maximum number of worker go routines created for processing transactions in a block.
 #DEFAULT: NumCPU
 #maxparalleltxprocessing=
+
+#Max Parallel Vin Processing - Specifies the maximum number of worker go routines created for processing inputs in a transaction.
+#DEFAULT: NumCPU
+#maxparallelvinprocessing=
+
+#Max Parallel Vout Processing - Specifies the maximum number of worker go routines created for processing outputs in a transaction.
+#DEFAULT: NumCPU
+#maxparallelvoutprocessing=
