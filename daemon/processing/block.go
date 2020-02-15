@@ -2,7 +2,6 @@ package processing
 
 import (
 	"fmt"
-	"runtime"
 	"sort"
 	"strconv"
 	"strings"
@@ -172,7 +171,7 @@ func syncTransactionsOfBlock(stopper *stop.Group, txs []string, blockTime uint64
 		redoJobsCh:    make(chan txToProcess, 1000),
 		jobsCh:        make(chan txToProcess),
 	}
-	workers := util.Min(len(txs), runtime.NumCPU())
+	workers := util.Min(len(txs), MaxParallelTxProcessing)
 	initTxWorkers(manager.workerStopper, workers, manager.jobsCh, manager.resultsCh)
 	// Queue up n threads of transactions
 	manager.queueStopper.Add(1)

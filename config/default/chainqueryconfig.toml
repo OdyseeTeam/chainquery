@@ -112,3 +112,7 @@
 #Max SQL API Timeout - Specifies a timeout, in seconds, on queries placed against the SQL API.
 #DEFAULT: 5
 #maxsqlapitimeout=
+
+#Max Parallel Tx Processing - Specifies the maximum number of worker go routines created for processing transactions in a block.
+#DEFAULT: NumCPU
+#maxparalleltxprocessing=

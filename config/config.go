@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"runtime"
 	"time"
 
 	"github.com/lbryio/chainquery/apiactions"
@@ -27,34 +28,35 @@ import (
 )
 
 const ( // config setting keys
-	debugmode            = "debugmode"
-	debugquerymode       = "debugquerymode"
-	mysqldsn             = "mysqldsn"
-	apimysqldsn          = "apimysqldsn"
-	lbrycrdurl           = "lbrycrdurl"
-	profilemode          = "profilemode"
-	daemonmode           = "daemonmode"
-	processingdelay      = "processingdelay"
-	daemondelay          = "daemondelay"
-	defaultclienttimeout = "defaultclienttimeout"
-	daemonprofile        = "daemonprofile"
-	lbrycrdprofile       = "lbrycrdprofile"
-	mysqlprofile         = "mysqlprofile"
-	apihostport          = "apihostport"
-	slackhookurl         = "slackhookurl"
-	slackchannel         = "slackchannel"
-	slackloglevel        = "slackloglevel"
-	autoupdatecommand    = "autoupdatecommand"
-	twiliosid            = "twiliosid"
-	twilioauthtoken      = "twilioauthtoken"
-	smsrecipients        = "smsrecipients"
-	smsfromphonenumber   = "smsfromphonenumber"
-	apikeys              = "apikeys"
-	maxfailures          = "maxfailures"
-	blockchainname       = "blockchainname"
-	chainsyncrunduration = "chainsyncrunduration"
-	chainsyncdelay       = "chainsyncdelay"
-	maxsqlapitimeout     = "maxsqlapitimeout"
+	debugmode               = "debugmode"
+	debugquerymode          = "debugquerymode"
+	mysqldsn                = "mysqldsn"
+	apimysqldsn             = "apimysqldsn"
+	lbrycrdurl              = "lbrycrdurl"
+	profilemode             = "profilemode"
+	daemonmode              = "daemonmode"
+	processingdelay         = "processingdelay"
+	daemondelay             = "daemondelay"
+	defaultclienttimeout    = "defaultclienttimeout"
+	daemonprofile           = "daemonprofile"
+	lbrycrdprofile          = "lbrycrdprofile"
+	mysqlprofile            = "mysqlprofile"
+	apihostport             = "apihostport"
+	slackhookurl            = "slackhookurl"
+	slackchannel            = "slackchannel"
+	slackloglevel           = "slackloglevel"
+	autoupdatecommand       = "autoupdatecommand"
+	twiliosid               = "twiliosid"
+	twilioauthtoken         = "twilioauthtoken"
+	smsrecipients           = "smsrecipients"
+	smsfromphonenumber      = "smsfromphonenumber"
+	apikeys                 = "apikeys"
+	maxfailures             = "maxfailures"
+	blockchainname          = "blockchainname"
+	chainsyncrunduration    = "chainsyncrunduration"
+	chainsyncdelay          = "chainsyncdelay"
+	maxsqlapitimeout        = "maxsqlapitimeout"
+	maxparalleltxprocessing = "maxparalleltxprocessing"
 )
 
 const (
@@ -152,6 +154,7 @@ func initDefaults() {
 	viper.SetDefault(chainsyncrunduration, 60)
 	viper.SetDefault(chainsyncdelay, 100)
 	viper.SetDefault(maxsqlapitimeout, 5)
+	viper.SetDefault(maxparalleltxprocessing, runtime.NumCPU())
 }
 
 func processConfiguration() {
@@ -180,6 +183,7 @@ func processConfiguration() {
 	lbrycrd.LBRYcrdURL = GetLBRYcrdURL()
 	auth.APIKeys = viper.GetStringSlice(apikeys)
 	processing.MaxFailures = viper.GetInt(maxfailures)
+	processing.MaxParallelTxProcessing = viper.GetInt(maxparalleltxprocessing)
 	global.BlockChainName = viper.GetString(blockchainname)
 	jobs.ChainSyncDelay = viper.GetInt(chainsyncdelay)
 	jobs.ChainSyncRunDuration = viper.GetInt(chainsyncrunduration)

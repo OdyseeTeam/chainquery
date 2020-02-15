@@ -18,6 +18,8 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
+var MaxParallelTxProcessing = runtime.NumCPU()
+
 type txToProcess struct {
 	tx          *lbrycrd.TxRawResult
 	blockTime   uint64
