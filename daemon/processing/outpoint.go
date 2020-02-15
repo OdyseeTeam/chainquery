@@ -17,8 +17,10 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 )
 
+// MaxParallelVoutProcessing max concurrently processing outputs
 var MaxParallelVoutProcessing = runtime.NumCPU()
 
+// MaxParallelVinProcessing max concurrently processing inputs
 var MaxParallelVinProcessing = runtime.NumCPU()
 
 type vinToProcess struct {
