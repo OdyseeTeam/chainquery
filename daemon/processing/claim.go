@@ -307,7 +307,7 @@ func setMetaDataInfo(claim *model.Claim, helper *c.ClaimHelper) error {
 	if reference != nil {
 		claim.Type.SetValid(global.ClaimReferenceClaimType)
 		if len(reference.GetClaimHash()) > 0 {
-			claim.ClaimReference.SetValid(hex.EncodeToString(reference.GetClaimHash()))
+			claim.ClaimReference.SetValid(hex.EncodeToString(util2.ReverseBytes(reference.GetClaimHash())))
 		}
 	}
 
