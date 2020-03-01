@@ -18,7 +18,7 @@ ALTER TABLE claim
 
 -- +migrate StatementBegin
 ALTER TABLE claim_in_list
-    CHANGE COLUMN claim_id claim_id VARCHAR(40) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_unicode_ci' NOT NULL,
+    CHANGE COLUMN claim_id claim_id VARCHAR(40) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_unicode_ci' DEFAULT NULL,
     CHANGE COLUMN list_claim_id list_claim_id VARCHAR(40) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_unicode_ci'  NOT NULL;
 -- +migrate StatementEnd
 
