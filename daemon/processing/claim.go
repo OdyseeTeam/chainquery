@@ -541,7 +541,12 @@ func setSourceInfo(claim *model.Claim, helper *c.ClaimHelper) {
 	if stream != nil {
 		source := stream.GetSource()
 		if source != nil {
-			claim.ContentType.SetValid(source.GetMediaType())
+			const maxContentTypeLength = 162
+			mediaType := source.GetMediaType()
+			if len(mediaType) > maxContentTypeLength {
+				mediaType = mediaType[:158] + "..."
+			}
+			claim.ContentType.SetValid(mediaType)
 			sdHash := hex.EncodeToString(stream.GetSource().GetSdHash())
 			const maxSDHashColLength = 120
 			if len(sdHash) > maxSDHashColLength {
