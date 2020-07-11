@@ -418,7 +418,12 @@ func setChannelMetadata(claim *model.Claim, channel pb.Channel) {
 			claim.SourceSize.SetValid(c.GetSize())
 		}
 		if c.GetUrl() != "" {
-			claim.SourceURL.SetValid(c.GetUrl())
+			const maxSourceURLLength = 255
+			sourceURL := c.GetUrl()
+			if len(sourceURL) > maxSourceURLLength {
+				sourceURL = sourceURL[:252] + "..."
+			}
+			claim.SourceURL.SetValid(sourceURL)
 		}
 		if len(c.GetHash()) > 0 {
 			claim.SourceHash.SetValid(hex.EncodeToString(c.GetHash()))
