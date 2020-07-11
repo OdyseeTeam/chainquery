@@ -468,7 +468,12 @@ func setCollectionMetadata(claim *model.Claim, list pb.ClaimList) {
 
 func setSourceMetadata(claim *model.Claim, s *pb.Source) {
 	if s.GetUrl() != "" {
-		claim.SourceURL.SetValid(s.GetUrl())
+		const maxSourceURLLength = 255
+		sourceURL := s.GetUrl()
+		if len(sourceURL) > maxSourceURLLength {
+			sourceURL = sourceURL[:252] + "..."
+		}
+		claim.SourceURL.SetValid(sourceURL)
 	}
 	if len(s.GetHash()) > 0 {
 		claim.SourceHash.SetValid(hex.EncodeToString(s.GetHash()))
