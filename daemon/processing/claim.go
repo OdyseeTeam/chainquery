@@ -352,7 +352,13 @@ func setStreamMetadata(claim *model.Claim, stream pb.Stream) {
 		license = license[:500]
 	}
 	claim.License.SetValid(license)
-	claim.LicenseURL.SetValid(stream.GetLicenseUrl())
+
+	liscenseURL := stream.GetLicenseUrl()
+	if len(liscenseURL) > 255 {
+		liscenseURL = liscenseURL[0:255]
+	}
+	claim.LicenseURL.SetValid(liscenseURL)
+
 	claim.Preview.SetValid("") //Never set
 
 	fee := stream.GetFee()
