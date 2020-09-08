@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/lbryio/chainquery/notifications"
+
 	"github.com/lbryio/lbryschema.go/address/base58"
 	pb "github.com/lbryio/types/v2/go"
 
@@ -191,7 +193,7 @@ func processClaim(helper *c.ClaimHelper, claim *model.Claim, value []byte, outpu
 	if helper.LegacyClaim != nil {
 		claim.Version = helper.LegacyClaim.GetVersion().String()
 	}
-
+	notifications.ClaimEvent(claimID, claim.Name, claim.Title, tx.Hash, claim.PublisherID.String)
 	return claim, nil
 }
 

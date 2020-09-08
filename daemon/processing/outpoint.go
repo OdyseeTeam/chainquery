@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/lbryio/chainquery/notifications"
+
 	ds "github.com/lbryio/chainquery/datastore"
 	"github.com/lbryio/chainquery/lbrycrd"
 	m "github.com/lbryio/chainquery/model"
@@ -215,9 +217,12 @@ func processVout(jsonVout *lbrycrd.Vout, tx *m.Transaction, txDC *txDebitCredits
 	}
 
 	//Make sure there is a transaction address
-	if ds.GetTxAddress(tx.ID, address.ID) == nil {
+	txAddress := ds.GetTxAddress(tx.ID, address.ID)
+	if txAddress == nil {
 		return errors.Base("Missing txAddress for Tx:" + strconv.Itoa(int(tx.ID)) + "- Addr:" + strconv.Itoa(int(address.ID)))
 	}
+
+	notifications.PaymentEvent(vout.Value.Float64, address.Address, tx.Hash, vout.Vout)
 
 	// Process script for potential claims
 	claimid, err := processScriptForClaim(*vout, *tx, blockHeight)

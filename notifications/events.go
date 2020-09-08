@@ -1,0 +1,29 @@
+package notifications
+
+import (
+	"net/url"
+
+	"github.com/spf13/cast"
+)
+
+const payment = "payment"
+const newClaim = "new_claim"
+
+func PaymentEvent(lbc float64, address, txid string, vout uint) {
+	values := url.Values{}
+	values.Add("lbc", cast.ToString(lbc))
+	values.Add("tx_id", txid)
+	values.Add("vout", cast.ToString(vout))
+	values.Add("address", address)
+	go Notify(payment, values)
+}
+
+func ClaimEvent(claimID, name, title, txID, channeClaimID string) {
+	values := url.Values{}
+	values.Add("claim_id", claimID)
+	values.Add("name", name)
+	values.Add("title", title)
+	values.Add("tx_id", txID)
+	values.Add("channel_claim_id", channeClaimID)
+	go Notify(newClaim, values)
+}

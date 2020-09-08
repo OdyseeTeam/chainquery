@@ -124,3 +124,15 @@
 #Max Parallel Vout Processing - Specifies the maximum number of worker go routines created for processing outputs in a transaction.
 #DEFAULT: NumCPU
 #maxparallelvoutprocessing=
+
+#Subscribers - Lists the subscriptions for notifications. Possible types "payment" "new_claim"
+#DEFAULT: <none>
+#[[subscriber.payment]]
+#  url= "http://localhost:8080/event/payment"
+#  auth_token="mytoken"
+#[[subscriber.payment]]
+#  url= "http://localhost:8080/event/payment"
+#  auth_token="mytoken"
+#[[subscriber.newclaim]]
+#  url= "http://localhost:8080/event/claim"
+#  auth_token="mytoken"

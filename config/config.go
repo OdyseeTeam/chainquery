@@ -7,6 +7,8 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/lbryio/chainquery/notifications"
+
 	"github.com/lbryio/chainquery/apiactions"
 	"github.com/lbryio/chainquery/auth"
 	"github.com/lbryio/chainquery/daemon"
@@ -126,6 +128,9 @@ func readConfig() {
 		logrus.Warning("Error reading config file...defaults will be used: ", err)
 	}
 	twilio.RecipientList = viper.GetStringSlice(smsrecipients)
+	notifications.ClearSubscribers()
+	subscriptions := viper.GetStringMap("subscription")
+	applySubscribers(subscriptions)
 	twilio.FromNumber = viper.GetString(smsfromphonenumber)
 	twilio.TwilioAuthToken = viper.GetString(twilioauthtoken)
 	twilio.TwilioSID = viper.GetString(twiliosid)
@@ -244,4 +249,29 @@ func getLbrycrdURLFromConfFile() (string, error) {
 	}
 
 	return "rpc://" + userpass + host + port, nil
+}
+
+func applySubscribers(subs map[string]interface{}) error {
+	for subType, p := range subs {
+		typeSubsInt, ok := p.([]interface{})
+		if ok {
+			for _, typeSub := range typeSubsInt {
+				params, ok := typeSub.(map[string]interface{})
+				if ok {
+					url, ok := params["url"].(string)
+					if ok {
+						delete(params, "url")
+						notifications.AddSubscriber(url, subType, params)
+					} else {
+						return errors.Err("url is required")
+					}
+				} else {
+					return errors.Err("could not find params map for the subscription type instance")
+				}
+			}
+		} else {
+			return errors.Err("could not find sub type array under subscription")
+		}
+	}
+	return nil
 }
