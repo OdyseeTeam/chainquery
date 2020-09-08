@@ -130,7 +130,10 @@ func readConfig() {
 	twilio.RecipientList = viper.GetStringSlice(smsrecipients)
 	notifications.ClearSubscribers()
 	subscriptions := viper.GetStringMap("subscription")
-	applySubscribers(subscriptions)
+	err = applySubscribers(subscriptions)
+	if err != nil {
+		logrus.Error("could not apply subsribers: ", err)
+	}
 	twilio.FromNumber = viper.GetString(smsfromphonenumber)
 	twilio.TwilioAuthToken = viper.GetString(twilioauthtoken)
 	twilio.TwilioSID = viper.GetString(twiliosid)
