@@ -9,6 +9,7 @@ import (
 const payment = "payment"
 const newClaim = "new_claim"
 
+// PaymentEvent event to notify subscribers of a payment transaction
 func PaymentEvent(lbc float64, address, txid string, vout uint) {
 	values := url.Values{}
 	values.Add("lbc", cast.ToString(lbc))
@@ -18,6 +19,7 @@ func PaymentEvent(lbc float64, address, txid string, vout uint) {
 	go Notify(payment, values)
 }
 
+// ClaimEvent event to notify subscribers of a new claim thats been published
 func ClaimEvent(claimID, name, title, txID, channeClaimID string) {
 	values := url.Values{}
 	values.Add("claim_id", claimID)

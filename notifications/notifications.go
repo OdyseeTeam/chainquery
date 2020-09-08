@@ -17,6 +17,7 @@ type subscriber struct {
 
 var subscriptions map[string][]subscriber
 
+// AddSubscriber adds a subscriber to the subscribers list for a type
 func AddSubscriber(address, subType string, params map[string]interface{}) {
 	if subscriptions == nil {
 		subscriptions = make(map[string][]subscriber)
@@ -31,10 +32,12 @@ func AddSubscriber(address, subType string, params map[string]interface{}) {
 	subscriptions[subType] = append(subscriptions[subType], subscriber{URL: address, Type: subType, Params: urlParams})
 }
 
+// ClearSubscribers clears the list of subscribers
 func ClearSubscribers() {
 	subscriptions = make(map[string][]subscriber)
 }
 
+// Notify notifies the list of subscribers for a type
 func Notify(t string, values url.Values) {
 	subs, ok := subscriptions[t]
 	if ok {
