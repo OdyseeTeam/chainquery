@@ -193,7 +193,7 @@ func processClaim(helper *c.ClaimHelper, claim *model.Claim, value []byte, outpu
 	if helper.LegacyClaim != nil {
 		claim.Version = helper.LegacyClaim.GetVersion().String()
 	}
-	notifications.ClaimEvent(claimID, claim.Name, claim.Title, tx.Hash, claim.PublisherID.String)
+	notifications.ClaimEvent(claim.ClaimID, claim.Name, claim.Title.String, tx.Hash, claim.PublisherID.String)
 	return claim, nil
 }
 
