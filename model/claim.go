@@ -86,6 +86,7 @@ type Claim struct {
 	Longitude             null.Int64  `boil:"longitude" json:"longitude,omitempty" toml:"longitude" yaml:"longitude,omitempty"`
 	TransactionHashUpdate null.String `boil:"transaction_hash_update" json:"transaction_hash_update,omitempty" toml:"transaction_hash_update" yaml:"transaction_hash_update,omitempty"`
 	VoutUpdate            null.Uint   `boil:"vout_update" json:"vout_update,omitempty" toml:"vout_update" yaml:"vout_update,omitempty"`
+	ClaimCount            int64       `boil:"claim_count" json:"claim_count" toml:"claim_count" yaml:"claim_count"`
 
 	R *claimR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L claimL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -155,6 +156,7 @@ var ClaimColumns = struct {
 	Longitude             string
 	TransactionHashUpdate string
 	VoutUpdate            string
+	ClaimCount            string
 }{
 	ID:                    "id",
 	TransactionHashID:     "transaction_hash_id",
@@ -219,6 +221,7 @@ var ClaimColumns = struct {
 	Longitude:             "longitude",
 	TransactionHashUpdate: "transaction_hash_update",
 	VoutUpdate:            "vout_update",
+	ClaimCount:            "claim_count",
 }
 
 // Generated where
@@ -370,6 +373,15 @@ func (w whereHelpernull_Uint) GTE(x null.Uint) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.GTE, x)
 }
 
+type whereHelperint64 struct{ field string }
+
+func (w whereHelperint64) EQ(x int64) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
+func (w whereHelperint64) NEQ(x int64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
+func (w whereHelperint64) LT(x int64) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
+func (w whereHelperint64) LTE(x int64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
+func (w whereHelperint64) GT(x int64) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
+func (w whereHelperint64) GTE(x int64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
+
 var ClaimWhere = struct {
 	ID                    whereHelperuint64
 	TransactionHashID     whereHelpernull_String
@@ -434,6 +446,7 @@ var ClaimWhere = struct {
 	Longitude             whereHelpernull_Int64
 	TransactionHashUpdate whereHelpernull_String
 	VoutUpdate            whereHelpernull_Uint
+	ClaimCount            whereHelperint64
 }{
 	ID:                    whereHelperuint64{field: "`claim`.`id`"},
 	TransactionHashID:     whereHelpernull_String{field: "`claim`.`transaction_hash_id`"},
@@ -498,6 +511,7 @@ var ClaimWhere = struct {
 	Longitude:             whereHelpernull_Int64{field: "`claim`.`longitude`"},
 	TransactionHashUpdate: whereHelpernull_String{field: "`claim`.`transaction_hash_update`"},
 	VoutUpdate:            whereHelpernull_Uint{field: "`claim`.`vout_update`"},
+	ClaimCount:            whereHelperint64{field: "`claim`.`claim_count`"},
 }
 
 // ClaimRels is where relationship names are stored.
@@ -527,9 +541,9 @@ func (*claimR) NewStruct() *claimR {
 type claimL struct{}
 
 var (
-	claimAllColumns            = []string{"id", "transaction_hash_id", "vout", "name", "claim_id", "claim_type", "publisher_id", "publisher_sig", "certificate", "sd_hash", "transaction_time", "version", "value_as_hex", "value_as_json", "valid_at_height", "height", "effective_amount", "author", "description", "content_type", "is_nsfw", "language", "thumbnail_url", "title", "fee", "fee_currency", "fee_address", "is_filtered", "bid_state", "created_at", "modified_at", "claim_address", "is_cert_valid", "is_cert_processed", "license", "license_url", "preview", "type", "release_time", "source_hash", "source_name", "source_size", "source_media_type", "source_url", "frame_width", "frame_height", "duration", "audio_duration", "os", "email", "website_url", "has_claim_list", "claim_reference", "list_type", "claim_id_list", "country", "state", "city", "code", "latitude", "longitude", "transaction_hash_update", "vout_update"}
+	claimAllColumns            = []string{"id", "transaction_hash_id", "vout", "name", "claim_id", "claim_type", "publisher_id", "publisher_sig", "certificate", "sd_hash", "transaction_time", "version", "value_as_hex", "value_as_json", "valid_at_height", "height", "effective_amount", "author", "description", "content_type", "is_nsfw", "language", "thumbnail_url", "title", "fee", "fee_currency", "fee_address", "is_filtered", "bid_state", "created_at", "modified_at", "claim_address", "is_cert_valid", "is_cert_processed", "license", "license_url", "preview", "type", "release_time", "source_hash", "source_name", "source_size", "source_media_type", "source_url", "frame_width", "frame_height", "duration", "audio_duration", "os", "email", "website_url", "has_claim_list", "claim_reference", "list_type", "claim_id_list", "country", "state", "city", "code", "latitude", "longitude", "transaction_hash_update", "vout_update", "claim_count"}
 	claimColumnsWithoutDefault = []string{"transaction_hash_id", "vout", "name", "claim_id", "claim_type", "publisher_id", "publisher_sig", "certificate", "sd_hash", "transaction_time", "version", "value_as_hex", "value_as_json", "valid_at_height", "height", "author", "description", "content_type", "language", "thumbnail_url", "title", "fee_currency", "fee_address", "claim_address", "is_cert_valid", "is_cert_processed", "license", "license_url", "preview", "type", "release_time", "source_hash", "source_name", "source_size", "source_media_type", "source_url", "frame_width", "frame_height", "duration", "audio_duration", "os", "email", "website_url", "has_claim_list", "claim_reference", "list_type", "claim_id_list", "country", "state", "city", "code", "latitude", "longitude", "transaction_hash_update", "vout_update"}
-	claimColumnsWithDefault    = []string{"id", "effective_amount", "is_nsfw", "fee", "is_filtered", "bid_state", "created_at", "modified_at"}
+	claimColumnsWithDefault    = []string{"id", "effective_amount", "is_nsfw", "fee", "is_filtered", "bid_state", "created_at", "modified_at", "claim_count"}
 	claimPrimaryKeyColumns     = []string{"id"}
 )
 

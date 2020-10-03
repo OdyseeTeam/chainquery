@@ -29,8 +29,10 @@ func StartE2ETesting() {
 	increment(1)
 	jobs.ClaimTrieSync()
 	jobs.CertificateSync()
+	exitOnErr(jobs.SyncClaimCntInChannel())
 	time.Sleep(2 * time.Second)
 	exitOnErr(checkCertValid([]string{"claim1", "claim2", "claim3"}))
+	testClaimCount()
 	testImageMetadata()
 	testVideoMetaData()
 	daemon.ShutdownDaemon()
@@ -154,4 +156,15 @@ func checkForBlock(blockHash string) (bool, error) {
 		}
 	}
 	return false, nil
+}
+
+func testClaimCount() {
+	channel, err := model.Claims(model.ClaimWhere.Name.EQ("@MyChannel")).OneG()
+	exitOnErr(err)
+	if channel == nil {
+		exit(1, errors.Err("Could not find channel @MyChannel"))
+	}
+	if channel.ClaimCount != 3 {
+		exit(1, errors.Err("@MyChannel only has %d claims and should have 3", channel.ClaimCount))
+	}
 }

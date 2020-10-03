@@ -342,7 +342,7 @@ func handleFailure(err error, manager *txSyncManager) {
 func getBlockToProcess(height *uint64) (*lbrycrd.GetBlockResponse, error) {
 	hash, err := lbrycrd.GetBlockHash(*height)
 	if err != nil {
-		return nil, errors.Prefix("GetBlockHash Error("+string(*height)+"): ", err)
+		return nil, errors.Prefix(fmt.Sprintf("GetBlockHash Error(%d): ", *height), err)
 	}
 	jsonBlock, err := lbrycrd.GetBlock(*hash)
 	if err != nil {
