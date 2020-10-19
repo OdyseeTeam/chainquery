@@ -69,6 +69,7 @@ func initJobs() {
 	scheduleJob(jobs.ValidateChain, "Validate Chain", 24*time.Hour)
 	scheduleJob(jobs.SyncAddressBalancesJob, "Address Balance Sync", 24*time.Hour)
 	scheduleJob(jobs.TransactionValueASync, "Transaction Value Sync", 24*time.Hour)
+	scheduleJob(jobs.SyncClaimsInChannelJob, "Claim Count in Channel Sync", 24*time.Hour)
 	//ChainSync job should never be run later than 2.5 minutes or its possible it will never loop back due to coinbase time
 	scheduleJob(jobs.ChainSyncAsync, "Chain Sync", 5*time.Second)
 }

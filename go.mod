@@ -1,6 +1,6 @@
 module github.com/lbryio/chainquery
 
-go 1.12
+go 1.15
 
 replace github.com/btcsuite/btcd => github.com/lbryio/lbrycrd.go v0.0.0-20200203050410-e1076f12bf19
 

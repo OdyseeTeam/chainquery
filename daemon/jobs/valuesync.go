@@ -2,14 +2,16 @@ package jobs
 
 import (
 	"github.com/lbryio/chainquery/model"
-	"github.com/lbryio/lbry.go/extras/errors"
+	"github.com/lbryio/lbry.go/v2/extras/errors"
 	"github.com/sirupsen/logrus"
+	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 const syncTransactionValues = "SyncTransactionValues: "
 const syncAddressBalances = "SyncAddressBalances: "
+const syncClaimsInChannel = "SyncClaimsInChannel: "
 
 //SyncAddressBalancesJob runs the SyncAddressBalances as a background job.
 func SyncAddressBalancesJob() {
@@ -17,6 +19,16 @@ func SyncAddressBalancesJob() {
 		_, err := SyncAddressBalances()
 		if err != nil {
 			logrus.Error(syncAddressBalances, err)
+		}
+	}()
+}
+
+// SyncClaimsInChannelJob runs the SyncClaimsInChannel as a background job.
+func SyncClaimsInChannelJob() {
+	go func() {
+		err := SyncClaimCntInChannel()
+		if err != nil {
+			logrus.Error(syncClaimsInChannel, err)
 		}
 	}()
 }
@@ -108,6 +120,9 @@ func SyncTransactionValue() (int64, error) {
 	}
 	latestHeight := int(latestBlock.Height)
 	updateIncrement := 5000
+	if updateIncrement >= latestHeight {
+		updateIncrement = latestHeight
+	}
 	for i := 0; i < latestHeight/updateIncrement; i++ {
 		from = i * updateIncrement
 		to = (i + 1) * updateIncrement
@@ -130,5 +145,64 @@ func SyncTransactionValue() (int64, error) {
 	}
 
 	return affected, nil
+
+}
+
+// SyncClaimCntInChannel will sync up the number of claims that are part of a particular channel. This can be used as a
+// calculated column in the claim table to get this figure fast in a query.
+func SyncClaimCntInChannel() error {
+
+	t := model.TableNames
+	c := model.ClaimColumns
+
+	query := `SELECT COUNT(*) FROM ` + t.Claim + ` WHERE ` + t.Claim + `.` + c.PublisherID + ` = ?`
+
+	var from int
+	var to int
+
+	latestBlock, err := model.Blocks(qm.Select(model.BlockColumns.Height), qm.OrderBy(model.BlockColumns.Height+" DESC")).OneG()
+	if err != nil {
+		return errors.Prefix(syncClaimsInChannel, err)
+	}
+	if latestBlock.Height == 0 {
+		return errors.Prefix(syncClaimsInChannel, errors.Err("latest height = 0 "))
+	}
+	latestHeight := int(latestBlock.Height)
+	updateIncrement := 5000
+	if updateIncrement >= latestHeight {
+		updateIncrement = latestHeight
+	}
+	for i := 0; i < latestHeight/updateIncrement; i++ {
+		from = i * updateIncrement
+		to = (i + 1) * updateIncrement
+		if to > latestHeight {
+			to = latestHeight
+		}
+		channelsToProcess, err := model.Claims(
+			model.ClaimWhere.Height.GTE(uint(from)),
+			model.ClaimWhere.Height.LTE(uint(to)),
+			model.ClaimWhere.ClaimType.EQ(2)).AllG()
+		if err != nil {
+			return errors.Prefix(syncClaimsInChannel, err)
+		}
+		for _, channel := range channelsToProcess {
+			result := boil.GetDB().QueryRow(query, channel.ClaimID)
+			if err != nil {
+				return errors.Prefix(syncClaimsInChannel, err)
+			}
+			var cnt null.Uint64
+			err := result.Scan(&cnt)
+			if err != nil {
+				return errors.Prefix(syncClaimsInChannel, err)
+			}
+			channel.ClaimCount = int64(cnt.Uint64)
+			err = channel.UpdateG(boil.Whitelist(c.ClaimCount))
+			if err != nil {
+				return errors.Prefix(syncClaimsInChannel, err)
+			}
+		}
+	}
+
+	return nil
 
 }

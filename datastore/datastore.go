@@ -3,6 +3,7 @@ package datastore
 import (
 	"github.com/lbryio/chainquery/model"
 	"github.com/lbryio/lbry.go/extras/errors"
+	"github.com/volatiletech/null"
 
 	"time"
 
@@ -352,8 +353,8 @@ func PutTag(tag *model.Tag) error {
 // GetClaimTag makes creating,retrieving,updating the model type simplified.
 func GetClaimTag(tagID uint64, claimID string) *model.ClaimTag {
 	defer util.TimeTrack(time.Now(), "GetClaimTag", "mysqlprofile")
-	tagIDMatch := qm.Where(model.ClaimTagColumns.TagID+"=?", tagID)
-	claimIDMatch := qm.Where(model.ClaimTagColumns.ClaimID+"=?", claimID)
+	claimIDMatch := model.ClaimTagWhere.ClaimID.EQ(claimID)
+	tagIDMatch := model.ClaimTagWhere.TagID.EQ(null.Uint64From(tagID))
 
 	exists, err := model.ClaimTags(tagIDMatch, claimIDMatch).ExistsG()
 	if err != nil {
@@ -376,7 +377,12 @@ func PutClaimTag(claimTag *model.ClaimTag) error {
 	if claimTag != nil {
 
 		var err error
-		exists, err := model.ClaimTagExistsG(claimTag.ID)
+		if !model.Claims(model.ClaimWhere.ClaimID.EQ(claimTag.ClaimID)).ExistsGP() {
+			logrus.Error("Failed to find claim ", claimTag.ClaimID)
+		}
+		claimIDMatch := model.ClaimTagWhere.ClaimID.EQ(claimTag.ClaimID)
+		tagIDMatch := model.ClaimTagWhere.TagID.EQ(claimTag.TagID)
+		exists, err := model.ClaimTags(claimIDMatch, tagIDMatch).ExistsG()
 		if err != nil {
 			return errors.Prefix("Datastore(PUTCLAIMTAG): ", err)
 		}
