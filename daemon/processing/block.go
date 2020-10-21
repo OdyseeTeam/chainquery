@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/lbryio/chainquery/lbrycrd"
+	"github.com/lbryio/chainquery/metrics"
 	"github.com/lbryio/chainquery/model"
 	"github.com/lbryio/chainquery/twilio"
 	"github.com/lbryio/chainquery/util"
@@ -30,6 +31,7 @@ var ManualShutDownError = errors.Err("Daemon stopped manually!")
 // important to note that if the previous block is not processed it will panic to prevent corruption because blocks
 // must be processed in order.
 func RunBlockProcessing(stopper *stop.Group, height uint64) uint64 {
+	defer metrics.Processing(time.Now(), "block")
 	defer util.TimeTrack(time.Now(), "runBlockProcessing", "daemonprofile")
 	if height == 0 {
 		err := processGenesisBlock()
@@ -61,6 +63,7 @@ func RunBlockProcessing(stopper *stop.Group, height uint64) uint64 {
 
 	block, err := ProcessBlock(height, stopper, jsonBlock)
 	if err != nil {
+		metrics.ProcessingFailures.WithLabelValues("block").Inc()
 		rollBackHeight := height - 1
 		blockRemovalError := block.DeleteG()
 		if blockRemovalError != nil {

@@ -16,6 +16,7 @@ import (
 	"github.com/lbryio/chainquery/daemon/processing"
 	"github.com/lbryio/chainquery/global"
 	"github.com/lbryio/chainquery/lbrycrd"
+	server "github.com/lbryio/chainquery/swagger/apiserver/go"
 	"github.com/lbryio/chainquery/twilio"
 
 	"github.com/lbryio/lbry.go/extras/errors"
@@ -61,6 +62,8 @@ const ( // config setting keys
 	maxparalleltxprocessing   = "maxparalleltxprocessing"
 	maxparallelvinprocessing  = "maxparallelvinprocessing"
 	maxparallelvoutprocessing = "maxparallelvoutprocessing"
+	promuser                  = "promuser"
+	prompass                  = "prompass"
 )
 
 const (
@@ -202,6 +205,8 @@ func processConfiguration() {
 	jobs.ChainSyncDelay = viper.GetInt(chainsyncdelay)
 	jobs.ChainSyncRunDuration = viper.GetInt(chainsyncrunduration)
 	apiactions.MaxSQLAPITimeout = viper.GetInt(maxsqlapitimeout)
+	server.PromUser = viper.GetString(promuser)
+	server.PromPassword = viper.GetString(prompass)
 
 	//Flags last so they override everything before, even config
 	if viper.IsSet(debugmodeflag) {

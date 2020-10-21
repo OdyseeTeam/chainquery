@@ -11,6 +11,7 @@ import (
 	"github.com/lbryio/chainquery/daemon/processing"
 	"github.com/lbryio/chainquery/datastore"
 	"github.com/lbryio/chainquery/lbrycrd"
+	"github.com/lbryio/chainquery/metrics"
 	"github.com/lbryio/chainquery/model"
 	"github.com/lbryio/lbry.go/extras/errors"
 
@@ -50,6 +51,9 @@ func endChainSync() {
 
 // ChainSync synchronizes the chain data when it does not match lbrycrd. It runs for x duration before it stores state.
 func ChainSync() {
+	metrics.JobLoad.WithLabelValues("chain_sync").Inc()
+	defer metrics.JobLoad.WithLabelValues("chain_sync").Dec()
+	defer metrics.Job(time.Now(), "chain_sync")
 	defer endChainSync()
 	if chainSync == nil {
 		chainSync = &chainSyncStatus{}

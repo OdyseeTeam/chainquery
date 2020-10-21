@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/lbryio/chainquery/metrics"
+
 	"github.com/lbryio/lbry.go/v2/extras/errors"
 
 	"github.com/sirupsen/logrus"
@@ -46,12 +48,17 @@ func Notify(t string, values url.Values) {
 				values.Set(param, value[0])
 			}
 			s.notify(values)
+			metrics.Notifications.WithLabelValues(t).Inc()
 		}
 	}
 }
 
 func (s subscriber) notify(values url.Values) {
-	_, err := http.PostForm(s.URL, values)
+	res, err := http.PostForm(s.URL, values)
+	if err != nil {
+		logrus.Error(errors.Prefix("Notify:", errors.Err(err)))
+	}
+	err = res.Body.Close()
 	if err != nil {
 		logrus.Error(errors.Prefix("Notify:", errors.Err(err)))
 	}

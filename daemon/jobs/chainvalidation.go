@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/lbryio/chainquery/lbrycrd"
+	"github.com/lbryio/chainquery/metrics"
 	"github.com/lbryio/chainquery/model"
 
 	"github.com/lbryio/lbry.go/extras/errors"
@@ -24,6 +25,9 @@ const chainValidationJob = "chainvalidationjob"
 func ValidateChain() {
 	if !validatingChain {
 		go func() {
+			metrics.JobLoad.WithLabelValues("validate_chain").Inc()
+			defer metrics.JobLoad.WithLabelValues("validate_chain").Dec()
+			defer metrics.Job(time.Now(), "validate_chain")
 			var job *model.JobStatus
 			exists, err := model.JobStatuses(qm.Where(model.JobStatusColumns.JobName+"=?", chainValidationJob)).ExistsG()
 			if err != nil {

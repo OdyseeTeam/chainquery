@@ -4,8 +4,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-
-	"github.com/lbryio/chainquery/notifications"
+	"time"
 
 	"github.com/lbryio/lbryschema.go/address/base58"
 	pb "github.com/lbryio/types/v2/go"
@@ -15,7 +14,9 @@ import (
 	"github.com/lbryio/chainquery/datastore"
 	"github.com/lbryio/chainquery/global"
 	"github.com/lbryio/chainquery/lbrycrd"
+	"github.com/lbryio/chainquery/metrics"
 	"github.com/lbryio/chainquery/model"
+	"github.com/lbryio/chainquery/notifications"
 
 	"github.com/lbryio/lbry.go/extras/errors"
 	util "github.com/lbryio/lbry.go/lbrycrd"
@@ -26,6 +27,7 @@ import (
 )
 
 func processAsClaim(script []byte, vout model.Output, tx model.Transaction, blockHeight uint64) (address *string, claimID *string, err error) {
+	defer metrics.Processing(time.Now(), "claim")
 	var pubkeyscript []byte
 	var name string
 	var claimid string

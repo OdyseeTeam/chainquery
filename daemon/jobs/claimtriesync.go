@@ -10,6 +10,7 @@ import (
 
 	"github.com/lbryio/chainquery/datastore"
 	"github.com/lbryio/chainquery/lbrycrd"
+	"github.com/lbryio/chainquery/metrics"
 	"github.com/lbryio/chainquery/model"
 
 	"github.com/lbryio/lbry.go/extras/errors"
@@ -49,6 +50,9 @@ func ClaimTrieSyncAsync() {
 
 // ClaimTrieSync syncs the claim trie bidstate, effective amount and effective height
 func ClaimTrieSync() {
+	metrics.JobLoad.WithLabelValues("claimtrie_sync").Inc()
+	defer metrics.JobLoad.WithLabelValues("claimtrie_sync").Dec()
+	defer metrics.Job(time.Now(), "claimtrie_sync")
 	//defer util.TimeTrack(time.Now(), "ClaimTrieSync", "always")
 	printDebug("ClaimTrieSync: started... ")
 	if lastSync == nil {

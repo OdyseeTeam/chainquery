@@ -136,3 +136,11 @@
 #[[subscriber.newclaim]]
 #  url= "http://localhost:8080/event/claim"
 #  auth_token="mytoken"
+
+#Prometheus User - user for basic authentication on metrics endpoint
+#DEFAULT: <none>
+#promuser=
+
+#Prometheus Password - password for basic authentication on metrics endpoint
+#DEFAULT: <none>
+#prompass=

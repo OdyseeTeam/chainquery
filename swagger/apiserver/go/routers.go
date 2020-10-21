@@ -16,6 +16,7 @@ import (
 	. "github.com/lbryio/lbry.go/extras/api"
 
 	"github.com/gorilla/mux"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 type Route struct {
@@ -40,6 +41,8 @@ func NewRouter() *mux.Router {
 			Name(route.Name).
 			Handler(handler)
 	}
+
+	router.Handle("/metrics", promBasicAuthWrapper(promhttp.Handler()))
 
 	return router
 }
@@ -114,4 +117,26 @@ var routes = Routes{
 		"/api/sync/txvalues",
 		SyncTransactionValue,
 	},
+}
+
+var PromPassword string
+var PromUser string
+
+func promBasicAuthWrapper(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user, pass, ok := r.BasicAuth()
+		if !ok {
+			http.Error(w, "authentication required", http.StatusBadRequest)
+			return
+		}
+		if PromUser == "" {
+			http.Error(w, "not configured", http.StatusPreconditionFailed)
+		} else {
+			if user == PromUser && pass == PromPassword {
+				h.ServeHTTP(w, r)
+			} else {
+				http.Error(w, "invalid username or password", http.StatusForbidden)
+			}
+		}
+	})
 }

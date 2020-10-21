@@ -8,6 +8,7 @@ import (
 
 	"github.com/lbryio/chainquery/datastore"
 	"github.com/lbryio/chainquery/lbrycrd"
+	"github.com/lbryio/chainquery/metrics"
 	"github.com/lbryio/chainquery/model"
 	"github.com/lbryio/chainquery/util"
 
@@ -55,6 +56,9 @@ func txProcessor(s *stop.Group, jobs <-chan txToProcess, results chan<- txProces
 		case job := <-jobs:
 			q(strconv.Itoa(worker) + " - WORKER TX - Start new job " + job.tx.Txid)
 			err := ProcessTx(job.tx, job.blockTime, job.blockHeight)
+			if err != nil {
+				metrics.ProcessingFailures.WithLabelValues("transaction").Inc()
+			}
 			result := txProcessResult{
 				tx:          job.tx,
 				blockTime:   job.blockTime,
@@ -125,6 +129,7 @@ func (txDC *txDebitCredits) add(address string, value float64) {
 
 // ProcessTx processes an individual transaction from a block.
 func ProcessTx(jsonTx *lbrycrd.TxRawResult, blockTime uint64, blockHeight uint64) error {
+	defer metrics.Processing(time.Now(), "transaction")
 	defer util.TimeTrack(time.Now(), "processTx "+jsonTx.Txid+" -- ", "daemonprofile")
 
 	//Save transaction before the id is used any where else otherwise it will be 0

@@ -2,8 +2,10 @@ package jobs
 
 import (
 	"context"
+	"time"
 
 	"github.com/lbryio/chainquery/global"
+	"github.com/lbryio/chainquery/metrics"
 	"github.com/lbryio/chainquery/model"
 
 	"github.com/lbryio/lbry.go/extras/errors"
@@ -25,6 +27,9 @@ const certsProcessedPerIteration = 1000
 // signed by the channels certificate. This ensure that the channel owner actually published this claim.
 func CertificateSync() {
 	if !certificateSyncRunning {
+		metrics.JobLoad.WithLabelValues("certificate_sync").Inc()
+		defer metrics.JobLoad.WithLabelValues("certificate_sync").Dec()
+		defer metrics.Job(time.Now(), "certificate_sync")
 		logrus.Debug("Running Certificate Sync...")
 		certificateSyncRunning = true
 		defer endCertificateSync()

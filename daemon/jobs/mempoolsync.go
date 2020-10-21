@@ -6,6 +6,7 @@ import (
 
 	"github.com/lbryio/chainquery/daemon/processing"
 	"github.com/lbryio/chainquery/lbrycrd"
+	"github.com/lbryio/chainquery/metrics"
 	"github.com/lbryio/chainquery/model"
 
 	"github.com/lbryio/lbry.go/extras/errors"
@@ -29,6 +30,9 @@ var mempoolBlock *model.Block
 func MempoolSync() {
 	if !mempoolSyncIsRunning {
 		mempoolSyncIsRunning = true
+		metrics.JobLoad.WithLabelValues("mempool_sync").Inc()
+		defer metrics.JobLoad.WithLabelValues("mempool_sync").Dec()
+		defer metrics.Job(time.Now(), "mempool_sync")
 		// Need to lock block processing to avoid race condition where we are saving a mempool transaction after a block
 		// has already started processing transactions. The mempool transaction could overwrite the block transaction
 		// incorrectly.

@@ -1,6 +1,9 @@
 package jobs
 
 import (
+	"time"
+
+	"github.com/lbryio/chainquery/metrics"
 	"github.com/lbryio/chainquery/model"
 	"github.com/lbryio/lbry.go/v2/extras/errors"
 	"github.com/sirupsen/logrus"
@@ -16,6 +19,9 @@ const syncClaimsInChannel = "SyncClaimsInChannel: "
 //SyncAddressBalancesJob runs the SyncAddressBalances as a background job.
 func SyncAddressBalancesJob() {
 	go func() {
+		metrics.JobLoad.WithLabelValues("address_balance_sync").Inc()
+		defer metrics.JobLoad.WithLabelValues("address_balance_sync").Dec()
+		defer metrics.Job(time.Now(), "address_balance_sync")
 		_, err := SyncAddressBalances()
 		if err != nil {
 			logrus.Error(syncAddressBalances, err)
@@ -26,6 +32,9 @@ func SyncAddressBalancesJob() {
 // SyncClaimsInChannelJob runs the SyncClaimsInChannel as a background job.
 func SyncClaimsInChannelJob() {
 	go func() {
+		metrics.JobLoad.WithLabelValues("claims_in_channel_sync").Inc()
+		defer metrics.JobLoad.WithLabelValues("claims_in_channel_sync").Dec()
+		defer metrics.Job(time.Now(), "claims_in_channel_sync")
 		err := SyncClaimCntInChannel()
 		if err != nil {
 			logrus.Error(syncClaimsInChannel, err)
@@ -36,6 +45,9 @@ func SyncClaimsInChannelJob() {
 //TransactionValueSync synchronizes the transaction value column due to a bug in mysql related to triggers.
 //https://bugs.mysql.com/bug.php?id=11472
 func TransactionValueSync() {
+	metrics.JobLoad.WithLabelValues("transaction_value_sync").Inc()
+	defer metrics.JobLoad.WithLabelValues("transaction_value_sync").Dec()
+	defer metrics.Job(time.Now(), "transaction_value_sync")
 	_, err := SyncTransactionValue()
 	if err != nil {
 		logrus.Error(syncTransactionValues, err)

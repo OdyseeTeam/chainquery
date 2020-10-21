@@ -6,12 +6,13 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
-
-	"github.com/lbryio/chainquery/notifications"
+	"time"
 
 	ds "github.com/lbryio/chainquery/datastore"
 	"github.com/lbryio/chainquery/lbrycrd"
+	"github.com/lbryio/chainquery/metrics"
 	m "github.com/lbryio/chainquery/model"
+	"github.com/lbryio/chainquery/notifications"
 	"github.com/lbryio/lbry.go/extras/errors"
 	"github.com/lbryio/lbry.go/extras/stop"
 
@@ -53,6 +54,9 @@ func vinProcessor(worker int, jobs <-chan vinToProcess, results chan<- error) {
 	for job := range jobs {
 		q(strconv.Itoa(worker) + " - WORKER VIN start new job " + strconv.Itoa(int(job.jsonVin.Sequence)))
 		result := ProcessVin(job.jsonVin, job.tx, job.txDC, job.vin)
+		if result != nil {
+			metrics.ProcessingFailures.WithLabelValues("vin").Inc()
+		}
 		q(strconv.Itoa(worker) + " - WORKER VIN passing result " + strconv.Itoa(int(job.jsonVin.Sequence)))
 		results <- result
 		q(strconv.Itoa(worker) + " - WORKER VIN passed result " + strconv.Itoa(int(job.jsonVin.Sequence)))
@@ -72,13 +76,18 @@ func initVoutWorkers(s *stop.Group, nrWorkers int, jobs <-chan voutToProcess, re
 
 func voutProcessor(worker int, jobs <-chan voutToProcess, results chan<- error) {
 	for job := range jobs {
-		results <- processVout(job.jsonVout, job.tx, job.txDC, job.blockHeight)
+		err := processVout(job.jsonVout, job.tx, job.txDC, job.blockHeight)
+		if err != nil {
+			metrics.ProcessingFailures.WithLabelValues("vin").Inc()
+		}
+		results <- err
 	}
 	q(strconv.Itoa(worker) + " - WORKER VOUT finished all jobs")
 }
 
 //ProcessVin handles the processing of an input to a transaction.
 func ProcessVin(jsonVin *lbrycrd.Vin, tx *m.Transaction, txDC *txDebitCredits, n uint64) error {
+	defer metrics.Processing(time.Now(), "vin")
 	vin := &m.Input{}
 	foundVin := ds.GetInput(tx.Hash, len(jsonVin.Coinbase) > 0, jsonVin.TxID, uint(jsonVin.Vout))
 	if foundVin != nil {
@@ -170,6 +179,7 @@ func processCoinBaseVin(jsonVin *lbrycrd.Vin, vin *m.Input) error {
 }
 
 func processVout(jsonVout *lbrycrd.Vout, tx *m.Transaction, txDC *txDebitCredits, blockHeight uint64) error {
+	defer metrics.Processing(time.Now(), "vout")
 	vout := &m.Output{}
 	foundVout := ds.GetOutput(tx.Hash, uint(jsonVout.N))
 	if foundVout != nil {
