@@ -378,11 +378,11 @@ func getUpdatedClaims(jobStatus *model.JobStatus) (model.ClaimSlice, error) {
 		logrus.Debugf("found %d additional claims from name list", len(claims))
 		namesToFind = namesToFind[upTo:]
 	}
-	claimsToUpdate, err = populateClaimId(claimsToUpdate)
+	claimsToUpdate, err = populateClaimID(claimsToUpdate)
 	return claimsToUpdate, err
 }
 
-func populateClaimId(originalClaims model.ClaimSlice) (model.ClaimSlice, error) {
+func populateClaimID(originalClaims model.ClaimSlice) (model.ClaimSlice, error) {
 	var idsToFind []interface{}
 	var idsOfClaims []uint64
 	IDMap := make(map[uint64]int)
