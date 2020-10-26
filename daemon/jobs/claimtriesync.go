@@ -164,7 +164,7 @@ func SetControllingClaimForNames(claims model.ClaimSlice, atHeight uint64) error
 		names[claim.Name] = claim.Name
 	}
 	printDebug("ClaimTrieSync: Finished making name map...[", len(names), "]")
-	setControllingQueue := make(chan string, 100)
+	setControllingQueue := make(chan string, 1000)
 	initControllingWorkers(runtime.NumCPU()-1, setControllingQueue, &controlwg, atHeight)
 	for _, name := range names {
 		setControllingQueue <- name
@@ -211,7 +211,7 @@ func SyncClaims(claims model.ClaimSlice) error {
 
 	printDebug("ClaimTrieSync: claim  update started... ")
 	syncwg := sync.WaitGroup{}
-	processingQueue := make(chan lbrycrd.Claim, 100)
+	processingQueue := make(chan lbrycrd.Claim, 1000)
 	initSyncWorkers(runtime.NumCPU()-1, processingQueue, &syncwg)
 	for i, claim := range claims {
 		if i%1000 == 0 {
