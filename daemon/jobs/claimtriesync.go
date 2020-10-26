@@ -208,18 +208,26 @@ func setBidStateOfClaimsForName(name string, atHeight uint64) {
 
 // SyncClaims syncs the claims' with these names effective amount and valid at height with the lbrycrd claimtrie.
 func SyncClaims(claims model.ClaimSlice) error {
-
 	printDebug("ClaimTrieSync: claim  update started... ")
+	claimNameMap := make(map[string]bool)
+	for _, claim := range claims {
+		claimNameMap[claim.Name] = true
+	}
+	var names []string
+	for name := range claimNameMap {
+		names = append(names, name)
+	}
+	printDebug("ClaimTrieSync: ", len(names), " names to sync from lbrycrd...")
 	syncwg := sync.WaitGroup{}
 	processingQueue := make(chan lbrycrd.Claim, 1000)
 	initSyncWorkers(runtime.NumCPU()-1, processingQueue, &syncwg)
-	for i, claim := range claims {
+	for i, name := range names {
 		if i%1000 == 0 {
-			printDebug("ClaimTrieSync: syncing ", i, " of ", len(claims), " queued - ", len(processingQueue))
+			printDebug("ClaimTrieSync: syncing ", i, " of ", len(names), " queued - ", len(processingQueue))
 		}
-		claims, err := lbrycrd.GetClaimsForName(claim.Name)
+		claims, err := lbrycrd.GetClaimsForName(name)
 		if err != nil {
-			logrus.Error("ClaimTrieSync: Could not get claims for name: ", claim.Name, " Error: ", err)
+			logrus.Error("ClaimTrieSync: Could not get claims for name: ", name, " Error: ", err)
 		}
 		for _, claimJSON := range claims.Claims {
 			processingQueue <- claimJSON
@@ -235,12 +243,17 @@ func SyncClaims(claims model.ClaimSlice) error {
 
 func syncClaim(claimJSON *lbrycrd.Claim) {
 	hasChanges := false
-	claim := datastore.GetClaim(claimJSON.ClaimID)
-	if claim == nil {
+	c := model.ClaimColumns
+	claim, err := model.Claims(qm.Select(c.ID, c.ValidAtHeight, c.EffectiveAmount), model.ClaimWhere.ClaimID.EQ(claimJSON.ClaimID)).OneG()
+	if err == sql.ErrNoRows {
 		unknown, _ := model.AbnormalClaims(qm.Where(model.AbnormalClaimColumns.ClaimID+"=?", claimJSON.ClaimID)).OneG()
 		if unknown == nil {
 			printDebug("ClaimTrieSync: Missing Claim ", claimJSON.ClaimID, " ", claimJSON.TxID, " ", claimJSON.N)
 		}
+		return
+	}
+	if err != nil {
+		logrus.Error("ClaimTrieSync: ", err)
 		return
 	}
 	if claim.ValidAtHeight != uint(claimJSON.ValidAtHeight) {
@@ -252,7 +265,8 @@ func syncClaim(claimJSON *lbrycrd.Claim) {
 		hasChanges = true
 	}
 	if hasChanges {
-		if err := datastore.PutClaim(claim); err != nil {
+		err := claim.UpdateG(boil.Whitelist(c.ValidAtHeight, c.EffectiveAmount))
+		if err != nil {
 			logrus.Error("ClaimTrieSync: unable to sync claim ", claim.ClaimID, ". JSON-", claimJSON)
 			printDebug("Error: ", err)
 		}
@@ -263,18 +277,19 @@ func getClaimStatus(claim *model.Claim, atHeight uint64) string {
 	status := "Accepted"
 	var transaction *model.Transaction
 	var err error
+	t := model.TransactionColumns
 	if !claim.TransactionHashUpdate.IsZero() {
-		transaction, err = model.Transactions(model.TransactionWhere.Hash.EQ(claim.TransactionHashUpdate.String)).OneG()
+		transaction, err = model.Transactions(qm.Select(t.ID), model.TransactionWhere.Hash.EQ(claim.TransactionHashUpdate.String)).OneG()
 	} else { //Transaction and output should never be missing if the claim exists.
-		transaction, err = claim.TransactionHash().OneG()
+		transaction, err = claim.TransactionHash(qm.Select(t.ID)).OneG()
 	}
 
 	if err != nil {
 		logrus.Error("could not find transaction ", claim.TransactionHashID, " : ", err)
 		return status
 	}
-
-	output, err := transaction.Outputs(qm.Where(model.OutputColumns.Vout+"=?", claim.VoutUpdate)).OneG()
+	o := model.OutputColumns
+	output, err := transaction.Outputs(qm.Select(o.ID, o.IsSpent), qm.Where(model.OutputColumns.Vout+"=?", claim.VoutUpdate)).OneG()
 	if err != nil {
 		logrus.Error("could not find output ", claim.TransactionHashID, "-", claim.Vout, " : ", err)
 		return "ERROR"
