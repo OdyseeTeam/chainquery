@@ -181,7 +181,7 @@ func setBidStateOfClaimsForName(name string, atHeight uint64) {
 		qm.Where(model.ClaimColumns.Name+"=?", name),
 		qm.Where(model.ClaimColumns.ValidAtHeight+"<=?", atHeight),
 		qm.OrderBy(model.ClaimColumns.EffectiveAmount+" DESC")).AllG()
-	printDebug("found ", len(claims), " claims matching the name ", name)
+	printDebug("ClaimTrieSync: found ", len(claims), " claims matching the name ", name)
 	foundControlling := false
 	for _, claim := range claims {
 		if !foundControlling && getClaimStatus(claim, atHeight) == "Active" {

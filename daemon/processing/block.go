@@ -366,6 +366,8 @@ func checkHandleReorg(height uint64, chainPrevHash string) (uint64, error) {
 		//Recursively delete blocks until they match or a reorg of depth 100 == failure of logic.
 		for prevBlock.Hash != chainPrevHash && depth < 100 && prevHeight > 0 {
 			// Delete because it needs to be reprocessed due to reorg
+			fmt.Println("block ", prevBlock.Hash, " at height ", prevBlock.Height,
+				" to be removed due to reorg. TX-> ", prevBlock.TransactionHashes)
 			logrus.Println("block ", prevBlock.Hash, " at height ", prevBlock.Height,
 				" to be removed due to reorg. TX-> ", prevBlock.TransactionHashes)
 			err = prevBlock.DeleteG()
