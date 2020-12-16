@@ -77,13 +77,6 @@ script:
   - git diff --exit-code
 
 deploy:
-  # calls goreleaser for production release
-  - provider: script
-    skip_cleanup: true
-    script: ./scripts/deploy.sh
-    on:
-      tags: true
-      condition: $TRAVIS_OS_NAME = linux
   # uploads per commit builds
   - provider: s3
     bucket: "build.lbry.io"

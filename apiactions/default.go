@@ -95,7 +95,7 @@ func AutoUpdateAction(r *http.Request) api.Response {
 		return api.Response{Data: "same commit version, skipping automatic update."}
 	}
 
-	shouldUpdate := webHook.Status == 0 && !webHook.PullRequest && webHook.Tag != "" && webHook.Tag != meta.GetVersion()
+	shouldUpdate := webHook.Status == 0 && !webHook.PullRequest && webHook.IsMatch("master", "chainquery", "lbryio")
 	if shouldUpdate { // webHook.ShouldDeploy() doesn't work for chainquery autoupdate.
 		if AutoUpdateCommand == "" {
 			err := errors.Base("auto-update triggered, but no auto-update command configured")
