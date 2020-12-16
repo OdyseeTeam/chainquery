@@ -261,8 +261,9 @@ func (c *chainSyncStatus) alignTx(l *lbrycrd.TxRawResult) error {
 		c.Tx.OutputCount = uint(len(l.Vout))
 		colsToUpdate = append(colsToUpdate, model.TransactionColumns.OutputCount)
 	}
-	if c.Tx.Raw.String != l.Hex {
-		c.Tx.Raw.SetValid(l.Hex)
+	if !c.Tx.Raw.IsZero() {
+		c.Tx.Raw.String = ""
+		c.Tx.Raw.Valid = false
 		colsToUpdate = append(colsToUpdate, model.TransactionColumns.Raw)
 	}
 	if len(colsToUpdate) > 0 {
