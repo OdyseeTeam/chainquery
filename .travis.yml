@@ -8,9 +8,7 @@ language: go
 # development version of Go. This can warn you that your code will break
 # in the next version of Go. Don't worry! Later we declare that test runs
 # are allowed to fail on Go tip.
-go:
-  - 1.15.2
-  - master
+go: 1.15.2
 
 # Skip the install step. Don't `go get` dependencies. Only build with the
 # code in vendor/
@@ -23,18 +21,6 @@ cache:
   directories:
   - $HOME/.cache/go-build
   - $HOME/gopath/pkg/mod
-
-matrix:
-  # It's ok if our code fails on unstable development versions of Go.
-  allow_failures:
-    - go: master
-  # Don't wait for tip tests to finish. Mark the test run green if the
-  # tests pass on the stable versions of Go.
-  fast_finish: true
-
-# Don't email me the results of the test runs.
-  notifications:
-    email: false
 
 services:
 - mysql
