@@ -464,7 +464,7 @@ func getSpentClaimsToUpdate(hasUpdate bool) (model.ClaimSlice, error) {
 			txHashCol = model.ClaimColumns.TransactionHashUpdate
 		}
 		c := model.ClaimColumns
-		claimsToAdd, err = model.Claims(qm.Select(c.ID, c.ClaimID, c.TransactionHashUpdate), qm.WhereIn(txHashCol+" IN ?", txHashList...)).AllG()
+		claimsToAdd, err = model.Claims(qm.Select(c.ID, c.ClaimID, txHashCol), qm.WhereIn(txHashCol+" IN ?", txHashList...)).AllG()
 		if err != nil {
 			return nil, errors.Err(err)
 		}
