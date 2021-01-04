@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
+	"unicode/utf8"
 
 	"github.com/lbryio/lbryschema.go/address/base58"
 	pb "github.com/lbryio/types/v2/go"
@@ -355,7 +356,9 @@ func setStreamMetadata(claim *model.Claim, stream pb.Stream) {
 	if len(license) > 500 {
 		license = license[:500]
 	}
-	claim.License.SetValid(license)
+	if utf8.ValidString(license) {
+		claim.License.SetValid(license)
+	}
 
 	liscenseURL := stream.GetLicenseUrl()
 	if len(liscenseURL) > 255 {
