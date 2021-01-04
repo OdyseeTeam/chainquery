@@ -70,7 +70,7 @@ func MempoolSync() {
 
 		running, err := processTxSet(txSet, lastBlock, staleTxs)
 		if err != nil {
-			logrus.Error("MempoolSync:", err)
+			logrus.Debug("MempoolSync Error:", err)
 		}
 
 		mempoolSyncIsRunning = running
