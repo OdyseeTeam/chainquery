@@ -349,17 +349,15 @@ func setTags(claim *model.Claim, tags []string) error {
 	return nil
 }
 
-func setStreamMetadata(claim *model.Claim, stream pb.Stream) {
-	claim.Type.SetValid(global.StreamClaimType)
-	claim.Author.SetValid(stream.GetAuthor())
+func setLicense(claim *model.Claim, stream pb.Stream) {
 	license := stream.GetLicense()
 	if len(license) > 500 {
 		license = license[:500]
 	}
 	if utf8.ValidString(license) {
-		//dont save license issue with liscense at block height 891070 txid 5e06c03b5457732213fc9d5a9e32abb8a5ee22e5762f28da8851e0999fbbe970
+		//issue with liscense at block height 891070 txid 5e06c03b5457732213fc9d5a9e32abb8a5ee22e5762f28da8851e0999fbbe970
 		// Error 1366: Incorrect string value: '\xC3' for column 'license' at row 1
-		//claim.License.SetValid(license)
+		claim.License.SetValid(license)
 	}
 
 	liscenseURL := stream.GetLicenseUrl()
@@ -367,7 +365,12 @@ func setStreamMetadata(claim *model.Claim, stream pb.Stream) {
 		liscenseURL = liscenseURL[0:255]
 	}
 	claim.LicenseURL.SetValid(liscenseURL)
+}
 
+func setStreamMetadata(claim *model.Claim, stream pb.Stream) {
+	claim.Type.SetValid(global.StreamClaimType)
+	claim.Author.SetValid(stream.GetAuthor())
+	setLicense(claim, stream)
 	claim.Preview.SetValid("") //Never set
 
 	fee := stream.GetFee()
