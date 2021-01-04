@@ -357,7 +357,9 @@ func setStreamMetadata(claim *model.Claim, stream pb.Stream) {
 		license = license[:500]
 	}
 	if utf8.ValidString(license) {
-		claim.License.SetValid(license)
+		//dont save license issue with liscense at block height 891070 txid 5e06c03b5457732213fc9d5a9e32abb8a5ee22e5762f28da8851e0999fbbe970
+		// Error 1366: Incorrect string value: '\xC3' for column 'license' at row 1
+		//claim.License.SetValid(license)
 	}
 
 	liscenseURL := stream.GetLicenseUrl()
