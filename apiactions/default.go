@@ -81,8 +81,12 @@ var AutoUpdateCommand = ""
 
 // AutoUpdateAction takes a travis webhook for a successful deployment and runs an environment script to self update.
 func AutoUpdateAction(r *http.Request) api.Response {
-	logrus.Info(httputil.DumpRequest(r, true))
-	err := travis.ValidateSignature(false, r)
+	rBytes, err := httputil.DumpRequest(r, true)
+	if err != nil {
+		return api.Response{Error: err}
+	}
+	logrus.Info("Hook Request: ", string(rBytes))
+	err = travis.ValidateSignature(false, r)
 	if err != nil {
 		logrus.Info(err)
 		return api.Response{Error: err, Status: http.StatusBadRequest}
