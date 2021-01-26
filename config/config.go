@@ -210,10 +210,14 @@ func processConfiguration() {
 
 	//Flags last so they override everything before, even config
 	if viper.IsSet(debugmodeflag) {
-		logrus.SetLevel(logrus.DebugLevel)
+		if viper.GetBool(debugmodeflag) {
+			logrus.SetLevel(logrus.DebugLevel)
+		}
 	}
 	if viper.IsSet(tracemodeflag) {
-		logrus.SetLevel(logrus.TraceLevel)
+		if viper.GetBool(tracemodeflag) {
+			logrus.SetLevel(logrus.TraceLevel)
+		}
 	}
 
 }
