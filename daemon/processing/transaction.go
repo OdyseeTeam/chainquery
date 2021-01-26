@@ -1,10 +1,11 @@
 package processing
 
 import (
-	"runtime"
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/lbryio/chainquery/datastore"
 	"github.com/lbryio/chainquery/lbrycrd"
@@ -20,7 +21,7 @@ import (
 )
 
 //MaxParallelTxProcessing sets the maximum concurrent transactions to process in a block.
-var MaxParallelTxProcessing = runtime.NumCPU()
+var MaxParallelTxProcessing int
 
 type txToProcess struct {
 	tx          *lbrycrd.TxRawResult
@@ -58,6 +59,9 @@ func txProcessor(s *stop.Group, jobs <-chan txToProcess, results chan<- txProces
 			err := ProcessTx(job.tx, job.blockTime, job.blockHeight)
 			if err != nil {
 				metrics.ProcessingFailures.WithLabelValues("transaction").Inc()
+				logrus.Debugf("processing tx failed %d times %s", job.failcount+1, job.tx.Hash)
+			} else if job.failcount > 0 {
+				logrus.Debugf("processing tx success after %d times %s", job.failcount, job.tx.Hash)
 			}
 			result := txProcessResult{
 				tx:          job.tx,

@@ -418,15 +418,19 @@ func reprocessQueue(manager *txSyncManager) {
 	}
 }
 
+func checkDepth(tx *lbrycrd.TxRawResult, txMap map[string]*lbrycrd.TxRawResult, depthMap map[string]int) {
+	for _, vin := range tx.Vin {
+		if txchild, ok := txMap[vin.TxID]; ok {
+			depthMap[vin.TxID] = depthMap[vin.TxID] + 1
+			checkDepth(txchild, txMap, depthMap)
+		}
+	}
+}
+
 func optimizeOrderToProcess(txMap map[string]*lbrycrd.TxRawResult, depthMap map[string]int) []*lbrycrd.TxRawResult {
 
 	for _, tx := range txMap {
-		for _, vin := range tx.Vin {
-			if _, ok := txMap[vin.TxID]; ok {
-				depthMap[vin.TxID] = (depthMap[vin.TxID] + 1) * 3
-				depthMap[tx.Txid] = depthMap[tx.Txid] - 1
-			}
-		}
+		checkDepth(tx, txMap, depthMap)
 	}
 
 	type depthPair struct {

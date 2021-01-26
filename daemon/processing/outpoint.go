@@ -3,7 +3,6 @@ package processing
 import (
 	"encoding/hex"
 	"encoding/json"
-	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -21,10 +20,10 @@ import (
 )
 
 // MaxParallelVoutProcessing max concurrently processing outputs
-var MaxParallelVoutProcessing = runtime.NumCPU()
+var MaxParallelVoutProcessing int
 
 // MaxParallelVinProcessing max concurrently processing inputs
-var MaxParallelVinProcessing = runtime.NumCPU()
+var MaxParallelVinProcessing int
 
 type vinToProcess struct {
 	jsonVin *lbrycrd.Vin
