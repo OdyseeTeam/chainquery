@@ -352,7 +352,7 @@ func setTags(claim *model.Claim, tags []string) error {
 func setLicense(claim *model.Claim, stream pb.Stream) {
 	license := stream.GetLicense()
 	if len(license) > 500 {
-		license = license[:500]
+		license = string([]rune(license)[:500])
 	}
 	if utf8.ValidString(license) {
 		//issue with liscense at block height 891070 txid 5e06c03b5457732213fc9d5a9e32abb8a5ee22e5762f28da8851e0999fbbe970
