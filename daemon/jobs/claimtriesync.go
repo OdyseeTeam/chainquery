@@ -347,15 +347,22 @@ func getUpdatedClaims(jobStatus *model.JobStatus) (model.ClaimSlice, error) {
 		claimids = append(claimids, support.SupportedClaimID)
 	}
 	c := model.ClaimColumns
+	upTo := 5000
 	var claims model.ClaimSlice
-	if len(claimids) > 0 {
+	var namesMap map[string]bool
+	for len(claimids) > 0 {
+		if len(claimids) < upTo {
+			upTo = len(claimids)
+		}
 		var err error
-		claims, err = model.Claims(qm.Select("DISTINCT "+c.Name), qm.WhereIn(c.ClaimID+" IN ?", claimids...)).AllG()
+		claims, err = model.Claims(qm.Select("DISTINCT "+c.Name), qm.WhereIn(c.ClaimID+" IN ?", claimids[:upTo])).AllG()
 		if err != nil {
 			return nil, errors.Err(err)
 		}
+		namesMap = updateNameList(namesMap, claims)
+		claimids = claimids[upTo:]
 	}
-	namesMap := updateNameList(nil, claims)
+
 	prevNamesLength = len(namesMap)
 	logrus.Debugf("found %d new names from support modifications", prevNamesLength)
 	// CLAIMS THAT WERE MODIFIED [SELECT DISTINCT claim.name FROM claim WHERE claim.modified_at >= '2019-11-03 19:48:58';]
@@ -378,7 +385,7 @@ func getUpdatedClaims(jobStatus *model.JobStatus) (model.ClaimSlice, error) {
 		namesToFind = append(namesToFind, name)
 	}
 
-	upTo := 5000
+	upTo = 5000
 	var claimsToUpdate model.ClaimSlice
 	for len(namesToFind) > 0 {
 		if len(namesToFind) < upTo {
