@@ -351,7 +351,7 @@ func setTags(claim *model.Claim, tags []string) error {
 
 func setLicense(claim *model.Claim, stream pb.Stream) {
 	license := stream.GetLicense()
-	if len(license) > 500 {
+	if len([]rune(license)) > 500 {
 		license = string([]rune(license)[:500])
 	}
 	if utf8.ValidString(license) {
