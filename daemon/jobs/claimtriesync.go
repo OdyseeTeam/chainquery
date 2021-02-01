@@ -355,7 +355,8 @@ func getUpdatedClaims(jobStatus *model.JobStatus) (model.ClaimSlice, error) {
 			upTo = len(claimids)
 		}
 		var err error
-		claims, err = model.Claims(qm.Select("DISTINCT "+c.Name), qm.WhereIn(c.ClaimID+" IN ?", claimids[:upTo])).AllG()
+		toFind := claimids[:upTo]
+		claims, err = model.Claims(qm.Select("DISTINCT "+c.Name), qm.WhereIn(c.ClaimID+" IN ?", toFind...)).AllG()
 		if err != nil {
 			return nil, errors.Err(err)
 		}
