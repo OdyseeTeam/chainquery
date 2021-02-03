@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
+	"strings"
 	"unicode/utf8"
 
 	"github.com/lbryio/lbryschema.go/address/base58"
@@ -351,6 +352,11 @@ func setTags(claim *model.Claim, tags []string) error {
 
 func setLicense(claim *model.Claim, stream pb.Stream) {
 	license := stream.GetLicense()
+	
+	// Sanitize string
+	if license != "" {
+		license = strings.ToValidUTF8(license, "")
+	}
 	if len([]rune(license)) > 500 {
 		license = string([]rune(license)[:500])
 	}
