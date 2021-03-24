@@ -231,7 +231,7 @@ func (c *chainSyncStatus) alignClaim() error {
 
 	//Update Claim
 	if len(colsToUpdate) > 0 {
-		logrus.Debugf("found unaligned claim @%d and Tx %s with the following columns out of alignment: %s", c.Vout.ClaimID.String, c.Tx.Hash, strings.Join(colsToUpdate, ","))
+		logrus.Debugf("found unaligned claim @%s and Tx %s with the following columns out of alignment: %s", c.Vout.ClaimID.String, c.Tx.Hash, strings.Join(colsToUpdate, ","))
 		err := storedClaim.UpdateG(boil.Whitelist(colsToUpdate...))
 		if err != nil {
 			return errors.Err(err)
