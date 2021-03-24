@@ -231,6 +231,7 @@ func processUpdateClaim(helper *c.ClaimHelper, claim *model.Claim, value []byte)
 	return claim, nil
 }
 
+// UpdateClaimData updates the claim information from the blockchain
 func UpdateClaimData(helper *c.ClaimHelper, claim *model.Claim) error {
 	// pbClaim JSON
 	if claimHelper, err := c.DecodeClaimHex(claim.ValueAsHex, global.BlockChainName); err == nil && claimHelper != nil {

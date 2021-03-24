@@ -177,6 +177,7 @@ func processCoinBaseVin(jsonVin *lbrycrd.Vin, vin *m.Input) error {
 	return nil
 }
 
+// ProcessVout processes an ouput from lbrycrd
 func ProcessVout(jsonVout *lbrycrd.Vout, tx *m.Transaction, txDC *txDebitCredits, blockHeight uint64) error {
 	defer metrics.Processing(time.Now(), "vout")
 	vout := &m.Output{}
