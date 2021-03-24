@@ -196,7 +196,7 @@ func processClaim(helper *c.ClaimHelper, claim *model.Claim, value []byte, outpu
 	if helper.LegacyClaim != nil {
 		claim.Version = helper.LegacyClaim.GetVersion().String()
 	}
-	notifications.ClaimEvent(claim.ClaimID, claim.Name, claim.Title.String, tx.Hash, claim.PublisherID.String)
+	notifications.ClaimEvent(claim.ClaimID, claim.Name, claim.Title.String, tx.Hash, claim.PublisherID.String, claim.SourceHash.String)
 	return claim, nil
 }
 
@@ -223,6 +223,15 @@ func processUpdateClaim(helper *c.ClaimHelper, claim *model.Claim, value []byte)
 	}
 	claim.ValueAsHex = hex.EncodeToString(value)
 
+	err := UpdateClaimData(helper, claim)
+	if err != nil {
+		return nil, err
+	}
+
+	return claim, nil
+}
+
+func UpdateClaimData(helper *c.ClaimHelper, claim *model.Claim) error {
 	// pbClaim JSON
 	if claimHelper, err := c.DecodeClaimHex(claim.ValueAsHex, global.BlockChainName); err == nil && claimHelper != nil {
 		json, err := GetValueAsJSON(*claimHelper)
@@ -236,7 +245,7 @@ func processUpdateClaim(helper *c.ClaimHelper, claim *model.Claim, value []byte)
 	setSourceInfo(claim, helper)
 	err := setMetaDataInfo(claim, helper)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	setPublisherInfo(claim, helper)
 	setCertificateInfo(claim, helper)
@@ -244,8 +253,7 @@ func processUpdateClaim(helper *c.ClaimHelper, claim *model.Claim, value []byte)
 	if helper.LegacyClaim != nil {
 		claim.Version = helper.LegacyClaim.GetVersion().String()
 	}
-
-	return claim, nil
+	return nil
 }
 
 func setPublisherInfo(claim *model.Claim, helper *c.ClaimHelper) {

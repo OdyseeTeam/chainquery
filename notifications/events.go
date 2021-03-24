@@ -20,12 +20,13 @@ func PaymentEvent(lbc float64, address, txid string, vout uint) {
 }
 
 // ClaimEvent event to notify subscribers of a new claim thats been published
-func ClaimEvent(claimID, name, title, txID, channeClaimID string) {
+func ClaimEvent(claimID, name, title, txID, channeClaimID, source string) {
 	values := url.Values{}
 	values.Add("claim_id", claimID)
 	values.Add("name", name)
 	values.Add("title", title)
 	values.Add("tx_id", txID)
+	values.Add("source", source)
 	values.Add("channel_claim_id", channeClaimID)
 	go Notify(newClaim, values)
 }

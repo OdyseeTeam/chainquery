@@ -75,7 +75,7 @@ func initVoutWorkers(s *stop.Group, nrWorkers int, jobs <-chan voutToProcess, re
 
 func voutProcessor(worker int, jobs <-chan voutToProcess, results chan<- error) {
 	for job := range jobs {
-		err := processVout(job.jsonVout, job.tx, job.txDC, job.blockHeight)
+		err := ProcessVout(job.jsonVout, job.tx, job.txDC, job.blockHeight)
 		if err != nil {
 			metrics.ProcessingFailures.WithLabelValues("vin").Inc()
 		}
@@ -177,7 +177,7 @@ func processCoinBaseVin(jsonVin *lbrycrd.Vin, vin *m.Input) error {
 	return nil
 }
 
-func processVout(jsonVout *lbrycrd.Vout, tx *m.Transaction, txDC *txDebitCredits, blockHeight uint64) error {
+func ProcessVout(jsonVout *lbrycrd.Vout, tx *m.Transaction, txDC *txDebitCredits, blockHeight uint64) error {
 	defer metrics.Processing(time.Now(), "vout")
 	vout := &m.Output{}
 	foundVout := ds.GetOutput(tx.Hash, uint(jsonVout.N))

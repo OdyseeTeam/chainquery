@@ -10,10 +10,13 @@ import (
 
 	"github.com/lbryio/chainquery/daemon/processing"
 	"github.com/lbryio/chainquery/datastore"
+	"github.com/lbryio/chainquery/global"
 	"github.com/lbryio/chainquery/lbrycrd"
 	"github.com/lbryio/chainquery/metrics"
 	"github.com/lbryio/chainquery/model"
+
 	"github.com/lbryio/lbry.go/extras/errors"
+	"github.com/lbryio/lbryschema.go/claim"
 
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/null"
@@ -160,6 +163,81 @@ func (c *chainSyncStatus) alignTxs(block *model.Block, txHashes []string) error 
 			return c.recordAndReturnError(c.LastHeight, "vin-alignment", err)
 		}
 	}
+	return nil
+}
+
+func (c chainSyncStatus) alignVouts(vouts []lbrycrd.Vout) error {
+	for i, vout := range vouts {
+		output := datastore.GetOutput(c.Tx.Hash, uint(vout.N))
+		if output == nil {
+			err := processing.ProcessVout(&vout, c.Tx, nil, uint64(i))
+			if err != nil {
+				return errors.Err(err)
+			}
+		} else {
+			c.Vout = output
+			err := c.alignVout(vout)
+			if err != nil {
+				c.recordError(c.LastHeight, "vout-alignment", err)
+			}
+		}
+	}
+
+	return nil
+}
+
+func (c *chainSyncStatus) alignVout(v lbrycrd.Vout) error {
+	colsToUpdate := make([]string, 0)
+	if c.Vout.Value.Float64 != v.Value {
+		c.Vout.Value.SetValid(v.Value)
+		colsToUpdate = append(colsToUpdate, model.OutputColumns.Value)
+	}
+	if len(colsToUpdate) > 0 {
+		logrus.Debugf("found unaligned vout @%d and Tx %s with the following columns out of alignment: %s", c.LastHeight, c.Tx.Hash, strings.Join(colsToUpdate, ","))
+		err := c.Vout.UpdateG(boil.Whitelist(colsToUpdate...))
+		if err != nil {
+			return errors.Err(err)
+		}
+	}
+	if !c.Vout.ClaimID.IsZero() && !c.Vout.IsSpent {
+		return c.alignClaim()
+	}
+	return nil
+}
+
+func (c *chainSyncStatus) alignClaim() error {
+	storedClaim := datastore.GetClaim(c.Vout.ClaimID.String)
+	if storedClaim == nil {
+		return errors.Err("could not find claim with id %s", c.Vout.ClaimID.String)
+	}
+	helper, err := claim.DecodeClaimHex(storedClaim.ValueAsHex, global.BlockChainName)
+	if err != nil {
+		return err
+	}
+	if helper == nil {
+		return errors.Err("could not create help for claim %s from ValueAsHex", c.Vout.ClaimID)
+	}
+	original := *storedClaim
+	colsToUpdate := make([]string, 0)
+	err = processing.UpdateClaimData(helper, storedClaim)
+	if err != nil {
+		return err
+	}
+
+	//Check for deltas here to update for
+	if original.License.String != storedClaim.License.String {
+		colsToUpdate = append(colsToUpdate, model.ClaimColumns.License)
+	}
+
+	//Update Claim
+	if len(colsToUpdate) > 0 {
+		logrus.Debugf("found unaligned claim @%d and Tx %s with the following columns out of alignment: %s", c.Vout.ClaimID, c.Tx.Hash, strings.Join(colsToUpdate, ","))
+		err := storedClaim.UpdateG(boil.Whitelist(colsToUpdate...))
+		if err != nil {
+			return errors.Err(err)
+		}
+	}
+
 	return nil
 }
 
