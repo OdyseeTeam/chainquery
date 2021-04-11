@@ -24,7 +24,6 @@ const (
 	opSupportClaim = 0xb6 //OP_NOP7 			= 182
 	opUpdateClaim  = 0xb7 //OP_NOP8 			= 183
 	opReturn       = 0x6a //OP_RETURN       	= 106
-	SOMETHING      = 0x17 // = 23
 	purchase       = 0x50 //PURCHASE = 80
 	opDup          = 0x76 //opDup 				= 118
 	opChecksig     = 0xac //opChecksig 			= 172
