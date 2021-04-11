@@ -431,6 +431,7 @@ func parseDataScript(script []byte) ([]byte, error) {
 	return script[2:], nil
 }
 
+// ParsePurchaseScript returns the purchase from script bytes or errors if invalid
 func ParsePurchaseScript(script []byte) (*pb.Purchase, error) {
 	data, err := parseDataScript(script)
 	if err != nil {
