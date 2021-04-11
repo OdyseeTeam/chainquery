@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/lbryio/chainquery/util"
+
 	ds "github.com/lbryio/chainquery/datastore"
 	"github.com/lbryio/chainquery/lbrycrd"
 	"github.com/lbryio/chainquery/metrics"
@@ -194,6 +196,13 @@ func ProcessVout(jsonVout *lbrycrd.Vout, tx *m.Transaction, txDC *txDebitCredits
 	vout.ScriptPubKeyAsm.SetValid(jsonVout.ScriptPubKey.Asm)
 	vout.ScriptPubKeyHex.SetValid(jsonVout.ScriptPubKey.Hex)
 	vout.Type.SetValid(jsonVout.ScriptPubKey.Type)
+	if jsonVout.ScriptPubKey.Type == lbrycrd.NullData {
+		err := processNullDataVout(tx, jsonVout, blockHeight)
+		if err != nil {
+			return err
+		}
+		return ds.PutOutput(vout, boil.Infer())
+	}
 	var address *m.Address
 	jsonAddresses, err := json.Marshal(jsonVout.ScriptPubKey.Addresses)
 	if len(jsonVout.ScriptPubKey.Addresses) > 0 {
@@ -286,4 +295,41 @@ func processScriptForClaim(vout m.Output, tx m.Transaction, blockHeight uint64) 
 	}
 
 	return claimid, nil
+}
+
+func processNullDataVout(tx *m.Transaction, vout *lbrycrd.Vout, blockHeight uint64) error {
+	scriptBytes, err := hex.DecodeString(vout.ScriptPubKey.Hex)
+	if err != nil {
+		return errors.Err(err)
+	}
+	if lbrycrd.IsPurchaseScript(scriptBytes) {
+		return processPurchaseVout(scriptBytes, tx, vout, blockHeight)
+	}
+	return nil
+}
+
+func processPurchaseVout(script []byte, tx *m.Transaction, vout *lbrycrd.Vout, blockHeight uint64) error {
+	pbPurchase, err := lbrycrd.ParsePurchaseScript(script)
+	if err != nil {
+		return errors.Err(err)
+	}
+	pbPurchase.GetClaimHash()
+	bytes := util.ReverseBytes(pbPurchase.GetClaimHash())
+	claimID := hex.EncodeToString(bytes)
+	claim := ds.GetClaim(claimID)
+	if claim != nil {
+		purchase := ds.GetPurchase(tx.Hash, uint(vout.N), claim.ClaimID)
+		if purchase == nil {
+			purchase = &m.Purchase{}
+		}
+		purchase.ClaimID.SetValid(claim.ClaimID)
+		purchase.TransactionByHashID.SetValid(tx.Hash)
+		purchase.Vout = uint(vout.N)
+		purchase.Height = uint(blockHeight)
+		err := ds.PutPurchase(purchase)
+		if err != nil {
+			return errors.Err(err)
+		}
+	}
+	return nil
 }

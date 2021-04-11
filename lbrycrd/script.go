@@ -4,6 +4,8 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 
+	"github.com/golang/protobuf/proto"
+
 	"github.com/lbryio/chainquery/global"
 	"github.com/lbryio/chainquery/util"
 
@@ -12,6 +14,7 @@ import (
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcutil"
+	pb "github.com/lbryio/types/v2/go"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -20,11 +23,14 @@ const (
 	opClaimName    = 0xb5 //OP_NOP6 			= 181
 	opSupportClaim = 0xb6 //OP_NOP7 			= 182
 	opUpdateClaim  = 0xb7 //OP_NOP8 			= 183
-	opDup          = 0x76 //opDup 			= 118
-	opChecksig     = 0xac //opChecksig 		= 172
-	opEqualverify  = 0x88 //opEqualverify 	= 136
-	opHash160      = 0xa9 //opHash160		= 169
-	opPushdata1    = 0x4c //opPushdata1  	= 76
+	opReturn       = 0x6a //OP_RETURN       	= 106
+	SOMETHING      = 0x17 // = 23
+	purchase       = 0x50 //PURCHASE = 80
+	opDup          = 0x76 //opDup 				= 118
+	opChecksig     = 0xac //opChecksig 			= 172
+	opEqualverify  = 0x88 //opEqualverify 		= 136
+	opHash160      = 0xa9 //opHash160			= 169
+	opPushdata1    = 0x4c //opPushdata1  		= 76
 	opPushdata2    = 0x4d //opPushdata2 		= 77
 	opPushdata4    = 0x4e //opPushdata4 		= 78
 
@@ -112,6 +118,14 @@ func IsClaimSupportScript(script []byte) bool {
 func IsClaimUpdateScript(script []byte) bool {
 	if len(script) > 0 {
 		return script[0] == opUpdateClaim
+	}
+	return false
+}
+
+// IsPurchaseScript returns true if the script for the vout contains the OP_RETURN + 'P' byte identifier for a purchase
+func IsPurchaseScript(script []byte) bool {
+	if len(script) > 2 {
+		return script[0] == opReturn && script[2] == purchase
 	}
 	return false
 }
@@ -400,4 +414,35 @@ func getAddressFromP2WSH(hexstring string) (string, error) {
 	}
 	address := addr.EncodeAddress()
 	return address, nil
+}
+
+func parseDataScript(script []byte) ([]byte, error) {
+	// OP_RETURN (bytes) DATA
+	if len(script) <= 1 {
+		return nil, errors.Err("there is no script to parse")
+	}
+	if script[0] != opReturn {
+		return nil, errors.Err("the first byte of script must be an OP_RETURN to quality as un-spendable data")
+	}
+	dataBytesToRead := int(script[1])
+	if (len(script) - dataBytesToRead - 2) != 0 {
+		return nil, errors.Err("supposed to have %d bytes to read but the script is %d bytes", dataBytesToRead, len(script))
+	}
+	return script[2:], nil
+}
+
+func ParsePurchaseScript(script []byte) (*pb.Purchase, error) {
+	data, err := parseDataScript(script)
+	if err != nil {
+		return nil, err
+	}
+	if data[0] != purchase {
+		return nil, errors.Err("the first byte must be 'P'(0x50) to be a purchase script")
+	}
+	purchase := &pb.Purchase{}
+	err = proto.Unmarshal(data[1:], purchase)
+	if err != nil {
+		return nil, errors.Err(err)
+	}
+	return purchase, nil
 }

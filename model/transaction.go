@@ -115,29 +115,32 @@ var TransactionWhere = struct {
 
 // TransactionRels is where relationship names are stored.
 var TransactionRels = struct {
-	BlockHash               string
-	TransactionHashClaims   string
-	Inputs                  string
-	Outputs                 string
-	TransactionHashSupports string
-	TransactionAddresses    string
+	BlockHash                  string
+	TransactionHashClaims      string
+	Inputs                     string
+	Outputs                    string
+	TransactionByHashPurchases string
+	TransactionHashSupports    string
+	TransactionAddresses       string
 }{
-	BlockHash:               "BlockHash",
-	TransactionHashClaims:   "TransactionHashClaims",
-	Inputs:                  "Inputs",
-	Outputs:                 "Outputs",
-	TransactionHashSupports: "TransactionHashSupports",
-	TransactionAddresses:    "TransactionAddresses",
+	BlockHash:                  "BlockHash",
+	TransactionHashClaims:      "TransactionHashClaims",
+	Inputs:                     "Inputs",
+	Outputs:                    "Outputs",
+	TransactionByHashPurchases: "TransactionByHashPurchases",
+	TransactionHashSupports:    "TransactionHashSupports",
+	TransactionAddresses:       "TransactionAddresses",
 }
 
 // transactionR is where relationships are stored.
 type transactionR struct {
-	BlockHash               *Block
-	TransactionHashClaims   ClaimSlice
-	Inputs                  InputSlice
-	Outputs                 OutputSlice
-	TransactionHashSupports SupportSlice
-	TransactionAddresses    TransactionAddressSlice
+	BlockHash                  *Block
+	TransactionHashClaims      ClaimSlice
+	Inputs                     InputSlice
+	Outputs                    OutputSlice
+	TransactionByHashPurchases PurchaseSlice
+	TransactionHashSupports    SupportSlice
+	TransactionAddresses       TransactionAddressSlice
 }
 
 // NewStruct creates a new relationship struct
@@ -418,6 +421,27 @@ func (o *Transaction) Outputs(mods ...qm.QueryMod) outputQuery {
 
 	if len(queries.GetSelect(query.Query)) == 0 {
 		queries.SetSelect(query.Query, []string{"`output`.*"})
+	}
+
+	return query
+}
+
+// TransactionByHashPurchases retrieves all the purchase's Purchases with an executor via transaction_by_hash_id column.
+func (o *Transaction) TransactionByHashPurchases(mods ...qm.QueryMod) purchaseQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("`purchase`.`transaction_by_hash_id`=?", o.Hash),
+	)
+
+	query := Purchases(queryMods...)
+	queries.SetFrom(query.Query, "`purchase`")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"`purchase`.*"})
 	}
 
 	return query
@@ -818,6 +842,94 @@ func (transactionL) LoadOutputs(e boil.Executor, singular bool, maybeTransaction
 					foreign.R = &outputR{}
 				}
 				foreign.R.Transaction = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadTransactionByHashPurchases allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (transactionL) LoadTransactionByHashPurchases(e boil.Executor, singular bool, maybeTransaction interface{}, mods queries.Applicator) error {
+	var slice []*Transaction
+	var object *Transaction
+
+	if singular {
+		object = maybeTransaction.(*Transaction)
+	} else {
+		slice = *maybeTransaction.(*[]*Transaction)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &transactionR{}
+		}
+		args = append(args, object.Hash)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &transactionR{}
+			}
+
+			for _, a := range args {
+				if queries.Equal(a, obj.Hash) {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.Hash)
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(qm.From(`purchase`), qm.WhereIn(`transaction_by_hash_id in ?`, args...))
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.Query(e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load purchase")
+	}
+
+	var resultSlice []*Purchase
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice purchase")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on purchase")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for purchase")
+	}
+
+	if singular {
+		object.R.TransactionByHashPurchases = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &purchaseR{}
+			}
+			foreign.R.TransactionByHash = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if queries.Equal(local.Hash, foreign.TransactionByHashID) {
+				local.R.TransactionByHashPurchases = append(local.R.TransactionByHashPurchases, foreign)
+				if foreign.R == nil {
+					foreign.R = &purchaseR{}
+				}
+				foreign.R.TransactionByHash = local
 				break
 			}
 		}
@@ -1520,6 +1632,225 @@ func (o *Transaction) AddOutputs(exec boil.Executor, insert bool, related ...*Ou
 			rel.R.Transaction = o
 		}
 	}
+	return nil
+}
+
+// AddTransactionByHashPurchasesG adds the given related objects to the existing relationships
+// of the transaction, optionally inserting them as new records.
+// Appends related to o.R.TransactionByHashPurchases.
+// Sets related.R.TransactionByHash appropriately.
+// Uses the global database handle.
+func (o *Transaction) AddTransactionByHashPurchasesG(insert bool, related ...*Purchase) error {
+	return o.AddTransactionByHashPurchases(boil.GetDB(), insert, related...)
+}
+
+// AddTransactionByHashPurchasesP adds the given related objects to the existing relationships
+// of the transaction, optionally inserting them as new records.
+// Appends related to o.R.TransactionByHashPurchases.
+// Sets related.R.TransactionByHash appropriately.
+// Panics on error.
+func (o *Transaction) AddTransactionByHashPurchasesP(exec boil.Executor, insert bool, related ...*Purchase) {
+	if err := o.AddTransactionByHashPurchases(exec, insert, related...); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// AddTransactionByHashPurchasesGP adds the given related objects to the existing relationships
+// of the transaction, optionally inserting them as new records.
+// Appends related to o.R.TransactionByHashPurchases.
+// Sets related.R.TransactionByHash appropriately.
+// Uses the global database handle and panics on error.
+func (o *Transaction) AddTransactionByHashPurchasesGP(insert bool, related ...*Purchase) {
+	if err := o.AddTransactionByHashPurchases(boil.GetDB(), insert, related...); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// AddTransactionByHashPurchases adds the given related objects to the existing relationships
+// of the transaction, optionally inserting them as new records.
+// Appends related to o.R.TransactionByHashPurchases.
+// Sets related.R.TransactionByHash appropriately.
+func (o *Transaction) AddTransactionByHashPurchases(exec boil.Executor, insert bool, related ...*Purchase) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			queries.Assign(&rel.TransactionByHashID, o.Hash)
+			if err = rel.Insert(exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE `purchase` SET %s WHERE %s",
+				strmangle.SetParamNames("`", "`", 0, []string{"transaction_by_hash_id"}),
+				strmangle.WhereClause("`", "`", 0, purchasePrimaryKeyColumns),
+			)
+			values := []interface{}{o.Hash, rel.ID}
+
+			if boil.DebugMode {
+				fmt.Fprintln(boil.DebugWriter, updateQuery)
+				fmt.Fprintln(boil.DebugWriter, values)
+			}
+
+			if _, err = exec.Exec(updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			queries.Assign(&rel.TransactionByHashID, o.Hash)
+		}
+	}
+
+	if o.R == nil {
+		o.R = &transactionR{
+			TransactionByHashPurchases: related,
+		}
+	} else {
+		o.R.TransactionByHashPurchases = append(o.R.TransactionByHashPurchases, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &purchaseR{
+				TransactionByHash: o,
+			}
+		} else {
+			rel.R.TransactionByHash = o
+		}
+	}
+	return nil
+}
+
+// SetTransactionByHashPurchasesG removes all previously related items of the
+// transaction replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.TransactionByHash's TransactionByHashPurchases accordingly.
+// Replaces o.R.TransactionByHashPurchases with related.
+// Sets related.R.TransactionByHash's TransactionByHashPurchases accordingly.
+// Uses the global database handle.
+func (o *Transaction) SetTransactionByHashPurchasesG(insert bool, related ...*Purchase) error {
+	return o.SetTransactionByHashPurchases(boil.GetDB(), insert, related...)
+}
+
+// SetTransactionByHashPurchasesP removes all previously related items of the
+// transaction replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.TransactionByHash's TransactionByHashPurchases accordingly.
+// Replaces o.R.TransactionByHashPurchases with related.
+// Sets related.R.TransactionByHash's TransactionByHashPurchases accordingly.
+// Panics on error.
+func (o *Transaction) SetTransactionByHashPurchasesP(exec boil.Executor, insert bool, related ...*Purchase) {
+	if err := o.SetTransactionByHashPurchases(exec, insert, related...); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// SetTransactionByHashPurchasesGP removes all previously related items of the
+// transaction replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.TransactionByHash's TransactionByHashPurchases accordingly.
+// Replaces o.R.TransactionByHashPurchases with related.
+// Sets related.R.TransactionByHash's TransactionByHashPurchases accordingly.
+// Uses the global database handle and panics on error.
+func (o *Transaction) SetTransactionByHashPurchasesGP(insert bool, related ...*Purchase) {
+	if err := o.SetTransactionByHashPurchases(boil.GetDB(), insert, related...); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// SetTransactionByHashPurchases removes all previously related items of the
+// transaction replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.TransactionByHash's TransactionByHashPurchases accordingly.
+// Replaces o.R.TransactionByHashPurchases with related.
+// Sets related.R.TransactionByHash's TransactionByHashPurchases accordingly.
+func (o *Transaction) SetTransactionByHashPurchases(exec boil.Executor, insert bool, related ...*Purchase) error {
+	query := "update `purchase` set `transaction_by_hash_id` = null where `transaction_by_hash_id` = ?"
+	values := []interface{}{o.Hash}
+	if boil.DebugMode {
+		fmt.Fprintln(boil.DebugWriter, query)
+		fmt.Fprintln(boil.DebugWriter, values)
+	}
+
+	_, err := exec.Exec(query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.TransactionByHashPurchases {
+			queries.SetScanner(&rel.TransactionByHashID, nil)
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.TransactionByHash = nil
+		}
+
+		o.R.TransactionByHashPurchases = nil
+	}
+	return o.AddTransactionByHashPurchases(exec, insert, related...)
+}
+
+// RemoveTransactionByHashPurchasesG relationships from objects passed in.
+// Removes related items from R.TransactionByHashPurchases (uses pointer comparison, removal does not keep order)
+// Sets related.R.TransactionByHash.
+// Uses the global database handle.
+func (o *Transaction) RemoveTransactionByHashPurchasesG(related ...*Purchase) error {
+	return o.RemoveTransactionByHashPurchases(boil.GetDB(), related...)
+}
+
+// RemoveTransactionByHashPurchasesP relationships from objects passed in.
+// Removes related items from R.TransactionByHashPurchases (uses pointer comparison, removal does not keep order)
+// Sets related.R.TransactionByHash.
+// Panics on error.
+func (o *Transaction) RemoveTransactionByHashPurchasesP(exec boil.Executor, related ...*Purchase) {
+	if err := o.RemoveTransactionByHashPurchases(exec, related...); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// RemoveTransactionByHashPurchasesGP relationships from objects passed in.
+// Removes related items from R.TransactionByHashPurchases (uses pointer comparison, removal does not keep order)
+// Sets related.R.TransactionByHash.
+// Uses the global database handle and panics on error.
+func (o *Transaction) RemoveTransactionByHashPurchasesGP(related ...*Purchase) {
+	if err := o.RemoveTransactionByHashPurchases(boil.GetDB(), related...); err != nil {
+		panic(boil.WrapErr(err))
+	}
+}
+
+// RemoveTransactionByHashPurchases relationships from objects passed in.
+// Removes related items from R.TransactionByHashPurchases (uses pointer comparison, removal does not keep order)
+// Sets related.R.TransactionByHash.
+func (o *Transaction) RemoveTransactionByHashPurchases(exec boil.Executor, related ...*Purchase) error {
+	var err error
+	for _, rel := range related {
+		queries.SetScanner(&rel.TransactionByHashID, nil)
+		if rel.R != nil {
+			rel.R.TransactionByHash = nil
+		}
+		if err = rel.Update(exec, boil.Whitelist("transaction_by_hash_id")); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.TransactionByHashPurchases {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.TransactionByHashPurchases)
+			if ln > 1 && i < ln-1 {
+				o.R.TransactionByHashPurchases[i] = o.R.TransactionByHashPurchases[ln-1]
+			}
+			o.R.TransactionByHashPurchases = o.R.TransactionByHashPurchases[:ln-1]
+			break
+		}
+	}
+
 	return nil
 }
 

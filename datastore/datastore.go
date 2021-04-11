@@ -399,3 +399,51 @@ func PutClaimTag(claimTag *model.ClaimTag) error {
 	}
 	return nil
 }
+
+// GetPurchase makes creating,retrieving,updating the model type simplified.
+func GetPurchase(txHash string, vout uint, claimID string) *model.Purchase {
+	defer util.TimeTrack(time.Now(), "GetPurchase", "mysqlprofile")
+	claimIDMatch := model.PurchaseWhere.ClaimID.EQ(null.StringFrom(claimID))
+	txHashMatch := model.PurchaseWhere.TransactionByHashID.EQ(null.StringFrom(txHash))
+	voutMatch := model.PurchaseWhere.Vout.EQ(vout)
+
+	exists, err := model.Purchases(claimIDMatch, txHashMatch, voutMatch).ExistsG()
+	if err != nil {
+		logrus.Warning("Datastore(GETPURCHASE): ", err)
+	}
+	if exists {
+		purchase, err := model.Purchases(claimIDMatch, txHashMatch, voutMatch).OneG()
+		if err != nil {
+			logrus.Warning("Datastore(GETPURCHASE): ", err)
+		}
+		return purchase
+	}
+	return nil
+}
+
+// PutPurchase makes creating,retrieving,updating the model type simplified.
+func PutPurchase(purchase *model.Purchase) error {
+	defer util.TimeTrack(time.Now(), "PutPurchase", "mysqlprofile")
+	if purchase != nil {
+
+		var err error
+		claimIDMatch := model.PurchaseWhere.ClaimID.EQ(null.StringFrom(purchase.ClaimID.String))
+		txHashMatch := model.PurchaseWhere.TransactionByHashID.EQ(null.StringFrom(purchase.TransactionByHashID.String))
+		voutMatch := model.PurchaseWhere.Vout.EQ(purchase.Vout)
+		exists, err := model.Purchases(claimIDMatch, txHashMatch, voutMatch).ExistsG()
+		if err != nil {
+			return errors.Prefix("Datastore(PUTPURCHASE): ", err)
+		}
+		if exists {
+			purchase.Modified = time.Now()
+			err = purchase.UpdateG(boil.Infer())
+		} else {
+			err = purchase.InsertG(boil.Infer())
+		}
+		if err != nil {
+			err = errors.Prefix("Datastore(PUTPURCHASE): ", err)
+			return err
+		}
+	}
+	return nil
+}

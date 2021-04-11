@@ -4,6 +4,8 @@ import (
 	"encoding/hex"
 	"testing"
 
+	"github.com/lbryio/chainquery/util"
+
 	"github.com/btcsuite/btcd/txscript"
 
 	"github.com/lbryio/chainquery/global"
@@ -142,5 +144,28 @@ func TestParseClaimNameScript2(t *testing.T) {
 	}
 	if name != correctName {
 		t.Error("Parse error for claim name: expected ", correctName, " got ", name)
+	}
+}
+
+func TestPurchaseScriptParse(t *testing.T) {
+	hexStr := "6a17500a14b5fb292f0ccb678a0c393b5ab47c522d1a9f4bfc"
+	hexBytes, err := hex.DecodeString(hexStr)
+	if err != nil {
+		t.Fatal(err)
+	}
+	isPurchase := IsPurchaseScript(hexBytes)
+	if !isPurchase {
+		t.Fatal("test string no longer identifies as a purchase!")
+	}
+	purchase, err := ParsePurchaseScript(hexBytes)
+	if err != nil {
+		t.Fatal(err)
+	}
+	purchase.GetClaimHash()
+	bytes := util.ReverseBytes(purchase.GetClaimHash())
+	claimID := hex.EncodeToString(bytes)
+	expectedClaimID := "fc4b9f1a2d527cb45a3b390c8a67cb0c2f29fbb5"
+	if claimID != expectedClaimID {
+		t.Errorf("expected %s, got %s", expectedClaimID, claimID)
 	}
 }

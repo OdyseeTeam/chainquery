@@ -12,6 +12,7 @@ require (
 	github.com/go-ini/ini v1.48.0
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/gofrs/uuid v3.2.0+incompatible // indirect
+	github.com/golang/protobuf v1.4.3
 	github.com/gorilla/mux v1.7.3
 	github.com/gorilla/schema v1.0.2 // indirect
 	github.com/hashicorp/hcl v0.0.0-20180404174102-ef8a98b0bbce // indirect
@@ -23,7 +24,7 @@ require (
 	github.com/lbryio/lbry.go/v2 v2.4.7-0.20200203053542-c4772e61c565
 	github.com/lbryio/lbryschema.go v0.0.0-20190602173230-6d2f69a36f46
 	github.com/lbryio/ozzo-validation v0.0.0-20170323141101-d1008ad1fd04
-	github.com/lbryio/types v0.0.0-20191009145016-1bb8107e04f8
+	github.com/lbryio/types v0.0.0-20201019032447-f0b4476ef386
 	github.com/lib/pq v1.1.1 // indirect
 	github.com/magiconair/properties v1.8.0 // indirect
 	github.com/mattn/go-sqlite3 v1.10.0 // indirect

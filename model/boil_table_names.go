@@ -14,6 +14,7 @@ var TableNames = struct {
 	Input              string
 	JobStatus          string
 	Output             string
+	Purchase           string
 	Support            string
 	Tag                string
 	Transaction        string
@@ -29,6 +30,7 @@ var TableNames = struct {
 	Input:              "input",
 	JobStatus:          "job_status",
 	Output:             "output",
+	Purchase:           "purchase",
 	Support:            "support",
 	Tag:                "tag",
 	Transaction:        "transaction",
