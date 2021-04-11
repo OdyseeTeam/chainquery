@@ -323,6 +323,7 @@ func processPurchaseVout(script []byte, tx *m.Transaction, vout *lbrycrd.Vout, b
 			purchase = &m.Purchase{}
 		}
 		purchase.ClaimID.SetValid(claim.ClaimID)
+		purchase.PublisherID = claim.PublisherID
 		purchase.TransactionByHashID.SetValid(tx.Hash)
 		purchase.Vout = uint(vout.N)
 		purchase.Height = uint(blockHeight)
