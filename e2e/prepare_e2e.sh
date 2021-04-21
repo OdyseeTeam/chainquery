@@ -12,6 +12,7 @@ docker-compose stop
 docker-compose rm -f
 if [ -d ../persist ]; then rm -r ../persist; fi
 mkdir ../persist
+echo "$DOCKER_PASSWORD" | docker login --username "$DOCKER_USERNAME" --password-stdin
 docker-compose pull
 docker-compose up -d lbrycrd
 docker ps
