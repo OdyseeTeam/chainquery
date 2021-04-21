@@ -27,6 +27,7 @@ var jobsMap = map[string]func(){
 	"mempool":          jobs.MempoolSync,
 	"transactionvalue": jobs.TransactionValueSync,
 	"chain":            jobs.ChainSync,
+	"outputfix":        jobs.OutputFixSync,
 }
 
 var runCmd = &cobra.Command{
