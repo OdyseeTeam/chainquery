@@ -12,8 +12,9 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
-const outputFixSyncJob = "outputfixsync"
+// const outputFixSyncJob = "outputfixsync"
 
+// OutputFixSync this will check for spent claims and update them if they are incorrectly marked spent.
 func OutputFixSync() {
 	err := fixOutputs()
 	if err != nil {
