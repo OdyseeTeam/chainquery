@@ -151,6 +151,7 @@ type Claim struct {
 	ValidAtHeight   int32     `json:"validAtHeight"`
 	Amount          uint64    `json:"amount"`
 	EffectiveAmount uint64    `json:"effectiveAmount"`
+	PendingAmount   uint64    `json:"pendingAmount"`
 	Supports        []Support `json:"supports,omitempty"`
 	Bid             uint64    `json:"bid"`
 	Sequence        int       `json:"sequence"`

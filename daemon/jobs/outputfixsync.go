@@ -36,8 +36,9 @@ func fixOutputs() error {
 	if len(claims) == 0 {
 		return nil
 	}
-	logrus.Debugf("check claim from %d to %d", claims[0].ID, claims[len(claims)-1].ID)
+
 	for len(claims) != 0 {
+		logrus.Debugf("check claim from %d to %d", claims[0].ID, claims[len(claims)-1].ID)
 		for _, claim := range claims {
 			lastClaimRecordID = claim.ID
 			where := model.OutputWhere
