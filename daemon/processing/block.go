@@ -8,6 +8,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/lbryio/chainquery/sockety"
+
 	"github.com/lbryio/chainquery/lbrycrd"
 	"github.com/lbryio/chainquery/metrics"
 	"github.com/lbryio/chainquery/model"
@@ -15,6 +17,7 @@ import (
 	"github.com/lbryio/chainquery/util"
 	"github.com/lbryio/lbry.go/extras/errors"
 	"github.com/lbryio/lbry.go/extras/stop"
+	"github.com/lbryio/sockety/socketyapi"
 
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/boil"
@@ -86,6 +89,12 @@ func RunBlockProcessing(stopper *stop.Group, height uint64) uint64 {
 func ProcessBlock(height uint64, stopper *stop.Group, jsonBlock *lbrycrd.GetBlockResponse) (*model.Block, error) {
 	block := parseBlockInfo(height, jsonBlock)
 	txs := jsonBlock.Tx
+	sockety.SendNotification(socketyapi.SendNotificationArgs{
+		Service: socketyapi.BlockChain,
+		Type:    "new_block",
+		IDs:     []string{"blocks", strconv.Itoa(int(height))},
+		Data:    map[string]interface{}{"block": jsonBlock},
+	})
 	return block, syncTransactionsOfBlock(stopper, txs, block.BlockTime, block.Height)
 }
 

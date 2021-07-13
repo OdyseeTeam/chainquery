@@ -7,6 +7,8 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/lbryio/chainquery/sockety"
+
 	"github.com/lbryio/chainquery/notifications"
 
 	"github.com/lbryio/chainquery/apiactions"
@@ -64,6 +66,7 @@ const ( // config setting keys
 	maxparallelvoutprocessing = "maxparallelvoutprocessing"
 	promuser                  = "promuser"
 	prompass                  = "prompass"
+	socketytoken              = "socketytoken"
 )
 
 const (
@@ -207,6 +210,7 @@ func processConfiguration() {
 	apiactions.MaxSQLAPITimeout = viper.GetInt(maxsqlapitimeout)
 	server.PromUser = viper.GetString(promuser)
 	server.PromPassword = viper.GetString(prompass)
+	sockety.SocketyToken = viper.GetString(socketytoken)
 
 	//Flags last so they override everything before, even config
 	if viper.IsSet(debugmodeflag) {

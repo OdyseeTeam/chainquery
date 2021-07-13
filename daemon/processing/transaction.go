@@ -5,6 +5,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/lbryio/chainquery/sockety"
+	"github.com/lbryio/sockety/socketyapi"
+
 	"github.com/sirupsen/logrus"
 
 	"github.com/lbryio/chainquery/datastore"
@@ -169,6 +172,13 @@ func ProcessTx(jsonTx *lbrycrd.TxRawResult, blockTime uint64, blockHeight uint64
 	if err != nil {
 		return err
 	}
+
+	sockety.SendNotification(socketyapi.SendNotificationArgs{
+		Service: socketyapi.BlockChain,
+		Type:    "new_tx",
+		IDs:     []string{"transactions", jsonTx.Txid},
+		Data:    map[string]interface{}{"transaction": jsonTx},
+	})
 
 	return nil
 }

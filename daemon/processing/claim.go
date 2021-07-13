@@ -7,21 +7,22 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/lbryio/lbryschema.go/address/base58"
-	pb "github.com/lbryio/types/v2/go"
-
-	util2 "github.com/lbryio/chainquery/util"
-
 	"github.com/lbryio/chainquery/datastore"
 	"github.com/lbryio/chainquery/global"
 	"github.com/lbryio/chainquery/lbrycrd"
 	"github.com/lbryio/chainquery/metrics"
 	"github.com/lbryio/chainquery/model"
 	"github.com/lbryio/chainquery/notifications"
+	"github.com/lbryio/chainquery/sockety"
+	util2 "github.com/lbryio/chainquery/util"
 
 	"github.com/lbryio/lbry.go/extras/errors"
 	util "github.com/lbryio/lbry.go/lbrycrd"
+	"github.com/lbryio/lbryschema.go/address/base58"
 	c "github.com/lbryio/lbryschema.go/claim"
+	"github.com/lbryio/sockety/socketyapi"
+	pb "github.com/lbryio/types/v2/go"
+
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
@@ -101,6 +102,14 @@ func processClaimNameScript(script *[]byte, vout model.Output, tx model.Transact
 		logrus.Debug("ClaimNew: No blockheight!")
 	}
 	err = datastore.PutClaim(claim)
+	if err == nil {
+		sockety.SendNotification(socketyapi.SendNotificationArgs{
+			Service: socketyapi.BlockChain,
+			Type:    "new_claim",
+			IDs:     []string{"claims", claim.Name, claimid},
+			Data:    map[string]interface{}{"claim": claim},
+		})
+	}
 
 	return name, claimid, pkscript, err
 }
@@ -115,6 +124,13 @@ func processClaimSupportScript(script *[]byte, vout model.Output, tx model.Trans
 	support = processSupport(claimid, support, vout, tx)
 	if err := datastore.PutSupport(support); err != nil {
 		logrus.Debug("Support for unknown claim! ", claimid)
+	} else {
+		sockety.SendNotification(socketyapi.SendNotificationArgs{
+			Service: socketyapi.BlockChain,
+			Type:    "support",
+			IDs:     []string{"supports", claimid, name},
+			Data:    map[string]interface{}{"support": support},
+		})
 	}
 
 	return name, claimid, pubkeyscript, err
@@ -162,6 +178,13 @@ func processClaimUpdateScript(script *[]byte, vout model.Output, tx model.Transa
 			if logrus.GetLevel() == logrus.DebugLevel {
 				logrus.WithError(err)
 			}
+		} else {
+			sockety.SendNotification(socketyapi.SendNotificationArgs{
+				Service: socketyapi.BlockChain,
+				Type:    "claim_update",
+				IDs:     []string{"claims", "claimupdates", claim.ClaimID, name},
+				Data:    map[string]interface{}{"claim": claim},
+			})
 		}
 	}
 	return name, claimID, pubkeyscript, err
