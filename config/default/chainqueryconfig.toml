@@ -144,3 +144,7 @@
 #Prometheus Password - password for basic authentication on metrics endpoint
 #DEFAULT: <none>
 #prompass=
+
+#Sockety Token - token used to be able to send notifications to a sockety instance
+#DEFAULT: <none>
+#socketytoken=
