@@ -4,4 +4,4 @@ The Chainquery application comes with a watched configuration that when updated 
 
 The order of precedence for where chainquery looks for a configuration file are `--configpath` flag, `$HOME/`, `.` working directory, and last `./config/default/` for running from src.
 
-Testing
+Testin
