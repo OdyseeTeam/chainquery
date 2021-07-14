@@ -45,6 +45,14 @@ var (
 		Name:      "duration",
 		Help:      "The durations of the individual processing by type",
 	}, []string{"type"})
+
+	// ProcessingFailures metric for processing failure count by type
+	SocketyNotifications = promauto.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "chainquery",
+		Subsystem: "sockety",
+		Name:      "notifications",
+		Help:      "counter for sending sockety notifications as the blockchain sourcex",
+	}, []string{"type", "category", "subcategory"})
 )
 
 //Job helper function to make tracking metric one line deferral

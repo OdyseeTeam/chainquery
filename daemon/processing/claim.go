@@ -103,7 +103,7 @@ func processClaimNameScript(script *[]byte, vout model.Output, tx model.Transact
 	}
 	err = datastore.PutClaim(claim)
 	if err == nil {
-		sockety.SendNotification(socketyapi.SendNotificationArgs{
+		go sockety.SendNotification(socketyapi.SendNotificationArgs{
 			Service: socketyapi.BlockChain,
 			Type:    "new_claim",
 			IDs:     []string{"claims", claim.Name, claimid},
@@ -125,7 +125,7 @@ func processClaimSupportScript(script *[]byte, vout model.Output, tx model.Trans
 	if err := datastore.PutSupport(support); err != nil {
 		logrus.Debug("Support for unknown claim! ", claimid)
 	} else {
-		sockety.SendNotification(socketyapi.SendNotificationArgs{
+		go sockety.SendNotification(socketyapi.SendNotificationArgs{
 			Service: socketyapi.BlockChain,
 			Type:    "support",
 			IDs:     []string{"supports", claimid, name},
@@ -179,7 +179,7 @@ func processClaimUpdateScript(script *[]byte, vout model.Output, tx model.Transa
 				logrus.WithError(err)
 			}
 		} else {
-			sockety.SendNotification(socketyapi.SendNotificationArgs{
+			go sockety.SendNotification(socketyapi.SendNotificationArgs{
 				Service: socketyapi.BlockChain,
 				Type:    "claim_update",
 				IDs:     []string{"claims", "claimupdates", claim.ClaimID, name},

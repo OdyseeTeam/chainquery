@@ -89,7 +89,7 @@ func RunBlockProcessing(stopper *stop.Group, height uint64) uint64 {
 func ProcessBlock(height uint64, stopper *stop.Group, jsonBlock *lbrycrd.GetBlockResponse) (*model.Block, error) {
 	block := parseBlockInfo(height, jsonBlock)
 	txs := jsonBlock.Tx
-	sockety.SendNotification(socketyapi.SendNotificationArgs{
+	go sockety.SendNotification(socketyapi.SendNotificationArgs{
 		Service: socketyapi.BlockChain,
 		Type:    "new_block",
 		IDs:     []string{"blocks", strconv.Itoa(int(height))},

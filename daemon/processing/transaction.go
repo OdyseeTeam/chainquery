@@ -173,7 +173,7 @@ func ProcessTx(jsonTx *lbrycrd.TxRawResult, blockTime uint64, blockHeight uint64
 		return err
 	}
 
-	sockety.SendNotification(socketyapi.SendNotificationArgs{
+	go sockety.SendNotification(socketyapi.SendNotificationArgs{
 		Service: socketyapi.BlockChain,
 		Type:    "new_tx",
 		IDs:     []string{"transactions", jsonTx.Txid},
