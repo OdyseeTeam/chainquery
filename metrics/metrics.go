@@ -46,7 +46,7 @@ var (
 		Help:      "The durations of the individual processing by type",
 	}, []string{"type"})
 
-	// ProcessingFailures metric for processing failure count by type
+	// SocketyNotifications metric for processing failure count by type
 	SocketyNotifications = promauto.NewCounterVec(prometheus.CounterOpts{
 		Namespace: "chainquery",
 		Subsystem: "sockety",
