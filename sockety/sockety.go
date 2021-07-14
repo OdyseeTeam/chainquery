@@ -17,6 +17,7 @@ func SendNotification(args socketyapi.SendNotificationArgs) {
 		return
 	}
 	if socketyClient == nil {
+		logrus.Debug("initializating sockety client")
 		socketyClient = socketyapi.NewClient("wss://sockety.lbry.com", SocketyToken)
 	}
 	_, err := socketyClient.SendNotification(args)

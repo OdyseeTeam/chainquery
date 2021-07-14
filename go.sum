@@ -60,6 +60,7 @@ github.com/btcsuite/snappy-go v0.0.0-20151229074030-0bdef8d06723/go.mod h1:8woku
 github.com/btcsuite/websocket v0.0.0-20150119174127-31079b680792 h1:R8vQdOQdZ9Y3SkEwmHoWBmX1DNXhXZqlTpq6s4tyJGc=
 github.com/btcsuite/websocket v0.0.0-20150119174127-31079b680792/go.mod h1:ghJtEyQwv5/p4Mg4C0fgbePVuGr935/5ddU9Z3TmDRY=
 github.com/btcsuite/winsvc v1.0.0/go.mod h1:jsenWakMcC0zFBFurPLEAyrnc/teJEM1O46fmI40EZs=
+github.com/caarlos0/env v3.5.0+incompatible h1:Yy0UN8o9Wtr/jGHZDpCBLpNrzcFLLM2yixi/rBrKyJs=
 github.com/caarlos0/env v3.5.0+incompatible/go.mod h1:tdCsowwCzMLdkqRYDlHpZCp2UooDD3MspDBjZ2AD02Y=
 github.com/casbin/casbin/v2 v2.1.2/go.mod h1:YcPU1XXisHhLzuxH9coDNf2FbKpjGlbCg3n9yuLkIJQ=
 github.com/cenkalti/backoff v2.2.1+incompatible/go.mod h1:90ReRw6GdpyfrHakVjL/QHaoyV4aDUVVkXQJJJ3NXXM=
@@ -285,6 +286,8 @@ github.com/lbryio/ozzo-validation v0.0.0-20170512160344-202201e212ec h1:z/71pO8v
 github.com/lbryio/ozzo-validation v0.0.0-20170512160344-202201e212ec/go.mod h1:fbG/dzobG8r95KzMwckXiLMHfFjZaBRQqC9hPs2XAQ4=
 github.com/lbryio/sockety v0.0.0-20210708201924-f21400c148bb h1:sxo4A+7NrEA+LUk5jOO31OLIKTZPdVS8zE+VTcxQgCk=
 github.com/lbryio/sockety v0.0.0-20210708201924-f21400c148bb/go.mod h1:lqM8md4af1ZAL7zL7P5w7j9OmRJzmI0HEYvNgdl2VO4=
+github.com/lbryio/sockety v0.0.0-20210713230938-60dca8d97537 h1:pa3fLPG8W5TAm/f4PX6nBHYqm582OEtcz4PH6tm85O4=
+github.com/lbryio/sockety v0.0.0-20210713230938-60dca8d97537/go.mod h1:lqM8md4af1ZAL7zL7P5w7j9OmRJzmI0HEYvNgdl2VO4=
 github.com/lbryio/types v0.0.0-20190422033210-321fb2abda9c h1:m3O7561xBQ00lfUVayW4c6SnpVbUDQtPUwGcGYSUYQA=
 github.com/lbryio/types v0.0.0-20190422033210-321fb2abda9c/go.mod h1:CG3wsDv5BiVYQd5i1Jp7wGsaVyjZTJshqXeWMVKsISE=
 github.com/lbryio/types v0.0.0-20201019032447-f0b4476ef386 h1:JOQkGpeCM9FWkEHRx+kRPqySPCXElNW1em1++7tVS4M=

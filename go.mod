@@ -23,7 +23,7 @@ require (
 	github.com/lbryio/lbry.go/v2 v2.7.1
 	github.com/lbryio/lbryschema.go v0.0.0-20190602173230-6d2f69a36f46
 	github.com/lbryio/ozzo-validation v0.0.0-20170512160344-202201e212ec
-	github.com/lbryio/sockety v0.0.0-20210708201924-f21400c148bb
+	github.com/lbryio/sockety v0.0.0-20210713230938-60dca8d97537
 	github.com/lbryio/types v0.0.0-20201019032447-f0b4476ef386
 	github.com/lib/pq v1.1.1 // indirect
 	github.com/mattn/go-sqlite3 v1.10.0 // indirect

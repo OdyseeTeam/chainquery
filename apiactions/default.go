@@ -80,23 +80,29 @@ var AutoUpdateCommand = ""
 
 // AutoUpdateAction takes a travis webhook for a successful deployment and runs an environment script to self update.
 func AutoUpdateAction(r *http.Request) api.Response {
-	err := travis.ValidateSignature(false, r)
+	err := travis.ValidateSignature(true, r)
 	if err != nil {
-		logrus.Info(err)
+		logrus.Error(err)
 		return api.Response{Error: err, Status: http.StatusBadRequest}
 	}
 
 	webHook, err := travis.NewFromRequest(r)
 	if err != nil {
+		logrus.Error(err)
 		return api.Response{Error: err}
 	}
 
 	if webHook.Commit == meta.GetVersion() {
+		logrus.Warning("same commit version, skipping automatic update.")
 		return api.Response{Data: "same commit version, skipping automatic update."}
 	}
 	isMatch := webHook.IsMatch("master", "chainquery", "lbryio")
+	if !isMatch {
+		logrus.Warning("skipping...webhook does not match")
+		return api.Response{}
+	}
 	logrus.Info("Received Update Webhook:", fmt.Sprintf(" branch %s, repo %s, owner %s, isMatch %t", webHook.Branch, webHook.Repository.Name, webHook.Repository.OwnerName, isMatch))
-	shouldUpdate := webHook.Status == 0 && !webHook.PullRequest && isMatch
+	shouldUpdate := webHook.Status == 0 && !webHook.PullRequest
 	if shouldUpdate { // webHook.ShouldDeploy() doesn't work for chainquery autoupdate.
 		if AutoUpdateCommand == "" {
 			err := errors.Base("auto-update triggered, but no auto-update command configured")
@@ -114,7 +120,7 @@ func AutoUpdateAction(r *http.Request) api.Response {
 				if exitErr, ok := err.(*exec.ExitError); ok {
 					errMsg = errMsg + "\nStderr: " + string(exitErr.Stderr)
 				}
-				logrus.Errorln(errMsg)
+				logrus.Error(errMsg)
 			}
 		}()
 		return api.Response{Data: "Successful launch of auto update"}
