@@ -8,20 +8,23 @@ import (
 	"github.com/volatiletech/null"
 )
 
-// SocketyToken token used to sent notifications to sockety
-var SocketyToken string
+// Token token used to sent notifications to sockety
+var Token string
+
+// URL is the url to connect to an instance of sockety.
+var URL string
 
 var socketyClient *socketyapi.Client
 
 // SendNotification sends the notification to socket using client
 func SendNotification(args socketyapi.SendNotificationArgs) {
-	if SocketyToken == "" {
+	if Token == "" || URL == "" {
 		return
 	}
 
 	if socketyClient == nil {
 		logrus.Debug("initializating sockety client")
-		socketyClient = socketyapi.NewClient("wss://sockety.lbry.com", SocketyToken)
+		socketyClient = socketyapi.NewClient(URL, Token)
 	}
 	_, err := socketyClient.SendNotification(args)
 	if err != nil {

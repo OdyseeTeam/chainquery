@@ -67,6 +67,7 @@ const ( // config setting keys
 	promuser                  = "promuser"
 	prompass                  = "prompass"
 	socketytoken              = "socketytoken"
+	socketyurl                = "socketyurl"
 )
 
 const (
@@ -210,7 +211,8 @@ func processConfiguration() {
 	apiactions.MaxSQLAPITimeout = viper.GetInt(maxsqlapitimeout)
 	server.PromUser = viper.GetString(promuser)
 	server.PromPassword = viper.GetString(prompass)
-	sockety.SocketyToken = viper.GetString(socketytoken)
+	sockety.Token = viper.GetString(socketytoken)
+	sockety.URL = viper.GetString(socketyurl)
 
 	//Flags last so they override everything before, even config
 	if viper.IsSet(debugmodeflag) {

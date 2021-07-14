@@ -125,18 +125,6 @@
 #DEFAULT: NumCPU
 #maxparallelvoutprocessing=
 
-#Subscribers - Lists the subscriptions for notifications. Possible types "payment" "new_claim"
-#DEFAULT: <none>
-#[[subscriber.payment]]
-#  url= "http://localhost:8080/event/payment"
-#  auth_token="mytoken"
-#[[subscriber.payment]]
-#  url= "http://localhost:8080/event/payment"
-#  auth_token="mytoken"
-#[[subscriber.newclaim]]
-#  url= "http://localhost:8080/event/claim"
-#  auth_token="mytoken"
-
 #Prometheus User - user for basic authentication on metrics endpoint
 #DEFAULT: <none>
 #promuser=
@@ -148,3 +136,19 @@
 #Sockety Token - token used to be able to send notifications to a sockety instance
 #DEFAULT: <none>
 #socketytoken=
+
+#Sockety URL - url to connect to a sockety instance
+#DEFAULT: <none>
+#socketyurl=
+
+#Subscribers - Lists the subscriptions for notifications. Possible types "payment" "new_claim"
+#DEFAULT: <none>
+#[[subscriber.payment]]
+#  url= "http://localhost:8080/event/payment"
+#  auth_token="mytoken"
+#[[subscriber.payment]]
+#  url= "http://localhost:8080/event/payment"
+#  auth_token="mytoken"
+#[[subscriber.newclaim]]
+#  url= "http://localhost:8080/event/claim"
+#  auth_token="mytoken"
