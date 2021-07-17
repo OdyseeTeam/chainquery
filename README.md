@@ -109,7 +109,7 @@ You can obtain information on the flags in Chainqueries main binary by running t
 
 ## The Model 
 
-The model of Chainquery at its foundation consist of the fundamental data types found in the block chain.
+The model of Chainquery at its foundation consists of the fundamental data types found in the block chain.
 This information is then expounded on with additional columns and tables that make querying the data much easier.
 
 ### [Latest Schema](/db/chainquery_schema.sql)
