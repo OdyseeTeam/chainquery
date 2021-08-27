@@ -207,8 +207,12 @@ func SyncClaimCntInChannel() error {
 			if err != nil {
 				return errors.Prefix(syncClaimsInChannel, err)
 			}
+			if channel.ClaimCount == int64(cnt.Uint64) {
+				continue
+			}
 			channel.ClaimCount = int64(cnt.Uint64)
-			err = channel.UpdateG(boil.Whitelist(c.ClaimCount))
+			channel.ModifiedAt = time.Now()
+			err = channel.UpdateG(boil.Whitelist(c.ClaimCount, c.ModifiedAt))
 			if err != nil {
 				return errors.Prefix(syncClaimsInChannel, err)
 			}
