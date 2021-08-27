@@ -21,7 +21,7 @@ func SendNotification(args socketyapi.SendNotificationArgs) {
 	if Token == "" || URL == "" {
 		return
 	}
-
+	defer catchPanic()
 	if socketyClient == nil {
 		logrus.Debug("initializating sockety client")
 		socketyClient = socketyapi.NewClient(URL, Token)
@@ -31,4 +31,10 @@ func SendNotification(args socketyapi.SendNotificationArgs) {
 		logrus.Error(errors.Prefix("Socket Send Notification:", err))
 	}
 	metrics.SocketyNotifications.WithLabelValues(args.Type, null.StringFromPtr(args.Category).String, null.StringFromPtr(args.SubCategory).String).Inc()
+}
+
+func catchPanic() {
+	if r := recover(); r != nil {
+		logrus.Error("sockety send recovered from: ", r)
+	}
 }
