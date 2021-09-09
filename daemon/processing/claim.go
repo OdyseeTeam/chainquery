@@ -103,10 +103,14 @@ func processClaimNameScript(script *[]byte, vout model.Output, tx model.Transact
 	}
 	err = datastore.PutClaim(claim)
 	if err == nil {
+		IDs := []string{"claims", claim.Name, claimid}
+		if !claim.PublisherID.IsZero() {
+			IDs = append(IDs, "channel-"+claim.PublisherID.String)
+		}
 		go sockety.SendNotification(socketyapi.SendNotificationArgs{
 			Service: socketyapi.BlockChain,
 			Type:    "new_claim",
-			IDs:     []string{"claims", claim.Name, claimid},
+			IDs:     IDs,
 			Data:    map[string]interface{}{"claim": claim},
 		})
 	}
