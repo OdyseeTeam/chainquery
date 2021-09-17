@@ -22,9 +22,12 @@ func SyncAddressBalancesJob() {
 		metrics.JobLoad.WithLabelValues("address_balance_sync").Inc()
 		defer metrics.JobLoad.WithLabelValues("address_balance_sync").Dec()
 		defer metrics.Job(time.Now(), "address_balance_sync")
-		_, err := SyncAddressBalances()
+		rowsAffected, err := SyncAddressBalances()
 		if err != nil {
 			logrus.Error(syncAddressBalances, err)
+		}
+		if rowsAffected > 0 {
+			logrus.Warn(syncAddressBalances+" rows affected ( ", rowsAffected, " )")
 		}
 	}()
 }
@@ -61,8 +64,27 @@ func TransactionValueASync() {
 
 //SyncAddressBalances will update the balance for every address if needed based on the transaction address table and
 // returns the number of rows changed. Due to mysql bug https://bugs.mysql.com/bug.php?id=11472
-func SyncAddressBalances() (int64, error) {
+func SyncAddressBalances() (uint64, error) {
+	const batchSize = 10000
+	addressesAdjusted := uint64(0)
+	lastAddressID := uint64(0)
+	latestAddress, err := model.Addresses(qm.OrderBy(model.AddressColumns.ID+" DESC"), qm.Limit(1)).OneG()
+	if err != nil {
+		return addressesAdjusted, errors.Err(err)
+	}
+	lastAddressID = latestAddress.ID
+	for lastAddressID < addressesAdjusted {
+		adjusted, err := syncAddressBalanceSet(lastAddressID, batchSize)
+		if err != nil {
+			return addressesAdjusted, errors.Err(err)
+		}
+		addressesAdjusted += adjusted
+		lastAddressID += batchSize
+	}
+	return addressesAdjusted, nil
+}
 
+func syncAddressBalanceSet(from uint64, batchSize uint64) (uint64, error) {
 	addressTbl := model.TableNames.Address
 	transactionAddressTbl := model.TableNames.TransactionAddress
 	addressBalance := addressTbl + "." + model.AddressColumns.Balance
@@ -71,11 +93,12 @@ func SyncAddressBalances() (int64, error) {
 	taDebitAmount := model.TransactionAddressColumns.DebitAmount
 	taAddressID := model.TransactionAddressColumns.AddressID
 	result, err := boil.GetDB().Exec(`
-		UPDATE ` + addressTbl + `
-		SET ` + addressBalance + ` = (
-				SELECT COALESCE( SUM( ta.` + taCreditAmount + ` - ta.` + taDebitAmount + ` ),0.0) 
-				FROM ` + transactionAddressTbl + ` ta 
-				WHERE ta.` + taAddressID + ` = ` + addressID + `)`)
+		UPDATE `+addressTbl+`
+		SET `+addressBalance+` = (
+				SELECT COALESCE( SUM( ta.`+taCreditAmount+` - ta.`+taDebitAmount+` ),0.0) 
+				FROM `+transactionAddressTbl+` ta 
+				WHERE ta.`+taAddressID+` = `+addressID+`)
+		WHERE `+addressID+` > ? AND `+addressID+` < ?`, from, from+batchSize)
 	if err != nil {
 		return 0, errors.Prefix(syncAddressBalances, err)
 	}
@@ -87,11 +110,7 @@ func SyncAddressBalances() (int64, error) {
 	if err != nil {
 		return 0, errors.Prefix(syncAddressBalances, err)
 	}
-	if rowsAffected > 0 {
-		logrus.Warn(syncAddressBalances+" rows affected ( ", rowsAffected, " )")
-	}
-
-	return rowsAffected, nil
+	return uint64(rowsAffected), nil
 
 }
 
