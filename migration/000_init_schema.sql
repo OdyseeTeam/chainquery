@@ -34,7 +34,6 @@ CREATE TABLE IF NOT EXISTS `block`
 
     PRIMARY KEY `PK_Block` (`id`),
     UNIQUE KEY `Idx_BlockHash` (`hash`),
-    CONSTRAINT `Cnt_TransactionHashesValidJson` CHECK(`transaction_hashes` IS NULL OR JSON_VALID(`transaction_hashes`)),
     INDEX `Idx_BlockHeight` (`height`),
     INDEX `Idx_BlockTime` (`block_time`),
     INDEX `Idx_MedianTime` (`median_time`),
