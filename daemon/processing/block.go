@@ -147,7 +147,11 @@ func processGenesisBlock() error {
 	BlockLock.Lock()
 	defer BlockLock.Unlock()
 	block := parseBlockInfo(0, genesis)
-	for _, tx := range genesisVerbose.Tx {
+	txs := genesisVerbose.Tx
+	if len(txs) == 0 {
+		txs = genesisVerbose.RawTx
+	}
+	for _, tx := range txs {
 		tx.BlockHash = genesis.Hash
 		err := ProcessTx(&tx, block.BlockTime, 0)
 		if err != nil {

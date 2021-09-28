@@ -81,6 +81,7 @@ type GetBlockVerboseResponse struct {
 	MerkleRoot        string        `json:"merkleroot"`
 	NameClaimRoot     string        `json:"nameclaimroot"`
 	Tx                []TxRawResult `json:"tx,omitempty"`
+	RawTx             []TxRawResult `json:"rawtx,omitempty"`
 	Time              int64         `json:"time"`
 	MedianTime        int64         `json:"mediantime"`
 	Nonce             uint64        `json:"nonce"`
