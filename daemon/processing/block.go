@@ -149,6 +149,7 @@ func processGenesisBlock() error {
 	block := parseBlockInfo(0, genesis)
 	txs := genesisVerbose.Tx
 	if len(txs) == 0 {
+		// This is to support lbcd which treats verbose output as a different field unlike lbrycrd
 		txs = genesisVerbose.RawTx
 	}
 	for _, tx := range txs {
