@@ -8,7 +8,7 @@ import (
 	"github.com/lbryio/chainquery/util"
 
 	"github.com/lbryio/lbry.go/extras/errors"
-	c "github.com/lbryio/lbryschema.go/claim"
+	c "github.com/lbryio/lbry.go/v2/schema/stake"
 	pb "github.com/lbryio/types/v2/go"
 
 	"github.com/btcsuite/btcd/btcec"
@@ -37,7 +37,7 @@ func testBasicClaimCreation() {
 	exitOnErr(errors.Err(err))
 }
 
-func newImageStreamClaim() (*c.ClaimHelper, error) {
+func newImageStreamClaim() (*c.StakeHelper, error) {
 	streamClaim := new(pb.Claim_Stream)
 	stream := new(pb.Stream)
 	image := new(pb.Stream_Image)
@@ -49,12 +49,12 @@ func newImageStreamClaim() (*c.ClaimHelper, error) {
 	pbClaim := new(pb.Claim)
 	pbClaim.Type = streamClaim
 
-	helper := c.ClaimHelper{Claim: pbClaim}
+	helper := c.StakeHelper{Claim: pbClaim}
 
 	return &helper, nil
 }
 
-func newVideoStreamClaim() (*c.ClaimHelper, error) {
+func newVideoStreamClaim() (*c.StakeHelper, error) {
 	streamClaim := new(pb.Claim_Stream)
 	stream := new(pb.Stream)
 	video := new(pb.Stream_Video)
@@ -65,12 +65,12 @@ func newVideoStreamClaim() (*c.ClaimHelper, error) {
 	pbClaim := new(pb.Claim)
 	pbClaim.Type = streamClaim
 
-	helper := c.ClaimHelper{Claim: pbClaim}
+	helper := c.StakeHelper{Claim: pbClaim}
 
 	return &helper, nil
 }
 
-func newStreamClaim(title, description string) (*c.ClaimHelper, error) {
+func newStreamClaim(title, description string) (*c.StakeHelper, error) {
 	streamClaim := new(pb.Claim_Stream)
 	stream := new(pb.Stream)
 	streamClaim.Stream = stream
@@ -78,14 +78,14 @@ func newStreamClaim(title, description string) (*c.ClaimHelper, error) {
 	pbClaim := new(pb.Claim)
 	pbClaim.Type = streamClaim
 
-	helper := c.ClaimHelper{Claim: pbClaim}
-	helper.Title = title
-	helper.Description = description
+	helper := c.StakeHelper{Claim: pbClaim}
+	helper.Claim.Title = title
+	helper.Claim.Description = description
 
 	return &helper, nil
 }
 
-func addClaimToTx(rawTx *wire.MsgTx, claim *c.ClaimHelper, name string) error {
+func addClaimToTx(rawTx *wire.MsgTx, claim *c.StakeHelper, name string) error {
 
 	address, err := lbrycrd.LBRYcrdClient.GetNewAddress("")
 	if err != nil {
@@ -109,7 +109,7 @@ func addClaimToTx(rawTx *wire.MsgTx, claim *c.ClaimHelper, name string) error {
 	return nil
 }
 
-func signClaim(rawTx *wire.MsgTx, privKey btcec.PrivateKey, claim, channel *c.ClaimHelper, channelClaimID string) error {
+func signClaim(rawTx *wire.MsgTx, privKey btcec.PrivateKey, claim, channel *c.StakeHelper, channelClaimID string) error {
 	claimIDHexBytes, err := hex.DecodeString(channelClaimID)
 	if err != nil {
 		return errors.Err(err)

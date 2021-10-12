@@ -3,11 +3,12 @@ package e2e
 import (
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/lbryio/lbry.go/extras/errors"
-	c "github.com/lbryio/lbryschema.go/claim"
+	"github.com/lbryio/lbry.go/v2/schema/keys"
+	c "github.com/lbryio/lbry.go/v2/schema/stake"
 	pb "github.com/lbryio/types/v2/go"
 )
 
-func newChannel() (*c.ClaimHelper, *btcec.PrivateKey, error) {
+func newChannel() (*c.StakeHelper, *btcec.PrivateKey, error) {
 	claimChannel := new(pb.Claim_Channel)
 	channel := new(pb.Channel)
 	claimChannel.Channel = channel
@@ -19,31 +20,31 @@ func newChannel() (*c.ClaimHelper, *btcec.PrivateKey, error) {
 	if err != nil {
 		return nil, nil, errors.Err(err)
 	}
-	pubkeyBytes, err := c.PublicKeyToDER(privateKey.PubKey())
+	pubkeyBytes, err := keys.PublicKeyToDER(privateKey.PubKey())
 	if err != nil {
 		return nil, nil, errors.Err(err)
 	}
 
-	helper := c.ClaimHelper{Claim: pbClaim}
+	helper := c.StakeHelper{Claim: pbClaim}
 	helper.Version = c.NoSig
-	helper.GetChannel().PublicKey = pubkeyBytes
-	helper.Tags = []string{"Foo", "Bar"}
+	helper.Claim.GetChannel().PublicKey = pubkeyBytes
+	helper.Claim.Tags = []string{"Foo", "Bar"}
 	coverSrc := new(pb.Source)
 	coverSrc.Url = "https://coverurl.com"
-	helper.GetChannel().Cover = coverSrc
-	helper.GetChannel().WebsiteUrl = "https://homepageurl.com"
-	helper.Languages = []*pb.Language{{Language: pb.Language_en}}
-	helper.Title = "title"
-	helper.Description = "description"
+	helper.Claim.GetChannel().Cover = coverSrc
+	helper.Claim.GetChannel().WebsiteUrl = "https://homepageurl.com"
+	helper.Claim.Languages = []*pb.Language{{Language: pb.Language_en}}
+	helper.Claim.Title = "title"
+	helper.Claim.Description = "description"
 	thumbnailSrc := new(pb.Source)
 	thumbnailSrc.Url = "thumbnailurl.com"
-	helper.Thumbnail = thumbnailSrc
-	helper.Locations = []*pb.Location{{Country: pb.Location_US}}
+	helper.Claim.Thumbnail = thumbnailSrc
+	helper.Claim.Locations = []*pb.Location{{Country: pb.Location_US}}
 
 	return &helper, privateKey, nil
 }
 
-func createChannel(name string) (*c.ClaimHelper, *btcec.PrivateKey, error) {
+func createChannel(name string) (*c.StakeHelper, *btcec.PrivateKey, error) {
 	channel, key, err := newChannel()
 	if err != nil {
 		return nil, nil, err

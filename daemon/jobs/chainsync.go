@@ -16,7 +16,7 @@ import (
 	"github.com/lbryio/chainquery/model"
 
 	"github.com/lbryio/lbry.go/extras/errors"
-	"github.com/lbryio/lbryschema.go/claim"
+	"github.com/lbryio/lbry.go/v2/schema/stake"
 
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/null"
@@ -210,7 +210,7 @@ func (c *chainSyncStatus) alignClaim() error {
 	if storedClaim == nil {
 		return errors.Err("could not find claim with id %s", c.Vout.ClaimID.String)
 	}
-	helper, err := claim.DecodeClaimHex(storedClaim.ValueAsHex, global.BlockChainName)
+	helper, err := stake.DecodeClaimHex(storedClaim.ValueAsHex, global.BlockChainName)
 	if err != nil {
 		return err
 	}

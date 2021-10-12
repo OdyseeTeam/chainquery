@@ -6,7 +6,7 @@ import (
 
 	"github.com/lbryio/chainquery/model"
 	"github.com/lbryio/lbry.go/extras/errors"
-	"github.com/lbryio/lbryschema.go/claim"
+	"github.com/lbryio/lbry.go/v2/schema/stake"
 	pb "github.com/lbryio/types/v2/go"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
@@ -34,7 +34,7 @@ func testVideoMetaData() {
 	pbClaim.GetStream().GetSource().Name = "angrytom.mpeg"
 	sha = sha256.Sum256([]byte("hash"))
 	pbClaim.GetStream().GetSource().Hash = sha[:]
-	pbClaim.Version = claim.NoSig
+	pbClaim.Version = stake.NoSig
 
 	test(func() {
 		rawTx, err := getEmptyTx(claimAmount * 1)
@@ -76,7 +76,7 @@ func testImageMetadata() {
 	pbClaim.GetStream().GetSource().Name = "angrytom.mpeg"
 	sha = sha256.Sum256([]byte("hash"))
 	pbClaim.GetStream().GetSource().Hash = sha[:]
-	pbClaim.Version = claim.NoSig
+	pbClaim.Version = stake.NoSig
 
 	test(func() {
 		rawTx, err := getEmptyTx(claimAmount * 1)
