@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/lbryio/chainquery/global"
-	"github.com/lbryio/lbryschema.go/claim"
+	"github.com/lbryio/lbry.go/v2/schema/stake"
 )
 
 type claimCertTest struct {
@@ -59,11 +59,11 @@ var fail = []claimCertTest{
 func TestV2Validation(t *testing.T) {
 	firstTxID := "e8168121dac295625b5b8de880f13f5d08d7974ba86108957ba71f17ed7b4e06"
 	channelClaimID := "94ef9a76965c239eb248f7e448252df8da868116"
-	stream, err := claim.DecodeClaimHex("01168186daf82d2548e4f748b29e235c96769aef9448dc2bf20843de50292b7e2b57e4b6621bbfd37954bd0ce3a8053de08335125742f4deee351f44d36bbf3d0bbf8b4595139260abb4075cee31370e8c57a19f2d0a00", global.BlockChainName)
+	stream, err := stake.DecodeClaimHex("01168186daf82d2548e4f748b29e235c96769aef9448dc2bf20843de50292b7e2b57e4b6621bbfd37954bd0ce3a8053de08335125742f4deee351f44d36bbf3d0bbf8b4595139260abb4075cee31370e8c57a19f2d0a00", global.BlockChainName)
 	if err != nil {
 		t.Error(err)
 	}
-	channel, err := claim.DecodeClaimHex("00128b010a583056301006072a8648ce3d020106052b8104000a03420004e525fef8bf20cd100e8ec6818aeb56ddd59c79467670a3b53d0b983379cd49b2cb8c514d895bfeb304257e9ca0fc839dc44fcc4db4f3e7652f4525965e5e0abc1a1768747470733a2f2f686f6d657061676575726c2e636f6d22162a1468747470733a2f2f636f76657275726c2e636f6d", global.BlockChainName)
+	channel, err := stake.DecodeClaimHex("00128b010a583056301006072a8648ce3d020106052b8104000a03420004e525fef8bf20cd100e8ec6818aeb56ddd59c79467670a3b53d0b983379cd49b2cb8c514d895bfeb304257e9ca0fc839dc44fcc4db4f3e7652f4525965e5e0abc1a1768747470733a2f2f686f6d657061676575726c2e636f6d22162a1468747470733a2f2f636f76657275726c2e636f6d", global.BlockChainName)
 	if err != nil {
 		t.Error(err)
 	}
@@ -80,11 +80,11 @@ func TestV2Validation(t *testing.T) {
 
 func TestCertifyClaim(t *testing.T) {
 	for _, testCase := range pass {
-		signedHelper, err := claim.DecodeClaimHex(testCase.signedClaimHex, global.BlockChainName)
+		signedHelper, err := stake.DecodeClaimHex(testCase.signedClaimHex, global.BlockChainName)
 		if err != nil {
 			t.Error(err)
 		}
-		certHelper, err := claim.DecodeClaimHex(testCase.certClaimHex, global.BlockChainName)
+		certHelper, err := stake.DecodeClaimHex(testCase.certClaimHex, global.BlockChainName)
 		if err != nil {
 			t.Error(err)
 		}
@@ -99,11 +99,11 @@ func TestCertifyClaim(t *testing.T) {
 	}
 
 	for _, testCase := range fail {
-		signedHelper, err := claim.DecodeClaimHex(testCase.signedClaimHex, global.BlockChainName)
+		signedHelper, err := stake.DecodeClaimHex(testCase.signedClaimHex, global.BlockChainName)
 		if err != nil {
 			t.Error(err)
 		}
-		certHelper, err := claim.DecodeClaimHex(testCase.certClaimHex, global.BlockChainName)
+		certHelper, err := stake.DecodeClaimHex(testCase.certClaimHex, global.BlockChainName)
 		if err != nil {
 			t.Error(err)
 		}

@@ -7,6 +7,8 @@ import (
 	"time"
 	"unicode/utf8"
 
+	legacy_pb "github.com/lbryio/types/v1/go"
+
 	"github.com/lbryio/chainquery/datastore"
 	"github.com/lbryio/chainquery/global"
 	"github.com/lbryio/chainquery/lbrycrd"
@@ -18,8 +20,8 @@ import (
 
 	"github.com/lbryio/lbry.go/extras/errors"
 	util "github.com/lbryio/lbry.go/lbrycrd"
-	"github.com/lbryio/lbryschema.go/address/base58"
-	c "github.com/lbryio/lbryschema.go/claim"
+	"github.com/lbryio/lbry.go/v2/schema/address/base58"
+	c "github.com/lbryio/lbry.go/v2/schema/stake"
 	"github.com/lbryio/sockety/socketyapi"
 	pb "github.com/lbryio/types/v2/go"
 
@@ -194,11 +196,11 @@ func processClaimUpdateScript(script *[]byte, vout model.Output, tx model.Transa
 	return name, claimID, pubkeyscript, err
 }
 
-func processClaim(helper *c.ClaimHelper, claim *model.Claim, value []byte, output model.Output, tx model.Transaction) (*model.Claim, error) {
+func processClaim(helper *c.StakeHelper, claim *model.Claim, value []byte, output model.Output, tx model.Transaction) (*model.Claim, error) {
 	claim.ValueAsHex = hex.EncodeToString(value)
 	if helper.GetStream() != nil {
 		claim.ClaimType = 1
-	} else if helper.GetChannel() != nil {
+	} else if helper.Claim.GetChannel() != nil {
 		claim.ClaimType = 2
 	}
 
@@ -244,7 +246,7 @@ func processSupport(claimID string, support *model.Support, output model.Output,
 
 }
 
-func processUpdateClaim(helper *c.ClaimHelper, claim *model.Claim, value []byte) (*model.Claim, error) {
+func processUpdateClaim(helper *c.StakeHelper, claim *model.Claim, value []byte) (*model.Claim, error) {
 	if claim == nil {
 		return nil, nil
 	}
@@ -259,7 +261,7 @@ func processUpdateClaim(helper *c.ClaimHelper, claim *model.Claim, value []byte)
 }
 
 // UpdateClaimData updates the claim information from the blockchain
-func UpdateClaimData(helper *c.ClaimHelper, claim *model.Claim) error {
+func UpdateClaimData(helper *c.StakeHelper, claim *model.Claim) error {
 	// pbClaim JSON
 	if claimHelper, err := c.DecodeClaimHex(claim.ValueAsHex, global.BlockChainName); err == nil && claimHelper != nil {
 		json, err := GetValueAsJSON(*claimHelper)
@@ -284,7 +286,7 @@ func UpdateClaimData(helper *c.ClaimHelper, claim *model.Claim) error {
 	return nil
 }
 
-func setPublisherInfo(claim *model.Claim, helper *c.ClaimHelper) {
+func setPublisherInfo(claim *model.Claim, helper *c.StakeHelper) {
 	claim.IsCertProcessed = true
 	claim.IsCertValid = false
 	claim.PublisherID = null.NewString("", false)
@@ -300,51 +302,60 @@ func setPublisherInfo(claim *model.Claim, helper *c.ClaimHelper) {
 	}
 }
 
-func setCertificateInfo(claim *model.Claim, helper *c.ClaimHelper) {
+func setCertificateInfo(claim *model.Claim, helper *c.StakeHelper) {
 	claim.Certificate = null.NewString("", false)
-	if helper.GetChannel() != nil {
+	if helper.Claim.GetChannel() != nil {
 		claim.IsCertProcessed = true
+		var certificate *legacy_pb.Certificate
 		if helper.LegacyClaim != nil {
-			certificate := helper.LegacyClaim.GetCertificate()
-			certBytes, err := json.Marshal(certificate)
-			if err != nil {
-				logrus.Error("Could not form json from certificate")
+			certificate = helper.LegacyClaim.GetCertificate()
+		} else {
+			unknown := legacy_pb.Certificate_UNKNOWN_VERSION
+			SECP256k1 := legacy_pb.KeyType_SECP256k1
+			certificate = &legacy_pb.Certificate{
+				Version:   &unknown,
+				KeyType:   &SECP256k1,
+				PublicKey: helper.Claim.GetChannel().PublicKey,
 			}
-			claim.Certificate.SetValid(string(certBytes))
 		}
+		certBytes, err := json.Marshal(certificate)
+		if err != nil {
+			logrus.Error("Could not form json from certificate")
+		}
+		claim.Certificate.SetValid(string(certBytes))
 	}
 }
 
-func setMetaDataInfo(claim *model.Claim, helper *c.ClaimHelper) error {
+func setMetaDataInfo(claim *model.Claim, helper *c.StakeHelper) error {
 	err := resetMetadata(claim)
 	if err != nil {
 		return err
 	}
-	claim.Title.SetValid(helper.GetTitle())
-	claim.Description.SetValid(helper.GetDescription())
-	claim.ThumbnailURL.SetValid(helper.GetThumbnail().GetUrl())
-	if len(helper.GetTags()) > 0 {
-		err := setTags(claim, helper.GetTags())
+	claim.Title.SetValid(helper.Claim.GetTitle())
+	claim.Description.SetValid(helper.Claim.GetDescription())
+	claim.ThumbnailURL.SetValid(helper.Claim.GetThumbnail().GetUrl())
+	if len(helper.Claim.GetTags()) > 0 {
+		err := setTags(claim, helper.Claim.GetTags())
 		if err != nil {
 			return err
 		}
 	}
-	if len(helper.GetLanguages()) > 0 {
-		claim.Language.SetValid(helper.GetLanguages()[0].Language.String())
+	if len(helper.Claim.GetLanguages()) > 0 {
+		claim.Language.SetValid(helper.Claim.GetLanguages()[0].Language.String())
 	}
 	stream := helper.GetStream()
 	if stream != nil {
 		setStreamMetadata(claim, *stream)
 	}
-	channel := helper.GetChannel()
+	channel := helper.Claim.GetChannel()
 	if channel != nil {
 		setChannelMetadata(claim, *channel)
 	}
-	list := helper.GetCollection()
+	list := helper.Claim.GetCollection()
 	if list != nil {
 		setCollectionMetadata(claim, *list)
 	}
-	reference := helper.GetRepost()
+	reference := helper.Claim.GetRepost()
 	if reference != nil {
 		claim.Type.SetValid(global.ClaimReferenceClaimType)
 		if len(reference.GetClaimHash()) > 0 {
@@ -596,7 +607,7 @@ func resetMetadata(claim *model.Claim) error {
 	return nil
 }
 
-func setSourceInfo(claim *model.Claim, helper *c.ClaimHelper) {
+func setSourceInfo(claim *model.Claim, helper *c.StakeHelper) {
 	claim.ContentType = null.NewString("", false)
 	claim.SDHash = null.NewString("", false)
 	stream := helper.GetStream()

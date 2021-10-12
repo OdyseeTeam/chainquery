@@ -1,8 +1,13 @@
 package processing
 
 import (
-	util "github.com/lbryio/lbry.go/lbrycrd"
+	"encoding/hex"
+	"encoding/json"
 	"testing"
+
+	util "github.com/lbryio/lbry.go/lbrycrd"
+	legacy_pb "github.com/lbryio/types/v1/go"
+	"github.com/sirupsen/logrus"
 )
 
 type claimIDMatch struct {
@@ -54,5 +59,30 @@ func TestGetClaimIDFromOutput(t *testing.T) {
 			t.Error("Expected ", claimMatch.ClaimID, " got ", claimID)
 		}
 	}
+}
 
+func TestGetCertificate(t *testing.T) {
+	pkHex := "3056301006072a8648ce3d020106052b8104000a03420004f83982cd9cedb8fd6ec81524fceb0b79ec65725dca0f8b8499def4ad2f3cfafd406e15184c1e0607d3fea7f5a5ae787735a8917394e6de576d73084ce961666d"
+	pkBytes, err := hex.DecodeString(pkHex)
+	if err != nil {
+		t.Error(err)
+	}
+	var certificate *legacy_pb.Certificate
+	unknown := legacy_pb.Certificate_UNKNOWN_VERSION
+	SECP256k1 := legacy_pb.KeyType_SECP256k1
+	certificate = &legacy_pb.Certificate{
+		Version:   &unknown,
+		KeyType:   &SECP256k1,
+		PublicKey: pkBytes,
+	}
+
+	certBytes, err := json.Marshal(certificate)
+	if err != nil {
+		logrus.Error("Could not form json from certificate")
+	}
+	println(string(certBytes))
+	expected := `{"version":0,"keyType":3,"publicKey":"MFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAE+DmCzZztuP1uyBUk/OsLeexlcl3KD4uEmd70rS88+v1AbhUYTB4GB9P+p/Wlrnh3NaiRc5Tm3ldtcwhM6WFmbQ=="}`
+	if string(certBytes) != expected {
+		t.Error("values don't match")
+	}
 }

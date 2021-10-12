@@ -3,7 +3,7 @@ package processing
 import (
 	json2 "encoding/json"
 
-	"github.com/lbryio/lbryschema.go/claim"
+	"github.com/lbryio/lbry.go/v2/schema/stake"
 )
 
 // value.stream.metadata.author
@@ -47,7 +47,7 @@ const streamType = "streamType"
 const certificateType = "certificateType"
 
 //GetValueAsJSON returns the JSON string of the structure of claim metadata.
-func GetValueAsJSON(helper claim.ClaimHelper) (string, error) {
+func GetValueAsJSON(helper stake.StakeHelper) (string, error) {
 	var value Value
 	if helper.GetStream() != nil {
 		s := helper.GetStream()
@@ -55,15 +55,15 @@ func GetValueAsJSON(helper claim.ClaimHelper) (string, error) {
 		if s.GetSource() != nil {
 			contentType = s.GetSource().GetMediaType()
 		}
-		nsfw := tagExists("mature", helper.GetTags())
+		nsfw := tagExists("mature", helper.Claim.GetTags())
 		value = Value{
 			&Claim{
 				streamType,
 				&Stream{
 					&Metadata{
 						s.GetAuthor(),
-						helper.GetTitle(),
-						helper.GetDescription(),
+						helper.Claim.GetTitle(),
+						helper.Claim.GetDescription(),
 						nsfw,
 					},
 					&Source{
@@ -72,7 +72,7 @@ func GetValueAsJSON(helper claim.ClaimHelper) (string, error) {
 				},
 			},
 		}
-	} else if helper.GetChannel() != nil {
+	} else if helper.Claim.GetChannel() != nil {
 		value = Value{&Claim{certificateType, nil}}
 	}
 

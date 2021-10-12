@@ -9,7 +9,7 @@ import (
 	"github.com/lbryio/chainquery/model"
 
 	"github.com/lbryio/lbry.go/extras/errors"
-	c "github.com/lbryio/lbryschema.go/claim"
+	c "github.com/lbryio/lbry.go/v2/schema/stake"
 
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/null"
