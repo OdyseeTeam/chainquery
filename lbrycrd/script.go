@@ -124,7 +124,10 @@ func IsClaimUpdateScript(script []byte) bool {
 // IsPurchaseScript returns true if the script for the vout contains the OP_RETURN + 'P' byte identifier for a purchase
 func IsPurchaseScript(script []byte) bool {
 	if len(script) > 2 {
-		return script[0] == opReturn && script[2] == purchase
+		if script[0] == opReturn && script[2] == purchase {
+			_, err := ParsePurchaseScript(script)
+			return err == nil
+		}
 	}
 	return false
 }
