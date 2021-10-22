@@ -75,7 +75,7 @@ func RunBlockProcessing(stopper *stop.Group, height uint64) uint64 {
 		if err.Error() == ManualShutDownError.Error() {
 			return rollBackHeight
 		}
-		logrus.Error("Block Processing Error: ", err)
+		logrus.Error("Block Processing Error: ", errors.FullTrace(err))
 		logrus.Warning("Ran into transaction sync error at height", height, ". Rolling block back to height", height-1)
 		//ToDo - Should just return error...that is for another day
 		return rollBackHeight
