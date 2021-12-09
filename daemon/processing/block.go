@@ -426,20 +426,22 @@ func reprocessQueue(manager *txSyncManager) {
 		}
 	}
 }
-
-func checkDepth(tx *lbrycrd.TxRawResult, txMap map[string]*lbrycrd.TxRawResult, depthMap map[string]int) {
+func checkDepth(tx *lbrycrd.TxRawResult, txMap map[string]*lbrycrd.TxRawResult, checkedTx map[string]bool, depthMap map[string]int) {
 	for _, vin := range tx.Vin {
-		if txchild, ok := txMap[vin.TxID]; ok {
-			depthMap[vin.TxID] = depthMap[vin.TxID] + 1
-			checkDepth(txchild, txMap, depthMap)
+		if alreadyChecked := checkedTx[vin.TxID]; !alreadyChecked {
+			if txchild, ok := txMap[vin.TxID]; ok {
+				depthMap[vin.TxID]++
+				checkDepth(txchild, txMap, checkedTx, depthMap)
+				checkedTx[vin.TxID] = true
+			}
 		}
 	}
 }
 
 func optimizeOrderToProcess(txMap map[string]*lbrycrd.TxRawResult, depthMap map[string]int) []*lbrycrd.TxRawResult {
-
+	checkedVinTxs := make(map[string]bool)
 	for _, tx := range txMap {
-		checkDepth(tx, txMap, depthMap)
+		checkDepth(tx, txMap, checkedVinTxs, depthMap)
 	}
 
 	type depthPair struct {
@@ -455,6 +457,7 @@ func optimizeOrderToProcess(txMap map[string]*lbrycrd.TxRawResult, depthMap map[
 	sort.Slice(list, func(i, j int) bool {
 		return list[i].Count > list[j].Count
 	})
+
 	orderedTx := make([]*lbrycrd.TxRawResult, len(list))
 	for i := range list {
 		orderedTx[i] = txMap[list[i].TxID]
