@@ -180,7 +180,7 @@ func syncTransactionsOfBlock(stopper *stop.Group, txs []string, blockTime uint64
 		workerStopper: stop.New(nil),
 		errorsCh:      make(chan error, maxErrorsPerBlockSync),
 		resultsCh:     make(chan txProcessResult),
-		redoJobsCh:    make(chan txToProcess, 1000),
+		redoJobsCh:    make(chan txToProcess, len(txs)),
 		jobsCh:        make(chan txToProcess),
 	}
 	workers := util.Min(len(txs), MaxParallelTxProcessing)
@@ -291,6 +291,7 @@ func queueTx(txs []string, blockTime uint64, blockHeight uint64, manager *txSync
 	q("QUEUE: start of queuing")
 	txRawMap := make(map[string]*lbrycrd.TxRawResult)
 	depthMap := make(map[string]int, len(txs))
+	txSlice := make([]*lbrycrd.TxRawResult, len(txs))
 	for i := range txs {
 		select {
 		case <-manager.queueStopper.Ch():
@@ -305,12 +306,16 @@ func queueTx(txs []string, blockTime uint64, blockHeight uint64, manager *txSync
 				return
 			}
 			txRawMap[jsonTx.Txid] = jsonTx
+			txSlice[i] = jsonTx
 			depthMap[jsonTx.Txid] = 1
 			q("QUEUE:  end getting lbrycrd transaction..." + txs[i])
 		}
 	}
-	txSet := optimizeOrderToProcess(txRawMap, depthMap)
-	q("QUEUE: start interation of " + strconv.Itoa(len(txSet)) + " transactions")
+	txSet, ok := optimizeOrderToProcess(txRawMap, depthMap)
+	q("QUEUE: start interaction of " + strconv.Itoa(len(txSet)) + " transactions")
+	if !ok {
+		txSet = txSlice
+	}
 	for _, jsonTx := range txSet {
 		select {
 		case <-manager.queueStopper.Ch():
@@ -426,22 +431,24 @@ func reprocessQueue(manager *txSyncManager) {
 		}
 	}
 }
-func checkDepth(tx *lbrycrd.TxRawResult, txMap map[string]*lbrycrd.TxRawResult, checkedTx map[string]bool, depthMap map[string]int) {
+func checkDepth(tx *lbrycrd.TxRawResult, txMap map[string]*lbrycrd.TxRawResult, depthMap map[string]int, start time.Time) bool {
+	if time.Since(start) > 5*time.Second {
+		return false
+	}
 	for _, vin := range tx.Vin {
-		if alreadyChecked := checkedTx[vin.TxID]; !alreadyChecked {
-			if txchild, ok := txMap[vin.TxID]; ok {
-				depthMap[vin.TxID]++
-				checkDepth(txchild, txMap, checkedTx, depthMap)
-				checkedTx[vin.TxID] = true
-			}
+		if txchild, ok := txMap[vin.TxID]; ok {
+			depthMap[vin.TxID]++
+			return checkDepth(txchild, txMap, depthMap, start)
 		}
 	}
+	return true
 }
 
-func optimizeOrderToProcess(txMap map[string]*lbrycrd.TxRawResult, depthMap map[string]int) []*lbrycrd.TxRawResult {
-	checkedVinTxs := make(map[string]bool)
+func optimizeOrderToProcess(txMap map[string]*lbrycrd.TxRawResult, depthMap map[string]int) ([]*lbrycrd.TxRawResult, bool) {
+	start := time.Now()
+	successful := false
 	for _, tx := range txMap {
-		checkDepth(tx, txMap, checkedVinTxs, depthMap)
+		successful = checkDepth(tx, txMap, depthMap, start)
 	}
 
 	type depthPair struct {
@@ -464,6 +471,5 @@ func optimizeOrderToProcess(txMap map[string]*lbrycrd.TxRawResult, depthMap map[
 		//Additional debugging to output the order in which transactions are processed.
 		q("Tx " + list[i].TxID + " Count " + strconv.Itoa(list[i].Count))
 	}
-
-	return orderedTx
+	return orderedTx, successful
 }
