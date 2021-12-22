@@ -130,7 +130,8 @@ func processClaimSupportScript(script *[]byte, vout model.Output, tx model.Trans
 	support := datastore.GetSupport(tx.Hash, vout.Vout)
 	support, err = processSupport(claimid, value, support, vout, tx)
 	if err != nil {
-		logrus.Error(fmt.Sprintf("[outpoint:%s:%d]", tx.Hash, vout.Vout), "could not decode support value: ", err)
+		err = nil
+		//logrus.Error(fmt.Sprintf("[outpoint:%s:%d]", tx.Hash, vout.Vout), "could not decode support value: ", err)
 	}
 	if err := datastore.PutSupport(support); err != nil {
 		logrus.Debug("Support for unknown claim! ", claimid)
