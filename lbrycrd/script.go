@@ -202,7 +202,7 @@ func ParseClaimSupportScript(script []byte) (name string, claimid string, value 
 		if err != nil {
 			return
 		}
-		if len(script) > claimidEnd+1+int(vSize) {
+		if len(script) < claimidEnd+1+int(vSize) {
 			log.Error("intended support for claim ", claimid, " is invalid")
 			return
 		} else {
