@@ -191,8 +191,8 @@ func ParseClaimSupportScript(script []byte) (name string, claimid string, value 
 	claimidBytesToRead := int(script[nameEnd])
 	claimidStart := nameEnd + 1
 	claimidEnd := claimidStart + claimidBytesToRead
-	claimIdBytes := util.ReverseBytes(script[claimidStart:claimidEnd])
-	claimid = hex.EncodeToString(claimIdBytes)
+	claimIDBytes := util.ReverseBytes(script[claimidStart:claimidEnd])
+	claimid = hex.EncodeToString(claimIDBytes)
 	//OP_SUPPORT_CLAIM vchName vchClaimId OP_2DROP OP_DROP pubkeyscript
 	pksStart := claimidEnd + 2 // +2 to ignore OP_2DROP and OP_DROP
 
