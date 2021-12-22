@@ -2,6 +2,7 @@ package lbrycrd
 
 import (
 	"encoding/hex"
+	"fmt"
 	"testing"
 
 	"github.com/lbryio/chainquery/util"
@@ -168,4 +169,17 @@ func TestPurchaseScriptParse(t *testing.T) {
 	if claimID != expectedClaimID {
 		t.Errorf("expected %s, got %s", expectedClaimID, claimID)
 	}
+}
+
+func TestParseClaimSupportScript(t *testing.T) {
+	scriptHex := "b609405363694669344d6514cf5290ec6c4eebbd5c2fcf833944335526a0a63f4c550189e52371184a4100f40f786a151d13be53a97ecb168c690ebb97199b3a1a4aae3ba078f1c2b3bd8cc057e6a8d91078f8a09a6f945dabacd12faed9f4b2649e1ae55eb02a294d907447a6f5e12ac76a1c5ad278a46d6d76a9140e570ed0ef92cd798e6dabc05d6b4923eb0049a988ac"
+	scriptBytes, err := hex.DecodeString(scriptHex)
+	if err != nil {
+		t.Fatal(err)
+	}
+	name, claimid, value, pkscript, err := ParseClaimSupportScript(scriptBytes)
+	if err != nil {
+		t.Fatal(err)
+	}
+	println(fmt.Sprintf("Name: %s\n ClaimID: %s\n ValueHex: %x\n PKSCriptHex: %x", name, claimid, value, pkscript))
 }

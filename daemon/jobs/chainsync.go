@@ -2,11 +2,14 @@ package jobs
 
 import (
 	"database/sql"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
 	"time"
+
+	util2 "github.com/lbryio/chainquery/util"
 
 	"github.com/lbryio/chainquery/daemon/processing"
 	"github.com/lbryio/chainquery/datastore"
@@ -201,6 +204,31 @@ func (c *chainSyncStatus) alignVout(v lbrycrd.Vout) error {
 	}
 	if !c.Vout.ClaimID.IsZero() && !c.Vout.IsSpent {
 		return c.alignClaim()
+	} else if !c.Vout.ClaimID.IsZero() && c.Vout.Type.String == lbrycrd.NonStandard {
+		scriptBytes, err := hex.DecodeString(c.Vout.ScriptPubKeyHex.String)
+		if err != nil {
+			return errors.Err(err)
+		}
+		if lbrycrd.IsClaimSupportScript(scriptBytes) {
+			support := datastore.GetSupport(c.Tx.Hash, c.Vout.Vout)
+			if support != nil {
+				_, _, value, _, err := lbrycrd.ParseClaimSupportScript(scriptBytes)
+				if err != nil {
+					return err
+				}
+				if len(value) > 0 {
+					s, err := stake.DecodeSupportBytes(value, global.BlockChainName)
+					if err != nil {
+						return err
+					}
+					support.SupportedByClaimID.SetValid(hex.EncodeToString(util2.ReverseBytes(s.ClaimID)))
+					err = support.UpdateG(boil.Whitelist(model.SupportColumns.SupportedByClaimID))
+					if err != nil {
+						return err
+					}
+				}
+			}
+		}
 	}
 	return nil
 }
@@ -222,6 +250,16 @@ func (c *chainSyncStatus) alignClaim() error {
 	err = processing.UpdateClaimData(helper, storedClaim)
 	if err != nil {
 		return err
+	}
+
+	if storedClaim.VoutUpdate.IsZero() {
+		storedClaim.VoutUpdate.SetValid(c.Vout.Vout)
+		colsToUpdate = append(colsToUpdate, model.ClaimColumns.VoutUpdate)
+	}
+
+	if storedClaim.TransactionHashUpdate.IsZero() {
+		storedClaim.TransactionHashUpdate.SetValid(storedClaim.TransactionHashID.String)
+		colsToUpdate = append(colsToUpdate, model.ClaimColumns.TransactionHashUpdate)
 	}
 
 	//Check for deltas here to update for

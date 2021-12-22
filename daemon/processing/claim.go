@@ -121,13 +121,17 @@ func processClaimNameScript(script *[]byte, vout model.Output, tx model.Transact
 }
 
 func processClaimSupportScript(script *[]byte, vout model.Output, tx model.Transaction) (name string, claimid string, pubkeyscript []byte, err error) {
-	name, claimid, pubkeyscript, err = lbrycrd.ParseClaimSupportScript(*script)
+	var value []byte
+	name, claimid, value, pubkeyscript, err = lbrycrd.ParseClaimSupportScript(*script)
 	if err != nil {
 		err := errors.Prefix("Claim support processing error: ", err)
 		return name, claimid, pubkeyscript, err
 	}
 	support := datastore.GetSupport(tx.Hash, vout.Vout)
-	support = processSupport(claimid, support, vout, tx)
+	support, err = processSupport(claimid, value, support, vout, tx)
+	if err != nil {
+		return name, claimid, pubkeyscript, err
+	}
 	if err := datastore.PutSupport(support); err != nil {
 		logrus.Debug("Support for unknown claim! ", claimid)
 	} else {
@@ -229,7 +233,7 @@ func processClaim(helper *c.StakeHelper, claim *model.Claim, value []byte, outpu
 	return claim, nil
 }
 
-func processSupport(claimID string, support *model.Support, output model.Output, tx model.Transaction) *model.Support {
+func processSupport(claimID string, value []byte, support *model.Support, output model.Output, tx model.Transaction) (*model.Support, error) {
 	if support == nil {
 		support = &model.Support{}
 	}
@@ -237,12 +241,20 @@ func processSupport(claimID string, support *model.Support, output model.Output,
 	support.TransactionHashID.SetValid(tx.Hash)
 	support.Vout = output.Vout
 	support.SupportAmount = output.Value.Float64
+	if len(value) > 0 {
+		s, err := c.DecodeSupportBytes(value, global.BlockChainName)
+		if err != nil {
+			return nil, err
+		}
+		support.SupportedByClaimID.SetValid(hex.EncodeToString(util2.ReverseBytes(s.ClaimID)))
+	}
+
 	if claim := datastore.GetClaim(claimID); claim != nil {
 		support.SupportedClaimID = claimID
-		return support
+		return support, nil
 	}
 	logrus.Debug("Claim Support for claim ", claimID, " is a non-existent claim.")
-	return support
+	return support, nil
 
 }
 

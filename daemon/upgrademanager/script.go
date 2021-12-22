@@ -88,7 +88,7 @@ func setClaimAddresses() {
 			} else if lbrycrd.IsClaimUpdateScript(scriptBytes) {
 				_, _, _, pkscript, err = lbrycrd.ParseClaimUpdateScript(scriptBytes)
 			} else if lbrycrd.IsClaimSupportScript(scriptBytes) {
-				_, _, pkscript, err = lbrycrd.ParseClaimSupportScript(scriptBytes)
+				_, _, _, pkscript, err = lbrycrd.ParseClaimSupportScript(scriptBytes)
 			} else {
 				continue
 			}

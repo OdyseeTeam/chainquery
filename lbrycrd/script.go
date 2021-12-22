@@ -1,6 +1,7 @@
 package lbrycrd
 
 import (
+	"bytes"
 	"encoding/binary"
 	"encoding/hex"
 
@@ -27,6 +28,7 @@ const (
 	purchase       = 0x50 //PURCHASE = 80
 	opDup          = 0x76 //opDup 				= 118
 	opChecksig     = 0xac //opChecksig 			= 172
+	op2drop        = 0x6d //op2Drop
 	opEqualverify  = 0x88 //opEqualverify 		= 136
 	opHash160      = 0xa9 //opHash160			= 169
 	opPushdata1    = 0x4c //opPushdata1  		= 76
@@ -168,7 +170,7 @@ func ParseClaimNameScript(script []byte) (name string, value []byte, pubkeyscrip
 }
 
 // ParseClaimSupportScript parses a script for a support of a claim.
-func ParseClaimSupportScript(script []byte) (name string, claimid string, pubkeyscript []byte, err error) {
+func ParseClaimSupportScript(script []byte) (name string, claimid string, value []byte, pubkeyscript []byte, err error) {
 	// Already validated by blockchain so can be assumed
 	// opSupportClaim vchName vchClaimId OP_2DROP OP_DROP pubkeyscript
 
@@ -189,11 +191,23 @@ func ParseClaimSupportScript(script []byte) (name string, claimid string, pubkey
 	claimidBytesToRead := int(script[nameEnd])
 	claimidStart := nameEnd + 1
 	claimidEnd := claimidStart + claimidBytesToRead
-	bytes := util.ReverseBytes(script[claimidStart:claimidEnd])
-	claimid = hex.EncodeToString(bytes)
+	claimIdBytes := util.ReverseBytes(script[claimidStart:claimidEnd])
+	claimid = hex.EncodeToString(claimIdBytes)
+	//OP_SUPPORT_CLAIM vchName vchClaimId OP_2DROP OP_DROP pubkeyscript
+	pksStart := claimidEnd + 2 // +2 to ignore OP_2DROP and OP_DROP
+
+	if script[claimidEnd+1] != op2drop {
+		var vSize uint64
+		vSize, _, err = readCompactSize(bytes.NewBuffer(script[claimidEnd+1:]))
+		if err != nil {
+			return
+		}
+		value = script[claimidEnd+1 : claimidEnd+1+int(vSize)]
+		//OP_SUPPORT_CLAIM vchName vchClaimId vchValue OP_2DROP OP_2DROP pubkeyscript
+		pksStart = claimidEnd + 1 + int(vSize)
+	}
 
 	//PubKeyScript
-	pksStart := claimidEnd + 2       // +2 to ignore OP_2DROP and OP_DROP
 	pubkeyscript = script[pksStart:] //Remainder is always pubkeyscript
 	return
 }
@@ -265,7 +279,7 @@ func GetPubKeyScriptFromClaimPKS(script []byte) (pubkeyscript []byte, err error)
 			}
 			return
 		} else if IsClaimSupportScript(script) {
-			_, _, pubkeyscript, err = ParseClaimSupportScript(script)
+			_, _, _, pubkeyscript, err = ParseClaimSupportScript(script)
 			if err != nil {
 				return
 			}
@@ -448,4 +462,63 @@ func ParsePurchaseScript(script []byte) (*pb.Purchase, error) {
 		return nil, errors.Err(err)
 	}
 	return purchase, nil
+}
+
+func readCompactSize(bs *bytes.Buffer) (uint64, []byte, error) {
+	var readBuf []byte
+	bSize := make([]byte, 1)
+	_, err := bs.Read(bSize)
+	if err != nil {
+		return 0, nil, errors.Err(err)
+	}
+	readBuf = append(readBuf, bSize...)
+
+	size := uint64(bSize[0])
+	if size < 253 {
+		return size, readBuf, nil
+	}
+
+	if size == 253 {
+		buf := make([]byte, 2)
+		_, err := bs.Read(buf)
+		if err != nil {
+			return 0, nil, errors.Err(err)
+		}
+		readBuf = append(readBuf, buf...)
+
+		return uint64(binary.LittleEndian.Uint16(buf)), readBuf, nil
+	}
+	if size == 254 {
+		v, buf, err := readUint32(bs)
+		if err != nil {
+			return 0, nil, err
+		}
+		readBuf = append(readBuf, buf...)
+		return uint64(v), readBuf, err
+	}
+
+	if size == 255 {
+		buf := make([]byte, 8)
+		readBuf = append(readBuf, buf...)
+		return binary.LittleEndian.Uint64(buf), readBuf, nil
+	}
+
+	return 0, nil, errors.Err("size is greater than 255")
+}
+
+func readUint32(bs *bytes.Buffer) (uint32, []byte, error) {
+	buf, err := readBytes(4, bs)
+	if err != nil {
+		return 0, nil, errors.Err(err)
+	}
+	return binary.LittleEndian.Uint32(buf), buf, nil
+}
+
+func readBytes(toRead int, bs *bytes.Buffer) ([]byte, error) {
+	buf := make([]byte, toRead)
+	_, err := bs.Read(buf)
+	if err != nil {
+		return nil, errors.Err(err)
+	}
+	return buf, nil
 }

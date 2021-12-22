@@ -23,59 +23,64 @@ import (
 
 // Support is an object representing the database table.
 type Support struct {
-	ID                uint64      `boil:"id" json:"id" toml:"id" yaml:"id"`
-	SupportedClaimID  string      `boil:"supported_claim_id" json:"supported_claim_id" toml:"supported_claim_id" yaml:"supported_claim_id"`
-	SupportAmount     float64     `boil:"support_amount" json:"support_amount" toml:"support_amount" yaml:"support_amount"`
-	BidState          string      `boil:"bid_state" json:"bid_state" toml:"bid_state" yaml:"bid_state"`
-	TransactionHashID null.String `boil:"transaction_hash_id" json:"transaction_hash_id,omitempty" toml:"transaction_hash_id" yaml:"transaction_hash_id,omitempty"`
-	Vout              uint        `boil:"vout" json:"vout" toml:"vout" yaml:"vout"`
-	CreatedAt         time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	ModifiedAt        time.Time   `boil:"modified_at" json:"modified_at" toml:"modified_at" yaml:"modified_at"`
+	ID                 uint64      `boil:"id" json:"id" toml:"id" yaml:"id"`
+	SupportedClaimID   string      `boil:"supported_claim_id" json:"supported_claim_id" toml:"supported_claim_id" yaml:"supported_claim_id"`
+	SupportAmount      float64     `boil:"support_amount" json:"support_amount" toml:"support_amount" yaml:"support_amount"`
+	BidState           string      `boil:"bid_state" json:"bid_state" toml:"bid_state" yaml:"bid_state"`
+	TransactionHashID  null.String `boil:"transaction_hash_id" json:"transaction_hash_id,omitempty" toml:"transaction_hash_id" yaml:"transaction_hash_id,omitempty"`
+	Vout               uint        `boil:"vout" json:"vout" toml:"vout" yaml:"vout"`
+	CreatedAt          time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	ModifiedAt         time.Time   `boil:"modified_at" json:"modified_at" toml:"modified_at" yaml:"modified_at"`
+	SupportedByClaimID null.String `boil:"supported_by_claim_id" json:"supported_by_claim_id,omitempty" toml:"supported_by_claim_id" yaml:"supported_by_claim_id,omitempty"`
 
 	R *supportR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L supportL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var SupportColumns = struct {
-	ID                string
-	SupportedClaimID  string
-	SupportAmount     string
-	BidState          string
-	TransactionHashID string
-	Vout              string
-	CreatedAt         string
-	ModifiedAt        string
+	ID                 string
+	SupportedClaimID   string
+	SupportAmount      string
+	BidState           string
+	TransactionHashID  string
+	Vout               string
+	CreatedAt          string
+	ModifiedAt         string
+	SupportedByClaimID string
 }{
-	ID:                "id",
-	SupportedClaimID:  "supported_claim_id",
-	SupportAmount:     "support_amount",
-	BidState:          "bid_state",
-	TransactionHashID: "transaction_hash_id",
-	Vout:              "vout",
-	CreatedAt:         "created_at",
-	ModifiedAt:        "modified_at",
+	ID:                 "id",
+	SupportedClaimID:   "supported_claim_id",
+	SupportAmount:      "support_amount",
+	BidState:           "bid_state",
+	TransactionHashID:  "transaction_hash_id",
+	Vout:               "vout",
+	CreatedAt:          "created_at",
+	ModifiedAt:         "modified_at",
+	SupportedByClaimID: "supported_by_claim_id",
 }
 
 // Generated where
 
 var SupportWhere = struct {
-	ID                whereHelperuint64
-	SupportedClaimID  whereHelperstring
-	SupportAmount     whereHelperfloat64
-	BidState          whereHelperstring
-	TransactionHashID whereHelpernull_String
-	Vout              whereHelperuint
-	CreatedAt         whereHelpertime_Time
-	ModifiedAt        whereHelpertime_Time
+	ID                 whereHelperuint64
+	SupportedClaimID   whereHelperstring
+	SupportAmount      whereHelperfloat64
+	BidState           whereHelperstring
+	TransactionHashID  whereHelpernull_String
+	Vout               whereHelperuint
+	CreatedAt          whereHelpertime_Time
+	ModifiedAt         whereHelpertime_Time
+	SupportedByClaimID whereHelpernull_String
 }{
-	ID:                whereHelperuint64{field: "`support`.`id`"},
-	SupportedClaimID:  whereHelperstring{field: "`support`.`supported_claim_id`"},
-	SupportAmount:     whereHelperfloat64{field: "`support`.`support_amount`"},
-	BidState:          whereHelperstring{field: "`support`.`bid_state`"},
-	TransactionHashID: whereHelpernull_String{field: "`support`.`transaction_hash_id`"},
-	Vout:              whereHelperuint{field: "`support`.`vout`"},
-	CreatedAt:         whereHelpertime_Time{field: "`support`.`created_at`"},
-	ModifiedAt:        whereHelpertime_Time{field: "`support`.`modified_at`"},
+	ID:                 whereHelperuint64{field: "`support`.`id`"},
+	SupportedClaimID:   whereHelperstring{field: "`support`.`supported_claim_id`"},
+	SupportAmount:      whereHelperfloat64{field: "`support`.`support_amount`"},
+	BidState:           whereHelperstring{field: "`support`.`bid_state`"},
+	TransactionHashID:  whereHelpernull_String{field: "`support`.`transaction_hash_id`"},
+	Vout:               whereHelperuint{field: "`support`.`vout`"},
+	CreatedAt:          whereHelpertime_Time{field: "`support`.`created_at`"},
+	ModifiedAt:         whereHelpertime_Time{field: "`support`.`modified_at`"},
+	SupportedByClaimID: whereHelpernull_String{field: "`support`.`supported_by_claim_id`"},
 }
 
 // SupportRels is where relationship names are stored.
@@ -99,8 +104,8 @@ func (*supportR) NewStruct() *supportR {
 type supportL struct{}
 
 var (
-	supportAllColumns            = []string{"id", "supported_claim_id", "support_amount", "bid_state", "transaction_hash_id", "vout", "created_at", "modified_at"}
-	supportColumnsWithoutDefault = []string{"supported_claim_id", "transaction_hash_id", "vout"}
+	supportAllColumns            = []string{"id", "supported_claim_id", "support_amount", "bid_state", "transaction_hash_id", "vout", "created_at", "modified_at", "supported_by_claim_id"}
+	supportColumnsWithoutDefault = []string{"supported_claim_id", "transaction_hash_id", "vout", "supported_by_claim_id"}
 	supportColumnsWithDefault    = []string{"id", "support_amount", "bid_state", "created_at", "modified_at"}
 	supportPrimaryKeyColumns     = []string{"id"}
 )
