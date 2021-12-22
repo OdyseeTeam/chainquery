@@ -130,7 +130,7 @@ func processClaimSupportScript(script *[]byte, vout model.Output, tx model.Trans
 	support := datastore.GetSupport(tx.Hash, vout.Vout)
 	support, err = processSupport(claimid, value, support, vout, tx)
 	if err != nil {
-		return name, claimid, pubkeyscript, err
+		logrus.Error(fmt.Sprintf("[outpoint:%s:%d]", tx.Hash, vout.Vout), "could not decode support value: ", err)
 	}
 	if err := datastore.PutSupport(support); err != nil {
 		logrus.Debug("Support for unknown claim! ", claimid)
@@ -237,24 +237,24 @@ func processSupport(claimID string, value []byte, support *model.Support, output
 	if support == nil {
 		support = &model.Support{}
 	}
-
+	var err error
 	support.TransactionHashID.SetValid(tx.Hash)
 	support.Vout = output.Vout
 	support.SupportAmount = output.Value.Float64
 	if len(value) > 0 {
-		s, err := c.DecodeSupportBytes(value, global.BlockChainName)
-		if err != nil {
-			return nil, err
+		var s *c.StakeHelper
+		s, err = c.DecodeSupportBytes(value, global.BlockChainName)
+		if err == nil {
+			support.SupportedByClaimID.SetValid(hex.EncodeToString(util2.ReverseBytes(s.ClaimID)))
 		}
-		support.SupportedByClaimID.SetValid(hex.EncodeToString(util2.ReverseBytes(s.ClaimID)))
 	}
 
 	if claim := datastore.GetClaim(claimID); claim != nil {
 		support.SupportedClaimID = claimID
-		return support, nil
+		return support, err
 	}
 	logrus.Debug("Claim Support for claim ", claimID, " is a non-existent claim.")
-	return support, nil
+	return support, err
 
 }
 

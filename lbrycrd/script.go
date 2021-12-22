@@ -204,7 +204,6 @@ func ParseClaimSupportScript(script []byte) (name string, claimid string, value 
 		}
 		if len(script) < claimidEnd+1+int(vSize) {
 			log.Error("intended support for claim ", claimid, " is invalid")
-			return
 		} else {
 			value = script[claimidEnd+1 : claimidEnd+1+int(vSize)]
 			//OP_SUPPORT_CLAIM vchName vchClaimId vchValue OP_2DROP OP_2DROP pubkeyscript
