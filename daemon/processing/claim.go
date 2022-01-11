@@ -423,7 +423,10 @@ func setLicense(claim *model.Claim, stream pb.Stream) {
 	if len(liscenseURL) > 255 {
 		liscenseURL = liscenseURL[0:255]
 	}
-	claim.LicenseURL.SetValid(liscenseURL)
+
+	if utf8.ValidString(liscenseURL) {
+		claim.LicenseURL.SetValid(strings.ToValidUTF8(liscenseURL, " "))
+	}
 }
 
 func setStreamMetadata(claim *model.Claim, stream pb.Stream) {
