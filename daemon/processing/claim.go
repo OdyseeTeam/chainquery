@@ -420,8 +420,8 @@ func setLicense(claim *model.Claim, stream pb.Stream) {
 	}
 
 	liscenseURL := stream.GetLicenseUrl()
-	if len(liscenseURL) > 255 {
-		liscenseURL = liscenseURL[0:255]
+	if len([]rune(liscenseURL)) > 255 {
+		liscenseURL = string([]rune(liscenseURL)[0:255])
 	}
 
 	if utf8.ValidString(liscenseURL) {
