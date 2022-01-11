@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 	"unicode/utf8"
 
@@ -415,7 +416,7 @@ func setLicense(claim *model.Claim, stream pb.Stream) {
 		license = string([]rune(license)[:500])
 	}
 	if utf8.ValidString(license) {
-		claim.License.SetValid(license)
+		claim.License.SetValid(strings.ToValidUTF8(license, " "))
 	}
 
 	liscenseURL := stream.GetLicenseUrl()
