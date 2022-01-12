@@ -425,7 +425,7 @@ func setLicense(claim *model.Claim, stream pb.Stream) {
 	}
 
 	if utf8.ValidString(liscenseURL) {
-		claim.LicenseURL.SetValid(strings.ToValidUTF8(liscenseURL, " "))
+		//claim.LicenseURL.SetValid(strings.ToValidUTF8(liscenseURL, " "))
 	}
 }
 
