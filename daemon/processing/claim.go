@@ -509,12 +509,18 @@ func setChannelMetadata(claim *model.Claim, channel pb.Channel) {
 			claim.SourceHash.SetValid(hex.EncodeToString(c.GetHash()))
 		}
 		if c.GetMediaType() != "" {
-			claim.SourceMediaType.SetValid(c.GetMediaType())
+			const maxSourceMediaType = 254
+			sourceMediaType := c.GetMediaType()
+			if len([]rune(sourceMediaType)) > maxSourceMediaType {
+				sourceMediaType = string([]rune(sourceMediaType)[:maxSourceMediaType])
+			}
+			claim.SourceMediaType.SetValid(sourceMediaType)
 		}
 	}
 	if channel.GetEmail() != "" {
 		claim.Email.SetValid(channel.GetEmail())
 	}
+
 	if channel.GetFeatured() != nil {
 		claim.HasClaimList.SetValid(true)
 		claim.ListType.SetValid(int16(channel.GetFeatured().GetListType()))
@@ -570,7 +576,12 @@ func setSourceMetadata(claim *model.Claim, s *pb.Source) {
 		claim.SourceName.SetValid(s.GetName())
 	}
 	if s.GetMediaType() != "" {
-		claim.SourceMediaType.SetValid(s.GetMediaType())
+		const maxSourceMediaType = 254
+		sourceMediaType := s.GetMediaType()
+		if len([]rune(sourceMediaType)) > maxSourceMediaType {
+			sourceMediaType = string([]rune(sourceMediaType)[:maxSourceMediaType])
+		}
+		claim.SourceMediaType.SetValid(sourceMediaType)
 	}
 }
 
