@@ -518,7 +518,12 @@ func setChannelMetadata(claim *model.Claim, channel pb.Channel) {
 		}
 	}
 	if channel.GetEmail() != "" {
-		claim.Email.SetValid(channel.GetEmail())
+		const maxEmailLength = 255
+		email := channel.GetEmail()
+		if len(email) > maxEmailLength {
+			email = email[:252] + "..."
+		}
+		claim.Email.SetValid(email)
 	}
 
 	if channel.GetFeatured() != nil {
