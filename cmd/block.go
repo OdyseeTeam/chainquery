@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"database/sql"
 	"fmt"
 	"strconv"
 	"time"
@@ -51,14 +52,16 @@ var blockCmd = &cobra.Command{
 		defer db.CloseDB(dbInstance)
 		logrus.Infof("Running processor on block %d with hash %s", blockHeight, blockHash)
 		block, err := model.Blocks(model.BlockWhere.Hash.EQ(blockHash.String())).OneG()
-		if err != nil {
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
 			logrus.Panic(errors.Err(err))
 		}
-		err = block.DeleteG()
-		if err != nil {
-			logrus.Fatal(errors.Err(err))
+		if block != nil {
+			err = block.DeleteG()
+			if err != nil {
+				logrus.Fatal(errors.Err(err))
+			}
+			logrus.Info("Block successfully removed")
 		}
-		logrus.Info("Block successfully removed")
 		jsonBlock, err := lbrycrd.GetBlock(blockHash.String())
 		if err != nil {
 			logrus.Fatal(errors.Err(err))
