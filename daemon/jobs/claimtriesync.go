@@ -460,12 +460,18 @@ func getSpentClaimsToUpdate(hasUpdate bool, lastProcessed uint64) (model.ClaimSl
 		w.ModifiedAt.GTE(lastSync.PreviousSyncTime),
 		w.IsSpent.EQ(true),
 		w.ID.GT(lastProcessed),
-		qm.Limit(10000),
+		qm.Limit(15000),
 	}
 	var outputs model.OutputSlice
 	var err error
 	outputs, err = model.Outputs(outputMods...).AllG()
-	//for len(outputs) > 0 {
+	if err != nil {
+		return nil, 0, errors.Err(err)
+	}
+	if len(outputs) == 0 {
+		return nil, lastProcessed, nil
+	}
+
 	var txHashList []interface{}
 	for _, o := range outputs {
 		txHashList = append(txHashList, o.TransactionHash)
@@ -480,15 +486,17 @@ func getSpentClaimsToUpdate(hasUpdate bool, lastProcessed uint64) (model.ClaimSl
 		return nil, 0, errors.Err(err)
 	}
 	if len(claims) > 0 {
-		logrus.Debugf("outputs found: %d claims found up to: %d - claim id: %d", len(outputs), len(claims), claims[len(claims)-1].ID)
+		logrus.Debugf("found %d outputs, %d claims - last claim id: %d", len(outputs), len(claims), claims[len(claims)-1].ID)
 	}
 	lastProcessed = outputs[len(outputs)-1].ID
+
 	return claims, lastProcessed, nil
 }
 
 func updateSpentClaims() error {
 	var lastProcessed uint64
 	for {
+		break //tmp
 		//Claims without updates
 		claims, newLastProcessed, err := getSpentClaimsToUpdate(false, lastProcessed)
 		if err != nil {

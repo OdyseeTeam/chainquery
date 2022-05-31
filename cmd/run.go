@@ -22,6 +22,9 @@ func init() {
 }
 
 var jobsMap = map[string]func(){
+	"claimcount": func() {
+		_ = jobs.SyncClaimCntInChannel()
+	},
 	"claimtrie":        jobs.ClaimTrieSync,
 	"certificate":      jobs.CertificateSync,
 	"mempool":          jobs.MempoolSync,
