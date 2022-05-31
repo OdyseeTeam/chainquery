@@ -452,14 +452,15 @@ func updateNameList(m map[string]bool, claims model.ClaimSlice) map[string]bool 
 	return m
 }
 
-func getSpentClaimsToUpdate(hasUpdate bool) (model.ClaimSlice, error) {
+func getSpentClaimsToUpdate(hasUpdate bool, lastProcessed uint64) (model.ClaimSlice, uint64, error) {
 	w := model.OutputWhere
 	o := model.OutputColumns
 	outputMods := []qm.QueryMod{
 		qm.Select(o.ID, o.IsSpent, o.TransactionHash),
 		w.ModifiedAt.GTE(lastSync.PreviousSyncTime),
 		w.IsSpent.EQ(true),
-		qm.Limit(5000),
+		w.ID.GT(lastProcessed),
+		qm.Limit(50000),
 	}
 	var outputs model.OutputSlice
 	var claims model.ClaimSlice
@@ -478,62 +479,76 @@ func getSpentClaimsToUpdate(hasUpdate bool) (model.ClaimSlice, error) {
 		c := model.ClaimColumns
 		claimsToAdd, err = model.Claims(qm.Select(c.ID, c.ClaimID, txHashCol), qm.WhereIn(txHashCol+" IN ?", txHashList...)).AllG()
 		if err != nil {
-			return nil, errors.Err(err)
+			return nil, 0, errors.Err(err)
 		}
 		claims = append(claims, claimsToAdd...)
 		logrus.Debug("outputs found: ", len(outputs), " claims found up to: ", len(claims))
-		nextOutputMods := append(outputMods, w.ID.GT(outputs[len(outputs)-1].ID))
-		outputs, err = model.Outputs(nextOutputMods...).AllG()
-		if err != nil {
-			return nil, errors.Err(err)
-		}
+		//nextOutputMods := append(outputMods, w.ID.GT(outputs[len(outputs)-1].ID))
+		//outputs, err = model.Outputs(nextOutputMods...).AllG()
+		//if err != nil {
+		//	return nil, 0, errors.Err(err)
+		//}
 	}
-	return claims, nil
+	lastProcessed = outputs[len(outputs)-1].ID
+	return claims, lastProcessed, nil
 }
 
 func updateSpentClaims() error {
-
-	//Claims without updates
-	claims, err := getSpentClaimsToUpdate(false)
-	if err != nil {
-		return err
-	}
-	for _, claim := range claims {
-		if !claim.TransactionHashUpdate.IsZero() {
-			continue
-		}
-		claim.BidState = "Spent"
-		claim.ModifiedAt = time.Now()
-		if err := claim.UpdateG(boil.Whitelist(model.ClaimColumns.BidState, model.ClaimColumns.ModifiedAt)); err != nil {
+	var lastProcessed uint64
+	for {
+		//Claims without updates
+		claims, newLastProcessed, err := getSpentClaimsToUpdate(false, lastProcessed)
+		if err != nil {
 			return err
 		}
-	}
-	//Claims without updates
-	claims, err = getSpentClaimsToUpdate(true)
-	if err != nil {
-		return err
-	}
-	for _, claim := range claims {
-		claim.BidState = "Spent"
-		claim.ModifiedAt = time.Now()
-	}
-	upTo := 1000
-	logrus.Debugf("%d claims left to update", len(claims))
-	for len(claims) > 0 {
-		if len(claims) < upTo {
-			upTo = len(claims)
+		for _, claim := range claims {
+			if !claim.TransactionHashUpdate.IsZero() {
+				continue
+			}
+			claim.BidState = "Spent"
+			claim.ModifiedAt = time.Now()
+			if err := claim.UpdateG(boil.Whitelist(model.ClaimColumns.BidState, model.ClaimColumns.ModifiedAt)); err != nil {
+				return err
+			}
 		}
-		toUpdate := claims[:upTo]
-		args := []interface{}{time.Now()}
-		for _, c := range toUpdate {
-			args = append(args, c.ID)
+		if lastProcessed == newLastProcessed {
+			break
 		}
-		updateQuery := fmt.Sprintf(`UPDATE claim SET bid_state="Spent", modified_at = ? WHERE id IN (%s)`, query.Qs(len(toUpdate)))
-		if _, err := boil.GetDB().Exec(updateQuery, args...); err != nil {
+		lastProcessed = newLastProcessed
+	}
+	lastProcessed = 0
+	for {
+		//Claims without updates
+		claims, newLastProcessed, err := getSpentClaimsToUpdate(true, lastProcessed)
+		if err != nil {
 			return err
 		}
+		for _, claim := range claims {
+			claim.BidState = "Spent"
+			claim.ModifiedAt = time.Now()
+		}
+		upTo := 1000
 		logrus.Debugf("%d claims left to update", len(claims))
-		claims = claims[upTo:]
+		for len(claims) > 0 {
+			if len(claims) < upTo {
+				upTo = len(claims)
+			}
+			toUpdate := claims[:upTo]
+			args := []interface{}{time.Now()}
+			for _, c := range toUpdate {
+				args = append(args, c.ID)
+			}
+			updateQuery := fmt.Sprintf(`UPDATE claim SET bid_state="Spent", modified_at = ? WHERE id IN (%s)`, query.Qs(len(toUpdate)))
+			if _, err := boil.GetDB().Exec(updateQuery, args...); err != nil {
+				return err
+			}
+			logrus.Debugf("%d claims left to update", len(claims))
+			claims = claims[upTo:]
+		}
+		if lastProcessed == newLastProcessed {
+			break
+		}
+		lastProcessed = newLastProcessed
 	}
 	return nil
 }
