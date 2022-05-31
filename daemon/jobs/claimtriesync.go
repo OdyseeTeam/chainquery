@@ -460,35 +460,35 @@ func getSpentClaimsToUpdate(hasUpdate bool, lastProcessed uint64) (model.ClaimSl
 		w.ModifiedAt.GTE(lastSync.PreviousSyncTime),
 		w.IsSpent.EQ(true),
 		w.ID.GT(lastProcessed),
-		qm.Limit(50000),
+		qm.Limit(10000),
 	}
 	var outputs model.OutputSlice
 	var claims model.ClaimSlice
 	var claimsToAdd model.ClaimSlice
 	var err error
 	outputs, err = model.Outputs(outputMods...).AllG()
-	for len(outputs) > 0 {
-		var txHashList []interface{}
-		for _, o := range outputs {
-			txHashList = append(txHashList, o.TransactionHash)
-		}
-		txHashCol := model.ClaimColumns.TransactionHashID
-		if hasUpdate {
-			txHashCol = model.ClaimColumns.TransactionHashUpdate
-		}
-		c := model.ClaimColumns
-		claimsToAdd, err = model.Claims(qm.Select(c.ID, c.ClaimID, txHashCol), qm.WhereIn(txHashCol+" IN ?", txHashList...)).AllG()
-		if err != nil {
-			return nil, 0, errors.Err(err)
-		}
-		claims = append(claims, claimsToAdd...)
-		logrus.Debug("outputs found: ", len(outputs), " claims found up to: ", len(claims))
-		//nextOutputMods := append(outputMods, w.ID.GT(outputs[len(outputs)-1].ID))
-		//outputs, err = model.Outputs(nextOutputMods...).AllG()
-		//if err != nil {
-		//	return nil, 0, errors.Err(err)
-		//}
+	//for len(outputs) > 0 {
+	var txHashList []interface{}
+	for _, o := range outputs {
+		txHashList = append(txHashList, o.TransactionHash)
 	}
+	txHashCol := model.ClaimColumns.TransactionHashID
+	if hasUpdate {
+		txHashCol = model.ClaimColumns.TransactionHashUpdate
+	}
+	c := model.ClaimColumns
+	claimsToAdd, err = model.Claims(qm.Select(c.ID, c.ClaimID, txHashCol), qm.WhereIn(txHashCol+" IN ?", txHashList...)).AllG()
+	if err != nil {
+		return nil, 0, errors.Err(err)
+	}
+	claims = append(claims, claimsToAdd...)
+	logrus.Debug("outputs found: ", len(outputs), " claims found up to: ", len(claims))
+	//nextOutputMods := append(outputMods, w.ID.GT(outputs[len(outputs)-1].ID))
+	//outputs, err = model.Outputs(nextOutputMods...).AllG()
+	//if err != nil {
+	//	return nil, 0, errors.Err(err)
+	//}
+	//}
 	lastProcessed = outputs[len(outputs)-1].ID
 	return claims, lastProcessed, nil
 }
