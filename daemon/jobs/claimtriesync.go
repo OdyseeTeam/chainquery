@@ -463,8 +463,6 @@ func getSpentClaimsToUpdate(hasUpdate bool, lastProcessed uint64) (model.ClaimSl
 		qm.Limit(10000),
 	}
 	var outputs model.OutputSlice
-	var claims model.ClaimSlice
-	var claimsToAdd model.ClaimSlice
 	var err error
 	outputs, err = model.Outputs(outputMods...).AllG()
 	//for len(outputs) > 0 {
@@ -477,18 +475,13 @@ func getSpentClaimsToUpdate(hasUpdate bool, lastProcessed uint64) (model.ClaimSl
 		txHashCol = model.ClaimColumns.TransactionHashUpdate
 	}
 	c := model.ClaimColumns
-	claimsToAdd, err = model.Claims(qm.Select(c.ID, c.ClaimID, txHashCol), qm.WhereIn(txHashCol+" IN ?", txHashList...)).AllG()
+	claims, err := model.Claims(qm.Select(c.ID, c.ClaimID, txHashCol), qm.WhereIn(txHashCol+" IN ?", txHashList...)).AllG()
 	if err != nil {
 		return nil, 0, errors.Err(err)
 	}
-	claims = append(claims, claimsToAdd...)
-	logrus.Debug("outputs found: ", len(outputs), " claims found up to: ", len(claims))
-	//nextOutputMods := append(outputMods, w.ID.GT(outputs[len(outputs)-1].ID))
-	//outputs, err = model.Outputs(nextOutputMods...).AllG()
-	//if err != nil {
-	//	return nil, 0, errors.Err(err)
-	//}
-	//}
+	if len(claims) > 0 {
+		logrus.Debugf("outputs found: %d claims found up to: %d - claim id: %d", len(outputs), len(claims), claims[len(claims)-1].ID)
+	}
 	lastProcessed = outputs[len(outputs)-1].ID
 	return claims, lastProcessed, nil
 }
