@@ -340,9 +340,9 @@ func GetIsExpiredAtHeight(height, blockHeight uint) bool {
 
 func getUpdatedClaims(jobStatus *model.JobStatus) (model.ClaimSlice, error) {
 	prevNamesLength := 0
-	// CLAIMS THAT HAVE SUPPORTS THAT WERE MODIFIED [SELECT support.supported_claim_id FROM support WHERE support.modified_at >= '2019-11-03 19:48:58';]
+	// CLAIMS THAT HAVE SUPPORTS THAT WERE MODIFIED [SELECT DISTINCT support.supported_claim_id FROM support WHERE support.modified_at >= '2019-11-03 19:48:58';]
 	s := model.SupportColumns
-	supports, err := model.Supports(qm.Select(s.SupportedClaimID), model.SupportWhere.ModifiedAt.GTE(jobStatus.LastSync)).AllG()
+	supports, err := model.Supports(qm.Select("DISTINCT "+s.SupportedClaimID), model.SupportWhere.ModifiedAt.GTE(jobStatus.LastSync)).AllG()
 	if err != nil {
 		return nil, errors.Err(err)
 	}
@@ -351,9 +351,9 @@ func getUpdatedClaims(jobStatus *model.JobStatus) (model.ClaimSlice, error) {
 		claimids = append(claimids, support.SupportedClaimID)
 	}
 	c := model.ClaimColumns
-	upTo := 5000
+	upTo := 15000
 	var claims model.ClaimSlice
-	var namesMap map[string]bool
+	var namesMap = make(map[string]bool, 200000)
 	for len(claimids) > 0 {
 		if len(claimids) < upTo {
 			upTo = len(claimids)
@@ -366,6 +366,7 @@ func getUpdatedClaims(jobStatus *model.JobStatus) (model.ClaimSlice, error) {
 		}
 		namesMap = updateNameList(namesMap, claims)
 		claimids = claimids[upTo:]
+		logrus.Debugf("%d claimIds left to process", len(claimids))
 	}
 
 	prevNamesLength = len(namesMap)
@@ -441,13 +442,8 @@ func populateClaimID(originalClaims model.ClaimSlice) (model.ClaimSlice, error) 
 }
 
 func updateNameList(m map[string]bool, claims model.ClaimSlice) map[string]bool {
-	if m == nil {
-		m = make(map[string]bool)
-	}
 	for _, claim := range claims {
-		if _, ok := m[claim.Name]; !ok {
-			m[claim.Name] = true
-		}
+		m[claim.Name] = true
 	}
 	return m
 }
@@ -494,9 +490,9 @@ func getSpentClaimsToUpdate(hasUpdate bool, lastProcessed uint64) (model.ClaimSl
 }
 
 func updateSpentClaims() error {
+	return nil
 	var lastProcessed uint64
 	for {
-		break //tmp
 		//Claims without updates
 		claims, newLastProcessed, err := getSpentClaimsToUpdate(false, lastProcessed)
 		if err != nil {
@@ -528,7 +524,7 @@ func updateSpentClaims() error {
 			claim.BidState = "Spent"
 			claim.ModifiedAt = time.Now()
 		}
-		upTo := 1000
+		upTo := 10000
 		logrus.Debugf("%d claims left to update", len(claims))
 		for len(claims) > 0 {
 			if len(claims) < upTo {
@@ -543,8 +539,8 @@ func updateSpentClaims() error {
 			if _, err := boil.GetDB().Exec(updateQuery, args...); err != nil {
 				return err
 			}
-			logrus.Debugf("%d claims left to update", len(claims))
 			claims = claims[upTo:]
+			logrus.Debugf("%d claims left to update", len(claims))
 		}
 		if lastProcessed == newLastProcessed {
 			break
