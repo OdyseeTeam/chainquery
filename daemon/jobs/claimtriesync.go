@@ -297,13 +297,13 @@ func getClaimStatus(claim *model.Claim, atHeight uint64) string {
 	}
 
 	if err != nil {
-		logrus.Error("could not find transaction ", claim.TransactionHashID, " : ", err)
+		logrus.Errorf("could not find transaction %s for claim id %d at height %d: %s", claim.TransactionHashID.String, claim.ID, atHeight, err.Error())
 		return status
 	}
 	o := model.OutputColumns
 	output, err := transaction.Outputs(qm.Select(o.ID, o.IsSpent), qm.Where(model.OutputColumns.Vout+"=?", claim.VoutUpdate)).OneG()
 	if err != nil {
-		logrus.Error("could not find output ", claim.TransactionHashID, "-", claim.Vout, " : ", err)
+		logrus.Errorf("could not find output %s - %d: %s", claim.TransactionHashID.String, claim.Vout, err)
 		return "ERROR"
 	}
 

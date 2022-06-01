@@ -192,16 +192,13 @@ func SyncClaimCntInChannel() error {
 	}
 	latestHeight := int(latestBlock.Height)
 	updateIncrement := 5000
-	if updateIncrement >= latestHeight {
-		updateIncrement = latestHeight
-	}
 
 	t := model.TableNames
 	c := model.ClaimColumns
 	query := `SELECT COUNT(*) FROM ` + t.Claim + ` WHERE ` + t.Claim + `.` + c.PublisherID + ` = ?`
-	for i := 0; i < latestHeight/updateIncrement; i++ {
-		from := i * updateIncrement
-		to := (i + 1) * updateIncrement
+	for i := 0; i < latestHeight; i = i + updateIncrement {
+		from := i
+		to := i + updateIncrement
 		if to > latestHeight {
 			to = latestHeight
 		}
