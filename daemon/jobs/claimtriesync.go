@@ -87,23 +87,17 @@ func ClaimTrieSync() {
 	lastSync.LastHeight = int64(blockHeight)
 
 	printDebug("ClaimTrieSync: getting updated claims...")
+	//replace getUpdatedClaims with the new functions that write to a channel
+	// detect first run of claimtriesync and only call getModifiedClaims since that includes ALL claims
+	//
 	updatedClaims, err := getUpdatedClaims(jobStatus)
 	if err != nil {
 		logrus.Error("ClaimTrieSync:", err)
 		saveJobError(jobStatus, err)
 		return
 	}
-	printDebug("ClaimTrieSync: Claims to update " + strconv.Itoa(len(updatedClaims)))
-
-	//For syncing the claims
-	if err := SyncClaims(updatedClaims); err != nil {
-		logrus.Error("ClaimTrieSync:", err)
-		saveJobError(jobStatus, err)
-		return
-	}
-
-	//For Setting Controlling Claims
-	if err := SetControllingClaimForNames(updatedClaims, blockHeight); err != nil {
+	err = reprocessUpdatedClaims(updatedClaims)
+	if err != nil {
 		logrus.Error("ClaimTrieSync:", err)
 		saveJobError(jobStatus, err)
 		return
@@ -122,6 +116,20 @@ func ClaimTrieSync() {
 	}
 	printDebug("ClaimTrieSync: Processed " + strconv.Itoa(len(updatedClaims)) + " claims.")
 	claimTrieSyncRunning = false
+}
+
+func reprocessUpdatedClaims(updatedClaims model.ClaimSlice) error {
+	printDebug("ClaimTrieSync: Claims to update " + strconv.Itoa(len(updatedClaims)))
+
+	//For syncing the claims
+	err := SyncClaims(updatedClaims)
+	if err != nil {
+		return err
+	}
+
+	//For Setting Controlling Claims
+	err = SetControllingClaimForNames(updatedClaims, blockHeight)
+	return err
 }
 
 func initSyncWorkers(nrWorkers int, jobs <-chan lbrycrd.Claim, wg *sync.WaitGroup) {
@@ -337,116 +345,198 @@ func GetIsExpiredAtHeight(height, blockHeight uint) bool {
 	}
 	return false
 }
-
-func getUpdatedClaims(jobStatus *model.JobStatus) (model.ClaimSlice, error) {
-	prevNamesLength := 0
+func getSupportedClaims(since time.Time, claimsChan chan *model.Claim) error {
 	// CLAIMS THAT HAVE SUPPORTS THAT WERE MODIFIED [SELECT DISTINCT support.supported_claim_id FROM support WHERE support.modified_at >= '2019-11-03 19:48:58';]
 	s := model.SupportColumns
-	supports, err := model.Supports(qm.Select("DISTINCT "+s.SupportedClaimID), model.SupportWhere.ModifiedAt.GTE(jobStatus.LastSync)).AllG()
+	supports, err := model.Supports(qm.Select("DISTINCT "+s.SupportedClaimID), model.SupportWhere.ModifiedAt.GTE(since)).AllG()
 	if err != nil {
-		return nil, errors.Err(err)
+		return errors.Err(err)
 	}
-	var claimids []interface{}
+	var claimIds []interface{}
 	for _, support := range supports {
-		claimids = append(claimids, support.SupportedClaimID)
+		claimIds = append(claimIds, support.SupportedClaimID)
 	}
 	c := model.ClaimColumns
 	upTo := 15000
-	var claims model.ClaimSlice
-	var namesMap = make(map[string]bool, 200000)
-	for len(claimids) > 0 {
-		if len(claimids) < upTo {
-			upTo = len(claimids)
+	for len(claimIds) > 0 {
+		if len(claimIds) < upTo {
+			upTo = len(claimIds)
 		}
-		var err error
-		toFind := claimids[:upTo]
-		claims, err = model.Claims(qm.Select("DISTINCT "+c.Name), qm.WhereIn(c.ClaimID+" IN ?", toFind...)).AllG()
+		toFind := claimIds[:upTo]
+		claims, err := model.Claims(qm.Select("DISTINCT "+c.Name), qm.WhereIn(c.ClaimID+" IN ?", toFind...)).AllG()
 		if err != nil {
-			return nil, errors.Err(err)
+			return errors.Err(err)
 		}
-		namesMap = updateNameList(namesMap, claims)
-		claimids = claimids[upTo:]
-		logrus.Debugf("%d claimIds left to process", len(claimids))
+		for i, c := range claims {
+			if i%100 == 0 {
+				logrus.Debugf("sending claim %d/%d for reprocessing", i+1, len(claims))
+			}
+			claimsChan <- c
+		}
+		logrus.Debugf("%d claimIds left to process", len(claimIds))
 	}
-
-	prevNamesLength = len(namesMap)
-	logrus.Debugf("found %d new names from support modifications", prevNamesLength)
+	return nil
+}
+func getModifiedClaims(since time.Time, claimsChan chan *model.Claim) error {
 	// CLAIMS THAT WERE MODIFIED [SELECT DISTINCT claim.name FROM claim WHERE claim.modified_at >= '2019-11-03 19:48:58';]
-	claims, err = model.Claims(qm.Select("DISTINCT "+c.Name), model.ClaimWhere.ModifiedAt.GTE(jobStatus.LastSync)).AllG()
-	if err != nil {
-		return nil, errors.Err(err)
-	}
-	namesMap = updateNameList(namesMap, claims)
-	logrus.Debugf("found %d new names from claims that were modified", len(namesMap)-prevNamesLength)
-	prevNamesLength = len(namesMap)
-	// CLAIMS THAT BECAME VALID SINCE [SELECT DISTINCT claim.name FROM claim WHERE claim.valid_at_height >= 852512;]
-	claims, err = model.Claims(qm.Select("DISTINCT "+c.Name), model.ClaimWhere.ValidAtHeight.GTE(uint(lastSync.LastHeight))).AllG()
-	if err != nil {
-		return nil, errors.Err(err)
-	}
-	namesMap = updateNameList(namesMap, claims)
-	logrus.Debugf("found %d new names from claims that became valid", len(namesMap)-prevNamesLength)
-	var namesToFind []interface{}
-	for name := range namesMap {
-		namesToFind = append(namesToFind, name)
-	}
-
-	upTo = 5000
-	var claimsToUpdate model.ClaimSlice
-	for len(namesToFind) > 0 {
-		if len(namesToFind) < upTo {
-			upTo = len(namesToFind)
-		}
-		toFind := namesToFind[:upTo]
-		claims, err := model.Claims(qm.Select(c.ID, c.Name), qm.WhereIn(c.Name+" IN ?", toFind...)).AllG()
-		if err != nil {
-			return nil, errors.Err(err)
-		}
-		claimsToUpdate = append(claimsToUpdate, claims...)
-		logrus.Debugf("found %d additional claims from name list", len(claims))
-		namesToFind = namesToFind[upTo:]
-	}
-	claimsToUpdate, err = populateClaimID(claimsToUpdate)
-	return claimsToUpdate, err
-}
-
-func populateClaimID(originalClaims model.ClaimSlice) (model.ClaimSlice, error) {
-	var idsToFind []interface{}
-	var idsOfClaims []uint64
-	IDMap := make(map[uint64]int)
-	for i, claim := range originalClaims {
-		idsToFind = append(idsToFind, claim.ID)
-		idsOfClaims = append(idsOfClaims, claim.ID)
-		IDMap[claim.ID] = i
-	}
-	upTo := 5000
 	c := model.ClaimColumns
-	for len(idsToFind) > 0 {
-		if len(idsToFind) < upTo {
-			upTo = len(idsToFind)
-		}
-		toFind := idsToFind[:upTo]
-		claims, err := model.Claims(qm.Select(c.ID, c.ClaimID), qm.WhereIn(c.ID+" IN ?", toFind...)).AllG()
-		if err != nil {
-			return nil, errors.Err(err)
-		}
-		logrus.Debugf("found %d additional claims from claim_id list", len(claims))
-		for _, claim := range claims {
-			c := originalClaims[IDMap[claim.ID]]
-			c.ClaimID = claim.ClaimID
-			originalClaims[IDMap[claim.ID]] = c
-		}
-		idsToFind = idsToFind[upTo:]
+	prevId := -1
+	timeClause := model.ClaimWhere.ModifiedAt.GTE(since)
+	if since.IsZero() {
+		timeClause = nil
 	}
-	return originalClaims, nil
+	for {
+		claims, err := model.Claims(qm.Select(c.ID, c.Name), timeClause, qm.Where(c.ID+">", prevId), qm.Limit(15000)).AllG()
+		if err != nil {
+			return errors.Err(err)
+		}
+		oldPrevId := prevId
+		for i, c := range claims {
+			if i%100 == 0 {
+				logrus.Debugf("sending claim %d/%d for reprocessing - claim id batch: %d", i+1, len(claims), prevId)
+			}
+			claimsChan <- c
+			prevId = int(c.ID)
+		}
+		if oldPrevId == prevId {
+			break
+		}
+	}
+	return nil
+}
+func getNewValidClaims(lastHeight uint, claimsChan chan *model.Claim) error {
+	// CLAIMS THAT BECAME VALID SINCE [SELECT DISTINCT claim.name FROM claim WHERE claim.valid_at_height >= 852512;]
+	c := model.ClaimColumns
+	prevId := -1
+	for {
+		claims, err := model.Claims(qm.Select(c.ID, c.Name), qm.Where(c.ID+">", prevId), model.ClaimWhere.ValidAtHeight.GTE(lastHeight), qm.Limit(15000)).AllG()
+		if err != nil {
+			return errors.Err(err)
+		}
+		oldPrevId := prevId
+		for i, c := range claims {
+			if i%100 == 0 {
+				logrus.Debugf("sending claim %d/%d for reprocessing - claim id batch: %d", i+1, len(claims), prevId)
+			}
+			claimsChan <- c
+			prevId = int(c.ID)
+		}
+		if oldPrevId == prevId {
+			break
+		}
+	}
+	return nil
 }
 
-func updateNameList(m map[string]bool, claims model.ClaimSlice) map[string]bool {
-	for _, claim := range claims {
-		m[claim.Name] = true
-	}
-	return m
+func getUpdatedClaims(jobStatus *model.JobStatus) (model.ClaimSlice, error) {
+	//prevNamesLength := 0
+	//// CLAIMS THAT HAVE SUPPORTS THAT WERE MODIFIED [SELECT DISTINCT support.supported_claim_id FROM support WHERE support.modified_at >= '2019-11-03 19:48:58';]
+	//s := model.SupportColumns
+	//supports, err := model.Supports(qm.Select("DISTINCT "+s.SupportedClaimID), model.SupportWhere.ModifiedAt.GTE(jobStatus.LastSync)).AllG()
+	//if err != nil {
+	//	return nil, errors.Err(err)
+	//}
+	//var claimids []interface{}
+	//for _, support := range supports {
+	//	claimids = append(claimids, support.SupportedClaimID)
+	//}
+	//c := model.ClaimColumns
+	//upTo := 15000
+	//var claims model.ClaimSlice
+	//var namesMap = make(map[string]bool, 200000)
+	//for len(claimids) > 0 {
+	//	if len(claimids) < upTo {
+	//		upTo = len(claimids)
+	//	}
+	//	var err error
+	//	toFind := claimids[:upTo]
+	//	claims, err = model.Claims(qm.Select("DISTINCT "+c.Name), qm.WhereIn(c.ClaimID+" IN ?", toFind...)).AllG()
+	//	if err != nil {
+	//		return nil, errors.Err(err)
+	//	}
+	//	namesMap = updateNameList(namesMap, claims)
+	//	claimids = claimids[upTo:]
+	//	logrus.Debugf("%d claimIds left to process", len(claimids))
+	//}
+
+	//prevNamesLength = len(namesMap)
+	//logrus.Debugf("found %d new names from support modifications", prevNamesLength)
+	//// CLAIMS THAT WERE MODIFIED [SELECT DISTINCT claim.name FROM claim WHERE claim.modified_at >= '2019-11-03 19:48:58';]
+	//claims, err = model.Claims(qm.Select("DISTINCT "+c.Name), model.ClaimWhere.ModifiedAt.GTE(jobStatus.LastSync)).AllG()
+	//if err != nil {
+	//	return nil, errors.Err(err)
+	//}
+	//namesMap = updateNameList(namesMap, claims)
+	//logrus.Debugf("found %d new names from claims that were modified", len(namesMap)-prevNamesLength)
+	//prevNamesLength = len(namesMap)
+	// CLAIMS THAT BECAME VALID SINCE [SELECT DISTINCT claim.name FROM claim WHERE claim.valid_at_height >= 852512;]
+	//claims, err = model.Claims(qm.Select("DISTINCT "+c.Name), model.ClaimWhere.ValidAtHeight.GTE(uint(lastSync.LastHeight))).AllG()
+	//if err != nil {
+	//	return nil, errors.Err(err)
+	//}
+	//namesMap = updateNameList(namesMap, claims)
+	//logrus.Debugf("found %d new names from claims that became valid", len(namesMap)-prevNamesLength)
+	//var namesToFind []interface{}
+	//for name := range namesMap {
+	//	namesToFind = append(namesToFind, name)
+	//}
+	//
+	//upTo = 5000
+	//var claimsToUpdate model.ClaimSlice
+	//for len(namesToFind) > 0 {
+	//	if len(namesToFind) < upTo {
+	//		upTo = len(namesToFind)
+	//	}
+	//	toFind := namesToFind[:upTo]
+	//	claims, err := model.Claims(qm.Select(c.ID, c.Name), qm.WhereIn(c.Name+" IN ?", toFind...)).AllG()
+	//	if err != nil {
+	//		return nil, errors.Err(err)
+	//	}
+	//	claimsToUpdate = append(claimsToUpdate, claims...)
+	//	logrus.Debugf("found %d additional claims from name list", len(claims))
+	//	namesToFind = namesToFind[upTo:]
+	//}
+	//claimsToUpdate, err = populateClaimID(claimsToUpdate) //this is useless, claimIDs are not used!
+	//return claimsToUpdate, err
 }
+
+//func populateClaimID(originalClaims model.ClaimSlice) (model.ClaimSlice, error) {
+//	var idsToFind []interface{}
+//	var idsOfClaims []uint64
+//	IDMap := make(map[uint64]int)
+//	for i, claim := range originalClaims {
+//		idsToFind = append(idsToFind, claim.ID)
+//		idsOfClaims = append(idsOfClaims, claim.ID)
+//		IDMap[claim.ID] = i
+//	}
+//	upTo := 5000
+//	c := model.ClaimColumns
+//	for len(idsToFind) > 0 {
+//		if len(idsToFind) < upTo {
+//			upTo = len(idsToFind)
+//		}
+//		toFind := idsToFind[:upTo]
+//		claims, err := model.Claims(qm.Select(c.ID, c.ClaimID), qm.WhereIn(c.ID+" IN ?", toFind...)).AllG()
+//		if err != nil {
+//			return nil, errors.Err(err)
+//		}
+//		logrus.Debugf("found %d additional claims from claim_id list", len(claims))
+//		for _, claim := range claims {
+//			c := originalClaims[IDMap[claim.ID]]
+//			c.ClaimID = claim.ClaimID
+//			originalClaims[IDMap[claim.ID]] = c
+//		}
+//		idsToFind = idsToFind[upTo:]
+//	}
+//	return originalClaims, nil
+//}
+//
+//func updateNameList(m map[string]bool, claims model.ClaimSlice) map[string]bool {
+//	for _, claim := range claims {
+//		m[claim.Name] = true
+//	}
+//	return m
+//}
 
 func getSpentClaimsToUpdate(hasUpdate bool, lastProcessed uint64) (model.ClaimSlice, uint64, error) {
 	w := model.OutputWhere
