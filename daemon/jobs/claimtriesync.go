@@ -177,6 +177,7 @@ func reprocessUpdatedClaims(claimsChan chan *model.Claim, currentHeight uint64, 
 					return err
 				}
 				atomic.AddInt64(processedClaims, int64(len(claimsBatch)))
+				claimsBatch = make(model.ClaimSlice, 0, BatchSize)
 			}
 			if !hasMore {
 				return nil
@@ -284,7 +285,7 @@ func SyncClaims(claims model.ClaimSlice) error {
 	initSyncWorkers(runtime.NumCPU()-1, processingQueue, &syncwg)
 	for i, name := range names {
 		if i%1000 == 0 {
-			printDebug("ClaimTrieSync: syncing ", i, " of ", len(names), " queued - ", len(processingQueue))
+			printDebug("ClaimTrieSync: syncing ", i, " of ", len(names), " queued - queue size: ", len(processingQueue))
 		}
 		claims, err := lbrycrd.GetClaimsForName(name)
 		if err != nil {
