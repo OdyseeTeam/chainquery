@@ -498,6 +498,7 @@ func getUpdatedClaims(jobStatus *model.JobStatus) (model.ClaimSlice, error) {
 	//}
 	//claimsToUpdate, err = populateClaimID(claimsToUpdate) //this is useless, claimIDs are not used!
 	//return claimsToUpdate, err
+	return nil, nil
 }
 
 //func populateClaimID(originalClaims model.ClaimSlice) (model.ClaimSlice, error) {
