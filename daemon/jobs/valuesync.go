@@ -182,19 +182,11 @@ func SyncTransactionValue() (int64, error) {
 // SyncClaimCntInChannel will sync up the number of claims that are part of a particular channel. This can be used as a
 // calculated column in the claim table to get this figure fast in a query.
 func SyncClaimCntInChannel() error {
-
-	t := model.TableNames
-	c := model.ClaimColumns
-
-	query := `SELECT COUNT(*) FROM ` + t.Claim + ` WHERE ` + t.Claim + `.` + c.PublisherID + ` = ?`
-
-	var from int
-	var to int
-
 	latestBlock, err := model.Blocks(qm.Select(model.BlockColumns.Height), qm.OrderBy(model.BlockColumns.Height+" DESC")).OneG()
 	if err != nil {
 		return errors.Prefix(syncClaimsInChannel, err)
 	}
+	logrus.Infof("running SyncClaimCntInChannel for latest height of %d", latestBlock.Height)
 	if latestBlock.Height == 0 {
 		return errors.Prefix(syncClaimsInChannel, errors.Err("latest height = 0 "))
 	}
@@ -203,9 +195,13 @@ func SyncClaimCntInChannel() error {
 	if updateIncrement >= latestHeight {
 		updateIncrement = latestHeight
 	}
+
+	t := model.TableNames
+	c := model.ClaimColumns
+	query := `SELECT COUNT(*) FROM ` + t.Claim + ` WHERE ` + t.Claim + `.` + c.PublisherID + ` = ?`
 	for i := 0; i < latestHeight/updateIncrement; i++ {
-		from = i * updateIncrement
-		to = (i + 1) * updateIncrement
+		from := i * updateIncrement
+		to := (i + 1) * updateIncrement
 		if to > latestHeight {
 			to = latestHeight
 		}
@@ -216,6 +212,7 @@ func SyncClaimCntInChannel() error {
 		if err != nil {
 			return errors.Prefix(syncClaimsInChannel, err)
 		}
+		logrus.Debugf("processing %d channels in batch from height %d to height %d", len(channelsToProcess), from, to)
 		for _, channel := range channelsToProcess {
 			result := boil.GetDB().QueryRow(query, channel.ClaimID)
 			if err != nil {
