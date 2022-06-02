@@ -492,7 +492,7 @@ func getSpentClaimsToUpdate(hasUpdate bool, lastProcessed uint64) (model.ClaimSl
 		w.ModifiedAt.GTE(lastSync.PreviousSyncTime),
 		w.IsSpent.EQ(true),
 		w.ID.GT(lastProcessed),
-		qm.Limit(10000),
+		qm.Limit(15000),
 	}
 	var outputs model.OutputSlice
 	var err error
@@ -570,7 +570,7 @@ func updateSpentClaims() error {
 			for _, c := range toUpdate {
 				args = append(args, c.ID)
 			}
-			updateQuery := fmt.Sprintf(`UPDATE claim SET bid_state="Spent", modified_at = ? WHERE id IN (%s)`, query.Qs(len(toUpdate)))
+			updateQuery := fmt.Sprintf(`UPDATE claim use index(id) SET bid_state="Spent", modified_at = ? WHERE id IN (%s)`, query.Qs(len(toUpdate)))
 			if _, err := boil.GetDB().Exec(updateQuery, args...); err != nil {
 				return err
 			}
