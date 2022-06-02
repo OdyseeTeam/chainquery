@@ -526,7 +526,6 @@ func getSpentClaimsToUpdate(hasUpdate bool, lastProcessed uint64) (model.ClaimSl
 }
 
 func updateSpentClaims() error {
-	return nil
 	var lastProcessed uint64
 	for {
 		//Claims without updates
