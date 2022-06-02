@@ -492,7 +492,7 @@ func getSpentClaimsToUpdate(hasUpdate bool, lastProcessed uint64) (model.ClaimSl
 		w.ModifiedAt.GTE(lastSync.PreviousSyncTime),
 		w.IsSpent.EQ(true),
 		w.ID.GT(lastProcessed),
-		qm.Limit(15000),
+		qm.Limit(10000),
 	}
 	var outputs model.OutputSlice
 	var err error
