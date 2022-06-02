@@ -411,23 +411,24 @@ func getSupportedClaims(since time.Time, claimsChan chan *model.Claim) error {
 		claimIds = append(claimIds, support.SupportedClaimID)
 	}
 	c := model.ClaimColumns
-	upTo := 15000
-	for len(claimIds) > 0 {
-		if len(claimIds) < upTo {
-			upTo = len(claimIds)
+
+	batch := 15000
+	for i := 0; i < len(claimIds); i += batch {
+		j := i + batch
+		if j > len(claimIds) {
+			j = len(claimIds)
 		}
-		toFind := claimIds[:upTo]
-		claims, err := model.Claims(qm.Select("DISTINCT "+c.Name), qm.WhereIn(c.ClaimID+" IN ?", toFind...)).AllG()
+		claims, err := model.Claims(qm.Select("DISTINCT "+c.Name), qm.WhereIn(c.ClaimID+" IN ?", claimIds[i:j]...)).AllG()
 		if err != nil {
 			return errors.Err(err)
 		}
 		for i, c := range claims {
-			if i%100 == 0 {
+			if i%99 == 0 {
 				logrus.Debugf("sending claim %d/%d for reprocessing", i+1, len(claims))
 			}
 			claimsChan <- c
 		}
-		logrus.Debugf("%d claimIds left to process", len(claimIds))
+		logrus.Debugf("%d claimIds left to process", len(claimIds)-i)
 	}
 	return nil
 }
@@ -559,24 +560,24 @@ func updateSpentClaims() error {
 			claim.BidState = "Spent"
 			claim.ModifiedAt = time.Now()
 		}
-		upTo := 10000
-		logrus.Debugf("%d claims left to update", len(claims))
-		for len(claims) > 0 {
-			if len(claims) < upTo {
-				upTo = len(claims)
+
+		batch := 15000
+		for i := 0; i < len(claims); i += batch {
+			j := i + batch
+			if j > len(claims) {
+				j = len(claims)
 			}
-			toUpdate := claims[:upTo]
 			args := []interface{}{time.Now()}
-			for _, c := range toUpdate {
+			for _, c := range claims[i:j] {
 				args = append(args, c.ID)
 			}
-			updateQuery := fmt.Sprintf(`UPDATE claim use index(id) SET bid_state="Spent", modified_at = ? WHERE id IN (%s)`, query.Qs(len(toUpdate)))
+			updateQuery := fmt.Sprintf(`UPDATE claim use index(id) SET bid_state="Spent", modified_at = ? WHERE id IN (%s)`, query.Qs(len(claims[i:j])))
 			if _, err := boil.GetDB().Exec(updateQuery, args...); err != nil {
 				return err
 			}
-			claims = claims[upTo:]
-			logrus.Debugf("%d claims left to update", len(claims))
+			logrus.Debugf("%d claims left to update", len(claims)-i)
 		}
+
 		if lastProcessed == newLastProcessed {
 			break
 		}

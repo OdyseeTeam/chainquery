@@ -29,6 +29,7 @@
 // migration/026_purchases.sql
 // migration/027_signed_supports.sql
 // migration/028_liscense_url.sql
+// migration/029_support_index.sql
 // DO NOT EDIT!
 
 package migration
@@ -676,6 +677,26 @@ func migration028_liscense_urlSql() (*asset, error) {
 	return a, nil
 }
 
+var _migration029_support_indexSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xd2\xd5\x55\xd0\xce\xcd\x4c\x2f\x4a\x2c\x49\x55\x08\x2d\xe0\xe2\x42\xe6\x07\x97\x24\x96\xa4\xe6\xa6\xe6\x95\x38\xa5\xa6\x67\xe6\x71\x39\x07\xb9\x3a\x86\xb8\x2a\x78\xfa\xb9\xb8\x46\x28\x64\xa6\x54\xc4\x17\x97\x16\x14\xe4\x17\x95\xc4\xe7\xe6\xa7\x64\xa6\x65\xa6\xa6\xc4\x27\x96\x28\xf8\xfb\x29\x40\x85\x15\x34\x90\xc4\x35\xad\xb1\x9b\xec\x9a\x97\x02\x08\x00\x00\xff\xff\x8d\xb3\xd3\x37\x82\x00\x00\x00")
+
+func migration029_support_indexSqlBytes() ([]byte, error) {
+	return bindataRead(
+		_migration029_support_indexSql,
+		"migration/029_support_index.sql",
+	)
+}
+
+func migration029_support_indexSql() (*asset, error) {
+	bytes, err := migration029_support_indexSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "migration/029_support_index.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -757,6 +778,7 @@ var _bindata = map[string]func() (*asset, error){
 	"migration/026_purchases.sql":                     migration026_purchasesSql,
 	"migration/027_signed_supports.sql":               migration027_signed_supportsSql,
 	"migration/028_liscense_url.sql":                  migration028_liscense_urlSql,
+	"migration/029_support_index.sql":                 migration029_support_indexSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -830,6 +852,7 @@ var _bintree = &bintree{nil, map[string]*bintree{
 		"026_purchases.sql":                     &bintree{migration026_purchasesSql, map[string]*bintree{}},
 		"027_signed_supports.sql":               &bintree{migration027_signed_supportsSql, map[string]*bintree{}},
 		"028_liscense_url.sql":                  &bintree{migration028_liscense_urlSql, map[string]*bintree{}},
+		"029_support_index.sql":                 &bintree{migration029_support_indexSql, map[string]*bintree{}},
 	}},
 }}
 
