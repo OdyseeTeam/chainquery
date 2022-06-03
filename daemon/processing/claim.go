@@ -228,7 +228,7 @@ func processClaim(helper *c.StakeHelper, claim *model.Claim, value []byte, outpu
 	setPublisherInfo(claim, helper)
 	setCertificateInfo(claim, helper)
 
-	if helper.LegacyClaim != nil {
+	if helper.LegacyClaim != nil && helper.LegacyClaim.GetVersion().String() != "" {
 		claim.Version = helper.LegacyClaim.GetVersion().String()
 	}
 	notifications.ClaimEvent(claim.ClaimID, claim.Name, claim.Title.String, tx.Hash, claim.PublisherID.String, claim.SourceHash.String)
@@ -294,7 +294,7 @@ func UpdateClaimData(helper *c.StakeHelper, claim *model.Claim) error {
 	setPublisherInfo(claim, helper)
 	setCertificateInfo(claim, helper)
 
-	if helper.LegacyClaim != nil {
+	if helper.LegacyClaim != nil && helper.LegacyClaim.GetVersion().String() != "" {
 		claim.Version = helper.LegacyClaim.GetVersion().String()
 	}
 	return nil
@@ -433,7 +433,6 @@ func setStreamMetadata(claim *model.Claim, stream pb.Stream) {
 	claim.Type.SetValid(global.StreamClaimType)
 	claim.Author.SetValid(stream.GetAuthor())
 	setLicense(claim, stream)
-	claim.Preview.SetValid("") //Never set
 
 	fee := stream.GetFee()
 	if fee != nil {
@@ -477,12 +476,6 @@ func setStreamMetadata(claim *model.Claim, stream pb.Stream) {
 	if stream.GetAudio() != nil {
 		if stream.GetAudio().GetDuration() > 0 {
 			claim.AudioDuration.SetValid(uint64(stream.GetAudio().GetDuration()))
-		}
-	}
-	if stream.GetSoftware() != nil {
-		s := stream.GetSoftware()
-		if s.GetOs() != "" {
-			claim.Os.SetValid(s.GetOs())
 		}
 	}
 }
@@ -614,7 +607,6 @@ func resetMetadata(claim *model.Claim) error {
 	claim.FrameHeight = null.NewUint64(0, false)
 	claim.Duration = null.NewUint64(0, false)
 	claim.AudioDuration = null.NewUint64(0, false)
-	claim.Os = null.NewString("", false)
 	claim.Email = null.NewString("", false)
 	claim.WebsiteURL = null.NewString("", false)
 	claim.HasClaimList = null.NewBool(false, false)

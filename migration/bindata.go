@@ -30,6 +30,8 @@
 // migration/027_signed_supports.sql
 // migration/028_liscense_url.sql
 // migration/029_support_index.sql
+// migration/030_json_field.sql
+// migration/031_drop_unused_columns.sql
 // DO NOT EDIT!
 
 package migration
@@ -697,6 +699,46 @@ func migration029_support_indexSql() (*asset, error) {
 	return a, nil
 }
 
+var _migration030_json_fieldSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xd2\xd5\x55\xd0\xce\xcd\x4c\x2f\x4a\x2c\x49\x55\x08\x2d\xe0\xe2\x42\xe6\x07\x97\x24\x96\xa4\xe6\xa6\xe6\x95\x38\xa5\xa6\x67\xe6\x71\x25\xe6\x94\xa4\x16\x29\x94\x24\x26\xe5\xa4\x2a\x24\xe7\x24\x66\xe6\x2a\xe4\xe6\xa7\x64\xa6\x55\x2a\x94\x25\xe6\x94\xa6\xc6\x27\x16\xc7\x67\x15\xe7\xe7\x29\x78\x05\xfb\xfb\x29\xe4\x95\xe6\xe4\x58\x63\x37\xcc\x35\x2f\x05\x10\x00\x00\xff\xff\x24\xb6\x3b\x55\x75\x00\x00\x00")
+
+func migration030_json_fieldSqlBytes() ([]byte, error) {
+	return bindataRead(
+		_migration030_json_fieldSql,
+		"migration/030_json_field.sql",
+	)
+}
+
+func migration030_json_fieldSql() (*asset, error) {
+	bytes, err := migration030_json_fieldSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "migration/030_json_field.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var _migration031_drop_unused_columnsSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xbc\x92\xcf\x4a\x03\x31\x10\xc6\xef\x7d\x8a\xb9\x55\x91\x82\x05\x6f\xe2\x45\xf0\x09\xc4\xf3\x36\x4d\xbe\x6e\x07\x66\x27\xcb\x64\xd2\xa5\x6f\x2f\xab\xf8\xa7\x22\x1e\x4a\xe3\x31\x93\xf0\xfb\xe6\x37\x99\xd5\x8a\x6e\x06\xee\x2d\x38\xe8\x65\x5c\x7c\x3f\x3e\x7b\x70\x0c\x50\x7f\x44\xcf\xba\x08\xe2\x30\xf2\xb0\x15\x50\x94\xc0\x03\x25\xcb\x23\xc5\x2c\x75\x50\x9a\xb0\x2d\xec\xe8\xaa\xc9\xfd\xef\x94\x27\x4d\xe7\xe3\x63\xae\xea\x76\x6c\x81\x2e\xf3\xe3\x26\x3d\xb3\x37\x69\x78\x13\x73\xc2\xa6\x05\x59\x82\xb3\xd7\xd4\x64\x1a\x92\xb5\x6f\x07\xe7\x08\x2d\xcd\xb6\x6f\x34\x1c\x18\x53\x0b\x74\x2e\x97\xa2\x0e\x39\xf1\xee\x48\x3b\xa0\x0b\x29\x19\x4a\xa1\x43\xb0\xb8\x0f\x76\x75\x77\x7b\x3d\xe7\xc9\xcc\x99\xff\x58\xd7\x5d\x0f\x85\x05\xe9\x22\x93\x56\x39\x73\x6a\x75\x4c\x73\xf5\x3d\xbf\xc0\x4f\xc2\x1f\xde\xc0\x34\xed\x61\xf8\x71\xb1\x5c\x5e\x58\xfa\x00\x2b\x9c\xf5\x53\x78\xfd\x5f\xc2\x1f\xc1\x27\xb2\x5f\xc5\xbf\x44\x5f\x03\x00\x00\xff\xff\x1e\x08\x88\xb7\x7a\x05\x00\x00")
+
+func migration031_drop_unused_columnsSqlBytes() ([]byte, error) {
+	return bindataRead(
+		_migration031_drop_unused_columnsSql,
+		"migration/031_drop_unused_columns.sql",
+	)
+}
+
+func migration031_drop_unused_columnsSql() (*asset, error) {
+	bytes, err := migration031_drop_unused_columnsSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "migration/031_drop_unused_columns.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -779,6 +821,8 @@ var _bindata = map[string]func() (*asset, error){
 	"migration/027_signed_supports.sql":               migration027_signed_supportsSql,
 	"migration/028_liscense_url.sql":                  migration028_liscense_urlSql,
 	"migration/029_support_index.sql":                 migration029_support_indexSql,
+	"migration/030_json_field.sql":                    migration030_json_fieldSql,
+	"migration/031_drop_unused_columns.sql":           migration031_drop_unused_columnsSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -853,6 +897,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 		"027_signed_supports.sql":               &bintree{migration027_signed_supportsSql, map[string]*bintree{}},
 		"028_liscense_url.sql":                  &bintree{migration028_liscense_urlSql, map[string]*bintree{}},
 		"029_support_index.sql":                 &bintree{migration029_support_indexSql, map[string]*bintree{}},
+		"030_json_field.sql":                    &bintree{migration030_json_fieldSql, map[string]*bintree{}},
+		"031_drop_unused_columns.sql":           &bintree{migration031_drop_unused_columnsSql, map[string]*bintree{}},
 	}},
 }}
 

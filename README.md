@@ -36,7 +36,7 @@ Make sure you have Go 1.11+ (required for [go-releaser](https://goreleaser.com/)
 
 ### MySQL
 
-- Install and run mysql 5.7.(OSX: `brew install mysql`)
+- Install and run mysql 8 (OSX: `brew install mysql`)
 - Create `chainquery` database.
 - Create user `lbry` with password `lbry` and grant it all permissions on `chainquery` db.
 
