@@ -9,7 +9,7 @@ import (
 	"github.com/lbryio/chainquery/daemon/jobs"
 	"github.com/lbryio/chainquery/db"
 	"github.com/lbryio/chainquery/lbrycrd"
-	"github.com/lbryio/lbry.go/extras/errors"
+	"github.com/lbryio/lbry.go/v2/extras/errors"
 
 	"github.com/pkg/profile"
 	"github.com/sirupsen/logrus"

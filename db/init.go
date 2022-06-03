@@ -2,11 +2,11 @@ package db
 
 import (
 	"github.com/lbryio/chainquery/migration"
-	"github.com/lbryio/lbry.go/extras/errors"
+	"github.com/lbryio/lbry.go/v2/extras/errors"
 
 	_ "github.com/go-sql-driver/mysql" // import mysql
 	"github.com/jmoiron/sqlx"
-	_ "github.com/jteeuwen/go-bindata" // so it's detected by `dep ensure`
+	_ "github.com/kevinburke/go-bindata" // so it's detected by `dep ensure`
 	migrate "github.com/rubenv/sql-migrate"
 	log "github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/boil"

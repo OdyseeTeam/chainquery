@@ -19,8 +19,8 @@ import (
 	"github.com/lbryio/chainquery/sockety"
 	util2 "github.com/lbryio/chainquery/util"
 
-	"github.com/lbryio/lbry.go/extras/errors"
-	util "github.com/lbryio/lbry.go/lbrycrd"
+	"github.com/lbryio/lbry.go/v2/extras/errors"
+	util "github.com/lbryio/lbry.go/v2/lbrycrd"
 	"github.com/lbryio/lbry.go/v2/schema/address/base58"
 	c "github.com/lbryio/lbry.go/v2/schema/stake"
 	"github.com/lbryio/sockety/socketyapi"
@@ -212,11 +212,11 @@ func processClaim(helper *c.StakeHelper, claim *model.Claim, value []byte, outpu
 
 	// pbClaim JSON
 	if claimHelper, err := c.DecodeClaimHex(claim.ValueAsHex, global.BlockChainName); err == nil && claimHelper != nil {
-		json, err := GetValueAsJSON(*claimHelper)
+		claimAsJson, err := GetValueAsJSON(*claimHelper)
 		if err != nil {
 			logrus.Error(err)
 		} else {
-			claim.ValueAsJSON.SetValid(json)
+			claim.ValueAsJSON.SetValid(claimAsJson)
 		}
 	}
 
@@ -229,7 +229,7 @@ func processClaim(helper *c.StakeHelper, claim *model.Claim, value []byte, outpu
 	setCertificateInfo(claim, helper)
 
 	if helper.LegacyClaim != nil && helper.LegacyClaim.GetVersion().String() != "" {
-		claim.Version = helper.LegacyClaim.GetVersion().String()
+		claim.Version.SetValid(helper.LegacyClaim.GetVersion().String())
 	}
 	notifications.ClaimEvent(claim.ClaimID, claim.Name, claim.Title.String, tx.Hash, claim.PublisherID.String, claim.SourceHash.String)
 	return claim, nil
@@ -295,7 +295,7 @@ func UpdateClaimData(helper *c.StakeHelper, claim *model.Claim) error {
 	setCertificateInfo(claim, helper)
 
 	if helper.LegacyClaim != nil && helper.LegacyClaim.GetVersion().String() != "" {
-		claim.Version = helper.LegacyClaim.GetVersion().String()
+		claim.Version.SetValid(helper.LegacyClaim.GetVersion().String())
 	}
 	return nil
 }
@@ -438,7 +438,7 @@ func setStreamMetadata(claim *model.Claim, stream pb.Stream) {
 	if fee != nil {
 		claim.FeeCurrency.SetValid(fee.GetCurrency().String())
 		claim.Fee = float64(fee.GetAmount())
-		claim.FeeAddress = base58.EncodeBase58(fee.GetAddress())
+		claim.FeeAddress.SetValid(base58.EncodeBase58(fee.GetAddress()))
 	}
 	s := stream.GetSource()
 	if s != nil {
@@ -592,10 +592,8 @@ func resetMetadata(claim *model.Claim) error {
 	claim.IsNSFW = false
 	claim.FeeCurrency = null.NewString("", false)
 	claim.Fee = 0.0
-	claim.FeeAddress = ""
+	claim.FeeAddress = null.NewString("", false)
 	claim.License = null.NewString("", false)
-	claim.LicenseURL = null.NewString("", false)
-	claim.Preview = null.NewString("", false)
 	claim.Type = null.NewString("", false)
 	claim.ReleaseTime = null.NewUint64(0, false)
 	claim.SourceHash = null.NewString("", false)
@@ -608,17 +606,10 @@ func resetMetadata(claim *model.Claim) error {
 	claim.Duration = null.NewUint64(0, false)
 	claim.AudioDuration = null.NewUint64(0, false)
 	claim.Email = null.NewString("", false)
-	claim.WebsiteURL = null.NewString("", false)
 	claim.HasClaimList = null.NewBool(false, false)
 	claim.ClaimReference = null.NewString("", false)
 	claim.ListType = null.NewInt16(0, false)
 	claim.ClaimIDList = null.NewJSON(nil, false)
-	claim.Country = null.NewString("", false)
-	claim.State = null.NewString("", false)
-	claim.Code = null.NewString("", false)
-	claim.City = null.NewString("", false)
-	claim.Longitude = null.NewInt64(0, false)
-	claim.Latitude = null.NewInt64(0, false)
 
 	err := claim.ListClaimClaimInLists().DeleteAll(boil.GetDB())
 	if err != nil {

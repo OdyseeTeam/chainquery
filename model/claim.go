@@ -34,9 +34,9 @@ type Claim struct {
 	Certificate           null.String `boil:"certificate" json:"certificate,omitempty" toml:"certificate" yaml:"certificate,omitempty"`
 	SDHash                null.String `boil:"sd_hash" json:"sd_hash,omitempty" toml:"sd_hash" yaml:"sd_hash,omitempty"`
 	TransactionTime       null.Uint64 `boil:"transaction_time" json:"transaction_time,omitempty" toml:"transaction_time" yaml:"transaction_time,omitempty"`
-	Version               string      `boil:"version" json:"version" toml:"version" yaml:"version"`
+	Version               null.String `boil:"version" json:"version,omitempty" toml:"version" yaml:"version,omitempty"`
 	ValueAsHex            string      `boil:"value_as_hex" json:"value_as_hex" toml:"value_as_hex" yaml:"value_as_hex"`
-	ValueAsJSON           null.String `boil:"value_as_json" json:"value_as_json,omitempty" toml:"value_as_json" yaml:"value_as_json,omitempty"`
+	ValueAsJSON           null.JSON   `boil:"value_as_json" json:"value_as_json,omitempty" toml:"value_as_json" yaml:"value_as_json,omitempty"`
 	ValidAtHeight         uint        `boil:"valid_at_height" json:"valid_at_height" toml:"valid_at_height" yaml:"valid_at_height"`
 	Height                uint        `boil:"height" json:"height" toml:"height" yaml:"height"`
 	EffectiveAmount       uint64      `boil:"effective_amount" json:"effective_amount" toml:"effective_amount" yaml:"effective_amount"`
@@ -49,7 +49,7 @@ type Claim struct {
 	Title                 null.String `boil:"title" json:"title,omitempty" toml:"title" yaml:"title,omitempty"`
 	Fee                   float64     `boil:"fee" json:"fee" toml:"fee" yaml:"fee"`
 	FeeCurrency           null.String `boil:"fee_currency" json:"fee_currency,omitempty" toml:"fee_currency" yaml:"fee_currency,omitempty"`
-	FeeAddress            string      `boil:"fee_address" json:"fee_address" toml:"fee_address" yaml:"fee_address"`
+	FeeAddress            null.String `boil:"fee_address" json:"fee_address,omitempty" toml:"fee_address" yaml:"fee_address,omitempty"`
 	IsFiltered            bool        `boil:"is_filtered" json:"is_filtered" toml:"is_filtered" yaml:"is_filtered"`
 	BidState              string      `boil:"bid_state" json:"bid_state" toml:"bid_state" yaml:"bid_state"`
 	CreatedAt             time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
@@ -58,8 +58,6 @@ type Claim struct {
 	IsCertValid           bool        `boil:"is_cert_valid" json:"is_cert_valid" toml:"is_cert_valid" yaml:"is_cert_valid"`
 	IsCertProcessed       bool        `boil:"is_cert_processed" json:"is_cert_processed" toml:"is_cert_processed" yaml:"is_cert_processed"`
 	License               null.String `boil:"license" json:"license,omitempty" toml:"license" yaml:"license,omitempty"`
-	LicenseURL            null.String `boil:"license_url" json:"license_url,omitempty" toml:"license_url" yaml:"license_url,omitempty"`
-	Preview               null.String `boil:"preview" json:"preview,omitempty" toml:"preview" yaml:"preview,omitempty"`
 	Type                  null.String `boil:"type" json:"type,omitempty" toml:"type" yaml:"type,omitempty"`
 	ReleaseTime           null.Uint64 `boil:"release_time" json:"release_time,omitempty" toml:"release_time" yaml:"release_time,omitempty"`
 	SourceHash            null.String `boil:"source_hash" json:"source_hash,omitempty" toml:"source_hash" yaml:"source_hash,omitempty"`
@@ -71,19 +69,11 @@ type Claim struct {
 	FrameHeight           null.Uint64 `boil:"frame_height" json:"frame_height,omitempty" toml:"frame_height" yaml:"frame_height,omitempty"`
 	Duration              null.Uint64 `boil:"duration" json:"duration,omitempty" toml:"duration" yaml:"duration,omitempty"`
 	AudioDuration         null.Uint64 `boil:"audio_duration" json:"audio_duration,omitempty" toml:"audio_duration" yaml:"audio_duration,omitempty"`
-	Os                    null.String `boil:"os" json:"os,omitempty" toml:"os" yaml:"os,omitempty"`
 	Email                 null.String `boil:"email" json:"email,omitempty" toml:"email" yaml:"email,omitempty"`
-	WebsiteURL            null.String `boil:"website_url" json:"website_url,omitempty" toml:"website_url" yaml:"website_url,omitempty"`
 	HasClaimList          null.Bool   `boil:"has_claim_list" json:"has_claim_list,omitempty" toml:"has_claim_list" yaml:"has_claim_list,omitempty"`
 	ClaimReference        null.String `boil:"claim_reference" json:"claim_reference,omitempty" toml:"claim_reference" yaml:"claim_reference,omitempty"`
 	ListType              null.Int16  `boil:"list_type" json:"list_type,omitempty" toml:"list_type" yaml:"list_type,omitempty"`
 	ClaimIDList           null.JSON   `boil:"claim_id_list" json:"claim_id_list,omitempty" toml:"claim_id_list" yaml:"claim_id_list,omitempty"`
-	Country               null.String `boil:"country" json:"country,omitempty" toml:"country" yaml:"country,omitempty"`
-	State                 null.String `boil:"state" json:"state,omitempty" toml:"state" yaml:"state,omitempty"`
-	City                  null.String `boil:"city" json:"city,omitempty" toml:"city" yaml:"city,omitempty"`
-	Code                  null.String `boil:"code" json:"code,omitempty" toml:"code" yaml:"code,omitempty"`
-	Latitude              null.Int64  `boil:"latitude" json:"latitude,omitempty" toml:"latitude" yaml:"latitude,omitempty"`
-	Longitude             null.Int64  `boil:"longitude" json:"longitude,omitempty" toml:"longitude" yaml:"longitude,omitempty"`
 	TransactionHashUpdate null.String `boil:"transaction_hash_update" json:"transaction_hash_update,omitempty" toml:"transaction_hash_update" yaml:"transaction_hash_update,omitempty"`
 	VoutUpdate            null.Uint   `boil:"vout_update" json:"vout_update,omitempty" toml:"vout_update" yaml:"vout_update,omitempty"`
 	ClaimCount            int64       `boil:"claim_count" json:"claim_count" toml:"claim_count" yaml:"claim_count"`
@@ -128,8 +118,6 @@ var ClaimColumns = struct {
 	IsCertValid           string
 	IsCertProcessed       string
 	License               string
-	LicenseURL            string
-	Preview               string
 	Type                  string
 	ReleaseTime           string
 	SourceHash            string
@@ -141,19 +129,11 @@ var ClaimColumns = struct {
 	FrameHeight           string
 	Duration              string
 	AudioDuration         string
-	Os                    string
 	Email                 string
-	WebsiteURL            string
 	HasClaimList          string
 	ClaimReference        string
 	ListType              string
 	ClaimIDList           string
-	Country               string
-	State                 string
-	City                  string
-	Code                  string
-	Latitude              string
-	Longitude             string
 	TransactionHashUpdate string
 	VoutUpdate            string
 	ClaimCount            string
@@ -193,8 +173,6 @@ var ClaimColumns = struct {
 	IsCertValid:           "is_cert_valid",
 	IsCertProcessed:       "is_cert_processed",
 	License:               "license",
-	LicenseURL:            "license_url",
-	Preview:               "preview",
 	Type:                  "type",
 	ReleaseTime:           "release_time",
 	SourceHash:            "source_hash",
@@ -206,19 +184,11 @@ var ClaimColumns = struct {
 	FrameHeight:           "frame_height",
 	Duration:              "duration",
 	AudioDuration:         "audio_duration",
-	Os:                    "os",
 	Email:                 "email",
-	WebsiteURL:            "website_url",
 	HasClaimList:          "has_claim_list",
 	ClaimReference:        "claim_reference",
 	ListType:              "list_type",
 	ClaimIDList:           "claim_id_list",
-	Country:               "country",
-	State:                 "state",
-	City:                  "city",
-	Code:                  "code",
-	Latitude:              "latitude",
-	Longitude:             "longitude",
 	TransactionHashUpdate: "transaction_hash_update",
 	VoutUpdate:            "vout_update",
 	ClaimCount:            "claim_count",
@@ -255,6 +225,29 @@ func (w whereHelpernull_Uint64) GT(x null.Uint64) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.GT, x)
 }
 func (w whereHelpernull_Uint64) GTE(x null.Uint64) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+
+type whereHelpernull_JSON struct{ field string }
+
+func (w whereHelpernull_JSON) EQ(x null.JSON) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, false, x)
+}
+func (w whereHelpernull_JSON) NEQ(x null.JSON) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, true, x)
+}
+func (w whereHelpernull_JSON) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
+func (w whereHelpernull_JSON) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
+func (w whereHelpernull_JSON) LT(x null.JSON) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpernull_JSON) LTE(x null.JSON) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpernull_JSON) GT(x null.JSON) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpernull_JSON) GTE(x null.JSON) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.GTE, x)
 }
 
@@ -304,52 +297,6 @@ func (w whereHelpernull_Int16) GTE(x null.Int16) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.GTE, x)
 }
 
-type whereHelpernull_JSON struct{ field string }
-
-func (w whereHelpernull_JSON) EQ(x null.JSON) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, false, x)
-}
-func (w whereHelpernull_JSON) NEQ(x null.JSON) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, true, x)
-}
-func (w whereHelpernull_JSON) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
-func (w whereHelpernull_JSON) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
-func (w whereHelpernull_JSON) LT(x null.JSON) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LT, x)
-}
-func (w whereHelpernull_JSON) LTE(x null.JSON) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LTE, x)
-}
-func (w whereHelpernull_JSON) GT(x null.JSON) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GT, x)
-}
-func (w whereHelpernull_JSON) GTE(x null.JSON) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GTE, x)
-}
-
-type whereHelpernull_Int64 struct{ field string }
-
-func (w whereHelpernull_Int64) EQ(x null.Int64) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, false, x)
-}
-func (w whereHelpernull_Int64) NEQ(x null.Int64) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, true, x)
-}
-func (w whereHelpernull_Int64) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
-func (w whereHelpernull_Int64) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
-func (w whereHelpernull_Int64) LT(x null.Int64) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LT, x)
-}
-func (w whereHelpernull_Int64) LTE(x null.Int64) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LTE, x)
-}
-func (w whereHelpernull_Int64) GT(x null.Int64) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GT, x)
-}
-func (w whereHelpernull_Int64) GTE(x null.Int64) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GTE, x)
-}
-
 type whereHelpernull_Uint struct{ field string }
 
 func (w whereHelpernull_Uint) EQ(x null.Uint) qm.QueryMod {
@@ -394,9 +341,9 @@ var ClaimWhere = struct {
 	Certificate           whereHelpernull_String
 	SDHash                whereHelpernull_String
 	TransactionTime       whereHelpernull_Uint64
-	Version               whereHelperstring
+	Version               whereHelpernull_String
 	ValueAsHex            whereHelperstring
-	ValueAsJSON           whereHelpernull_String
+	ValueAsJSON           whereHelpernull_JSON
 	ValidAtHeight         whereHelperuint
 	Height                whereHelperuint
 	EffectiveAmount       whereHelperuint64
@@ -409,7 +356,7 @@ var ClaimWhere = struct {
 	Title                 whereHelpernull_String
 	Fee                   whereHelperfloat64
 	FeeCurrency           whereHelpernull_String
-	FeeAddress            whereHelperstring
+	FeeAddress            whereHelpernull_String
 	IsFiltered            whereHelperbool
 	BidState              whereHelperstring
 	CreatedAt             whereHelpertime_Time
@@ -418,8 +365,6 @@ var ClaimWhere = struct {
 	IsCertValid           whereHelperbool
 	IsCertProcessed       whereHelperbool
 	License               whereHelpernull_String
-	LicenseURL            whereHelpernull_String
-	Preview               whereHelpernull_String
 	Type                  whereHelpernull_String
 	ReleaseTime           whereHelpernull_Uint64
 	SourceHash            whereHelpernull_String
@@ -431,19 +376,11 @@ var ClaimWhere = struct {
 	FrameHeight           whereHelpernull_Uint64
 	Duration              whereHelpernull_Uint64
 	AudioDuration         whereHelpernull_Uint64
-	Os                    whereHelpernull_String
 	Email                 whereHelpernull_String
-	WebsiteURL            whereHelpernull_String
 	HasClaimList          whereHelpernull_Bool
 	ClaimReference        whereHelpernull_String
 	ListType              whereHelpernull_Int16
 	ClaimIDList           whereHelpernull_JSON
-	Country               whereHelpernull_String
-	State                 whereHelpernull_String
-	City                  whereHelpernull_String
-	Code                  whereHelpernull_String
-	Latitude              whereHelpernull_Int64
-	Longitude             whereHelpernull_Int64
 	TransactionHashUpdate whereHelpernull_String
 	VoutUpdate            whereHelpernull_Uint
 	ClaimCount            whereHelperint64
@@ -459,9 +396,9 @@ var ClaimWhere = struct {
 	Certificate:           whereHelpernull_String{field: "`claim`.`certificate`"},
 	SDHash:                whereHelpernull_String{field: "`claim`.`sd_hash`"},
 	TransactionTime:       whereHelpernull_Uint64{field: "`claim`.`transaction_time`"},
-	Version:               whereHelperstring{field: "`claim`.`version`"},
+	Version:               whereHelpernull_String{field: "`claim`.`version`"},
 	ValueAsHex:            whereHelperstring{field: "`claim`.`value_as_hex`"},
-	ValueAsJSON:           whereHelpernull_String{field: "`claim`.`value_as_json`"},
+	ValueAsJSON:           whereHelpernull_JSON{field: "`claim`.`value_as_json`"},
 	ValidAtHeight:         whereHelperuint{field: "`claim`.`valid_at_height`"},
 	Height:                whereHelperuint{field: "`claim`.`height`"},
 	EffectiveAmount:       whereHelperuint64{field: "`claim`.`effective_amount`"},
@@ -474,7 +411,7 @@ var ClaimWhere = struct {
 	Title:                 whereHelpernull_String{field: "`claim`.`title`"},
 	Fee:                   whereHelperfloat64{field: "`claim`.`fee`"},
 	FeeCurrency:           whereHelpernull_String{field: "`claim`.`fee_currency`"},
-	FeeAddress:            whereHelperstring{field: "`claim`.`fee_address`"},
+	FeeAddress:            whereHelpernull_String{field: "`claim`.`fee_address`"},
 	IsFiltered:            whereHelperbool{field: "`claim`.`is_filtered`"},
 	BidState:              whereHelperstring{field: "`claim`.`bid_state`"},
 	CreatedAt:             whereHelpertime_Time{field: "`claim`.`created_at`"},
@@ -483,8 +420,6 @@ var ClaimWhere = struct {
 	IsCertValid:           whereHelperbool{field: "`claim`.`is_cert_valid`"},
 	IsCertProcessed:       whereHelperbool{field: "`claim`.`is_cert_processed`"},
 	License:               whereHelpernull_String{field: "`claim`.`license`"},
-	LicenseURL:            whereHelpernull_String{field: "`claim`.`license_url`"},
-	Preview:               whereHelpernull_String{field: "`claim`.`preview`"},
 	Type:                  whereHelpernull_String{field: "`claim`.`type`"},
 	ReleaseTime:           whereHelpernull_Uint64{field: "`claim`.`release_time`"},
 	SourceHash:            whereHelpernull_String{field: "`claim`.`source_hash`"},
@@ -496,19 +431,11 @@ var ClaimWhere = struct {
 	FrameHeight:           whereHelpernull_Uint64{field: "`claim`.`frame_height`"},
 	Duration:              whereHelpernull_Uint64{field: "`claim`.`duration`"},
 	AudioDuration:         whereHelpernull_Uint64{field: "`claim`.`audio_duration`"},
-	Os:                    whereHelpernull_String{field: "`claim`.`os`"},
 	Email:                 whereHelpernull_String{field: "`claim`.`email`"},
-	WebsiteURL:            whereHelpernull_String{field: "`claim`.`website_url`"},
 	HasClaimList:          whereHelpernull_Bool{field: "`claim`.`has_claim_list`"},
 	ClaimReference:        whereHelpernull_String{field: "`claim`.`claim_reference`"},
 	ListType:              whereHelpernull_Int16{field: "`claim`.`list_type`"},
 	ClaimIDList:           whereHelpernull_JSON{field: "`claim`.`claim_id_list`"},
-	Country:               whereHelpernull_String{field: "`claim`.`country`"},
-	State:                 whereHelpernull_String{field: "`claim`.`state`"},
-	City:                  whereHelpernull_String{field: "`claim`.`city`"},
-	Code:                  whereHelpernull_String{field: "`claim`.`code`"},
-	Latitude:              whereHelpernull_Int64{field: "`claim`.`latitude`"},
-	Longitude:             whereHelpernull_Int64{field: "`claim`.`longitude`"},
 	TransactionHashUpdate: whereHelpernull_String{field: "`claim`.`transaction_hash_update`"},
 	VoutUpdate:            whereHelpernull_Uint{field: "`claim`.`vout_update`"},
 	ClaimCount:            whereHelperint64{field: "`claim`.`claim_count`"},
@@ -541,8 +468,8 @@ func (*claimR) NewStruct() *claimR {
 type claimL struct{}
 
 var (
-	claimAllColumns            = []string{"id", "transaction_hash_id", "vout", "name", "claim_id", "claim_type", "publisher_id", "publisher_sig", "certificate", "sd_hash", "transaction_time", "version", "value_as_hex", "value_as_json", "valid_at_height", "height", "effective_amount", "author", "description", "content_type", "is_nsfw", "language", "thumbnail_url", "title", "fee", "fee_currency", "fee_address", "is_filtered", "bid_state", "created_at", "modified_at", "claim_address", "is_cert_valid", "is_cert_processed", "license", "license_url", "preview", "type", "release_time", "source_hash", "source_name", "source_size", "source_media_type", "source_url", "frame_width", "frame_height", "duration", "audio_duration", "os", "email", "website_url", "has_claim_list", "claim_reference", "list_type", "claim_id_list", "country", "state", "city", "code", "latitude", "longitude", "transaction_hash_update", "vout_update", "claim_count"}
-	claimColumnsWithoutDefault = []string{"transaction_hash_id", "vout", "name", "claim_id", "claim_type", "publisher_id", "publisher_sig", "certificate", "sd_hash", "transaction_time", "version", "value_as_hex", "value_as_json", "valid_at_height", "height", "author", "description", "content_type", "language", "thumbnail_url", "title", "fee_currency", "fee_address", "claim_address", "is_cert_valid", "is_cert_processed", "license", "license_url", "preview", "type", "release_time", "source_hash", "source_name", "source_size", "source_media_type", "source_url", "frame_width", "frame_height", "duration", "audio_duration", "os", "email", "website_url", "has_claim_list", "claim_reference", "list_type", "claim_id_list", "country", "state", "city", "code", "latitude", "longitude", "transaction_hash_update", "vout_update"}
+	claimAllColumns            = []string{"id", "transaction_hash_id", "vout", "name", "claim_id", "claim_type", "publisher_id", "publisher_sig", "certificate", "sd_hash", "transaction_time", "version", "value_as_hex", "value_as_json", "valid_at_height", "height", "effective_amount", "author", "description", "content_type", "is_nsfw", "language", "thumbnail_url", "title", "fee", "fee_currency", "fee_address", "is_filtered", "bid_state", "created_at", "modified_at", "claim_address", "is_cert_valid", "is_cert_processed", "license", "type", "release_time", "source_hash", "source_name", "source_size", "source_media_type", "source_url", "frame_width", "frame_height", "duration", "audio_duration", "email", "has_claim_list", "claim_reference", "list_type", "claim_id_list", "transaction_hash_update", "vout_update", "claim_count"}
+	claimColumnsWithoutDefault = []string{"transaction_hash_id", "vout", "name", "claim_id", "claim_type", "publisher_id", "publisher_sig", "certificate", "sd_hash", "transaction_time", "version", "value_as_hex", "value_as_json", "valid_at_height", "height", "author", "description", "content_type", "language", "thumbnail_url", "title", "fee_currency", "fee_address", "claim_address", "is_cert_valid", "is_cert_processed", "license", "type", "release_time", "source_hash", "source_name", "source_size", "source_media_type", "source_url", "frame_width", "frame_height", "duration", "audio_duration", "email", "has_claim_list", "claim_reference", "list_type", "claim_id_list", "transaction_hash_update", "vout_update"}
 	claimColumnsWithDefault    = []string{"id", "effective_amount", "is_nsfw", "fee", "is_filtered", "bid_state", "created_at", "modified_at", "claim_count"}
 	claimPrimaryKeyColumns     = []string{"id"}
 )

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/lbryio/lbry.go/extras/errors"
+	"github.com/lbryio/lbry.go/v2/extras/errors"
 	upstream "github.com/lbryio/lbry.go/v2/lbrycrd"
 	"github.com/mitchellh/mapstructure"
 	"github.com/shopspring/decimal"

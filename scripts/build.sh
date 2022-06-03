@@ -9,15 +9,14 @@
 
 
 echo "== Installing dependencies =="
-GO111MODULE=off go get -u golang.org/x/tools/cmd/goimports
-GO111MODULE=off go get -u github.com/jteeuwen/go-bindata/...
+go install golang.org/x/tools/cmd/goimports@latest
+go install github.com/kevinburke/go-bindata/...@latest
 go mod download
 
 
 echo "== Checking dependencies =="
 go mod verify
 set -e
-
 
  echo "== Compiling =="
  export IMPORTPATH="github.com/lbryio/chainquery"

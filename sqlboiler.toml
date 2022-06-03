@@ -5,9 +5,9 @@ pkgname="model"
 output="model"
 [mysql]
   blacklist=["gorp_migrations"]
-  dbname="chainquery"
+  dbname="chainquery2"
   host="localhost"
   port=3306
-  user="lbry"
-  pass="lbry"
+  user="chainquery"
+  pass="chainquery"
   sslmode="false"

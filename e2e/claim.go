@@ -7,7 +7,7 @@ import (
 	"github.com/lbryio/chainquery/model"
 	"github.com/lbryio/chainquery/util"
 
-	"github.com/lbryio/lbry.go/extras/errors"
+	"github.com/lbryio/lbry.go/v2/extras/errors"
 	c "github.com/lbryio/lbry.go/v2/schema/stake"
 	pb "github.com/lbryio/types/v2/go"
 

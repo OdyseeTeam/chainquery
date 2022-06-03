@@ -5,7 +5,7 @@ import (
 
 	"github.com/lbryio/chainquery/util"
 
-	"github.com/lbryio/lbry.go/extras/errors"
+	"github.com/lbryio/lbry.go/v2/extras/errors"
 )
 
 //GetGenesisBlock performs a jsonrpc that returns the structured data as a GetBlockResponse.

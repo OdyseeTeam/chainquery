@@ -15,7 +15,7 @@ import (
 	"github.com/lbryio/chainquery/metrics"
 	"github.com/lbryio/chainquery/model"
 
-	"github.com/lbryio/lbry.go/extras/errors"
+	"github.com/lbryio/lbry.go/v2/extras/errors"
 	"github.com/lbryio/lbry.go/v2/extras/query"
 
 	"github.com/sirupsen/logrus"

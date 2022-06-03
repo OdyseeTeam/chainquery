@@ -9,8 +9,8 @@ import (
 	"github.com/lbryio/chainquery/lbrycrd"
 	"github.com/lbryio/chainquery/model"
 
-	"github.com/lbryio/lbry.go/extras/api"
-	"github.com/lbryio/lbry.go/extras/errors"
+	"github.com/lbryio/lbry.go/v2/extras/api"
+	"github.com/lbryio/lbry.go/v2/extras/errors"
 
 	v "github.com/lbryio/ozzo-validation"
 	"github.com/sirupsen/logrus"

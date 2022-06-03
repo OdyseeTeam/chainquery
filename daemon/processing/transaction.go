@@ -16,8 +16,8 @@ import (
 	"github.com/lbryio/chainquery/model"
 	"github.com/lbryio/chainquery/util"
 
-	"github.com/lbryio/lbry.go/extras/errors"
-	"github.com/lbryio/lbry.go/extras/stop"
+	"github.com/lbryio/lbry.go/v2/extras/errors"
+	"github.com/lbryio/lbry.go/v2/extras/stop"
 
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"

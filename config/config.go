@@ -21,7 +21,7 @@ import (
 	server "github.com/lbryio/chainquery/swagger/apiserver/go"
 	"github.com/lbryio/chainquery/twilio"
 
-	"github.com/lbryio/lbry.go/extras/errors"
+	"github.com/lbryio/lbry.go/v2/extras/errors"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/go-ini/ini"

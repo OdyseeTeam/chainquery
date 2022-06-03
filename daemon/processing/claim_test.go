@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	util "github.com/lbryio/lbry.go/lbrycrd"
+	util "github.com/lbryio/lbry.go/v2/lbrycrd"
 	legacy_pb "github.com/lbryio/types/v1/go"
 	"github.com/sirupsen/logrus"
 )

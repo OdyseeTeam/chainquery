@@ -2,7 +2,7 @@ package e2e
 
 import (
 	"github.com/btcsuite/btcd/btcec"
-	"github.com/lbryio/lbry.go/extras/errors"
+	"github.com/lbryio/lbry.go/v2/extras/errors"
 	"github.com/lbryio/lbry.go/v2/schema/keys"
 	c "github.com/lbryio/lbry.go/v2/schema/stake"
 	pb "github.com/lbryio/types/v2/go"

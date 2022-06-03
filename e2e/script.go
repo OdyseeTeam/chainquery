@@ -3,7 +3,7 @@ package e2e
 import (
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcutil"
-	"github.com/lbryio/lbry.go/extras/errors"
+	"github.com/lbryio/lbry.go/v2/extras/errors"
 )
 
 /* WILL NEED FOR FUTURE TESTS

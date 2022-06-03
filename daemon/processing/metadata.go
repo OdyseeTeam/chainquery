@@ -47,7 +47,7 @@ const streamType = "streamType"
 const certificateType = "certificateType"
 
 //GetValueAsJSON returns the JSON string of the structure of claim metadata.
-func GetValueAsJSON(helper stake.StakeHelper) (string, error) {
+func GetValueAsJSON(helper stake.StakeHelper) ([]byte, error) {
 	var value Value
 	if helper.GetStream() != nil {
 		s := helper.GetStream()
@@ -78,10 +78,10 @@ func GetValueAsJSON(helper stake.StakeHelper) (string, error) {
 
 	json, err := json2.Marshal(value)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return string(json), nil
+	return json, nil
 }
 
 func tagExists(tagName string, taglist []string) bool {
