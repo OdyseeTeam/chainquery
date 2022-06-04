@@ -431,7 +431,9 @@ func setLicense(claim *model.Claim, stream pb.Stream) {
 
 func setStreamMetadata(claim *model.Claim, stream pb.Stream) {
 	claim.Type.SetValid(global.StreamClaimType)
-	claim.Author.SetValid(stream.GetAuthor())
+	if stream.GetAuthor() != "" {
+		claim.Author.SetValid(stream.GetAuthor())
+	}
 	setLicense(claim, stream)
 
 	fee := stream.GetFee()
