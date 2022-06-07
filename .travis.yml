@@ -1,5 +1,5 @@
 os: linux
-dist: xenial
+dist: bionic
 language: go
 
 # Only the last two Go releases are supported by the Go team with security
@@ -8,14 +8,11 @@ language: go
 # development version of Go. This can warn you that your code will break
 # in the next version of Go. Don't worry! Later we declare that test runs
 # are allowed to fail on Go tip.
-go: 1.15.2
+go: 1.17.x
 
 # Skip the install step. Don't `go get` dependencies. Only build with the
 # code in vendor/
 install: true
-
-env:
-  - GO111MODULE=on
 
 cache:
   directories:
@@ -28,8 +25,8 @@ services:
 
 before_install:
 - mysql -u root -e 'CREATE DATABASE IF NOT EXISTS chainquery;'
-- mysql -u root -e "CREATE USER 'lbry'@'localhost' IDENTIFIED BY 'lbry';"
-- mysql -u root -e "GRANT ALL ON chainquery.* TO 'lbry'@'localhost';"
+- mysql -u root -e "CREATE USER 'chainquery'@'localhost' IDENTIFIED BY 'chainquery';"
+- mysql -u root -e "GRANT ALL ON chainquery.* TO 'chainquery'@'localhost';"
 - sudo service mysql restart
 
 
@@ -58,7 +55,7 @@ script:
   - ./e2e/e2e.sh
   # check model generation...
   - ./bin/chainquery serve db && ./scripts/gen_models.sh
-  # matches what was commited
+  # matches what was committed
   - go mod tidy
   - git diff --exit-code
 

@@ -435,27 +435,27 @@ func getSupportedClaims(since time.Time, claimsChan chan *model.Claim) error {
 func getModifiedClaims(since time.Time, claimsChan chan *model.Claim) error {
 	// CLAIMS THAT WERE MODIFIED [SELECT DISTINCT claim.name FROM claim WHERE claim.modified_at >= '2019-11-03 19:48:58';]
 	c := model.ClaimColumns
-	prevId := -1
+	prevID := -1
 	clauses := make([]qm.QueryMod, 0)
 	if !since.IsZero() {
 		clauses = append(clauses, model.ClaimWhere.ModifiedAt.GTE(since))
 	}
 	clauses = append(clauses, qm.Select(c.ID, c.Name), qm.Limit(15000))
 	for {
-		finalClauses := append(clauses, qm.Where(c.ID+">?", prevId))
+		finalClauses := append(clauses, qm.Where(c.ID+">?", prevID))
 		claims, err := model.Claims(finalClauses...).AllG()
 		if err != nil {
 			return errors.Err(err)
 		}
-		oldPrevId := prevId
+		oldPrevID := prevID
 		for i, c := range claims {
 			if i%100 == 0 {
-				logrus.Debugf("sending claim %d/%d for reprocessing - claim id batch: %d", i+1, len(claims), prevId)
+				logrus.Debugf("sending claim %d/%d for reprocessing - claim id batch: %d", i+1, len(claims), prevID)
 			}
 			claimsChan <- c
-			prevId = int(c.ID)
+			prevID = int(c.ID)
 		}
-		if oldPrevId == prevId {
+		if oldPrevID == prevID {
 			break
 		}
 	}
@@ -464,21 +464,21 @@ func getModifiedClaims(since time.Time, claimsChan chan *model.Claim) error {
 func getNewValidClaims(lastHeight uint, claimsChan chan *model.Claim) error {
 	// CLAIMS THAT BECAME VALID SINCE [SELECT DISTINCT claim.name FROM claim WHERE claim.valid_at_height >= 852512;]
 	c := model.ClaimColumns
-	prevId := -1
+	prevID := -1
 	for {
-		claims, err := model.Claims(qm.Select(c.ID, c.Name), qm.Where(c.ID+">?", prevId), model.ClaimWhere.ValidAtHeight.GTE(lastHeight), qm.Limit(15000)).AllG()
+		claims, err := model.Claims(qm.Select(c.ID, c.Name), qm.Where(c.ID+">?", prevID), model.ClaimWhere.ValidAtHeight.GTE(lastHeight), qm.Limit(15000)).AllG()
 		if err != nil {
 			return errors.Err(err)
 		}
-		oldPrevId := prevId
+		oldPrevID := prevID
 		for i, c := range claims {
 			if i%100 == 0 {
-				logrus.Debugf("sending claim %d/%d for reprocessing - claim id batch: %d", i+1, len(claims), prevId)
+				logrus.Debugf("sending claim %d/%d for reprocessing - claim id batch: %d", i+1, len(claims), prevID)
 			}
 			claimsChan <- c
-			prevId = int(c.ID)
+			prevID = int(c.ID)
 		}
-		if oldPrevId == prevId {
+		if oldPrevID == prevID {
 			break
 		}
 	}

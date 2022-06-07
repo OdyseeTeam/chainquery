@@ -6,7 +6,7 @@ if [ -d persist ]; then rm -r persist; fi #Remove this if you want to debug the 
 ./scripts/build.sh
 mysql -u root -e 'DROP DATABASE IF EXISTS chainquery_e2e_test;'
 mysql -u root -e 'CREATE DATABASE IF NOT EXISTS chainquery_e2e_test;'
-mysql -u root -e "GRANT ALL ON chainquery_e2e_test.* TO 'lbry'@'localhost';"
+mysql -u root -e "GRANT ALL ON chainquery_e2e_test.* TO 'chainquery'@'localhost';"
 cd e2e
 docker-compose stop
 docker-compose rm -f

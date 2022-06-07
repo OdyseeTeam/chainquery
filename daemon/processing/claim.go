@@ -212,11 +212,11 @@ func processClaim(helper *c.StakeHelper, claim *model.Claim, value []byte, outpu
 
 	// pbClaim JSON
 	if claimHelper, err := c.DecodeClaimHex(claim.ValueAsHex, global.BlockChainName); err == nil && claimHelper != nil {
-		claimAsJson, err := GetValueAsJSON(*claimHelper)
+		claimAsJSON, err := GetValueAsJSON(*claimHelper)
 		if err != nil {
 			logrus.Error(err)
 		} else {
-			claim.ValueAsJSON.SetValid(claimAsJson)
+			claim.ValueAsJSON.SetValid(claimAsJSON)
 		}
 	}
 
