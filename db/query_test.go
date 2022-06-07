@@ -6,7 +6,7 @@ import (
 
 	"github.com/lbryio/chainquery/model"
 
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 func TestMain(m *testing.M) {

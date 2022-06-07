@@ -5,7 +5,7 @@ import (
 	"github.com/lbryio/errors.go"
 	"github.com/lbryio/sockety/socketyapi"
 	"github.com/sirupsen/logrus"
-	"github.com/volatiletech/null"
+	"github.com/volatiletech/null/v8"
 )
 
 // Token token used to sent notifications to sockety

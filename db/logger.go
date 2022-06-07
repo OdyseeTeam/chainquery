@@ -10,7 +10,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	_ "github.com/kevinburke/go-bindata" // so it's detected by `dep ensure`
 	log "github.com/sirupsen/logrus"
-	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/v4/boil"
 )
 
 func logQueryTime(logger *log.Logger, startTime time.Time) {

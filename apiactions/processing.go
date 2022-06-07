@@ -14,7 +14,7 @@ import (
 
 	v "github.com/lbryio/ozzo-validation"
 	"github.com/sirupsen/logrus"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 // ProcessBlocks processed a specific block or range of blocks if authorized.

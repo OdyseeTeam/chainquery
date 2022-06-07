@@ -12,9 +12,9 @@ import (
 	c "github.com/lbryio/lbry.go/v2/schema/stake"
 
 	"github.com/sirupsen/logrus"
-	"github.com/volatiletech/null"
-	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/queries"
+	"github.com/volatiletech/null/v8"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries"
 )
 
 const certificateSyncPrefix = "Certificate Sync:"

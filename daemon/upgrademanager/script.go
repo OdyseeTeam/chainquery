@@ -9,8 +9,8 @@ import (
 	"github.com/lbryio/chainquery/util"
 
 	"github.com/sirupsen/logrus"
-	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 func reProcessAllClaims() {

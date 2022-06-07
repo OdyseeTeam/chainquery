@@ -19,9 +19,9 @@ import (
 	"github.com/lbryio/lbry.go/v2/extras/query"
 
 	"github.com/sirupsen/logrus"
-	"github.com/volatiletech/null"
-	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/null/v8"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 const claimTrieSyncJob = "claimtriesyncjob"

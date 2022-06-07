@@ -8,11 +8,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/lbryio/chainquery/sockety"
-
 	"github.com/lbryio/chainquery/lbrycrd"
 	"github.com/lbryio/chainquery/metrics"
 	"github.com/lbryio/chainquery/model"
+	"github.com/lbryio/chainquery/sockety"
 	"github.com/lbryio/chainquery/twilio"
 	"github.com/lbryio/chainquery/util"
 	"github.com/lbryio/lbry.go/v2/extras/errors"
@@ -20,8 +19,8 @@ import (
 	"github.com/lbryio/sockety/socketyapi"
 
 	"github.com/sirupsen/logrus"
-	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 // BlockLock is used to lock block processing to a single parent thread.

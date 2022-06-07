@@ -19,7 +19,7 @@ import (
 	"github.com/lbryio/lbry.go/v2/extras/stop"
 
 	log "github.com/sirupsen/logrus"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 const (
