@@ -11,13 +11,13 @@
 #lbrycrdurl=
 
 #MySQL DSN is required for chainquery to store information.
-#DEFAULT: "lbry:lbry@tcp(localhost:3306)/chainquery"
-#SUGGESTED: "lbry:lbry@unix(/var/run/mysqld/mysqld.sock)/chainquery"
+#DEFAULT: "chainquery:chainquery@tcp(localhost:3306)/chainquery"
+#SUGGESTED: "chainquery:chainquery@unix(/var/run/mysqld/mysqld.sock)/chainquery"
 #mysqldsn=
 
 #API MySQL DSN is required for chainquery to expose a SQL query service
-#DEFAULT: "lbry:lbry@tcp(localhost:3306)/chainquery"
-#SUGGESTED: "lbry:lbry@unix(/var/run/mysqld/mysqld.sock)/chainquery"
+#DEFAULT: "chainquery:chainquery@tcp(localhost:3306)/chainquery"
+#SUGGESTED: "chainquery:chainquery@unix(/var/run/mysqld/mysqld.sock)/chainquery"
 #apimysqldsn=
 
 #API Host and Port is required for the API Server to bind and listen on.

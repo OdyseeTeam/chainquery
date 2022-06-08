@@ -23,163 +23,149 @@ import (
 
 // Block is an object representing the database table.
 type Block struct {
-	ID                    uint64      `boil:"id" json:"id" toml:"id" yaml:"id"`
-	Bits                  string      `boil:"bits" json:"bits" toml:"bits" yaml:"bits"`
-	Chainwork             string      `boil:"chainwork" json:"chainwork" toml:"chainwork" yaml:"chainwork"`
-	Confirmations         uint        `boil:"confirmations" json:"confirmations" toml:"confirmations" yaml:"confirmations"`
-	Difficulty            float64     `boil:"difficulty" json:"difficulty" toml:"difficulty" yaml:"difficulty"`
-	Hash                  string      `boil:"hash" json:"hash" toml:"hash" yaml:"hash"`
-	Height                uint64      `boil:"height" json:"height" toml:"height" yaml:"height"`
-	MerkleRoot            string      `boil:"merkle_root" json:"merkle_root" toml:"merkle_root" yaml:"merkle_root"`
-	NameClaimRoot         string      `boil:"name_claim_root" json:"name_claim_root" toml:"name_claim_root" yaml:"name_claim_root"`
-	Nonce                 uint64      `boil:"nonce" json:"nonce" toml:"nonce" yaml:"nonce"`
-	PreviousBlockHash     null.String `boil:"previous_block_hash" json:"previous_block_hash,omitempty" toml:"previous_block_hash" yaml:"previous_block_hash,omitempty"`
-	NextBlockHash         null.String `boil:"next_block_hash" json:"next_block_hash,omitempty" toml:"next_block_hash" yaml:"next_block_hash,omitempty"`
-	BlockSize             uint64      `boil:"block_size" json:"block_size" toml:"block_size" yaml:"block_size"`
-	BlockTime             uint64      `boil:"block_time" json:"block_time" toml:"block_time" yaml:"block_time"`
-	Version               uint64      `boil:"version" json:"version" toml:"version" yaml:"version"`
-	VersionHex            string      `boil:"version_hex" json:"version_hex" toml:"version_hex" yaml:"version_hex"`
-	TransactionHashes     null.String `boil:"transaction_hashes" json:"transaction_hashes,omitempty" toml:"transaction_hashes" yaml:"transaction_hashes,omitempty"`
-	TransactionsProcessed bool        `boil:"transactions_processed" json:"transactions_processed" toml:"transactions_processed" yaml:"transactions_processed"`
-	CreatedAt             time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	ModifiedAt            time.Time   `boil:"modified_at" json:"modified_at" toml:"modified_at" yaml:"modified_at"`
+	ID                uint64      `boil:"id" json:"id" toml:"id" yaml:"id"`
+	Bits              string      `boil:"bits" json:"bits" toml:"bits" yaml:"bits"`
+	Chainwork         string      `boil:"chainwork" json:"chainwork" toml:"chainwork" yaml:"chainwork"`
+	Confirmations     uint        `boil:"confirmations" json:"confirmations" toml:"confirmations" yaml:"confirmations"`
+	Difficulty        float64     `boil:"difficulty" json:"difficulty" toml:"difficulty" yaml:"difficulty"`
+	Hash              string      `boil:"hash" json:"hash" toml:"hash" yaml:"hash"`
+	Height            uint64      `boil:"height" json:"height" toml:"height" yaml:"height"`
+	MerkleRoot        string      `boil:"merkle_root" json:"merkle_root" toml:"merkle_root" yaml:"merkle_root"`
+	NameClaimRoot     string      `boil:"name_claim_root" json:"name_claim_root" toml:"name_claim_root" yaml:"name_claim_root"`
+	Nonce             uint64      `boil:"nonce" json:"nonce" toml:"nonce" yaml:"nonce"`
+	PreviousBlockHash null.String `boil:"previous_block_hash" json:"previous_block_hash,omitempty" toml:"previous_block_hash" yaml:"previous_block_hash,omitempty"`
+	NextBlockHash     null.String `boil:"next_block_hash" json:"next_block_hash,omitempty" toml:"next_block_hash" yaml:"next_block_hash,omitempty"`
+	BlockSize         uint64      `boil:"block_size" json:"block_size" toml:"block_size" yaml:"block_size"`
+	BlockTime         uint64      `boil:"block_time" json:"block_time" toml:"block_time" yaml:"block_time"`
+	Version           uint64      `boil:"version" json:"version" toml:"version" yaml:"version"`
+	VersionHex        string      `boil:"version_hex" json:"version_hex" toml:"version_hex" yaml:"version_hex"`
+	CreatedAt         time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	ModifiedAt        time.Time   `boil:"modified_at" json:"modified_at" toml:"modified_at" yaml:"modified_at"`
 
 	R *blockR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L blockL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var BlockColumns = struct {
-	ID                    string
-	Bits                  string
-	Chainwork             string
-	Confirmations         string
-	Difficulty            string
-	Hash                  string
-	Height                string
-	MerkleRoot            string
-	NameClaimRoot         string
-	Nonce                 string
-	PreviousBlockHash     string
-	NextBlockHash         string
-	BlockSize             string
-	BlockTime             string
-	Version               string
-	VersionHex            string
-	TransactionHashes     string
-	TransactionsProcessed string
-	CreatedAt             string
-	ModifiedAt            string
+	ID                string
+	Bits              string
+	Chainwork         string
+	Confirmations     string
+	Difficulty        string
+	Hash              string
+	Height            string
+	MerkleRoot        string
+	NameClaimRoot     string
+	Nonce             string
+	PreviousBlockHash string
+	NextBlockHash     string
+	BlockSize         string
+	BlockTime         string
+	Version           string
+	VersionHex        string
+	CreatedAt         string
+	ModifiedAt        string
 }{
-	ID:                    "id",
-	Bits:                  "bits",
-	Chainwork:             "chainwork",
-	Confirmations:         "confirmations",
-	Difficulty:            "difficulty",
-	Hash:                  "hash",
-	Height:                "height",
-	MerkleRoot:            "merkle_root",
-	NameClaimRoot:         "name_claim_root",
-	Nonce:                 "nonce",
-	PreviousBlockHash:     "previous_block_hash",
-	NextBlockHash:         "next_block_hash",
-	BlockSize:             "block_size",
-	BlockTime:             "block_time",
-	Version:               "version",
-	VersionHex:            "version_hex",
-	TransactionHashes:     "transaction_hashes",
-	TransactionsProcessed: "transactions_processed",
-	CreatedAt:             "created_at",
-	ModifiedAt:            "modified_at",
+	ID:                "id",
+	Bits:              "bits",
+	Chainwork:         "chainwork",
+	Confirmations:     "confirmations",
+	Difficulty:        "difficulty",
+	Hash:              "hash",
+	Height:            "height",
+	MerkleRoot:        "merkle_root",
+	NameClaimRoot:     "name_claim_root",
+	Nonce:             "nonce",
+	PreviousBlockHash: "previous_block_hash",
+	NextBlockHash:     "next_block_hash",
+	BlockSize:         "block_size",
+	BlockTime:         "block_time",
+	Version:           "version",
+	VersionHex:        "version_hex",
+	CreatedAt:         "created_at",
+	ModifiedAt:        "modified_at",
 }
 
 var BlockTableColumns = struct {
-	ID                    string
-	Bits                  string
-	Chainwork             string
-	Confirmations         string
-	Difficulty            string
-	Hash                  string
-	Height                string
-	MerkleRoot            string
-	NameClaimRoot         string
-	Nonce                 string
-	PreviousBlockHash     string
-	NextBlockHash         string
-	BlockSize             string
-	BlockTime             string
-	Version               string
-	VersionHex            string
-	TransactionHashes     string
-	TransactionsProcessed string
-	CreatedAt             string
-	ModifiedAt            string
+	ID                string
+	Bits              string
+	Chainwork         string
+	Confirmations     string
+	Difficulty        string
+	Hash              string
+	Height            string
+	MerkleRoot        string
+	NameClaimRoot     string
+	Nonce             string
+	PreviousBlockHash string
+	NextBlockHash     string
+	BlockSize         string
+	BlockTime         string
+	Version           string
+	VersionHex        string
+	CreatedAt         string
+	ModifiedAt        string
 }{
-	ID:                    "block.id",
-	Bits:                  "block.bits",
-	Chainwork:             "block.chainwork",
-	Confirmations:         "block.confirmations",
-	Difficulty:            "block.difficulty",
-	Hash:                  "block.hash",
-	Height:                "block.height",
-	MerkleRoot:            "block.merkle_root",
-	NameClaimRoot:         "block.name_claim_root",
-	Nonce:                 "block.nonce",
-	PreviousBlockHash:     "block.previous_block_hash",
-	NextBlockHash:         "block.next_block_hash",
-	BlockSize:             "block.block_size",
-	BlockTime:             "block.block_time",
-	Version:               "block.version",
-	VersionHex:            "block.version_hex",
-	TransactionHashes:     "block.transaction_hashes",
-	TransactionsProcessed: "block.transactions_processed",
-	CreatedAt:             "block.created_at",
-	ModifiedAt:            "block.modified_at",
+	ID:                "block.id",
+	Bits:              "block.bits",
+	Chainwork:         "block.chainwork",
+	Confirmations:     "block.confirmations",
+	Difficulty:        "block.difficulty",
+	Hash:              "block.hash",
+	Height:            "block.height",
+	MerkleRoot:        "block.merkle_root",
+	NameClaimRoot:     "block.name_claim_root",
+	Nonce:             "block.nonce",
+	PreviousBlockHash: "block.previous_block_hash",
+	NextBlockHash:     "block.next_block_hash",
+	BlockSize:         "block.block_size",
+	BlockTime:         "block.block_time",
+	Version:           "block.version",
+	VersionHex:        "block.version_hex",
+	CreatedAt:         "block.created_at",
+	ModifiedAt:        "block.modified_at",
 }
 
 // Generated where
 
 var BlockWhere = struct {
-	ID                    whereHelperuint64
-	Bits                  whereHelperstring
-	Chainwork             whereHelperstring
-	Confirmations         whereHelperuint
-	Difficulty            whereHelperfloat64
-	Hash                  whereHelperstring
-	Height                whereHelperuint64
-	MerkleRoot            whereHelperstring
-	NameClaimRoot         whereHelperstring
-	Nonce                 whereHelperuint64
-	PreviousBlockHash     whereHelpernull_String
-	NextBlockHash         whereHelpernull_String
-	BlockSize             whereHelperuint64
-	BlockTime             whereHelperuint64
-	Version               whereHelperuint64
-	VersionHex            whereHelperstring
-	TransactionHashes     whereHelpernull_String
-	TransactionsProcessed whereHelperbool
-	CreatedAt             whereHelpertime_Time
-	ModifiedAt            whereHelpertime_Time
+	ID                whereHelperuint64
+	Bits              whereHelperstring
+	Chainwork         whereHelperstring
+	Confirmations     whereHelperuint
+	Difficulty        whereHelperfloat64
+	Hash              whereHelperstring
+	Height            whereHelperuint64
+	MerkleRoot        whereHelperstring
+	NameClaimRoot     whereHelperstring
+	Nonce             whereHelperuint64
+	PreviousBlockHash whereHelpernull_String
+	NextBlockHash     whereHelpernull_String
+	BlockSize         whereHelperuint64
+	BlockTime         whereHelperuint64
+	Version           whereHelperuint64
+	VersionHex        whereHelperstring
+	CreatedAt         whereHelpertime_Time
+	ModifiedAt        whereHelpertime_Time
 }{
-	ID:                    whereHelperuint64{field: "`block`.`id`"},
-	Bits:                  whereHelperstring{field: "`block`.`bits`"},
-	Chainwork:             whereHelperstring{field: "`block`.`chainwork`"},
-	Confirmations:         whereHelperuint{field: "`block`.`confirmations`"},
-	Difficulty:            whereHelperfloat64{field: "`block`.`difficulty`"},
-	Hash:                  whereHelperstring{field: "`block`.`hash`"},
-	Height:                whereHelperuint64{field: "`block`.`height`"},
-	MerkleRoot:            whereHelperstring{field: "`block`.`merkle_root`"},
-	NameClaimRoot:         whereHelperstring{field: "`block`.`name_claim_root`"},
-	Nonce:                 whereHelperuint64{field: "`block`.`nonce`"},
-	PreviousBlockHash:     whereHelpernull_String{field: "`block`.`previous_block_hash`"},
-	NextBlockHash:         whereHelpernull_String{field: "`block`.`next_block_hash`"},
-	BlockSize:             whereHelperuint64{field: "`block`.`block_size`"},
-	BlockTime:             whereHelperuint64{field: "`block`.`block_time`"},
-	Version:               whereHelperuint64{field: "`block`.`version`"},
-	VersionHex:            whereHelperstring{field: "`block`.`version_hex`"},
-	TransactionHashes:     whereHelpernull_String{field: "`block`.`transaction_hashes`"},
-	TransactionsProcessed: whereHelperbool{field: "`block`.`transactions_processed`"},
-	CreatedAt:             whereHelpertime_Time{field: "`block`.`created_at`"},
-	ModifiedAt:            whereHelpertime_Time{field: "`block`.`modified_at`"},
+	ID:                whereHelperuint64{field: "`block`.`id`"},
+	Bits:              whereHelperstring{field: "`block`.`bits`"},
+	Chainwork:         whereHelperstring{field: "`block`.`chainwork`"},
+	Confirmations:     whereHelperuint{field: "`block`.`confirmations`"},
+	Difficulty:        whereHelperfloat64{field: "`block`.`difficulty`"},
+	Hash:              whereHelperstring{field: "`block`.`hash`"},
+	Height:            whereHelperuint64{field: "`block`.`height`"},
+	MerkleRoot:        whereHelperstring{field: "`block`.`merkle_root`"},
+	NameClaimRoot:     whereHelperstring{field: "`block`.`name_claim_root`"},
+	Nonce:             whereHelperuint64{field: "`block`.`nonce`"},
+	PreviousBlockHash: whereHelpernull_String{field: "`block`.`previous_block_hash`"},
+	NextBlockHash:     whereHelpernull_String{field: "`block`.`next_block_hash`"},
+	BlockSize:         whereHelperuint64{field: "`block`.`block_size`"},
+	BlockTime:         whereHelperuint64{field: "`block`.`block_time`"},
+	Version:           whereHelperuint64{field: "`block`.`version`"},
+	VersionHex:        whereHelperstring{field: "`block`.`version_hex`"},
+	CreatedAt:         whereHelpertime_Time{field: "`block`.`created_at`"},
+	ModifiedAt:        whereHelpertime_Time{field: "`block`.`modified_at`"},
 }
 
 // BlockRels is where relationship names are stored.
@@ -203,9 +189,9 @@ func (*blockR) NewStruct() *blockR {
 type blockL struct{}
 
 var (
-	blockAllColumns            = []string{"id", "bits", "chainwork", "confirmations", "difficulty", "hash", "height", "merkle_root", "name_claim_root", "nonce", "previous_block_hash", "next_block_hash", "block_size", "block_time", "version", "version_hex", "transaction_hashes", "transactions_processed", "created_at", "modified_at"}
-	blockColumnsWithoutDefault = []string{"bits", "chainwork", "confirmations", "difficulty", "hash", "height", "merkle_root", "name_claim_root", "nonce", "previous_block_hash", "next_block_hash", "block_size", "block_time", "version", "version_hex", "transaction_hashes"}
-	blockColumnsWithDefault    = []string{"id", "transactions_processed", "created_at", "modified_at"}
+	blockAllColumns            = []string{"id", "bits", "chainwork", "confirmations", "difficulty", "hash", "height", "merkle_root", "name_claim_root", "nonce", "previous_block_hash", "next_block_hash", "block_size", "block_time", "version", "version_hex", "created_at", "modified_at"}
+	blockColumnsWithoutDefault = []string{"bits", "chainwork", "confirmations", "difficulty", "hash", "height", "merkle_root", "name_claim_root", "nonce", "previous_block_hash", "next_block_hash", "block_size", "block_time", "version", "version_hex"}
+	blockColumnsWithDefault    = []string{"id", "created_at", "modified_at"}
 	blockPrimaryKeyColumns     = []string{"id"}
 	blockGeneratedColumns      = []string{}
 )

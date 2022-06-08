@@ -105,23 +105,22 @@ func parseBlockInfo(blockHeight uint64, jsonBlock *lbrycrd.GetBlockResponse) (bl
 		block = foundBlock
 	}
 
-	block.Height = blockHeight
-	block.Confirmations = uint(jsonBlock.Confirmations)
-	block.Hash = jsonBlock.Hash
-	block.BlockTime = uint64(jsonBlock.Time)
 	block.Bits = jsonBlock.Bits
-	block.BlockSize = uint64(jsonBlock.Size)
 	block.Chainwork = jsonBlock.ChainWork
-	difficulty, _ := strconv.ParseFloat(fmt.Sprintf("%.6f", jsonBlock.Difficulty), 64)
-	block.Difficulty = difficulty
+	block.Confirmations = uint(jsonBlock.Confirmations)
+	block.Difficulty = jsonBlock.Difficulty
+	block.Hash = jsonBlock.Hash
+	block.Height = blockHeight
 	block.MerkleRoot = jsonBlock.MerkleRoot
 	block.NameClaimRoot = jsonBlock.NameClaimRoot
 	block.Nonce = jsonBlock.Nonce
-	block.NextBlockHash.String = jsonBlock.NextBlockHash
 	block.PreviousBlockHash.SetValid(jsonBlock.PreviousBlockHash)
-	block.TransactionHashes.SetValid(strings.Join(jsonBlock.Tx, ","))
+	block.NextBlockHash.SetValid(jsonBlock.NextBlockHash)
+	block.BlockSize = uint64(jsonBlock.Size)
+	block.BlockTime = uint64(jsonBlock.Time)
 	block.Version = uint64(jsonBlock.Version)
 	block.VersionHex = jsonBlock.VersionHex
+	//block.TransactionHashes.SetValid(strings.Join(jsonBlock.Tx, ",")) //we don't need this, it's extremely redundant and heavy
 
 	var err error
 	if foundBlock != nil {
@@ -372,17 +371,19 @@ func checkHandleReorg(height uint64, chainPrevHash string) (uint64, error) {
 	prevHeight := height - 1
 	depth := 0
 	if height > 0 {
-		prevBlock, err := model.Blocks(qm.Where(model.BlockColumns.Height+"=?", prevHeight)).OneG()
+		prevBlock, err := model.Blocks(qm.Where(model.BlockColumns.Height+"=?", prevHeight), qm.Load("BlockHashTransactions")).OneG()
 		if err != nil {
 			return height, errors.Prefix("error getting block@"+strconv.Itoa(int(prevHeight)), err)
 		}
 		//Recursively delete blocks until they match or a reorg of depth 100 == failure of logic.
 		for prevBlock.Hash != chainPrevHash && depth < 100 && prevHeight > 0 {
+			hashes := make([]string, len(prevBlock.R.BlockHashTransactions))
+			for i, th := range prevBlock.R.BlockHashTransactions {
+				hashes[i] = th.Hash
+			}
+			fmt.Printf("block %s at height %d to be removed due to reorg. TX-> %s", prevBlock.Hash, prevBlock.Height, strings.Join(hashes, ","))
+			logrus.Printf("block %s at height %d to be removed due to reorg. TX-> %s", prevBlock.Hash, prevBlock.Height, strings.Join(hashes, ","))
 			// Delete because it needs to be reprocessed due to reorg
-			fmt.Println("block ", prevBlock.Hash, " at height ", prevBlock.Height,
-				" to be removed due to reorg. TX-> ", prevBlock.TransactionHashes)
-			logrus.Println("block ", prevBlock.Hash, " at height ", prevBlock.Height,
-				" to be removed due to reorg. TX-> ", prevBlock.TransactionHashes)
 			err = prevBlock.DeleteG()
 			if err != nil {
 				return height, errors.Prefix("error deleting block@"+strconv.Itoa(int(prevHeight)), err)

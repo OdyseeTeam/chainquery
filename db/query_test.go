@@ -10,7 +10,7 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	dbInstance, err := Init("lbry:lbry@tcp(localhost:3306)/chainquery", false)
+	dbInstance, err := Init("chainquery:chainquery@tcp(localhost:3306)/chainquery", false)
 	if err != nil {
 		panic(err)
 	}

@@ -1,5 +1,5 @@
 lbrycrdurl="rpc://lbry:lbry@localhost:11337"
-mysqldsn="lbry:lbry@tcp(localhost:3306)/chainquery_e2e_test"
+mysqldsn="chainquery:chainquery@tcp(localhost:3306)/chainquery_e2e_test"
 blockchainname="lbrycrd_regtest"
 #debugmode=true
 #debugquerymode=true

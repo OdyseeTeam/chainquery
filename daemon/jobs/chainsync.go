@@ -437,10 +437,6 @@ func (c *chainSyncStatus) alignBlock(l *lbrycrd.GetBlockResponse) error {
 		c.Block.PreviousBlockHash.SetValid(l.PreviousBlockHash)
 		colsToUpdate = append(colsToUpdate, model.BlockColumns.PreviousBlockHash)
 	}
-	if c.Block.TransactionHashes.String != strings.Join(l.Tx, ",") {
-		c.Block.TransactionHashes.SetValid(strings.Join(l.Tx, ","))
-		colsToUpdate = append(colsToUpdate, model.BlockColumns.TransactionHashes)
-	}
 	if c.Block.Nonce != l.Nonce {
 		c.Block.Nonce = l.Nonce
 		colsToUpdate = append(colsToUpdate, model.BlockColumns.Nonce)

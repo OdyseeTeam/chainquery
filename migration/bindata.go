@@ -32,6 +32,7 @@
 // migration/029_support_index.sql (130B)
 // migration/030_json_field.sql (117B)
 // migration/031_drop_unused_columns.sql (1.402kB)
+// migration/032_drop_block_txhashes.sql (223B)
 
 package migration
 
@@ -740,6 +741,26 @@ func migration031_drop_unused_columnsSql() (*asset, error) {
 	return a, nil
 }
 
+var _migration032_drop_block_txhashesSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xac\xcd\x31\x0e\xc2\x30\x0c\x46\xe1\xbd\xa7\xf0\x8e\x7a\x02\x36\x24\x4e\x80\x98\x2b\x37\xf9\xd5\x44\x38\x76\x64\x9b\xfb\xb3\x32\x20\xa6\x8e\x6f\x79\xdf\xba\xd2\x65\xf4\xc3\x39\x41\xcf\xb9\x7c\xe7\x23\x39\x31\xa0\x79\xc3\xd1\x75\x61\x49\x38\x25\xef\x02\xda\xc5\xca\x8b\xaa\xdb\xa4\x62\xf2\x1e\x4a\xe9\xac\xc1\x25\xbb\xe9\xd6\x38\x1a\xe2\xfa\x7b\x76\xd7\x7a\x8a\x12\xdb\x74\x2b\x88\x40\xfd\x23\x7d\x02\x00\x00\xff\xff\x6e\x24\x75\x3d\xdf\x00\x00\x00")
+
+func migration032_drop_block_txhashesSqlBytes() ([]byte, error) {
+	return bindataRead(
+		_migration032_drop_block_txhashesSql,
+		"migration/032_drop_block_txhashes.sql",
+	)
+}
+
+func migration032_drop_block_txhashesSql() (*asset, error) {
+	bytes, err := migration032_drop_block_txhashesSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "migration/032_drop_block_txhashes.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xfe, 0xd6, 0x6, 0x4f, 0x7c, 0x37, 0x6a, 0x5e, 0xa, 0x9, 0xb8, 0x59, 0xbb, 0x60, 0x40, 0xaa, 0x74, 0xcb, 0x39, 0x3a, 0x42, 0x93, 0xb2, 0x59, 0xde, 0xa2, 0xc0, 0x91, 0x74, 0x7e, 0x6, 0xa8}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -863,6 +884,7 @@ var _bindata = map[string]func() (*asset, error){
 	"migration/029_support_index.sql":                 migration029_support_indexSql,
 	"migration/030_json_field.sql":                    migration030_json_fieldSql,
 	"migration/031_drop_unused_columns.sql":           migration031_drop_unused_columnsSql,
+	"migration/032_drop_block_txhashes.sql":           migration032_drop_block_txhashesSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -942,6 +964,7 @@ var _bintree = &bintree{nil, map[string]*bintree{
 		"029_support_index.sql":                 {migration029_support_indexSql, map[string]*bintree{}},
 		"030_json_field.sql":                    {migration030_json_fieldSql, map[string]*bintree{}},
 		"031_drop_unused_columns.sql":           {migration031_drop_unused_columnsSql, map[string]*bintree{}},
+		"032_drop_block_txhashes.sql":           {migration032_drop_block_txhashesSql, map[string]*bintree{}},
 	}},
 }}
 
