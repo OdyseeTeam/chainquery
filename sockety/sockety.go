@@ -28,7 +28,7 @@ func SendNotification(args socketyapi.SendNotificationArgs) {
 	}
 	_, err := socketyClient.SendNotification(args)
 	if err != nil {
-		logrus.Error(errors.Prefix("Socket Send Notification:", err))
+		logrus.Error(errors.Prefix("Socket Send Notification", err))
 	}
 	metrics.SocketyNotifications.WithLabelValues(args.Type, null.StringFromPtr(args.Category).String, null.StringFromPtr(args.SubCategory).String).Inc()
 }

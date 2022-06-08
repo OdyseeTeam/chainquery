@@ -27,7 +27,7 @@ func RunUpgradesForVersion() {
 	if !model.ApplicationStatusExistsGP(1) {
 		appStatus = &model.ApplicationStatus{AppVersion: appVersion, APIVersion: apiVersion, DataVersion: dataVersion}
 		if err := appStatus.InsertG(boil.Infer()); err != nil {
-			err := errors.Prefix("App Status Error: ", err)
+			err := errors.Prefix("App Status Error", err)
 			panic(err)
 		}
 	} else {
@@ -59,7 +59,7 @@ func RunUpgradesForVersion() {
 		appStatus.APIVersion = apiVersion
 	}
 	if err := appStatus.UpdateG(boil.Infer()); err != nil {
-		err := errors.Prefix("App Status Error: ", err)
+		err := errors.Prefix("App Status Error", err)
 		panic(err)
 	}
 	logrus.Debug("All necessary upgrades are finished!")

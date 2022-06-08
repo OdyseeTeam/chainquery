@@ -56,10 +56,10 @@ func Notify(t string, values url.Values) {
 func (s subscriber) notify(values url.Values) {
 	res, err := http.PostForm(s.URL, values)
 	if err != nil {
-		logrus.Error(errors.Prefix("Notify:", errors.Err(err)))
+		logrus.Error(errors.Prefix("Notify", errors.Err(err)))
 	}
 	err = res.Body.Close()
 	if err != nil {
-		logrus.Error(errors.Prefix("Notify:", errors.Err(err)))
+		logrus.Error(errors.Prefix("Notify", errors.Err(err)))
 	}
 }

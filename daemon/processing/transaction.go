@@ -149,11 +149,11 @@ func ProcessTx(jsonTx *lbrycrd.TxRawResult, blockTime uint64, blockHeight uint64
 
 	_, err = createUpdateVoutAddresses(transaction, &jsonTx.Vout, blockTime)
 	if err != nil {
-		return errors.Prefix("Vout Address Creation Error: ", err)
+		return errors.Prefix("Vout Address Creation Error", err)
 	}
 	_, err = createUpdateVinAddresses(transaction, &jsonTx.Vin, blockTime)
 	if err != nil {
-		return errors.Prefix("Vin Address Creation Error: ", err)
+		return errors.Prefix("Vin Address Creation Error", err)
 	}
 
 	// Process the inputs of the tranasction

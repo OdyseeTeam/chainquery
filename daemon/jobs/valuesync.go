@@ -147,7 +147,7 @@ func SyncTransactionValue() (int64, error) {
 		return 0, errors.Prefix(syncTransactionValues, err)
 	}
 	if latestBlock.Height == 0 {
-		return 0, errors.Prefix(syncTransactionValues, errors.Err("latest height = 0 "))
+		return 0, errors.Prefix(syncTransactionValues, errors.Err("latest height = 0"))
 	}
 	latestHeight := int(latestBlock.Height)
 	updateIncrement := 5000
@@ -188,7 +188,7 @@ func SyncClaimCntInChannel() error {
 	}
 	logrus.Infof("running SyncClaimCntInChannel for latest height of %d", latestBlock.Height)
 	if latestBlock.Height == 0 {
-		return errors.Prefix(syncClaimsInChannel, errors.Err("latest height = 0 "))
+		return errors.Prefix(syncClaimsInChannel, errors.Err("latest height = 0"))
 	}
 	latestHeight := int(latestBlock.Height)
 	updateIncrement := 5000

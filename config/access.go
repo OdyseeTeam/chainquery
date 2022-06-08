@@ -27,7 +27,7 @@ func GetLBRYcrdURL() string {
 	}
 	url, err := getLbrycrdURLFromConfFile()
 	if err != nil {
-		err = errors.Prefix("LBRYcrd conf file error: ", err)
+		err = errors.Prefix("LBRYcrd conf file error", err)
 		logrus.Panic(err)
 	}
 	return url

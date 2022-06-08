@@ -42,7 +42,7 @@ func PutOutput(output *model.Output, columns boil.Columns) error {
 		var err error
 		exists, err := model.Outputs(txHashMatch, vOutMatch).ExistsG()
 		if err != nil {
-			return errors.Prefix("Datastore(PUTOUTPUT): ", err)
+			return errors.Prefix("Datastore(PUTOUTPUT)", err)
 		}
 		if exists {
 			output.ModifiedAt = time.Now()
@@ -55,7 +55,7 @@ func PutOutput(output *model.Output, columns boil.Columns) error {
 			}
 		}
 		if err != nil {
-			err = errors.Prefix("Datastore(PUTOUTPUT): ", err)
+			err = errors.Prefix("Datastore(PUTOUTPUT)", err)
 			return err
 		}
 	}
@@ -106,7 +106,7 @@ func PutInput(input *model.Input) error {
 		var err error
 		exists, err := model.Inputs(txHashMatch, txCoinBaseMatch, prevHashMatch, prevNMatch).ExistsG()
 		if err != nil {
-			return errors.Prefix("Datastore(PUTINPUT): ", err)
+			return errors.Prefix("Datastore(PUTINPUT)", err)
 		}
 		if exists {
 			input.Modified = time.Now()
@@ -116,7 +116,7 @@ func PutInput(input *model.Input) error {
 
 		}
 		if err != nil {
-			err = errors.Prefix("Datastore(PUTINPUT): ", err)
+			err = errors.Prefix("Datastore(PUTINPUT)", err)
 			return err
 		}
 	}
@@ -153,7 +153,7 @@ func PutAddress(address *model.Address) error {
 		var err error
 		exists, err := model.AddressExistsG(address.ID)
 		if err != nil {
-			return errors.Prefix("Datastore(PUTADDRESS): ", err)
+			return errors.Prefix("Datastore(PUTADDRESS)", err)
 		}
 		if exists {
 			address.ModifiedAt = time.Now()
@@ -163,7 +163,7 @@ func PutAddress(address *model.Address) error {
 
 		}
 		if err != nil {
-			err = errors.Prefix("Datastore(PUTADDRESS): ", err)
+			err = errors.Prefix("Datastore(PUTADDRESS)", err)
 			return err
 		}
 	}
@@ -196,7 +196,7 @@ func PutTxAddress(txAddress *model.TransactionAddress) error {
 		var err error
 		exists, err := model.TransactionAddressExistsG(txAddress.TransactionID, txAddress.AddressID)
 		if err != nil {
-			return errors.Prefix("Datastore(PUTTXADDRESS): ", err)
+			return errors.Prefix("Datastore(PUTTXADDRESS)", err)
 		}
 		if exists {
 			err = txAddress.UpdateG(boil.Infer())
@@ -204,7 +204,7 @@ func PutTxAddress(txAddress *model.TransactionAddress) error {
 			err = txAddress.InsertG(boil.Infer())
 		}
 		if err != nil {
-			err = errors.Prefix("Datastore(PUTTXADDRESS): ", err)
+			err = errors.Prefix("Datastore(PUTTXADDRESS)", err)
 			return err
 		}
 	}
@@ -241,7 +241,7 @@ func PutClaim(claim *model.Claim) error {
 		var err error
 		exists, err := model.ClaimExistsG(claim.ID)
 		if err != nil {
-			return errors.Prefix("Datastore(PUTCLAIM): ", err)
+			return errors.Prefix("Datastore(PUTCLAIM)", err)
 		}
 		if exists {
 			claim.ModifiedAt = time.Now()
@@ -254,7 +254,7 @@ func PutClaim(claim *model.Claim) error {
 			}
 		}
 		if err != nil {
-			err = errors.Prefix("Datastore(PUTCLAIM): ", err)
+			err = errors.Prefix("Datastore(PUTCLAIM)", err)
 			return err
 		}
 	}
@@ -290,7 +290,7 @@ func PutSupport(support *model.Support) error {
 		var err error
 		exists, err := model.ClaimExistsG(support.ID)
 		if err != nil {
-			return errors.Prefix("Datastore(PUTSUPPORT): ", err)
+			return errors.Prefix("Datastore(PUTSUPPORT)", err)
 		}
 		if exists {
 			support.ModifiedAt = time.Now()
@@ -299,7 +299,7 @@ func PutSupport(support *model.Support) error {
 			err = support.InsertG(boil.Infer())
 		}
 		if err != nil {
-			err = errors.Prefix("Datastore(PUTSUPPORT): ", err)
+			err = errors.Prefix("Datastore(PUTSUPPORT)", err)
 			return err
 		}
 	}
@@ -334,7 +334,7 @@ func PutTag(tag *model.Tag) error {
 		var err error
 		exists, err := model.TagExistsG(tag.ID)
 		if err != nil {
-			return errors.Prefix("Datastore(PUTTAG): ", err)
+			return errors.Prefix("Datastore(PUTTAG)", err)
 		}
 		if exists {
 			tag.ModifiedAt = time.Now()
@@ -343,7 +343,7 @@ func PutTag(tag *model.Tag) error {
 			err = tag.InsertG(boil.Infer())
 		}
 		if err != nil {
-			err = errors.Prefix("Datastore(PUTTAG): ", err)
+			err = errors.Prefix("Datastore(PUTTAG)", err)
 			return err
 		}
 	}
@@ -358,13 +358,13 @@ func GetClaimTag(tagID uint64, claimID string) *model.ClaimTag {
 
 	exists, err := model.ClaimTags(tagIDMatch, claimIDMatch).ExistsG()
 	if err != nil {
-		logrus.Warning("Datastore(GETTAG): ", err)
+		logrus.Warning("Datastore(GETCLAIMTAG): ", err)
 	}
 	if exists {
 
 		claimTag, err := model.ClaimTags(tagIDMatch, claimIDMatch).OneG()
 		if err != nil {
-			logrus.Warning("Datastore(GETTAG): ", err)
+			logrus.Warning("Datastore(GETCLAIMTAG): ", err)
 		}
 		return claimTag
 	}
@@ -384,7 +384,7 @@ func PutClaimTag(claimTag *model.ClaimTag) error {
 		tagIDMatch := model.ClaimTagWhere.TagID.EQ(claimTag.TagID)
 		exists, err := model.ClaimTags(claimIDMatch, tagIDMatch).ExistsG()
 		if err != nil {
-			return errors.Prefix("Datastore(PUTCLAIMTAG): ", err)
+			return errors.Prefix("Datastore(PUTCLAIMTAG)", err)
 		}
 		if exists {
 			claimTag.ModifiedAt = time.Now()
@@ -393,7 +393,7 @@ func PutClaimTag(claimTag *model.ClaimTag) error {
 			err = claimTag.InsertG(boil.Infer())
 		}
 		if err != nil {
-			err = errors.Prefix("Datastore(PUTCLAIMTAG): ", err)
+			err = errors.Prefix("Datastore(PUTCLAIMTAG)", err)
 			return err
 		}
 	}
@@ -432,7 +432,7 @@ func PutPurchase(purchase *model.Purchase) error {
 		voutMatch := model.PurchaseWhere.Vout.EQ(purchase.Vout)
 		exists, err := model.Purchases(claimIDMatch, txHashMatch, voutMatch).ExistsG()
 		if err != nil {
-			return errors.Prefix("Datastore(PUTPURCHASE): ", err)
+			return errors.Prefix("Datastore(PUTPURCHASE)", err)
 		}
 		if exists {
 			purchase.Modified = time.Now()
@@ -441,7 +441,7 @@ func PutPurchase(purchase *model.Purchase) error {
 			err = purchase.InsertG(boil.Infer())
 		}
 		if err != nil {
-			err = errors.Prefix("Datastore(PUTPURCHASE): ", err)
+			err = errors.Prefix("Datastore(PUTPURCHASE)", err)
 			return err
 		}
 	}

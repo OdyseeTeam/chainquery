@@ -36,13 +36,13 @@ var blockCmd = &cobra.Command{
 		}
 		blockHeight, err := strconv.ParseInt(args[0], 10, 64)
 		if err != nil {
-			logrus.Panic(errors.Prefix("Could not parse block height passed: ", err))
+			logrus.Panic(errors.Prefix("Could not parse block height passed", err))
 		}
 		lbrycrdClient := lbrycrd.Init()
 		defer lbrycrdClient.Shutdown()
 		blockHash, err := lbrycrdClient.GetBlockHash(blockHeight)
 		if err != nil {
-			logrus.Panic(errors.Prefix(fmt.Sprintf("Could not get block hash @ height %d: ", blockHeight), err))
+			logrus.Panic(errors.Prefix(fmt.Sprintf("Could not get block hash @ height %d", blockHeight), err))
 		}
 		//Main Chainquery DB connection
 		dbInstance, err := db.Init(config.GetMySQLDSN(), config.GetDebugQueryMode())

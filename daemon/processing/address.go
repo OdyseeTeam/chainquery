@@ -68,13 +68,13 @@ func createUpdateVinAddresses(tx *model.Transaction, inputs *[]lbrycrd.Vin, bloc
 			if input.Coinbase != "" {
 				continue //No addresses for coinbase inputs.
 			}
-			return nil, errors.Base("Missing source output for " + input.TxID + "-" + strconv.Itoa(int(input.Vout)))
+			return nil, errors.Base("Missing source output for " + input.TxID + ":" + strconv.Itoa(int(input.Vout)))
 		}
 		var addresses []string
 		if !srcOutput.AddressList.Valid {
 			jsonAddress, err := getAddressFromNonStandardVout(srcOutput.ScriptPubKeyHex.String)
 			if err != nil {
-				return nil, errors.Prefix("AddressParseError: ", err)
+				return nil, errors.Prefix("AddressParseError", err)
 			}
 			addresses = append(addresses, jsonAddress)
 		} else {
@@ -92,7 +92,7 @@ func createUpdateVinAddresses(tx *model.Transaction, inputs *[]lbrycrd.Vin, bloc
 				addr := &model.Address{Address: address}
 				err := datastore.PutAddress(addr)
 				if err != nil {
-					return nil, errors.Prefix("Could not create missing address ", err)
+					return nil, errors.Prefix("Could not create missing address", err)
 				}
 			}
 			addressIDMap[address] = addr.ID

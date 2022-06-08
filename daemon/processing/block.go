@@ -260,7 +260,7 @@ func handleTxResults(nrToHandle int, manager *txSyncManager) {
 			q("HANDLE: start handling new result.." + txResult.tx.Txid)
 			leftToProcess--
 			if txResult.failcount > MaxFailures {
-				err := errors.Prefix("transaction "+txResult.tx.Txid+" failed more than "+strconv.Itoa(MaxFailures)+" times!", txResult.err)
+				err := errors.Prefix("transaction "+txResult.tx.Txid+" failed more than "+strconv.Itoa(MaxFailures)+" times", txResult.err)
 				handleFailure(err, manager)
 				continue
 			}
@@ -301,7 +301,7 @@ func queueTx(txs []string, blockTime uint64, blockHeight uint64, manager *txSync
 			q("QUEUE:  start getting lbrycrd transaction..." + txs[i])
 			jsonTx, err := lbrycrd.GetRawTransactionResponse(txs[i])
 			if err != nil {
-				manager.errorsCh <- errors.Prefix("GetRawTxError:"+txs[i], err)
+				manager.errorsCh <- errors.Prefix("GetRawTxError"+txs[i], err)
 				return
 			}
 			txRawMap[jsonTx.Txid] = jsonTx
@@ -358,11 +358,11 @@ func handleFailure(err error, manager *txSyncManager) {
 func getBlockToProcess(height *uint64) (*lbrycrd.GetBlockResponse, error) {
 	hash, err := lbrycrd.GetBlockHash(*height)
 	if err != nil {
-		return nil, errors.Prefix(fmt.Sprintf("GetBlockHash Error(%d): ", *height), err)
+		return nil, errors.Prefix(fmt.Sprintf("GetBlockHash Error(%d)", *height), err)
 	}
 	jsonBlock, err := lbrycrd.GetBlock(*hash)
 	if err != nil {
-		return nil, errors.Prefix("GetBlock Error("+*hash+"): ", err)
+		return nil, errors.Prefix("GetBlock Error("+*hash+")", err)
 	}
 
 	return jsonBlock, nil
@@ -374,7 +374,7 @@ func checkHandleReorg(height uint64, chainPrevHash string) (uint64, error) {
 	if height > 0 {
 		prevBlock, err := model.Blocks(qm.Where(model.BlockColumns.Height+"=?", prevHeight)).OneG()
 		if err != nil {
-			return height, errors.Prefix("error getting block@"+strconv.Itoa(int(prevHeight))+": ", err)
+			return height, errors.Prefix("error getting block@"+strconv.Itoa(int(prevHeight)), err)
 		}
 		//Recursively delete blocks until they match or a reorg of depth 100 == failure of logic.
 		for prevBlock.Hash != chainPrevHash && depth < 100 && prevHeight > 0 {
@@ -385,7 +385,7 @@ func checkHandleReorg(height uint64, chainPrevHash string) (uint64, error) {
 				" to be removed due to reorg. TX-> ", prevBlock.TransactionHashes)
 			err = prevBlock.DeleteG()
 			if err != nil {
-				return height, errors.Prefix("error deleting block@"+strconv.Itoa(int(prevHeight))+": ", err)
+				return height, errors.Prefix("error deleting block@"+strconv.Itoa(int(prevHeight)), err)
 			}
 
 			depth++
@@ -393,7 +393,7 @@ func checkHandleReorg(height uint64, chainPrevHash string) (uint64, error) {
 			// Set chainPrevHash to new previous blocks prevhash to check next depth
 			jsonBlock, err := getBlockToProcess(&prevHeight)
 			if err != nil {
-				return height, errors.Prefix("error getting block@"+strconv.Itoa(int(prevHeight))+" from lbrycrd: ", err)
+				return height, errors.Prefix("error getting block@"+strconv.Itoa(int(prevHeight))+" from lbrycrd", err)
 			}
 			chainPrevHash = jsonBlock.PreviousBlockHash
 
@@ -401,7 +401,7 @@ func checkHandleReorg(height uint64, chainPrevHash string) (uint64, error) {
 			prevHeight--
 			prevBlock, err = model.Blocks(qm.Where(model.BlockColumns.Height+"=?", prevHeight)).OneG()
 			if err != nil {
-				return height, errors.Prefix("error getting previous block@"+strconv.Itoa(int(prevHeight))+": ", err)
+				return height, errors.Prefix("error getting previous block@"+strconv.Itoa(int(prevHeight)), err)
 			}
 		}
 		if depth > 0 {

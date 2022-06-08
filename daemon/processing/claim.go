@@ -68,7 +68,7 @@ func processClaimNameScript(script *[]byte, vout model.Output, tx model.Transact
 	}
 	name, value, pkscript, err := lbrycrd.ParseClaimNameScript(*script)
 	if err != nil {
-		err := errors.Prefix("Claim name script parsing error: ", err)
+		err := errors.Prefix("Claim name script parsing error", err)
 		return name, claimid, pkscript, err
 	}
 	helper, err := c.DecodeClaimBytes(value, global.BlockChainName)
@@ -125,7 +125,7 @@ func processClaimSupportScript(script *[]byte, vout model.Output, tx model.Trans
 	var value []byte
 	name, claimid, value, pubkeyscript, err = lbrycrd.ParseClaimSupportScript(*script)
 	if err != nil {
-		err := errors.Prefix("Claim support processing error: ", err)
+		err := errors.Prefix("Claim support processing error", err)
 		return name, claimid, pubkeyscript, err
 	}
 	support := datastore.GetSupport(tx.Hash, vout.Vout)
@@ -151,7 +151,7 @@ func processClaimSupportScript(script *[]byte, vout model.Output, tx model.Trans
 func processClaimUpdateScript(script *[]byte, vout model.Output, tx model.Transaction, blockHeight uint64) (name string, claimID string, pubkeyscript []byte, err error) {
 	name, claimID, value, pubkeyscript, err := lbrycrd.ParseClaimUpdateScript(*script)
 	if err != nil {
-		err := errors.Prefix("Claim update processing error: ", err)
+		err := errors.Prefix("Claim update processing error", err)
 		return name, claimID, pubkeyscript, err
 	}
 	helper, err := c.DecodeClaimBytes(value, global.BlockChainName)
@@ -394,7 +394,7 @@ func setTags(claim *model.Claim, tags []string) error {
 			t = &model.Tag{Tag: tag}
 			err := datastore.PutTag(t)
 			if err != nil {
-				logrus.Error(errors.Prefix(fmt.Sprintf("Could not save tag %s, skipping: ", tag), err))
+				logrus.Error(errors.Prefix(fmt.Sprintf("Could not save tag %s, skipping", tag), err))
 				return nil
 			}
 		}
