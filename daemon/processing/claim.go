@@ -404,13 +404,10 @@ func setTags(claim *model.Claim, tags []string) error {
 			return nil
 		}
 
-		ct := datastore.GetClaimTag(t.ID, claim.ClaimID)
-		if ct == nil {
-			ct = &model.ClaimTag{ClaimID: claim.ClaimID, TagID: null.NewUint64(t.ID, true)}
-			err := datastore.PutClaimTag(ct)
-			if err != nil {
-				return err
-			}
+		ct := &model.ClaimTag{ClaimID: claim.ClaimID, TagID: null.NewUint64(t.ID, true)}
+		err = datastore.PutClaimTag(ct)
+		if err != nil {
+			return err
 		}
 	}
 	return nil

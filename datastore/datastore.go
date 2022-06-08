@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"database/sql"
+	"fmt"
 	"time"
 
 	"github.com/lbryio/chainquery/model"
@@ -190,6 +191,17 @@ func GetTxAddress(txID uint64, addrID uint64) *model.TransactionAddress {
 	return nil
 }
 
+// UpdateTxAddressAmounts updates the credit and debit amounts
+func UpdateTxAddressAmounts(txAddress *model.TransactionAddress) error {
+	defer util.TimeTrack(time.Now(), "UpdateTxAddressAmounts", "mysqlprofile")
+	err := txAddress.UpdateG(boil.Infer())
+	if err != nil {
+		return errors.Prefix("Datastore(PUTTXADDRESS)", err)
+	}
+
+	return nil
+}
+
 // PutTxAddress makes creating,retrieving,updating the model type simplified.
 func PutTxAddress(txAddress *model.TransactionAddress) error {
 	defer util.TimeTrack(time.Now(), "PutTxAddres", "mysqlprofile")
@@ -351,18 +363,11 @@ func GetClaimTag(tagID uint64, claimID string) *model.ClaimTag {
 // PutClaimTag makes creating,retrieving,updating the model type simplified.
 func PutClaimTag(claimTag *model.ClaimTag) error {
 	defer util.TimeTrack(time.Now(), "PutClaimTag", "mysqlprofile")
-	claimIDMatch := model.ClaimTagWhere.ClaimID.EQ(claimTag.ClaimID)
-	tagIDMatch := model.ClaimTagWhere.TagID.EQ(claimTag.TagID)
-	//we need to first check if it exists already since we can't upsert due to unique columns
-	exists, err := model.ClaimTags(claimIDMatch, tagIDMatch).ExistsG()
+	//using UpsertG fails because sqlboiler doesn't consider multi column unique keys as valid. hence the manual "upsert" logic here.
+	query := fmt.Sprintf(`INSERT INTO claim_tag (%s, %s) VALUES(?, ?) ON DUPLICATE KEY UPDATE id=id`, model.ClaimTagColumns.TagID, model.ClaimTagColumns.ClaimID)
+	_, err := boil.GetDB().Exec(query, claimTag.TagID.Uint64, claimTag.ClaimID)
 	if err != nil {
 		return errors.Prefix("Datastore(PUTCLAIMTAG)", err)
-	}
-	if !exists {
-		err = claimTag.InsertG(boil.Infer())
-		if err != nil {
-			return errors.Prefix("Datastore(PUTCLAIMTAG)", err)
-		}
 	}
 	return nil
 }
