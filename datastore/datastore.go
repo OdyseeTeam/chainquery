@@ -351,25 +351,18 @@ func GetClaimTag(tagID uint64, claimID string) *model.ClaimTag {
 // PutClaimTag makes creating,retrieving,updating the model type simplified.
 func PutClaimTag(claimTag *model.ClaimTag) error {
 	defer util.TimeTrack(time.Now(), "PutClaimTag", "mysqlprofile")
-	var err error
-	if !model.Claims(model.ClaimWhere.ClaimID.EQ(claimTag.ClaimID)).ExistsGP() {
-		logrus.Error("Failed to find claim ", claimTag.ClaimID)
-	}
 	claimIDMatch := model.ClaimTagWhere.ClaimID.EQ(claimTag.ClaimID)
 	tagIDMatch := model.ClaimTagWhere.TagID.EQ(claimTag.TagID)
+	//we need to first check if it exists already since we can't upsert due to unique columns
 	exists, err := model.ClaimTags(claimIDMatch, tagIDMatch).ExistsG()
 	if err != nil {
 		return errors.Prefix("Datastore(PUTCLAIMTAG)", err)
 	}
-	if exists {
-		claimTag.ModifiedAt = time.Now()
-		err = claimTag.UpdateG(boil.Infer())
-	} else {
+	if !exists {
 		err = claimTag.InsertG(boil.Infer())
-	}
-	if err != nil {
-		err = errors.Prefix("Datastore(PUTCLAIMTAG)", err)
-		return err
+		if err != nil {
+			return errors.Prefix("Datastore(PUTCLAIMTAG)", err)
+		}
 	}
 	return nil
 }
