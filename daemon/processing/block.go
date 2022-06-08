@@ -17,6 +17,7 @@ import (
 	"github.com/lbryio/lbry.go/v2/extras/errors"
 	"github.com/lbryio/lbry.go/v2/extras/stop"
 	"github.com/lbryio/sockety/socketyapi"
+	"github.com/volatiletech/null/v8"
 
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/v4/boil"
@@ -98,7 +99,6 @@ func ProcessBlock(height uint64, stopper *stop.Group, jsonBlock *lbrycrd.GetBloc
 }
 
 func parseBlockInfo(blockHeight uint64, jsonBlock *lbrycrd.GetBlockResponse) (block *model.Block) {
-
 	block = &model.Block{}
 	foundBlock, _ := model.Blocks(qm.Where(model.BlockColumns.Hash+"=?", jsonBlock.Hash)).OneG()
 	if foundBlock != nil {
@@ -115,7 +115,7 @@ func parseBlockInfo(blockHeight uint64, jsonBlock *lbrycrd.GetBlockResponse) (bl
 	block.NameClaimRoot = jsonBlock.NameClaimRoot
 	block.Nonce = jsonBlock.Nonce
 	block.PreviousBlockHash.SetValid(jsonBlock.PreviousBlockHash)
-	block.NextBlockHash.SetValid(jsonBlock.NextBlockHash)
+	block.NextBlockHash = null.NewString(jsonBlock.NextBlockHash, jsonBlock.NextBlockHash != "")
 	block.BlockSize = uint64(jsonBlock.Size)
 	block.BlockTime = uint64(jsonBlock.Time)
 	block.Version = uint64(jsonBlock.Version)
