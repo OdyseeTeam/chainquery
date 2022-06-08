@@ -1,14 +1,15 @@
 package datastore
 
 import (
-	"github.com/lbryio/chainquery/model"
-	"github.com/lbryio/lbry.go/v2/extras/errors"
-	"github.com/volatiletech/null/v8"
-
+	"database/sql"
 	"time"
 
+	"github.com/lbryio/chainquery/model"
 	"github.com/lbryio/chainquery/util"
+
+	"github.com/lbryio/lbry.go/v2/extras/errors"
 	"github.com/sirupsen/logrus"
+	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
@@ -307,45 +308,26 @@ func PutSupport(support *model.Support) error {
 }
 
 // GetTag makes creating,retrieving,updating the model type simplified.
-func GetTag(tag string) *model.Tag {
+func GetTag(tagName string) *model.Tag {
 	defer util.TimeTrack(time.Now(), "GetTag", "mysqlprofile")
-	tagMatch := qm.Where(model.TagColumns.Tag+"=?", tag)
-
-	exists, err := model.Tags(tagMatch).ExistsG()
+	tagMatch := qm.Where(model.TagColumns.Tag+"=?", tagName)
+	tag, err := model.Tags(tagMatch).OneG()
 	if err != nil {
-		logrus.Warning("Datastore(GETTAG): ", err)
-	}
-	if exists {
-
-		tag, err := model.Tags(tagMatch).OneG()
-		if err != nil {
-			logrus.Warning("Datastore(GETTAG): ", err)
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil
 		}
-		return tag
+		logrus.Warningf("Datastore(GETTAG): %s", err.Error())
 	}
-	return nil
+	return tag
 }
 
 // PutTag makes creating,retrieving,updating the model type simplified.
 func PutTag(tag *model.Tag) error {
 	defer util.TimeTrack(time.Now(), "PutTag", "mysqlprofile")
-	if tag != nil {
-
-		var err error
-		exists, err := model.TagExistsG(tag.ID)
-		if err != nil {
-			return errors.Prefix("Datastore(PUTTAG)", err)
-		}
-		if exists {
-			tag.ModifiedAt = time.Now()
-			err = tag.UpdateG(boil.Infer())
-		} else {
-			err = tag.InsertG(boil.Infer())
-		}
-		if err != nil {
-			err = errors.Prefix("Datastore(PUTTAG)", err)
-			return err
-		}
+	err := tag.UpsertG(boil.None(), boil.Infer())
+	if err != nil {
+		err = errors.Prefix("Datastore(PUTTAG)", err)
+		return err
 	}
 	return nil
 }
@@ -356,46 +338,38 @@ func GetClaimTag(tagID uint64, claimID string) *model.ClaimTag {
 	claimIDMatch := model.ClaimTagWhere.ClaimID.EQ(claimID)
 	tagIDMatch := model.ClaimTagWhere.TagID.EQ(null.Uint64From(tagID))
 
-	exists, err := model.ClaimTags(tagIDMatch, claimIDMatch).ExistsG()
+	claimTag, err := model.ClaimTags(tagIDMatch, claimIDMatch).OneG()
 	if err != nil {
-		logrus.Warning("Datastore(GETCLAIMTAG): ", err)
-	}
-	if exists {
-
-		claimTag, err := model.ClaimTags(tagIDMatch, claimIDMatch).OneG()
-		if err != nil {
-			logrus.Warning("Datastore(GETCLAIMTAG): ", err)
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil
 		}
-		return claimTag
+		logrus.Warningf("Datastore(GETCLAIMTAG): %s", err.Error())
 	}
-	return nil
+	return claimTag
 }
 
 // PutClaimTag makes creating,retrieving,updating the model type simplified.
 func PutClaimTag(claimTag *model.ClaimTag) error {
 	defer util.TimeTrack(time.Now(), "PutClaimTag", "mysqlprofile")
-	if claimTag != nil {
-
-		var err error
-		if !model.Claims(model.ClaimWhere.ClaimID.EQ(claimTag.ClaimID)).ExistsGP() {
-			logrus.Error("Failed to find claim ", claimTag.ClaimID)
-		}
-		claimIDMatch := model.ClaimTagWhere.ClaimID.EQ(claimTag.ClaimID)
-		tagIDMatch := model.ClaimTagWhere.TagID.EQ(claimTag.TagID)
-		exists, err := model.ClaimTags(claimIDMatch, tagIDMatch).ExistsG()
-		if err != nil {
-			return errors.Prefix("Datastore(PUTCLAIMTAG)", err)
-		}
-		if exists {
-			claimTag.ModifiedAt = time.Now()
-			err = claimTag.UpdateG(boil.Infer())
-		} else {
-			err = claimTag.InsertG(boil.Infer())
-		}
-		if err != nil {
-			err = errors.Prefix("Datastore(PUTCLAIMTAG)", err)
-			return err
-		}
+	var err error
+	if !model.Claims(model.ClaimWhere.ClaimID.EQ(claimTag.ClaimID)).ExistsGP() {
+		logrus.Error("Failed to find claim ", claimTag.ClaimID)
+	}
+	claimIDMatch := model.ClaimTagWhere.ClaimID.EQ(claimTag.ClaimID)
+	tagIDMatch := model.ClaimTagWhere.TagID.EQ(claimTag.TagID)
+	exists, err := model.ClaimTags(claimIDMatch, tagIDMatch).ExistsG()
+	if err != nil {
+		return errors.Prefix("Datastore(PUTCLAIMTAG)", err)
+	}
+	if exists {
+		claimTag.ModifiedAt = time.Now()
+		err = claimTag.UpdateG(boil.Infer())
+	} else {
+		err = claimTag.InsertG(boil.Infer())
+	}
+	if err != nil {
+		err = errors.Prefix("Datastore(PUTCLAIMTAG)", err)
+		return err
 	}
 	return nil
 }

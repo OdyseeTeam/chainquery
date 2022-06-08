@@ -8,8 +8,6 @@ import (
 	"time"
 	"unicode/utf8"
 
-	legacy_pb "github.com/lbryio/types/v1/go"
-
 	"github.com/lbryio/chainquery/datastore"
 	"github.com/lbryio/chainquery/global"
 	"github.com/lbryio/chainquery/lbrycrd"
@@ -24,6 +22,7 @@ import (
 	"github.com/lbryio/lbry.go/v2/schema/address/base58"
 	c "github.com/lbryio/lbry.go/v2/schema/stake"
 	"github.com/lbryio/sockety/socketyapi"
+	legacy_pb "github.com/lbryio/types/v1/go"
 	pb "github.com/lbryio/types/v2/go"
 
 	"github.com/sirupsen/logrus"
@@ -389,15 +388,22 @@ func setTags(claim *model.Claim, tags []string) error {
 		if tag == "mature" {
 			claim.IsNSFW = true
 		}
-		t := datastore.GetTag(tag)
-		if t == nil {
-			t = &model.Tag{Tag: tag}
-			err := datastore.PutTag(t)
-			if err != nil {
-				logrus.Error(errors.Prefix(fmt.Sprintf("Could not save tag %s, skipping", tag), err))
-				return nil
-			}
+		t := &model.Tag{Tag: tag}
+		err := datastore.PutTag(t)
+		if err != nil {
+			logrus.Error(errors.Prefix(fmt.Sprintf("Could not save tag %s, skipping", tag), err))
+			return nil
 		}
+		tagIDNotFound := t.ID == 0
+		if tagIDNotFound {
+			t = datastore.GetTag(tag)
+		}
+		tagIDNotFound = t.ID == 0
+		if tagIDNotFound {
+			logrus.Error(errors.Prefix(fmt.Sprintf("Could not get tag %s, skipping", tag), err))
+			return nil
+		}
+
 		ct := datastore.GetClaimTag(t.ID, claim.ClaimID)
 		if ct == nil {
 			ct = &model.ClaimTag{ClaimID: claim.ClaimID, TagID: null.NewUint64(t.ID, true)}
