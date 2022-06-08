@@ -88,6 +88,10 @@ func RunBlockProcessing(stopper *stop.Group, height uint64) uint64 {
 // of the error.
 func ProcessBlock(height uint64, stopper *stop.Group, jsonBlock *lbrycrd.GetBlockResponse) (*model.Block, error) {
 	block := parseBlockInfo(height, jsonBlock)
+	err := setPreviousBlockInfo(height, jsonBlock.Hash)
+	if err != nil {
+		logrus.Errorf("failed to set previous block next hash: %s", err.Error())
+	}
 	txs := jsonBlock.Tx
 	go sockety.SendNotification(socketyapi.SendNotificationArgs{
 		Service: socketyapi.BlockChain,
@@ -96,6 +100,20 @@ func ProcessBlock(height uint64, stopper *stop.Group, jsonBlock *lbrycrd.GetBloc
 		Data:    map[string]interface{}{"block": jsonBlock},
 	})
 	return block, syncTransactionsOfBlock(stopper, txs, block.BlockTime, block.Height)
+}
+
+//setPreviousBlockInfo sets the NextBlockHash field from the previous block
+func setPreviousBlockInfo(currentHeight uint64, currentBLockHash string) error {
+	if currentHeight < 1 {
+		return nil
+	}
+	prevBlock, err := model.Blocks(qm.Where(model.BlockColumns.Height+"=?", currentHeight-1)).OneG()
+	if err != nil {
+		return errors.Err(err)
+	}
+	prevBlock.NextBlockHash.SetValid(currentBLockHash)
+	err = prevBlock.UpdateG(boil.Infer())
+	return errors.Err(err)
 }
 
 func parseBlockInfo(blockHeight uint64, jsonBlock *lbrycrd.GetBlockResponse) (block *model.Block) {
