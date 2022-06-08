@@ -102,6 +102,36 @@ func ProcessBlock(height uint64, stopper *stop.Group, jsonBlock *lbrycrd.GetBloc
 	return block, syncTransactionsOfBlock(stopper, txs, block.BlockTime, block.Height)
 }
 
+// NextHashFixSync fixes the next block hash for all blocks
+func NextHashFixSync() {
+	latestBlock, err := model.Blocks(qm.Select(model.BlockColumns.Height), qm.OrderBy(model.BlockColumns.Height+" DESC")).OneG()
+	if err != nil {
+		logrus.Errorf(err.Error())
+		return
+	}
+	logrus.Infof("running SyncClaimCntInChannel for latest height of %d", latestBlock.Height)
+	if latestBlock.Height == 0 {
+		return
+	}
+	latestHeight := int(latestBlock.Height)
+
+	for i := 1; i < latestHeight; i++ {
+		if i%100 == 0 {
+			logrus.Infof("nexthashfix for block %d", i)
+		}
+		block, err := model.Blocks(qm.Where(model.BlockColumns.Height+"=?", i)).OneG()
+		if err != nil {
+			logrus.Errorf(err.Error())
+			return
+		}
+		err = setPreviousBlockInfo(uint64(i), block.Hash)
+		if err != nil {
+			logrus.Errorf(err.Error())
+			return
+		}
+	}
+}
+
 //setPreviousBlockInfo sets the NextBlockHash field from the previous block
 func setPreviousBlockInfo(currentHeight uint64, currentBLockHash string) error {
 	if currentHeight < 1 {

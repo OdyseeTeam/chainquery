@@ -7,6 +7,7 @@ import (
 
 	"github.com/lbryio/chainquery/config"
 	"github.com/lbryio/chainquery/daemon/jobs"
+	"github.com/lbryio/chainquery/daemon/processing"
 	"github.com/lbryio/chainquery/db"
 	"github.com/lbryio/chainquery/lbrycrd"
 	"github.com/lbryio/lbry.go/v2/extras/errors"
@@ -29,6 +30,7 @@ var jobsMap = map[string]func(){
 		}
 	},
 	"claimtrie":        jobs.ClaimTrieSync,
+	"nexthashfix":      processing.NextHashFixSync,
 	"certificate":      jobs.CertificateSync,
 	"mempool":          jobs.MempoolSync,
 	"transactionvalue": jobs.TransactionValueSync,
