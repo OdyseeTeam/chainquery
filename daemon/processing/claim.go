@@ -345,8 +345,12 @@ func setMetaDataInfo(claim *model.Claim, helper *c.StakeHelper) error {
 		return err
 	}
 	claim.Title.SetValid(helper.Claim.GetTitle())
-	claim.Description.SetValid(helper.Claim.GetDescription())
-	claim.ThumbnailURL.SetValid(helper.Claim.GetThumbnail().GetUrl())
+	if helper.Claim.GetDescription() != "" {
+		claim.Description.SetValid(helper.Claim.GetDescription())
+	}
+	if helper.Claim.GetThumbnail().GetUrl() != "" {
+		claim.ThumbnailURL.SetValid(helper.Claim.GetThumbnail().GetUrl())
+	}
 	if len(helper.Claim.GetTags()) > 0 {
 		err := setTags(claim, helper.Claim.GetTags())
 		if err != nil {
