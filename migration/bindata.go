@@ -33,6 +33,8 @@
 // migration/030_json_field.sql (117B)
 // migration/031_drop_unused_columns.sql (1.402kB)
 // migration/032_drop_block_txhashes.sql (223B)
+// migration/032_drop_transaction_cols.sql (448B)
+// migration/033_vin_vout_changes.sql (120B)
 
 package migration
 
@@ -761,6 +763,46 @@ func migration032_drop_block_txhashesSql() (*asset, error) {
 	return a, nil
 }
 
+var _migration032_drop_transaction_colsSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xac\xce\x31\xae\xc2\x30\x10\x84\xe1\x3e\xa7\xd8\xfe\x29\x27\x78\x1d\x12\x27\x40\xd4\xd1\x24\x5e\x2c\x4b\xf6\xda\xda\x8c\xe1\xfa\x08\x44\x81\x10\xa2\x08\x94\xd3\x7c\xf3\x8f\xa3\xfc\x95\x14\x1d\x54\x39\xb6\xe1\x79\x1e\x08\x6a\x51\xe3\x4e\x63\xb2\x01\x99\xea\x42\xcc\x59\x85\x0e\x5b\xb1\x30\x55\x93\xe0\xb5\xc9\x52\x73\x2f\x26\x27\xd5\xff\xf7\xc6\xde\xc2\xb7\xb8\xe3\xb2\x0d\xbf\x23\xf4\x14\xe3\xed\x23\x4e\xc9\x56\x75\x4e\x67\xe4\xbe\x31\xf7\x55\xec\x2d\x80\xfa\x4b\xf1\xd1\x38\x23\xc3\x96\x0f\xe6\x35\x00\x00\xff\xff\x6e\x76\x61\x71\xc0\x01\x00\x00")
+
+func migration032_drop_transaction_colsSqlBytes() ([]byte, error) {
+	return bindataRead(
+		_migration032_drop_transaction_colsSql,
+		"migration/032_drop_transaction_cols.sql",
+	)
+}
+
+func migration032_drop_transaction_colsSql() (*asset, error) {
+	bytes, err := migration032_drop_transaction_colsSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "migration/032_drop_transaction_cols.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x64, 0xfe, 0xb3, 0xc3, 0x2a, 0x7b, 0x5, 0xf1, 0x43, 0xc8, 0xa2, 0x26, 0x79, 0x22, 0xa2, 0x83, 0xf7, 0x1d, 0x4f, 0x10, 0xc4, 0xdf, 0xdd, 0x15, 0xcd, 0x76, 0x3f, 0x6e, 0x28, 0x5f, 0xe4, 0x4d}}
+	return a, nil
+}
+
+var _migration033_vin_vout_changesSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x6c\xcc\x31\x0a\x02\x41\x0c\x05\xd0\x7e\x4e\x91\x5e\xf6\x04\x76\x82\x27\x10\xeb\x25\x9a\xcf\x32\x30\x93\x09\xf1\xc7\xf3\xdb\x5a\x6c\xf9\x9a\xb7\x6d\x72\x99\xfd\x48\x25\xe4\x19\xed\x9f\x0f\x2a\x31\xe1\xbc\xe1\xe8\xde\x74\x10\x29\xd4\xd7\x80\x74\x8f\xa2\x58\xae\x90\xf7\x1a\x35\x5d\x22\xf1\x5d\xc5\xfd\x13\x70\xdb\x2b\x4c\x09\xbb\x9e\x7f\x77\xb7\xf6\x0b\x00\x00\xff\xff\xe0\x32\x85\xf7\x78\x00\x00\x00")
+
+func migration033_vin_vout_changesSqlBytes() ([]byte, error) {
+	return bindataRead(
+		_migration033_vin_vout_changesSql,
+		"migration/033_vin_vout_changes.sql",
+	)
+}
+
+func migration033_vin_vout_changesSql() (*asset, error) {
+	bytes, err := migration033_vin_vout_changesSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "migration/033_vin_vout_changes.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xe1, 0xa8, 0x28, 0xe5, 0xc1, 0x8d, 0xad, 0x44, 0x87, 0x9b, 0xc2, 0x9f, 0x1c, 0xb4, 0x43, 0x77, 0xa2, 0x12, 0xfd, 0x91, 0xe0, 0x1, 0x17, 0x30, 0x7f, 0xd2, 0x4a, 0x15, 0x53, 0xfc, 0x1d, 0x90}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -885,6 +927,8 @@ var _bindata = map[string]func() (*asset, error){
 	"migration/030_json_field.sql":                    migration030_json_fieldSql,
 	"migration/031_drop_unused_columns.sql":           migration031_drop_unused_columnsSql,
 	"migration/032_drop_block_txhashes.sql":           migration032_drop_block_txhashesSql,
+	"migration/032_drop_transaction_cols.sql":         migration032_drop_transaction_colsSql,
+	"migration/033_vin_vout_changes.sql":              migration033_vin_vout_changesSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -965,6 +1009,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 		"030_json_field.sql":                    {migration030_json_fieldSql, map[string]*bintree{}},
 		"031_drop_unused_columns.sql":           {migration031_drop_unused_columnsSql, map[string]*bintree{}},
 		"032_drop_block_txhashes.sql":           {migration032_drop_block_txhashesSql, map[string]*bintree{}},
+		"032_drop_transaction_cols.sql":         {migration032_drop_transaction_colsSql, map[string]*bintree{}},
+		"033_vin_vout_changes.sql":              {migration033_vin_vout_changesSql, map[string]*bintree{}},
 	}},
 }}
 

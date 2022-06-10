@@ -23,102 +23,97 @@ import (
 
 // Input is an object representing the database table.
 type Input struct {
-	ID                  uint64       `boil:"id" json:"id" toml:"id" yaml:"id"`
-	TransactionID       uint64       `boil:"transaction_id" json:"transaction_id" toml:"transaction_id" yaml:"transaction_id"`
-	TransactionHash     string       `boil:"transaction_hash" json:"transaction_hash" toml:"transaction_hash" yaml:"transaction_hash"`
-	InputAddressID      null.Uint64  `boil:"input_address_id" json:"input_address_id,omitempty" toml:"input_address_id" yaml:"input_address_id,omitempty"`
-	IsCoinbase          bool         `boil:"is_coinbase" json:"is_coinbase" toml:"is_coinbase" yaml:"is_coinbase"`
-	Coinbase            null.String  `boil:"coinbase" json:"coinbase,omitempty" toml:"coinbase" yaml:"coinbase,omitempty"`
-	PrevoutHash         null.String  `boil:"prevout_hash" json:"prevout_hash,omitempty" toml:"prevout_hash" yaml:"prevout_hash,omitempty"`
-	PrevoutN            null.Uint    `boil:"prevout_n" json:"prevout_n,omitempty" toml:"prevout_n" yaml:"prevout_n,omitempty"`
-	PrevoutSpendUpdated bool         `boil:"prevout_spend_updated" json:"prevout_spend_updated" toml:"prevout_spend_updated" yaml:"prevout_spend_updated"`
-	Sequence            uint         `boil:"sequence" json:"sequence" toml:"sequence" yaml:"sequence"`
-	Value               null.Float64 `boil:"value" json:"value,omitempty" toml:"value" yaml:"value,omitempty"`
-	ScriptSigAsm        null.String  `boil:"script_sig_asm" json:"script_sig_asm,omitempty" toml:"script_sig_asm" yaml:"script_sig_asm,omitempty"`
-	ScriptSigHex        null.String  `boil:"script_sig_hex" json:"script_sig_hex,omitempty" toml:"script_sig_hex" yaml:"script_sig_hex,omitempty"`
-	Created             time.Time    `boil:"created" json:"created" toml:"created" yaml:"created"`
-	Modified            time.Time    `boil:"modified" json:"modified" toml:"modified" yaml:"modified"`
-	Vin                 null.Uint    `boil:"vin" json:"vin,omitempty" toml:"vin" yaml:"vin,omitempty"`
-	Witness             null.String  `boil:"witness" json:"witness,omitempty" toml:"witness" yaml:"witness,omitempty"`
+	ID              uint64       `boil:"id" json:"id" toml:"id" yaml:"id"`
+	TransactionID   uint64       `boil:"transaction_id" json:"transaction_id" toml:"transaction_id" yaml:"transaction_id"`
+	TransactionHash string       `boil:"transaction_hash" json:"transaction_hash" toml:"transaction_hash" yaml:"transaction_hash"`
+	InputAddressID  null.Uint64  `boil:"input_address_id" json:"input_address_id,omitempty" toml:"input_address_id" yaml:"input_address_id,omitempty"`
+	IsCoinbase      bool         `boil:"is_coinbase" json:"is_coinbase" toml:"is_coinbase" yaml:"is_coinbase"`
+	Coinbase        null.String  `boil:"coinbase" json:"coinbase,omitempty" toml:"coinbase" yaml:"coinbase,omitempty"`
+	PrevoutHash     null.String  `boil:"prevout_hash" json:"prevout_hash,omitempty" toml:"prevout_hash" yaml:"prevout_hash,omitempty"`
+	PrevoutN        null.Uint    `boil:"prevout_n" json:"prevout_n,omitempty" toml:"prevout_n" yaml:"prevout_n,omitempty"`
+	Sequence        uint         `boil:"sequence" json:"sequence" toml:"sequence" yaml:"sequence"`
+	Value           null.Float64 `boil:"value" json:"value,omitempty" toml:"value" yaml:"value,omitempty"`
+	ScriptSigAsm    null.String  `boil:"script_sig_asm" json:"script_sig_asm,omitempty" toml:"script_sig_asm" yaml:"script_sig_asm,omitempty"`
+	ScriptSigHex    null.String  `boil:"script_sig_hex" json:"script_sig_hex,omitempty" toml:"script_sig_hex" yaml:"script_sig_hex,omitempty"`
+	Created         time.Time    `boil:"created" json:"created" toml:"created" yaml:"created"`
+	Modified        time.Time    `boil:"modified" json:"modified" toml:"modified" yaml:"modified"`
+	Vin             null.Uint    `boil:"vin" json:"vin,omitempty" toml:"vin" yaml:"vin,omitempty"`
+	Witness         null.String  `boil:"witness" json:"witness,omitempty" toml:"witness" yaml:"witness,omitempty"`
 
 	R *inputR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L inputL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var InputColumns = struct {
-	ID                  string
-	TransactionID       string
-	TransactionHash     string
-	InputAddressID      string
-	IsCoinbase          string
-	Coinbase            string
-	PrevoutHash         string
-	PrevoutN            string
-	PrevoutSpendUpdated string
-	Sequence            string
-	Value               string
-	ScriptSigAsm        string
-	ScriptSigHex        string
-	Created             string
-	Modified            string
-	Vin                 string
-	Witness             string
+	ID              string
+	TransactionID   string
+	TransactionHash string
+	InputAddressID  string
+	IsCoinbase      string
+	Coinbase        string
+	PrevoutHash     string
+	PrevoutN        string
+	Sequence        string
+	Value           string
+	ScriptSigAsm    string
+	ScriptSigHex    string
+	Created         string
+	Modified        string
+	Vin             string
+	Witness         string
 }{
-	ID:                  "id",
-	TransactionID:       "transaction_id",
-	TransactionHash:     "transaction_hash",
-	InputAddressID:      "input_address_id",
-	IsCoinbase:          "is_coinbase",
-	Coinbase:            "coinbase",
-	PrevoutHash:         "prevout_hash",
-	PrevoutN:            "prevout_n",
-	PrevoutSpendUpdated: "prevout_spend_updated",
-	Sequence:            "sequence",
-	Value:               "value",
-	ScriptSigAsm:        "script_sig_asm",
-	ScriptSigHex:        "script_sig_hex",
-	Created:             "created",
-	Modified:            "modified",
-	Vin:                 "vin",
-	Witness:             "witness",
+	ID:              "id",
+	TransactionID:   "transaction_id",
+	TransactionHash: "transaction_hash",
+	InputAddressID:  "input_address_id",
+	IsCoinbase:      "is_coinbase",
+	Coinbase:        "coinbase",
+	PrevoutHash:     "prevout_hash",
+	PrevoutN:        "prevout_n",
+	Sequence:        "sequence",
+	Value:           "value",
+	ScriptSigAsm:    "script_sig_asm",
+	ScriptSigHex:    "script_sig_hex",
+	Created:         "created",
+	Modified:        "modified",
+	Vin:             "vin",
+	Witness:         "witness",
 }
 
 var InputTableColumns = struct {
-	ID                  string
-	TransactionID       string
-	TransactionHash     string
-	InputAddressID      string
-	IsCoinbase          string
-	Coinbase            string
-	PrevoutHash         string
-	PrevoutN            string
-	PrevoutSpendUpdated string
-	Sequence            string
-	Value               string
-	ScriptSigAsm        string
-	ScriptSigHex        string
-	Created             string
-	Modified            string
-	Vin                 string
-	Witness             string
+	ID              string
+	TransactionID   string
+	TransactionHash string
+	InputAddressID  string
+	IsCoinbase      string
+	Coinbase        string
+	PrevoutHash     string
+	PrevoutN        string
+	Sequence        string
+	Value           string
+	ScriptSigAsm    string
+	ScriptSigHex    string
+	Created         string
+	Modified        string
+	Vin             string
+	Witness         string
 }{
-	ID:                  "input.id",
-	TransactionID:       "input.transaction_id",
-	TransactionHash:     "input.transaction_hash",
-	InputAddressID:      "input.input_address_id",
-	IsCoinbase:          "input.is_coinbase",
-	Coinbase:            "input.coinbase",
-	PrevoutHash:         "input.prevout_hash",
-	PrevoutN:            "input.prevout_n",
-	PrevoutSpendUpdated: "input.prevout_spend_updated",
-	Sequence:            "input.sequence",
-	Value:               "input.value",
-	ScriptSigAsm:        "input.script_sig_asm",
-	ScriptSigHex:        "input.script_sig_hex",
-	Created:             "input.created",
-	Modified:            "input.modified",
-	Vin:                 "input.vin",
-	Witness:             "input.witness",
+	ID:              "input.id",
+	TransactionID:   "input.transaction_id",
+	TransactionHash: "input.transaction_hash",
+	InputAddressID:  "input.input_address_id",
+	IsCoinbase:      "input.is_coinbase",
+	Coinbase:        "input.coinbase",
+	PrevoutHash:     "input.prevout_hash",
+	PrevoutN:        "input.prevout_n",
+	Sequence:        "input.sequence",
+	Value:           "input.value",
+	ScriptSigAsm:    "input.script_sig_asm",
+	ScriptSigHex:    "input.script_sig_hex",
+	Created:         "input.created",
+	Modified:        "input.modified",
+	Vin:             "input.vin",
+	Witness:         "input.witness",
 }
 
 // Generated where
@@ -148,41 +143,39 @@ func (w whereHelpernull_Float64) IsNull() qm.QueryMod    { return qmhelper.Where
 func (w whereHelpernull_Float64) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
 
 var InputWhere = struct {
-	ID                  whereHelperuint64
-	TransactionID       whereHelperuint64
-	TransactionHash     whereHelperstring
-	InputAddressID      whereHelpernull_Uint64
-	IsCoinbase          whereHelperbool
-	Coinbase            whereHelpernull_String
-	PrevoutHash         whereHelpernull_String
-	PrevoutN            whereHelpernull_Uint
-	PrevoutSpendUpdated whereHelperbool
-	Sequence            whereHelperuint
-	Value               whereHelpernull_Float64
-	ScriptSigAsm        whereHelpernull_String
-	ScriptSigHex        whereHelpernull_String
-	Created             whereHelpertime_Time
-	Modified            whereHelpertime_Time
-	Vin                 whereHelpernull_Uint
-	Witness             whereHelpernull_String
+	ID              whereHelperuint64
+	TransactionID   whereHelperuint64
+	TransactionHash whereHelperstring
+	InputAddressID  whereHelpernull_Uint64
+	IsCoinbase      whereHelperbool
+	Coinbase        whereHelpernull_String
+	PrevoutHash     whereHelpernull_String
+	PrevoutN        whereHelpernull_Uint
+	Sequence        whereHelperuint
+	Value           whereHelpernull_Float64
+	ScriptSigAsm    whereHelpernull_String
+	ScriptSigHex    whereHelpernull_String
+	Created         whereHelpertime_Time
+	Modified        whereHelpertime_Time
+	Vin             whereHelpernull_Uint
+	Witness         whereHelpernull_String
 }{
-	ID:                  whereHelperuint64{field: "`input`.`id`"},
-	TransactionID:       whereHelperuint64{field: "`input`.`transaction_id`"},
-	TransactionHash:     whereHelperstring{field: "`input`.`transaction_hash`"},
-	InputAddressID:      whereHelpernull_Uint64{field: "`input`.`input_address_id`"},
-	IsCoinbase:          whereHelperbool{field: "`input`.`is_coinbase`"},
-	Coinbase:            whereHelpernull_String{field: "`input`.`coinbase`"},
-	PrevoutHash:         whereHelpernull_String{field: "`input`.`prevout_hash`"},
-	PrevoutN:            whereHelpernull_Uint{field: "`input`.`prevout_n`"},
-	PrevoutSpendUpdated: whereHelperbool{field: "`input`.`prevout_spend_updated`"},
-	Sequence:            whereHelperuint{field: "`input`.`sequence`"},
-	Value:               whereHelpernull_Float64{field: "`input`.`value`"},
-	ScriptSigAsm:        whereHelpernull_String{field: "`input`.`script_sig_asm`"},
-	ScriptSigHex:        whereHelpernull_String{field: "`input`.`script_sig_hex`"},
-	Created:             whereHelpertime_Time{field: "`input`.`created`"},
-	Modified:            whereHelpertime_Time{field: "`input`.`modified`"},
-	Vin:                 whereHelpernull_Uint{field: "`input`.`vin`"},
-	Witness:             whereHelpernull_String{field: "`input`.`witness`"},
+	ID:              whereHelperuint64{field: "`input`.`id`"},
+	TransactionID:   whereHelperuint64{field: "`input`.`transaction_id`"},
+	TransactionHash: whereHelperstring{field: "`input`.`transaction_hash`"},
+	InputAddressID:  whereHelpernull_Uint64{field: "`input`.`input_address_id`"},
+	IsCoinbase:      whereHelperbool{field: "`input`.`is_coinbase`"},
+	Coinbase:        whereHelpernull_String{field: "`input`.`coinbase`"},
+	PrevoutHash:     whereHelpernull_String{field: "`input`.`prevout_hash`"},
+	PrevoutN:        whereHelpernull_Uint{field: "`input`.`prevout_n`"},
+	Sequence:        whereHelperuint{field: "`input`.`sequence`"},
+	Value:           whereHelpernull_Float64{field: "`input`.`value`"},
+	ScriptSigAsm:    whereHelpernull_String{field: "`input`.`script_sig_asm`"},
+	ScriptSigHex:    whereHelpernull_String{field: "`input`.`script_sig_hex`"},
+	Created:         whereHelpertime_Time{field: "`input`.`created`"},
+	Modified:        whereHelpertime_Time{field: "`input`.`modified`"},
+	Vin:             whereHelpernull_Uint{field: "`input`.`vin`"},
+	Witness:         whereHelpernull_String{field: "`input`.`witness`"},
 }
 
 // InputRels is where relationship names are stored.
@@ -206,9 +199,9 @@ func (*inputR) NewStruct() *inputR {
 type inputL struct{}
 
 var (
-	inputAllColumns            = []string{"id", "transaction_id", "transaction_hash", "input_address_id", "is_coinbase", "coinbase", "prevout_hash", "prevout_n", "prevout_spend_updated", "sequence", "value", "script_sig_asm", "script_sig_hex", "created", "modified", "vin", "witness"}
+	inputAllColumns            = []string{"id", "transaction_id", "transaction_hash", "input_address_id", "is_coinbase", "coinbase", "prevout_hash", "prevout_n", "sequence", "value", "script_sig_asm", "script_sig_hex", "created", "modified", "vin", "witness"}
 	inputColumnsWithoutDefault = []string{"transaction_id", "transaction_hash", "input_address_id", "coinbase", "prevout_hash", "prevout_n", "sequence", "value", "script_sig_asm", "script_sig_hex", "vin", "witness"}
-	inputColumnsWithDefault    = []string{"id", "is_coinbase", "prevout_spend_updated", "created", "modified"}
+	inputColumnsWithDefault    = []string{"id", "is_coinbase", "created", "modified"}
 	inputPrimaryKeyColumns     = []string{"id"}
 	inputGeneratedColumns      = []string{}
 )

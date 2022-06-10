@@ -288,7 +288,7 @@ func (c *chainSyncStatus) alignVins(vins []lbrycrd.Vin) error {
 		if input == nil {
 			err := processing.ProcessVin(&vin, c.Tx, nil, uint64(i))
 			if err != nil {
-				return errors.Err(err)
+				return err
 			}
 		} else {
 			c.Vin = input
@@ -376,11 +376,6 @@ func (c *chainSyncStatus) alignTx(l *lbrycrd.TxRawResult) error {
 	if c.Tx.OutputCount != uint(len(l.Vout)) {
 		c.Tx.OutputCount = uint(len(l.Vout))
 		colsToUpdate = append(colsToUpdate, model.TransactionColumns.OutputCount)
-	}
-	if !c.Tx.Raw.IsZero() {
-		c.Tx.Raw.String = ""
-		c.Tx.Raw.Valid = false
-		colsToUpdate = append(colsToUpdate, model.TransactionColumns.Raw)
 	}
 	if len(colsToUpdate) > 0 {
 		logrus.Debugf("found unaligned tx @%d and hash %s with the following columns out of alignment: %s", c.LastHeight, c.Tx.Hash, strings.Join(colsToUpdate, ","))

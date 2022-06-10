@@ -7,7 +7,6 @@ import (
 
 	"github.com/lbryio/chainquery/model"
 	"github.com/lbryio/chainquery/util"
-
 	"github.com/lbryio/lbry.go/v2/extras/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/null/v8"
@@ -20,48 +19,34 @@ func GetOutput(txHash string, vout uint) *model.Output {
 	defer util.TimeTrack(time.Now(), "GetOutput", "mysqlprofile")
 	txHashMatch := qm.Where(model.OutputColumns.TransactionHash+"=?", txHash)
 	vOutMatch := qm.And(model.OutputColumns.Vout+"=?", vout)
-	exists, err := model.Outputs(txHashMatch, vOutMatch).ExistsG()
+	output, err := model.Outputs(txHashMatch, vOutMatch).OneG()
 	if err != nil {
-		return nil
-	}
-	if exists {
-		output, err := model.Outputs(txHashMatch, vOutMatch).OneG()
-		if err != nil {
-			logrus.Error("Datastore(GETOUTPUT): ", err)
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil
 		}
-		return output
+		logrus.Error("Datastore(GETOUTPUT): ", err)
 	}
-
-	return nil
+	return output
 }
 
 // PutOutput makes creating,retrieving,updating the model type simplified.
 func PutOutput(output *model.Output, columns boil.Columns) error {
 	defer util.TimeTrack(time.Now(), "PutOutput", "mysqlprofile")
-	if output != nil {
-		txHashMatch := qm.Where(model.OutputColumns.TransactionHash+"=?", output.TransactionHash)
-		vOutMatch := qm.And(model.OutputColumns.Vout+"=?", output.Vout)
-		var err error
-		exists, err := model.Outputs(txHashMatch, vOutMatch).ExistsG()
-		if err != nil {
-			return errors.Prefix("Datastore(PUTOUTPUT)", err)
-		}
-		if exists {
-			output.ModifiedAt = time.Now()
-			err = output.UpdateG(columns)
-		} else {
-			err = output.InsertG(boil.Infer())
-			if err != nil {
-				output.ModifiedAt = time.Now()
-				err = output.UpdateG(columns)
-			}
-		}
-		if err != nil {
-			err = errors.Prefix("Datastore(PUTOUTPUT)", err)
-			return err
-		}
+	txHashMatch := qm.Where(model.OutputColumns.TransactionHash+"=?", output.TransactionHash)
+	vOutMatch := qm.And(model.OutputColumns.Vout+"=?", output.Vout)
+	existingOutput, err := model.Outputs(txHashMatch, vOutMatch).OneG()
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return errors.Prefix("Datastore(PUTOUTPUT)", err)
 	}
-
+	if existingOutput != nil {
+		output.ID = existingOutput.ID
+		err = output.UpdateG(columns)
+	} else {
+		err = output.InsertG(boil.Infer())
+	}
+	if err != nil {
+		return errors.Prefix("Datastore(PUTOUTPUT)", err)
+	}
 	return nil
 }
 
@@ -73,20 +58,14 @@ func GetInput(txHash string, isCoinBase bool, prevHash string, prevN uint) *mode
 	txCoinBaseMatch := qm.Where(model.InputColumns.IsCoinbase+"=?", isCoinBase)
 	prevHashMatch := qm.Where(model.InputColumns.PrevoutHash+"=?", prevHash)
 	prevNMatch := qm.And(model.InputColumns.PrevoutN+"=?", prevN)
-
-	exists, err := model.Inputs(txHashMatch, txCoinBaseMatch, prevHashMatch, prevNMatch).ExistsG()
+	input, err := model.Inputs(txHashMatch, txCoinBaseMatch, prevHashMatch, prevNMatch).OneG()
 	if err != nil {
-		logrus.Warning("Datastore(GETINPUT): ", err)
-	}
-	if exists {
-		input, err := model.Inputs(txHashMatch, txCoinBaseMatch, prevHashMatch, prevNMatch).OneG()
-		if err != nil {
-			logrus.Warning("Datastore(GETINPUT): ", err)
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil
 		}
-		return input
+		logrus.Error("Datastore(GETINPUT): ", err)
 	}
-
-	return nil
+	return input
 }
 
 //PutInput makes creating,retrieving,updating the model type simplified.
@@ -131,20 +110,14 @@ func GetAddress(addr string) *model.Address {
 	defer util.TimeTrack(time.Now(), "GetAddress", "mysqlprofile")
 	addrMatch := qm.Where(model.AddressColumns.Address+"=?", addr)
 
-	exists, err := model.Addresses(addrMatch).ExistsG()
+	address, err := model.Addresses(addrMatch).OneG()
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil
+		}
 		logrus.Warning("Datastore(GETADDRESS): ", err)
 	}
-	if exists {
-
-		address, err := model.Addresses(addrMatch).OneG()
-		if err != nil {
-			logrus.Warning("Datastore(GETADDRESS): ", err)
-		}
-		return address
-	}
-
-	return nil
+	return address
 }
 
 //PutAddress  makes creating,retrieving,updating the model type simplified.

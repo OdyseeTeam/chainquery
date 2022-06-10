@@ -62,9 +62,9 @@ func txProcessor(s *stop.Group, jobs <-chan txToProcess, results chan<- txProces
 			err := ProcessTx(job.tx, job.blockTime, job.blockHeight)
 			if err != nil {
 				metrics.ProcessingFailures.WithLabelValues("transaction").Inc()
-				logrus.Debugf("processing tx failed %d times %s: %s", job.failcount+1, job.tx.Hash, err.Error())
+				logrus.Debugf("processing tx failed %d times %s: %s", job.failcount+1, job.tx.Txid, err.Error())
 			} else if job.failcount > 0 {
-				logrus.Debugf("processing tx success after %d times %s", job.failcount, job.tx.Hash)
+				logrus.Debugf("processing tx success after %d times %s", job.failcount, job.tx.Txid)
 			}
 			result := txProcessResult{
 				tx:          job.tx,
@@ -199,10 +199,11 @@ func saveUpdateTransaction(jsonTx *lbrycrd.TxRawResult) (*model.Transaction, err
 	transaction.Version = int(jsonTx.Version)
 	transaction.LockTime = uint(jsonTx.LockTime)
 	transaction.CreatedTime = time.Unix(jsonTx.Blocktime, 0)
-	//transactionAmount := 0.0
-	//for _, vout := range jsonTx.Vout {
-	//	transactionAmount += vout.Value
-	//}
+	transactionAmount := 0.0
+	for _, vout := range jsonTx.Vout {
+		transactionAmount += vout.Value
+	}
+	transaction.Value = transactionAmount
 
 	if foundTx != nil {
 		if err := transaction.UpdateG(boil.Infer()); err != nil {

@@ -128,7 +128,7 @@ type Vin struct {
 	Vout      uint64             `json:"vout"`
 	ScriptSig *btcjson.ScriptSig `json:"scriptSig"`
 	Sequence  uint64             `json:"sequence"`
-	Witness   []string           `json:"txinwitness"`
+	Witness   []string           `json:"witness"`
 }
 
 // ClaimsForNameResult models the claim list for a name in the claimtrie of lbrycrd.

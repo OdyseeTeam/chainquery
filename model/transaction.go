@@ -27,13 +27,11 @@ type Transaction struct {
 	BlockHashID     null.String `boil:"block_hash_id" json:"block_hash_id,omitempty" toml:"block_hash_id" yaml:"block_hash_id,omitempty"`
 	InputCount      uint        `boil:"input_count" json:"input_count" toml:"input_count" yaml:"input_count"`
 	OutputCount     uint        `boil:"output_count" json:"output_count" toml:"output_count" yaml:"output_count"`
-	Fee             float64     `boil:"fee" json:"fee" toml:"fee" yaml:"fee"`
 	TransactionTime null.Uint64 `boil:"transaction_time" json:"transaction_time,omitempty" toml:"transaction_time" yaml:"transaction_time,omitempty"`
 	TransactionSize uint64      `boil:"transaction_size" json:"transaction_size" toml:"transaction_size" yaml:"transaction_size"`
 	Hash            string      `boil:"hash" json:"hash" toml:"hash" yaml:"hash"`
 	Version         int         `boil:"version" json:"version" toml:"version" yaml:"version"`
 	LockTime        uint        `boil:"lock_time" json:"lock_time" toml:"lock_time" yaml:"lock_time"`
-	Raw             null.String `boil:"raw" json:"raw,omitempty" toml:"raw" yaml:"raw,omitempty"`
 	CreatedAt       time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 	ModifiedAt      time.Time   `boil:"modified_at" json:"modified_at" toml:"modified_at" yaml:"modified_at"`
 	CreatedTime     time.Time   `boil:"created_time" json:"created_time" toml:"created_time" yaml:"created_time"`
@@ -48,13 +46,11 @@ var TransactionColumns = struct {
 	BlockHashID     string
 	InputCount      string
 	OutputCount     string
-	Fee             string
 	TransactionTime string
 	TransactionSize string
 	Hash            string
 	Version         string
 	LockTime        string
-	Raw             string
 	CreatedAt       string
 	ModifiedAt      string
 	CreatedTime     string
@@ -64,13 +60,11 @@ var TransactionColumns = struct {
 	BlockHashID:     "block_hash_id",
 	InputCount:      "input_count",
 	OutputCount:     "output_count",
-	Fee:             "fee",
 	TransactionTime: "transaction_time",
 	TransactionSize: "transaction_size",
 	Hash:            "hash",
 	Version:         "version",
 	LockTime:        "lock_time",
-	Raw:             "raw",
 	CreatedAt:       "created_at",
 	ModifiedAt:      "modified_at",
 	CreatedTime:     "created_time",
@@ -82,13 +76,11 @@ var TransactionTableColumns = struct {
 	BlockHashID     string
 	InputCount      string
 	OutputCount     string
-	Fee             string
 	TransactionTime string
 	TransactionSize string
 	Hash            string
 	Version         string
 	LockTime        string
-	Raw             string
 	CreatedAt       string
 	ModifiedAt      string
 	CreatedTime     string
@@ -98,13 +90,11 @@ var TransactionTableColumns = struct {
 	BlockHashID:     "transaction.block_hash_id",
 	InputCount:      "transaction.input_count",
 	OutputCount:     "transaction.output_count",
-	Fee:             "transaction.fee",
 	TransactionTime: "transaction.transaction_time",
 	TransactionSize: "transaction.transaction_size",
 	Hash:            "transaction.hash",
 	Version:         "transaction.version",
 	LockTime:        "transaction.lock_time",
-	Raw:             "transaction.raw",
 	CreatedAt:       "transaction.created_at",
 	ModifiedAt:      "transaction.modified_at",
 	CreatedTime:     "transaction.created_time",
@@ -118,13 +108,11 @@ var TransactionWhere = struct {
 	BlockHashID     whereHelpernull_String
 	InputCount      whereHelperuint
 	OutputCount     whereHelperuint
-	Fee             whereHelperfloat64
 	TransactionTime whereHelpernull_Uint64
 	TransactionSize whereHelperuint64
 	Hash            whereHelperstring
 	Version         whereHelperint
 	LockTime        whereHelperuint
-	Raw             whereHelpernull_String
 	CreatedAt       whereHelpertime_Time
 	ModifiedAt      whereHelpertime_Time
 	CreatedTime     whereHelpertime_Time
@@ -134,13 +122,11 @@ var TransactionWhere = struct {
 	BlockHashID:     whereHelpernull_String{field: "`transaction`.`block_hash_id`"},
 	InputCount:      whereHelperuint{field: "`transaction`.`input_count`"},
 	OutputCount:     whereHelperuint{field: "`transaction`.`output_count`"},
-	Fee:             whereHelperfloat64{field: "`transaction`.`fee`"},
 	TransactionTime: whereHelpernull_Uint64{field: "`transaction`.`transaction_time`"},
 	TransactionSize: whereHelperuint64{field: "`transaction`.`transaction_size`"},
 	Hash:            whereHelperstring{field: "`transaction`.`hash`"},
 	Version:         whereHelperint{field: "`transaction`.`version`"},
 	LockTime:        whereHelperuint{field: "`transaction`.`lock_time`"},
-	Raw:             whereHelpernull_String{field: "`transaction`.`raw`"},
 	CreatedAt:       whereHelpertime_Time{field: "`transaction`.`created_at`"},
 	ModifiedAt:      whereHelpertime_Time{field: "`transaction`.`modified_at`"},
 	CreatedTime:     whereHelpertime_Time{field: "`transaction`.`created_time`"},
@@ -186,9 +172,9 @@ func (*transactionR) NewStruct() *transactionR {
 type transactionL struct{}
 
 var (
-	transactionAllColumns            = []string{"id", "block_hash_id", "input_count", "output_count", "fee", "transaction_time", "transaction_size", "hash", "version", "lock_time", "raw", "created_at", "modified_at", "created_time", "value"}
-	transactionColumnsWithoutDefault = []string{"block_hash_id", "input_count", "output_count", "transaction_time", "transaction_size", "hash", "version", "lock_time", "raw"}
-	transactionColumnsWithDefault    = []string{"id", "fee", "created_at", "modified_at", "created_time", "value"}
+	transactionAllColumns            = []string{"id", "block_hash_id", "input_count", "output_count", "transaction_time", "transaction_size", "hash", "version", "lock_time", "created_at", "modified_at", "created_time", "value"}
+	transactionColumnsWithoutDefault = []string{"block_hash_id", "input_count", "output_count", "transaction_time", "transaction_size", "hash", "version", "lock_time"}
+	transactionColumnsWithDefault    = []string{"id", "created_at", "modified_at", "created_time", "value"}
 	transactionPrimaryKeyColumns     = []string{"id"}
 	transactionGeneratedColumns      = []string{}
 )
