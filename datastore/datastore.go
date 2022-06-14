@@ -264,8 +264,17 @@ func GetSupport(txHash string, vout uint) *model.Support {
 
 // PutSupport makes creating,retrieving,updating the model type simplified.
 func PutSupport(support *model.Support) error {
+
 	defer util.TimeTrack(time.Now(), "PutSupport", "mysqlprofile")
-	err := support.UpsertG(boil.Infer(), boil.Infer())
+	//using UpsertG fails because sqlboiler doesn't consider multi column unique keys as valid. hence the manual "upsert" logic here.
+	query := fmt.Sprintf(`INSERT INTO support (%s, %s, %s, %s, %s, %s) VALUES(?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE id=id`,
+		model.SupportColumns.SupportedClaimID,
+		model.SupportColumns.SupportAmount,
+		model.SupportColumns.BidState,
+		model.SupportColumns.TransactionHashID,
+		model.SupportColumns.Vout,
+		model.SupportColumns.SupportedByClaimID)
+	_, err := boil.GetDB().Exec(query, support.SupportedClaimID, support.SupportAmount, support.BidState, support.TransactionHashID, support.Vout, support.SupportedByClaimID)
 	if err != nil {
 		return errors.Prefix("Datastore(PUTSUPPORT)", err)
 	}

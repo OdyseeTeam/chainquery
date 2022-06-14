@@ -35,6 +35,7 @@
 // migration/032_drop_block_txhashes.sql (223B)
 // migration/032_drop_transaction_cols.sql (448B)
 // migration/033_vin_vout_changes.sql (120B)
+// migration/034_support_uniq_index.sql (234B)
 
 package migration
 
@@ -803,6 +804,26 @@ func migration033_vin_vout_changesSql() (*asset, error) {
 	return a, nil
 }
 
+var _migration034_support_uniq_indexSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x7c\x8e\x31\xaa\xc3\x40\x0c\x44\xfb\x3d\x85\xca\xff\x49\x7c\x82\x74\x81\x14\xa9\x43\xea\x65\xf1\x0a\x5b\x85\xa5\x8d\x76\x14\x7c\xfc\xe0\xce\x85\x71\x39\x0f\x66\xde\x0c\x03\x5d\x16\x99\xbc\x80\xe9\xdd\xd2\x3e\xbe\x50\xc0\x0b\x2b\xee\x3c\x89\xa6\xea\xd6\x48\xb4\xf2\x4a\xcf\xba\x66\x0b\x34\x13\x05\x99\x52\x8f\xd6\xcc\x71\x3b\xae\x3f\xb4\xa6\xb3\xe1\xd1\x79\xa3\xa1\xf2\x09\xde\x19\x36\x70\xa4\xa1\x3f\x78\xd1\x5e\x46\x88\x69\x9e\x4b\x9f\xb3\xd4\x2b\x7d\x2d\xf0\x7f\x72\xe1\x17\x00\x00\xff\xff\x07\xd9\x37\x90\xea\x00\x00\x00")
+
+func migration034_support_uniq_indexSqlBytes() ([]byte, error) {
+	return bindataRead(
+		_migration034_support_uniq_indexSql,
+		"migration/034_support_uniq_index.sql",
+	)
+}
+
+func migration034_support_uniq_indexSql() (*asset, error) {
+	bytes, err := migration034_support_uniq_indexSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "migration/034_support_uniq_index.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x3f, 0xeb, 0x8, 0xff, 0x3e, 0x72, 0xa8, 0x20, 0xa3, 0x61, 0x67, 0x3, 0xa9, 0xc6, 0x46, 0x21, 0x2d, 0x86, 0x9e, 0x99, 0xb7, 0x1d, 0x2e, 0x50, 0x81, 0xab, 0xaa, 0xdf, 0x98, 0x7a, 0x77, 0xc4}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -929,6 +950,7 @@ var _bindata = map[string]func() (*asset, error){
 	"migration/032_drop_block_txhashes.sql":           migration032_drop_block_txhashesSql,
 	"migration/032_drop_transaction_cols.sql":         migration032_drop_transaction_colsSql,
 	"migration/033_vin_vout_changes.sql":              migration033_vin_vout_changesSql,
+	"migration/034_support_uniq_index.sql":            migration034_support_uniq_indexSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -1011,6 +1033,7 @@ var _bintree = &bintree{nil, map[string]*bintree{
 		"032_drop_block_txhashes.sql":           {migration032_drop_block_txhashesSql, map[string]*bintree{}},
 		"032_drop_transaction_cols.sql":         {migration032_drop_transaction_colsSql, map[string]*bintree{}},
 		"033_vin_vout_changes.sql":              {migration033_vin_vout_changesSql, map[string]*bintree{}},
+		"034_support_uniq_index.sql":            {migration034_support_uniq_indexSql, map[string]*bintree{}},
 	}},
 }}
 
