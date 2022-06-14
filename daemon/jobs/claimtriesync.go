@@ -31,7 +31,7 @@ var expirationHardForkHeight uint = 400155    // https://github.com/lbryio/lbryc
 var hardForkBlocksToExpiration uint = 2102400 // https://github.com/lbryio/lbrycrd/pull/137
 var blockHeight uint64
 var blocksToExpiration uint = 262974 //Hardcoded! https://lbry.com/faq/claimtrie-implementation
-// ClaimTrieSyncRunning is a variable used to show whether or not the job is running already.
+// ClaimTrieSyncRunning is a variable used to show whether the job is running already.
 var claimTrieSyncRunning = false
 
 var lastSync *claimTrieSyncStatus
@@ -422,10 +422,8 @@ func getSupportedClaims(since time.Time, claimsChan chan *model.Claim) error {
 		if err != nil {
 			return errors.Err(err)
 		}
-		for i, c := range claims {
-			if i%99 == 0 {
-				logrus.Debugf("sending claim %d/%d for reprocessing", i+1, len(claims))
-			}
+		logrus.Debugf("sending %d claim for reprocessing - batch %d-%d/%d", len(claims), i, j, len(claimIds))
+		for _, c := range claims {
 			claimsChan <- c
 		}
 		logrus.Debugf("%d claimIds left to process", len(claimIds)-i)
@@ -448,10 +446,8 @@ func getModifiedClaims(since time.Time, claimsChan chan *model.Claim) error {
 			return errors.Err(err)
 		}
 		oldPrevID := prevID
-		for i, c := range claims {
-			if i%100 == 0 {
-				logrus.Debugf("sending claim %d/%d for reprocessing - claim id batch: %d", i+1, len(claims), prevID)
-			}
+		logrus.Debugf("[getModifiedClaims] sending claim %d claims for reprocessing - claim id batch: %d", len(claims), prevID)
+		for _, c := range claims {
 			claimsChan <- c
 			prevID = int(c.ID)
 		}
@@ -471,10 +467,8 @@ func getNewValidClaims(lastHeight uint, claimsChan chan *model.Claim) error {
 			return errors.Err(err)
 		}
 		oldPrevID := prevID
-		for i, c := range claims {
-			if i%100 == 0 {
-				logrus.Debugf("sending claim %d/%d for reprocessing - claim id batch: %d", i+1, len(claims), prevID)
-			}
+		logrus.Debugf("[getNewValidClaims] sending claim %d claims for reprocessing - claim id batch: %d", len(claims), prevID)
+		for _, c := range claims {
 			claimsChan <- c
 			prevID = int(c.ID)
 		}

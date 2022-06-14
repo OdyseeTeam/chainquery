@@ -56,7 +56,6 @@ func processAsClaim(script []byte, vout model.Output, tx model.Transaction, bloc
 	pksAddress := lbrycrd.GetAddressFromPublicKeyScript(pubkeyscript)
 	address = &pksAddress
 	logrus.Debugf("Handled Claim - claimID: %s - name: %s", claimid, name)
-
 	return address, &claimid, nil
 }
 
