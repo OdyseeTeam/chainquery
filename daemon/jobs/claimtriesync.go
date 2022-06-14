@@ -324,7 +324,7 @@ func syncClaim(claimJSON *lbrycrd.Claim) {
 	}
 	if claim.EffectiveAmount != claimJSON.EffectiveAmount {
 		if claimJSON.PendingAmount != 0 && claim.EffectiveAmount != claimJSON.PendingAmount {
-			claim.EffectiveAmount = claimJSON.EffectiveAmount
+			claim.EffectiveAmount = claimJSON.PendingAmount
 		} else {
 			claim.EffectiveAmount = claimJSON.EffectiveAmount
 		}
