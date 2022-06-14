@@ -134,7 +134,7 @@ func processClaimSupportScript(script *[]byte, vout model.Output, tx model.Trans
 		//logrus.Error(fmt.Sprintf("[outpoint:%s:%d]", tx.Hash, vout.Vout), "could not decode support value: ", err)
 	}
 	if err := datastore.PutSupport(support); err != nil {
-		logrus.Debug("Support for unknown claim! ", claimid)
+		logrus.Debugf("error while adding support for claim_id %s: %s", claimid, err.Error())
 	} else {
 		go sockety.SendNotification(socketyapi.SendNotificationArgs{
 			Service: socketyapi.BlockChain,

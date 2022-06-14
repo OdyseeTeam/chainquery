@@ -252,42 +252,22 @@ func GetSupport(txHash string, vout uint) *model.Support {
 	defer util.TimeTrack(time.Now(), "GetSupport", "mysqlprofile")
 	txHashMatch := qm.Where(model.SupportColumns.TransactionHashID+"=?", txHash)
 	voutMatch := qm.Where(model.SupportColumns.Vout+"=?", vout)
-
-	exists, err := model.Supports(txHashMatch, voutMatch).ExistsG()
+	support, err := model.Supports(txHashMatch, voutMatch).OneG()
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil
+		}
 		logrus.Warning("Datastore(GETSUPPORT): ", err)
 	}
-	if exists {
-
-		support, err := model.Supports(txHashMatch, voutMatch).OneG()
-		if err != nil {
-			logrus.Warning("Datastore(GETSUPPORT): ", err)
-		}
-		return support
-	}
-	return nil
+	return support
 }
 
 // PutSupport makes creating,retrieving,updating the model type simplified.
 func PutSupport(support *model.Support) error {
 	defer util.TimeTrack(time.Now(), "PutSupport", "mysqlprofile")
-	if support != nil {
-
-		var err error
-		exists, err := model.ClaimExistsG(support.ID)
-		if err != nil {
-			return errors.Prefix("Datastore(PUTSUPPORT)", err)
-		}
-		if exists {
-			support.ModifiedAt = time.Now()
-			err = support.UpdateG(boil.Infer())
-		} else {
-			err = support.InsertG(boil.Infer())
-		}
-		if err != nil {
-			err = errors.Prefix("Datastore(PUTSUPPORT)", err)
-			return err
-		}
+	err := support.UpsertG(boil.Infer(), boil.Infer())
+	if err != nil {
+		return errors.Prefix("Datastore(PUTSUPPORT)", err)
 	}
 	return nil
 }
