@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 
-go get github.com/caarlos0/svu
+go install github.com/caarlos0/svu@latest
 git tag `svu "$1"`
 git push --tags

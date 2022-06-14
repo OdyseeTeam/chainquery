@@ -171,24 +171,26 @@ type Support struct {
 // command when the verbose flag is set.  When the verbose flag is not set,
 // getrawmempool returns an array of transaction hashes.
 type GetRawMempoolVerboseResult struct {
-	Fees struct {
+	Vsize           int     `json:"vsize"`
+	Size            int     `json:"size"`
+	Weight          int     `json:"weight"`
+	Fee             float64 `json:"fee"`
+	ModifiedFee     float64 `json:"modifiedfee"`
+	Time            int     `json:"time"`
+	Height          int     `json:"height"`
+	DescendantCount int     `json:"descendantcount"`
+	DescendantSize  int     `json:"descendantsize"`
+	DescendantFees  float64 `json:"descendantfees"`
+	AncestorCount   int     `json:"ancestorcount"`
+	AncestorSize    int     `json:"ancestorsize"`
+	AncestorFees    float64 `json:"ancestorfees"`
+	WtxID           string  `json:"wtxid"`
+	Fees            struct {
 		Base       float64 `json:"base"`
 		Modified   float64 `json:"modified"`
 		Ancestor   float64 `json:"ancestor"`
 		Descendant float64 `json:"descendant"`
 	} `json:"fees"`
-	Size            int      `json:"size"`
-	Fee             float64  `json:"fee"`
-	ModifiedFee     float64  `json:"modifiedfee"`
-	Time            int64    `json:"time"`
-	Height          int32    `json:"height"`
-	DescendantCount int32    `json:"descendantcount"`
-	DescendantSize  int32    `json:"descendantsize"`
-	DescendantFees  uint64   `json:"descendantfees"`
-	AncestorCount   int32    `json:"ancestorcount"`
-	AncestorSize    int32    `json:"ancestorsize"`
-	AncestorFees    int32    `json:"ancestorfees"`
-	WtxID           string   `json:"wtxid"`
-	Depends         []string `json:"depends"`
-	SpentBy         []string `json:"spentby"`
+	Depends []string `json:"depends"`
+	SpentBy []string `json:"spentby"`
 }
