@@ -187,4 +187,4 @@ Our PGP key is [here](https://lbry.com/faq/pgp-key) if you need it.
 
 ## Contact
 
-The primary contact for this project is [@tiger5226](https://github.com/tiger5226) (beamer@lbry.com)
+The primary contact for this project is [@tiger5226](https://github.com/tiger5226) (beamer -at- odysee.com)

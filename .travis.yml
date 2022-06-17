@@ -89,4 +89,4 @@ deploy:
       condition: $TRAVIS_OS_NAME = linux
 
 notifications:
-  webhooks: https://chainquery.lbry.com/api/autoupdate
+  webhooks: https://chainquery.odysee.tv/api/autoupdate
