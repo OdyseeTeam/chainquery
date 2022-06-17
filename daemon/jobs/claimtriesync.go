@@ -56,6 +56,9 @@ func ClaimTrieSync() {
 	metrics.JobLoad.WithLabelValues("claimtrie_sync").Inc()
 	defer metrics.JobLoad.WithLabelValues("claimtrie_sync").Dec()
 	defer metrics.Job(time.Now(), "claimtrie_sync")
+	defer func() {
+		claimTrieSyncRunning = false
+	}()
 	//defer util.TimeTrack(time.Now(), "ClaimTrieSync", "always")
 	printDebug("ClaimTrieSync: started... ")
 	if lastSync == nil {
@@ -149,7 +152,6 @@ func ClaimTrieSync() {
 		}
 		printDebug("ClaimTrieSync: Processed " + strconv.Itoa(int(atomic.LoadInt64(&processedClaims))) + " claims.")
 	}
-	claimTrieSyncRunning = false
 }
 
 func reprocessUpdatedClaims(claimsChan chan *model.Claim, currentHeight uint64, processedClaims *int64) error {

@@ -36,6 +36,7 @@
 // migration/032_drop_transaction_cols.sql (448B)
 // migration/033_vin_vout_changes.sql (120B)
 // migration/034_support_uniq_index.sql (234B)
+// migration/035_add_tx_count.sql (129B)
 
 package migration
 
@@ -824,6 +825,26 @@ func migration034_support_uniq_indexSql() (*asset, error) {
 	return a, nil
 }
 
+var _migration035_add_tx_countSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x6c\xcc\x31\x0a\xc2\x40\x10\x85\xe1\x3e\xa7\x78\xbd\xe4\x04\x76\x82\x27\x10\xeb\x30\xc9\x8e\x71\x71\xf2\x46\xd6\x17\xd9\xe3\x8b\x9d\x85\xe5\x0f\x3f\xdf\x38\xe2\xb0\xd5\xb5\x99\x1c\xd7\xe7\xf0\x9b\x17\x99\x7c\x73\xea\xe4\x6b\xe5\x60\x21\x6f\x90\xcd\xe1\x98\x23\x97\x07\xac\x14\xa8\x4f\x4b\xee\x14\x2a\x05\xa6\xc0\x3d\x02\x76\xfb\xbe\x6f\x6f\xaf\x9a\x9c\xee\xde\x8f\xff\xe5\x33\xcb\x27\x00\x00\xff\xff\xd4\x06\xec\xbb\x81\x00\x00\x00")
+
+func migration035_add_tx_countSqlBytes() ([]byte, error) {
+	return bindataRead(
+		_migration035_add_tx_countSql,
+		"migration/035_add_tx_count.sql",
+	)
+}
+
+func migration035_add_tx_countSql() (*asset, error) {
+	bytes, err := migration035_add_tx_countSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "migration/035_add_tx_count.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x60, 0x9, 0x52, 0x77, 0xdc, 0x93, 0x7f, 0xd1, 0x43, 0x44, 0x86, 0x1b, 0xbc, 0xf, 0x37, 0xf5, 0x53, 0x60, 0x6d, 0xb6, 0x51, 0x34, 0x52, 0x70, 0xff, 0xfe, 0xf0, 0x55, 0x5f, 0xcd, 0xad, 0xb5}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -951,6 +972,7 @@ var _bindata = map[string]func() (*asset, error){
 	"migration/032_drop_transaction_cols.sql":         migration032_drop_transaction_colsSql,
 	"migration/033_vin_vout_changes.sql":              migration033_vin_vout_changesSql,
 	"migration/034_support_uniq_index.sql":            migration034_support_uniq_indexSql,
+	"migration/035_add_tx_count.sql":                  migration035_add_tx_countSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -1034,6 +1056,7 @@ var _bintree = &bintree{nil, map[string]*bintree{
 		"032_drop_transaction_cols.sql":         {migration032_drop_transaction_colsSql, map[string]*bintree{}},
 		"033_vin_vout_changes.sql":              {migration033_vin_vout_changesSql, map[string]*bintree{}},
 		"034_support_uniq_index.sql":            {migration034_support_uniq_indexSql, map[string]*bintree{}},
+		"035_add_tx_count.sql":                  {migration035_add_tx_countSql, map[string]*bintree{}},
 	}},
 }}
 
