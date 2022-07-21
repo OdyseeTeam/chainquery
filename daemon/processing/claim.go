@@ -87,10 +87,7 @@ func processClaimNameScript(script *[]byte, vout model.Output, tx model.Transact
 			return name, claimid, pkscript, err
 		}
 	}
-	claim, err = processClaim(helper, claim, value, vout, tx)
-	if err != nil {
-		return name, claimid, pkscript, err
-	}
+
 	claim.ClaimID = claimid
 	claim.Name = name
 	claim.TransactionTime = tx.TransactionTime
@@ -101,6 +98,10 @@ func processClaimNameScript(script *[]byte, vout model.Output, tx model.Transact
 		claim.Height = uint(blockHeight)
 	} else {
 		logrus.Debug("ClaimNew: No blockheight!")
+	}
+	claim, err = processClaim(helper, claim, value, vout, tx)
+	if err != nil {
+		return name, claimid, pkscript, err
 	}
 	err = datastore.PutClaim(claim)
 	if err == nil {
