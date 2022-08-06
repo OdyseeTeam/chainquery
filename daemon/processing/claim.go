@@ -230,7 +230,10 @@ func processClaim(helper *c.StakeHelper, claim *model.Claim, value []byte, outpu
 	if helper.LegacyClaim != nil && helper.LegacyClaim.GetVersion().String() != "" {
 		claim.Version.SetValid(helper.LegacyClaim.GetVersion().String())
 	}
-	notifications.ClaimEvent(claim.ClaimID, claim.Name, claim.Title.String, tx.Hash, claim.PublisherID.String, claim.SourceHash.String)
+	if claim.Height > 0 {
+		notifications.ClaimEvent(claim.ClaimID, claim.Name, claim.Title.String, tx.Hash, claim.PublisherID.String, claim.SourceHash.String)
+	}
+
 	return claim, nil
 }
 
