@@ -1,6 +1,7 @@
 package notifications
 
 import (
+	"io"
 	"net/http"
 	"net/url"
 
@@ -58,8 +59,17 @@ func (s subscriber) notify(values url.Values) {
 	if err != nil {
 		logrus.Error(errors.Prefix("Notify", errors.Err(err)))
 	}
-	err = res.Body.Close()
+	defer func() {
+		err = res.Body.Close()
+		if err != nil {
+			logrus.Error(errors.Prefix("Notify", errors.Err(err)))
+		}
+	}()
+	b, err := io.ReadAll(res.Body)
+	// b, err := ioutil.ReadAll(resp.Body)  Go.1.15 and earlier
 	if err != nil {
 		logrus.Error(errors.Prefix("Notify", errors.Err(err)))
 	}
+
+	logrus.Errorln(string(b))
 }

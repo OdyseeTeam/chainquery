@@ -11,7 +11,7 @@ import (
 	"github.com/lbryio/lbry.go/v2/extras/jsonrpc"
 	c "github.com/lbryio/lbry.go/v2/schema/stake"
 	"github.com/lbryio/sockety/socketyapi"
-	
+
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cast"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
@@ -44,9 +44,10 @@ func ClaimEvent(claim *model.Claim, tx model.Transaction, claimData *c.StakeHelp
 	if !claim.Type.IsZero() {
 		values.Add("type", claim.Type.String)
 	}
-	if !claim.Title.IsZero() {
-		values.Add("title", claim.Title.String)
+	if claim.Title.IsZero() {
+		return //we can't use claims without a title
 	}
+	values.Add("title", claim.Title.String)
 	if !claim.Description.IsZero() {
 		values.Add("description", claim.Description.String)
 	}
@@ -74,7 +75,6 @@ func ClaimEvent(claim *model.Claim, tx model.Transaction, claimData *c.StakeHelp
 			break
 		}
 	}
-	values.Add("is_protected", strconv.FormatBool(isProtected))
 	signingChannel, err := model.Claims(qm.Where("claim_id=?", claim.PublisherID.String)).OneG()
 	if err != nil {
 		log.Errorf("failed to get signing channel for claim %s: %v", claim.ClaimID, err)
@@ -85,6 +85,7 @@ func ClaimEvent(claim *model.Claim, tx model.Transaction, claimData *c.StakeHelp
 			values.Add("channel_thumbnail_url", signingChannel.ThumbnailURL.String)
 		}
 	}
+	values.Add("is_protected", strconv.FormatBool(isProtected))
 
 	go Notify(newClaim, values)
 }
