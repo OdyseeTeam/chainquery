@@ -231,7 +231,7 @@ func processClaim(helper *c.StakeHelper, claim *model.Claim, value []byte, outpu
 		claim.Version.SetValid(helper.LegacyClaim.GetVersion().String())
 	}
 	if claim.Height > 0 {
-		notifications.ClaimEvent(claim.ClaimID, claim.Name, claim.Title.String, tx.Hash, claim.PublisherID.String, claim.SourceHash.String)
+		notifications.ClaimEvent(claim, tx, helper)
 	}
 
 	return claim, nil
