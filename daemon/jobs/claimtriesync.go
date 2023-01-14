@@ -291,7 +291,7 @@ func SyncClaims(claims model.ClaimSlice) error {
 		}
 		claims, err := lbrycrd.GetClaimsForName(name)
 		if err != nil {
-			logrus.Error("ClaimTrieSync: Could not get claims for name: ", name, " Error: ", err)
+			printDebug("ClaimTrieSync: Could not get claims for name: ", name, " Error: ", err)
 		}
 		for _, claimJSON := range claims.Claims {
 			processingQueue <- claimJSON
