@@ -44,7 +44,7 @@ func ClaimEvent(claim *model.Claim, tx model.Transaction, claimData *c.StakeHelp
 	if !claim.Type.IsZero() {
 		values.Add("type", claim.Type.String)
 	}
-	if claim.Title.IsZero() {
+	if claim.Title.IsZero() || claim.Title.String == "" {
 		return //we can't use claims without a title
 	}
 	values.Add("title", claim.Title.String)
