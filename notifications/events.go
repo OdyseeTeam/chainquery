@@ -36,7 +36,7 @@ func PaymentEvent(lbc float64, address, txid string, vout uint) {
 	})
 }
 
-// ClaimEvent event to notify subscribers of a new claim thats been published
+// ClaimEvent event to notify subscribers of a new claim that's been published
 func ClaimEvent(claim *model.Claim, tx model.Transaction, claimData *c.StakeHelper) {
 	values := url.Values{}
 	values.Add("claim_id", claim.ClaimID)
@@ -75,17 +75,21 @@ func ClaimEvent(claim *model.Claim, tx model.Transaction, claimData *c.StakeHelp
 			break
 		}
 	}
-	signingChannel, err := model.Claims(qm.Where("claim_id=?", claim.PublisherID.String)).OneG()
-	if err != nil {
-		log.Errorf("failed to get signing channel for claim %s: %v", claim.ClaimID, err)
-	}
-	if signingChannel != nil {
-		values.Add("channel_name", signingChannel.Name)
-		if !signingChannel.ThumbnailURL.IsZero() {
-			values.Add("channel_thumbnail_url", signingChannel.ThumbnailURL.String)
+	values.Add("is_protected", strconv.FormatBool(isProtected))
+
+	//skip channels or claims without a channel
+	if claim.ClaimType != 2 && !claim.PublisherID.IsZero() {
+		signingChannel, err := model.Claims(qm.Where("claim_id=?", claim.PublisherID.String)).OneG()
+		if err != nil {
+			log.Errorf("failed to get signing channel for claim %s: %v", claim.ClaimID, err)
+		}
+		if signingChannel != nil {
+			values.Add("channel_name", signingChannel.Name)
+			if !signingChannel.ThumbnailURL.IsZero() {
+				values.Add("channel_thumbnail_url", signingChannel.ThumbnailURL.String)
+			}
 		}
 	}
-	values.Add("is_protected", strconv.FormatBool(isProtected))
 
 	go Notify(newClaim, values)
 }
