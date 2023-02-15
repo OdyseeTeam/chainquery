@@ -29,7 +29,7 @@ require (
 	github.com/mitchellh/mapstructure v1.1.2
 	github.com/pkg/errors v0.9.1
 	github.com/pkg/profile v1.3.0
-	github.com/prometheus/client_golang v1.10.0
+	github.com/prometheus/client_golang v1.11.1
 	github.com/rubenv/sql-migrate v0.0.0-20170330050058-38004e7a77f2
 	github.com/sfreiberg/gotwilio v0.0.0-20180612161623-8fb7259ba8bf
 	github.com/shopspring/decimal v0.0.0-20191009025716-f1972eb1d1f5
