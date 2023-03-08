@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/lbryio/lbry.go/extras/errors"
+	"github.com/lbryio/lbry.go/v2/extras/errors"
 	upstream "github.com/lbryio/lbry.go/v2/lbrycrd"
 	"github.com/mitchellh/mapstructure"
 	"github.com/shopspring/decimal"
@@ -30,7 +30,7 @@ func Init() *upstream.Client {
 		logrus.Panic("Initializing LBRYcrd Client: ", err)
 	}
 	LBRYcrdClient = lbrycrdClient
-	_, err = GetBalance()
+	_, err = GetBlockCount()
 	if err != nil {
 		logrus.Panicf("Error connecting to lbrycrd: %+v", err)
 	}

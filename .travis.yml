@@ -1,5 +1,5 @@
 os: linux
-dist: xenial
+dist: focal
 language: go
 
 # Only the last two Go releases are supported by the Go team with security
@@ -8,14 +8,11 @@ language: go
 # development version of Go. This can warn you that your code will break
 # in the next version of Go. Don't worry! Later we declare that test runs
 # are allowed to fail on Go tip.
-go: 1.15.2
+go: 1.18.x
 
 # Skip the install step. Don't `go get` dependencies. Only build with the
 # code in vendor/
 install: true
-
-env:
-  - GO111MODULE=on
 
 cache:
   directories:
@@ -27,9 +24,10 @@ services:
 - docker
 
 before_install:
+- sudo sed -i '/^\[mysqld\]/a log_bin_trust_function_creators = 1' /etc/mysql/mysql.conf.d/mysqld.cnf
 - mysql -u root -e 'CREATE DATABASE IF NOT EXISTS chainquery;'
-- mysql -u root -e "CREATE USER 'lbry'@'localhost' IDENTIFIED BY 'lbry';"
-- mysql -u root -e "GRANT ALL ON chainquery.* TO 'lbry'@'localhost';"
+- mysql -u root -e "CREATE USER 'chainquery'@'localhost' IDENTIFIED BY 'chainquery';"
+- mysql -u root -e "GRANT ALL ON chainquery.* TO 'chainquery'@'localhost';"
 - sudo service mysql restart
 
 
@@ -39,8 +37,6 @@ before_install:
 before_script:
 # All the .go files, excluding vendor/ and model (auto generated)
   - GO_FILES=$(find . -iname '*.go' -type f | grep -v /vendor/ | grep -v /model/ | grep -v /swagger/ | grep -v /migration/)
-
-
 
 
 # script always run to completion (set +e). All of these code checks are must haves
@@ -58,7 +54,7 @@ script:
   - ./e2e/e2e.sh
   # check model generation...
   - ./bin/chainquery serve db && ./scripts/gen_models.sh
-  # matches what was commited
+  # matches what was committed
   - go mod tidy
   - git diff --exit-code
 
@@ -92,4 +88,4 @@ deploy:
       condition: $TRAVIS_OS_NAME = linux
 
 notifications:
-  webhooks: https://chainquery.lbry.com/api/autoupdate
+  webhooks: https://chainquery.odysee.tv/api/autoupdate

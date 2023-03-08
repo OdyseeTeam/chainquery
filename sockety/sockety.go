@@ -2,10 +2,10 @@ package sockety
 
 import (
 	"github.com/lbryio/chainquery/metrics"
-	"github.com/lbryio/errors.go"
+	"github.com/lbryio/lbry.go/v2/extras/errors"
 	"github.com/lbryio/sockety/socketyapi"
 	"github.com/sirupsen/logrus"
-	"github.com/volatiletech/null"
+	"github.com/volatiletech/null/v8"
 )
 
 // Token token used to sent notifications to sockety
@@ -28,7 +28,7 @@ func SendNotification(args socketyapi.SendNotificationArgs) {
 	}
 	_, err := socketyClient.SendNotification(args)
 	if err != nil {
-		logrus.Error(errors.Prefix("Socket Send Notification:", err))
+		logrus.Error(errors.Prefix("Socket Send Notification", err))
 	}
 	metrics.SocketyNotifications.WithLabelValues(args.Type, null.StringFromPtr(args.Category).String, null.StringFromPtr(args.SubCategory).String).Inc()
 }

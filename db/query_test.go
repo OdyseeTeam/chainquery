@@ -5,14 +5,15 @@ import (
 	"testing"
 
 	"github.com/lbryio/chainquery/model"
+	"github.com/lbryio/lbry.go/v2/extras/errors"
 
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 func TestMain(m *testing.M) {
-	dbInstance, err := Init("lbry:lbry@tcp(localhost:3306)/chainquery", false)
+	dbInstance, err := Init("chainquery:chainquery@tcp(localhost:3306)/chainquery", false)
 	if err != nil {
-		panic(err)
+		panic(errors.FullTrace(err))
 	}
 	defer CloseDB(dbInstance)
 	os.Exit(m.Run())

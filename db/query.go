@@ -7,8 +7,8 @@ import (
 	"github.com/lbryio/chainquery/util"
 
 	"github.com/lbryio/chainquery/meta"
-	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/queries"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries"
 )
 
 // AddressSummary summarizes information for an address from chainquery database

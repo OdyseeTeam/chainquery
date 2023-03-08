@@ -5,7 +5,7 @@ package main
 //go:generate goimports -l ./migration/bindata.go
 
 import (
-	_ "github.com/jteeuwen/go-bindata" // so it's detected by `dep ensure`
+	_ "github.com/kevinburke/go-bindata" // so it's detected by `dep ensure`
 	"github.com/lbryio/chainquery/cmd"
 )
 

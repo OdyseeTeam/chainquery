@@ -18,13 +18,13 @@ import (
 	"github.com/lbryio/chainquery/metrics"
 	"github.com/lbryio/chainquery/model"
 
-	"github.com/lbryio/lbry.go/extras/errors"
+	"github.com/lbryio/lbry.go/v2/extras/errors"
 	"github.com/lbryio/lbry.go/v2/schema/stake"
 
 	"github.com/sirupsen/logrus"
-	"github.com/volatiletech/null"
-	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/null/v8"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 var chainSyncRunning = false
@@ -288,7 +288,7 @@ func (c *chainSyncStatus) alignVins(vins []lbrycrd.Vin) error {
 		if input == nil {
 			err := processing.ProcessVin(&vin, c.Tx, nil, uint64(i))
 			if err != nil {
-				return errors.Err(err)
+				return err
 			}
 		} else {
 			c.Vin = input
@@ -377,11 +377,6 @@ func (c *chainSyncStatus) alignTx(l *lbrycrd.TxRawResult) error {
 		c.Tx.OutputCount = uint(len(l.Vout))
 		colsToUpdate = append(colsToUpdate, model.TransactionColumns.OutputCount)
 	}
-	if !c.Tx.Raw.IsZero() {
-		c.Tx.Raw.String = ""
-		c.Tx.Raw.Valid = false
-		colsToUpdate = append(colsToUpdate, model.TransactionColumns.Raw)
-	}
 	if len(colsToUpdate) > 0 {
 		logrus.Debugf("found unaligned tx @%d and hash %s with the following columns out of alignment: %s", c.LastHeight, c.Tx.Hash, strings.Join(colsToUpdate, ","))
 		err := c.Tx.UpdateG(boil.Whitelist(colsToUpdate...))
@@ -436,10 +431,6 @@ func (c *chainSyncStatus) alignBlock(l *lbrycrd.GetBlockResponse) error {
 	if c.Block.PreviousBlockHash.String != l.PreviousBlockHash {
 		c.Block.PreviousBlockHash.SetValid(l.PreviousBlockHash)
 		colsToUpdate = append(colsToUpdate, model.BlockColumns.PreviousBlockHash)
-	}
-	if c.Block.TransactionHashes.String != strings.Join(l.Tx, ",") {
-		c.Block.TransactionHashes.SetValid(strings.Join(l.Tx, ","))
-		colsToUpdate = append(colsToUpdate, model.BlockColumns.TransactionHashes)
 	}
 	if c.Block.Nonce != l.Nonce {
 		c.Block.Nonce = l.Nonce

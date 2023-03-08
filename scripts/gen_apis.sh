@@ -5,7 +5,7 @@
     mkdir -p $PWD/swagger
     if [ ! -f $PWD/swagger/swagger-codegen-cli.jar ]; then
         echo "swagger cli not found, downloading..."
-        wget http://central.maven.org/maven2/io/swagger/swagger-codegen-cli/2.4.8/swagger-codegen-cli-2.4.8.jar -O ./swagger/swagger-codegen-cli.jar
+        wget https://repo1.maven.org/maven2/io/swagger/swagger-codegen-cli/2.4.27/swagger-codegen-cli-2.4.27.jar -O ./swagger/swagger-codegen-cli.jar
     fi
     #Generate API docs
 

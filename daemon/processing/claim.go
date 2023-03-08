@@ -8,8 +8,6 @@ import (
 	"time"
 	"unicode/utf8"
 
-	legacy_pb "github.com/lbryio/types/v1/go"
-
 	"github.com/lbryio/chainquery/datastore"
 	"github.com/lbryio/chainquery/global"
 	"github.com/lbryio/chainquery/lbrycrd"
@@ -19,16 +17,17 @@ import (
 	"github.com/lbryio/chainquery/sockety"
 	util2 "github.com/lbryio/chainquery/util"
 
-	"github.com/lbryio/lbry.go/extras/errors"
-	util "github.com/lbryio/lbry.go/lbrycrd"
+	"github.com/lbryio/lbry.go/v2/extras/errors"
+	util "github.com/lbryio/lbry.go/v2/lbrycrd"
 	"github.com/lbryio/lbry.go/v2/schema/address/base58"
 	c "github.com/lbryio/lbry.go/v2/schema/stake"
 	"github.com/lbryio/sockety/socketyapi"
+	legacy_pb "github.com/lbryio/types/v1/go"
 	pb "github.com/lbryio/types/v2/go"
 
 	"github.com/sirupsen/logrus"
-	"github.com/volatiletech/null"
-	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/null/v8"
+	"github.com/volatiletech/sqlboiler/v4/boil"
 )
 
 func processAsClaim(script []byte, vout model.Output, tx model.Transaction, blockHeight uint64) (address *string, claimID *string, err error) {
@@ -56,8 +55,7 @@ func processAsClaim(script []byte, vout model.Output, tx model.Transaction, bloc
 	}
 	pksAddress := lbrycrd.GetAddressFromPublicKeyScript(pubkeyscript)
 	address = &pksAddress
-	logrus.Debug("Handled Claim: ", " Name ", name, ", ClaimID ", claimid)
-
+	logrus.Debugf("Handled Claim - claimID: %s - name: %s", claimid, name)
 	return address, &claimid, nil
 }
 
@@ -68,7 +66,7 @@ func processClaimNameScript(script *[]byte, vout model.Output, tx model.Transact
 	}
 	name, value, pkscript, err := lbrycrd.ParseClaimNameScript(*script)
 	if err != nil {
-		err := errors.Prefix("Claim name script parsing error: ", err)
+		err := errors.Prefix("Claim name script parsing error", err)
 		return name, claimid, pkscript, err
 	}
 	helper, err := c.DecodeClaimBytes(value, global.BlockChainName)
@@ -89,10 +87,7 @@ func processClaimNameScript(script *[]byte, vout model.Output, tx model.Transact
 			return name, claimid, pkscript, err
 		}
 	}
-	claim, err = processClaim(helper, claim, value, vout, tx)
-	if err != nil {
-		return name, claimid, pkscript, err
-	}
+
 	claim.ClaimID = claimid
 	claim.Name = name
 	claim.TransactionTime = tx.TransactionTime
@@ -103,6 +98,10 @@ func processClaimNameScript(script *[]byte, vout model.Output, tx model.Transact
 		claim.Height = uint(blockHeight)
 	} else {
 		logrus.Debug("ClaimNew: No blockheight!")
+	}
+	claim, err = processClaim(helper, claim, value, vout, tx)
+	if err != nil {
+		return name, claimid, pkscript, err
 	}
 	err = datastore.PutClaim(claim)
 	if err == nil {
@@ -125,7 +124,7 @@ func processClaimSupportScript(script *[]byte, vout model.Output, tx model.Trans
 	var value []byte
 	name, claimid, value, pubkeyscript, err = lbrycrd.ParseClaimSupportScript(*script)
 	if err != nil {
-		err := errors.Prefix("Claim support processing error: ", err)
+		err := errors.Prefix("Claim support processing error", err)
 		return name, claimid, pubkeyscript, err
 	}
 	support := datastore.GetSupport(tx.Hash, vout.Vout)
@@ -135,7 +134,7 @@ func processClaimSupportScript(script *[]byte, vout model.Output, tx model.Trans
 		//logrus.Error(fmt.Sprintf("[outpoint:%s:%d]", tx.Hash, vout.Vout), "could not decode support value: ", err)
 	}
 	if err := datastore.PutSupport(support); err != nil {
-		logrus.Debug("Support for unknown claim! ", claimid)
+		logrus.Debugf("error while adding support for claim_id %s: %s", claimid, err.Error())
 	} else {
 		go sockety.SendNotification(socketyapi.SendNotificationArgs{
 			Service: socketyapi.BlockChain,
@@ -151,7 +150,7 @@ func processClaimSupportScript(script *[]byte, vout model.Output, tx model.Trans
 func processClaimUpdateScript(script *[]byte, vout model.Output, tx model.Transaction, blockHeight uint64) (name string, claimID string, pubkeyscript []byte, err error) {
 	name, claimID, value, pubkeyscript, err := lbrycrd.ParseClaimUpdateScript(*script)
 	if err != nil {
-		err := errors.Prefix("Claim update processing error: ", err)
+		err := errors.Prefix("Claim update processing error", err)
 		return name, claimID, pubkeyscript, err
 	}
 	helper, err := c.DecodeClaimBytes(value, global.BlockChainName)
@@ -212,11 +211,11 @@ func processClaim(helper *c.StakeHelper, claim *model.Claim, value []byte, outpu
 
 	// pbClaim JSON
 	if claimHelper, err := c.DecodeClaimHex(claim.ValueAsHex, global.BlockChainName); err == nil && claimHelper != nil {
-		json, err := GetValueAsJSON(*claimHelper)
+		claimAsJSON, err := GetValueAsJSON(*claimHelper)
 		if err != nil {
 			logrus.Error(err)
 		} else {
-			claim.ValueAsJSON.SetValid(json)
+			claim.ValueAsJSON.SetValid(claimAsJSON)
 		}
 	}
 
@@ -228,10 +227,13 @@ func processClaim(helper *c.StakeHelper, claim *model.Claim, value []byte, outpu
 	setPublisherInfo(claim, helper)
 	setCertificateInfo(claim, helper)
 
-	if helper.LegacyClaim != nil {
-		claim.Version = helper.LegacyClaim.GetVersion().String()
+	if helper.LegacyClaim != nil && helper.LegacyClaim.GetVersion().String() != "" {
+		claim.Version.SetValid(helper.LegacyClaim.GetVersion().String())
 	}
-	notifications.ClaimEvent(claim.ClaimID, claim.Name, claim.Title.String, tx.Hash, claim.PublisherID.String, claim.SourceHash.String)
+	if claim.Height > 0 {
+		notifications.ClaimEvent(claim, tx, helper)
+	}
+
 	return claim, nil
 }
 
@@ -294,8 +296,8 @@ func UpdateClaimData(helper *c.StakeHelper, claim *model.Claim) error {
 	setPublisherInfo(claim, helper)
 	setCertificateInfo(claim, helper)
 
-	if helper.LegacyClaim != nil {
-		claim.Version = helper.LegacyClaim.GetVersion().String()
+	if helper.LegacyClaim != nil && helper.LegacyClaim.GetVersion().String() != "" {
+		claim.Version.SetValid(helper.LegacyClaim.GetVersion().String())
 	}
 	return nil
 }
@@ -346,8 +348,12 @@ func setMetaDataInfo(claim *model.Claim, helper *c.StakeHelper) error {
 		return err
 	}
 	claim.Title.SetValid(helper.Claim.GetTitle())
-	claim.Description.SetValid(helper.Claim.GetDescription())
-	claim.ThumbnailURL.SetValid(helper.Claim.GetThumbnail().GetUrl())
+	if helper.Claim.GetDescription() != "" {
+		claim.Description.SetValid(helper.Claim.GetDescription())
+	}
+	if helper.Claim.GetThumbnail().GetUrl() != "" {
+		claim.ThumbnailURL.SetValid(helper.Claim.GetThumbnail().GetUrl())
+	}
 	if len(helper.Claim.GetTags()) > 0 {
 		err := setTags(claim, helper.Claim.GetTags())
 		if err != nil {
@@ -389,22 +395,26 @@ func setTags(claim *model.Claim, tags []string) error {
 		if tag == "mature" {
 			claim.IsNSFW = true
 		}
-		t := datastore.GetTag(tag)
-		if t == nil {
-			t = &model.Tag{Tag: tag}
-			err := datastore.PutTag(t)
-			if err != nil {
-				logrus.Error(errors.Prefix(fmt.Sprintf("Could not save tag %s, skipping: ", tag), err))
-				return nil
-			}
+		t := &model.Tag{Tag: tag}
+		err := datastore.PutTag(t)
+		if err != nil {
+			logrus.Error(errors.Prefix(fmt.Sprintf("Could not save tag %s, skipping", tag), err))
+			return nil
 		}
-		ct := datastore.GetClaimTag(t.ID, claim.ClaimID)
-		if ct == nil {
-			ct = &model.ClaimTag{ClaimID: claim.ClaimID, TagID: null.NewUint64(t.ID, true)}
-			err := datastore.PutClaimTag(ct)
-			if err != nil {
-				return err
-			}
+		tagIDNotFound := t.ID == 0
+		if tagIDNotFound {
+			t = datastore.GetTag(tag)
+		}
+		tagIDNotFound = t.ID == 0
+		if tagIDNotFound {
+			logrus.Error(errors.Prefix(fmt.Sprintf("Could not get tag %s, skipping", tag), err))
+			return nil
+		}
+
+		ct := &model.ClaimTag{ClaimID: claim.ClaimID, TagID: null.NewUint64(t.ID, true)}
+		err = datastore.PutClaimTag(ct)
+		if err != nil {
+			return err
 		}
 	}
 	return nil
@@ -431,15 +441,16 @@ func setLicense(claim *model.Claim, stream pb.Stream) {
 
 func setStreamMetadata(claim *model.Claim, stream pb.Stream) {
 	claim.Type.SetValid(global.StreamClaimType)
-	claim.Author.SetValid(stream.GetAuthor())
+	if stream.GetAuthor() != "" {
+		claim.Author.SetValid(stream.GetAuthor())
+	}
 	setLicense(claim, stream)
-	claim.Preview.SetValid("") //Never set
 
 	fee := stream.GetFee()
 	if fee != nil {
 		claim.FeeCurrency.SetValid(fee.GetCurrency().String())
 		claim.Fee = float64(fee.GetAmount())
-		claim.FeeAddress = base58.EncodeBase58(fee.GetAddress())
+		claim.FeeAddress.SetValid(base58.EncodeBase58(fee.GetAddress()))
 	}
 	s := stream.GetSource()
 	if s != nil {
@@ -477,12 +488,6 @@ func setStreamMetadata(claim *model.Claim, stream pb.Stream) {
 	if stream.GetAudio() != nil {
 		if stream.GetAudio().GetDuration() > 0 {
 			claim.AudioDuration.SetValid(uint64(stream.GetAudio().GetDuration()))
-		}
-	}
-	if stream.GetSoftware() != nil {
-		s := stream.GetSoftware()
-		if s.GetOs() != "" {
-			claim.Os.SetValid(s.GetOs())
 		}
 	}
 }
@@ -599,10 +604,8 @@ func resetMetadata(claim *model.Claim) error {
 	claim.IsNSFW = false
 	claim.FeeCurrency = null.NewString("", false)
 	claim.Fee = 0.0
-	claim.FeeAddress = ""
+	claim.FeeAddress = null.NewString("", false)
 	claim.License = null.NewString("", false)
-	claim.LicenseURL = null.NewString("", false)
-	claim.Preview = null.NewString("", false)
 	claim.Type = null.NewString("", false)
 	claim.ReleaseTime = null.NewUint64(0, false)
 	claim.SourceHash = null.NewString("", false)
@@ -614,19 +617,11 @@ func resetMetadata(claim *model.Claim) error {
 	claim.FrameHeight = null.NewUint64(0, false)
 	claim.Duration = null.NewUint64(0, false)
 	claim.AudioDuration = null.NewUint64(0, false)
-	claim.Os = null.NewString("", false)
 	claim.Email = null.NewString("", false)
-	claim.WebsiteURL = null.NewString("", false)
 	claim.HasClaimList = null.NewBool(false, false)
 	claim.ClaimReference = null.NewString("", false)
 	claim.ListType = null.NewInt16(0, false)
 	claim.ClaimIDList = null.NewJSON(nil, false)
-	claim.Country = null.NewString("", false)
-	claim.State = null.NewString("", false)
-	claim.Code = null.NewString("", false)
-	claim.City = null.NewString("", false)
-	claim.Longitude = null.NewInt64(0, false)
-	claim.Latitude = null.NewInt64(0, false)
 
 	err := claim.ListClaimClaimInLists().DeleteAll(boil.GetDB())
 	if err != nil {

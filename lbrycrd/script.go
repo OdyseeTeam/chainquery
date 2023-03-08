@@ -10,7 +10,7 @@ import (
 	"github.com/lbryio/chainquery/global"
 	"github.com/lbryio/chainquery/util"
 
-	"github.com/lbryio/lbry.go/extras/errors"
+	"github.com/lbryio/lbry.go/v2/extras/errors"
 
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/txscript"

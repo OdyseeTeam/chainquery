@@ -3,22 +3,24 @@ package processing
 import (
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/lbryio/chainquery/util"
+	"github.com/volatiletech/null/v8"
 
 	ds "github.com/lbryio/chainquery/datastore"
 	"github.com/lbryio/chainquery/lbrycrd"
 	"github.com/lbryio/chainquery/metrics"
 	m "github.com/lbryio/chainquery/model"
 	"github.com/lbryio/chainquery/notifications"
-	"github.com/lbryio/lbry.go/extras/errors"
-	"github.com/lbryio/lbry.go/extras/stop"
+	"github.com/lbryio/lbry.go/v2/extras/errors"
+	"github.com/lbryio/lbry.go/v2/extras/stop"
 
 	"github.com/sirupsen/logrus"
-	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/v4/boil"
 )
 
 // MaxParallelVoutProcessing max concurrently processing outputs
@@ -54,12 +56,12 @@ func initVinWorkers(s *stop.Group, nrWorkers int, jobs <-chan vinToProcess, resu
 func vinProcessor(worker int, jobs <-chan vinToProcess, results chan<- error) {
 	for job := range jobs {
 		q(strconv.Itoa(worker) + " - WORKER VIN start new job " + strconv.Itoa(int(job.jsonVin.Sequence)))
-		result := ProcessVin(job.jsonVin, job.tx, job.txDC, job.vin)
-		if result != nil {
+		err := ProcessVin(job.jsonVin, job.tx, job.txDC, job.vin)
+		if err != nil {
 			metrics.ProcessingFailures.WithLabelValues("vin").Inc()
 		}
 		q(strconv.Itoa(worker) + " - WORKER VIN passing result " + strconv.Itoa(int(job.jsonVin.Sequence)))
-		results <- result
+		results <- err
 		q(strconv.Itoa(worker) + " - WORKER VIN passed result " + strconv.Itoa(int(job.jsonVin.Sequence)))
 	}
 	q(strconv.Itoa(worker) + " - WORKER VIN finished all jobs")
@@ -89,92 +91,84 @@ func voutProcessor(worker int, jobs <-chan voutToProcess, results chan<- error) 
 //ProcessVin handles the processing of an input to a transaction.
 func ProcessVin(jsonVin *lbrycrd.Vin, tx *m.Transaction, txDC *txDebitCredits, n uint64) error {
 	defer metrics.Processing(time.Now(), "vin")
-	vin := &m.Input{}
-	foundVin := ds.GetInput(tx.Hash, len(jsonVin.Coinbase) > 0, jsonVin.TxID, uint(jsonVin.Vout))
-	if foundVin != nil {
-		vin = foundVin
+	isVinCoinbase := len(jsonVin.Coinbase) > 0
+	vin := &m.Input{
+		TransactionID:   tx.ID,
+		TransactionHash: tx.Hash,
+		InputAddressID:  null.Uint64{},
+		IsCoinbase:      isVinCoinbase,
+		Coinbase:        null.NewString(jsonVin.Coinbase, isVinCoinbase),
+		PrevoutHash:     null.NewString(jsonVin.TxID, !isVinCoinbase),
+		PrevoutN:        null.NewUint(uint(jsonVin.Vout), !isVinCoinbase),
+		Sequence:        uint(jsonVin.Sequence),
+		Vin:             null.UintFrom(uint(n)),
+		Witness:         null.NewString(strings.Join(jsonVin.Witness, ","), len(jsonVin.Witness) > 0),
 	}
-	vin.Vin.SetValid(uint(n))
-	vin.TransactionID = tx.ID
-	vin.TransactionHash = tx.Hash
-	vin.Sequence = uint(jsonVin.Sequence)
-	vin.Witness.String = strings.Join(jsonVin.Witness, ",")
+	foundVin := ds.GetInput(tx.Hash, isVinCoinbase, jsonVin.TxID, uint(jsonVin.Vout))
+	if foundVin != nil {
+		vin.ID = foundVin.ID
+	}
 
-	if jsonVin.Coinbase != "" { //
+	if isVinCoinbase {
 		// No Source Output - Generation of Coin
-		if err := processCoinBaseVin(jsonVin, vin); err != nil {
-			return err
-		}
-	} else {
-		vin.PrevoutHash.SetValid(jsonVin.TxID)
-		vin.PrevoutN.SetValid(uint(jsonVin.Vout))
-		vin.ScriptSigHex.SetValid(jsonVin.ScriptSig.Hex)
-		vin.ScriptSigAsm.SetValid(jsonVin.ScriptSig.Asm)
-		srcOutput := ds.GetOutput(vin.PrevoutHash.String, vin.PrevoutN.Uint)
-		if srcOutput == nil {
-			id := strconv.Itoa(int(tx.ID))
-			sequence := strconv.FormatUint(uint64(vin.Sequence), 10)
-			logrus.Error("Tx ", tx.ID, ", Vin ", vin.PrevoutN.Uint, " - ", vin.PrevoutHash.String)
-			err := errors.Base("No source output for vin in tx: (" + id + ") - (" + sequence + ")")
-			return err
-		}
-		vin.Value = srcOutput.Value
-		var addresses []string
-		if srcOutput.AddressList.Valid {
-			if err := json.Unmarshal([]byte(srcOutput.AddressList.String), &addresses); err != nil {
-				return errors.Err("Error unmarshalling source output address list: ", err)
-			}
-		}
-		var address *m.Address
-		if len(addresses) > 0 {
-			address = ds.GetAddress(addresses[0])
-		} else if srcOutput.Type.String == lbrycrd.NonStandard {
+		err := ds.PutInput(vin)
+		return err
+	}
 
-			jsonAddress, err := getAddressFromNonStandardVout(srcOutput.ScriptPubKeyHex.String)
-			if err != nil {
-				return err
-			}
-			address = ds.GetAddress(jsonAddress)
-			if address == nil {
-				return errors.Err("No addresses for vout address list! %d -> %s ", srcOutput.ID, srcOutput.AddressList.String)
-			}
+	vin.ScriptSigHex.SetValid(jsonVin.ScriptSig.Hex)
+	vin.ScriptSigAsm.SetValid(jsonVin.ScriptSig.Asm)
+	//get the output for the VIN which contains information such as the value and the affected addresses
+	srcOutput := ds.GetOutput(vin.PrevoutHash.String, vin.PrevoutN.Uint)
+	if srcOutput == nil {
+		message := fmt.Sprintf("no source output for VIN %d (%s) at prev output with txid %s and index %d", tx.ID, tx.Hash, vin.PrevoutHash.String, vin.PrevoutN.Uint)
+		logrus.Errorln(message)
+		return errors.Err(message)
+	}
 
+	vin.Value = srcOutput.Value
+	var addresses []string
+	if srcOutput.AddressList.Valid {
+		if err := json.Unmarshal([]byte(srcOutput.AddressList.String), &addresses); err != nil {
+			return errors.Err("Error unmarshalling source output address list: ", err)
 		}
-		if address != nil {
-			txDC.subtract(address.Address, srcOutput.Value.Float64)
-			vin.InputAddressID.SetValid(address.ID)
-			// Store input - Needed to store input address below
-			err := ds.PutInput(vin)
-			if err != nil {
-				return err
-			}
-		} else {
-			return errors.Err("No Address created for Vin: %d of tx %d vout: %d Address: %s", vin.ID, tx.ID, srcOutput.ID, addresses[0])
-		}
-		// Update the srcOutput spent if successful
-		srcOutput.IsSpent = true
-		srcOutput.SpentByInputID.SetValid(vin.ID)
-		c := m.OutputColumns
-		err := ds.PutOutput(srcOutput, boil.Whitelist(c.IsSpent, c.SpentByInputID))
+	}
+	var address *m.Address
+	if len(addresses) > 0 {
+		address = ds.GetAddress(addresses[0])
+	} else if srcOutput.Type.String == lbrycrd.NonStandard {
+		jsonAddress, err := getAddressFromNonStandardVout(srcOutput.ScriptPubKeyHex.String)
 		if err != nil {
 			return err
 		}
-
-		//Make sure there is a transaction address
-
-		if ds.GetTxAddress(tx.ID, vin.InputAddressID.Uint64) == nil {
-			return errors.Err("Missing txAddress for Tx: " + strconv.Itoa(int(tx.ID)) + " - Addr: " + strconv.Itoa(int(vin.InputAddressID.Uint64)) + "[" + address.Address + "]")
+		address = ds.GetAddress(jsonAddress)
+		if address == nil {
+			return errors.Err("No addresses for vout address list! %d -> %s ", srcOutput.ID, srcOutput.AddressList.String)
 		}
 	}
-	return nil
-}
-
-func processCoinBaseVin(jsonVin *lbrycrd.Vin, vin *m.Input) error {
-	vin.IsCoinbase = true
-	vin.Coinbase.SetValid(jsonVin.Coinbase)
-	err := ds.PutInput(vin)
+	if address != nil {
+		txDC.subtract(address.Address, srcOutput.Value.Float64)
+		vin.InputAddressID.SetValid(address.ID)
+		// Store input - Needed to store input address below
+		err := ds.PutInput(vin)
+		if err != nil {
+			return err
+		}
+	} else {
+		return errors.Err("No Address created for Vin: %d of tx %d vout: %d Address: %s", vin.ID, tx.ID, srcOutput.ID, addresses[0])
+	}
+	// Update the srcOutput spent if successful
+	srcOutput.IsSpent = true
+	srcOutput.SpentByInputID.SetValid(vin.ID)
+	c := m.OutputColumns
+	err := ds.PutOutput(srcOutput, boil.Whitelist(c.IsSpent, c.SpentByInputID))
 	if err != nil {
 		return err
+	}
+
+	//Make sure there is a transaction address
+
+	if ds.GetTxAddress(tx.ID, vin.InputAddressID.Uint64) == nil {
+		return errors.Err("Missing txAddress for Tx: " + strconv.Itoa(int(tx.ID)) + " - Addr: " + strconv.Itoa(int(vin.InputAddressID.Uint64)) + "[" + address.Address + "]")
 	}
 	return nil
 }

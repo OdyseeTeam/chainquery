@@ -1,16 +1,17 @@
 package datastore
 
 import (
-	"github.com/lbryio/chainquery/model"
-	"github.com/lbryio/lbry.go/extras/errors"
-	"github.com/volatiletech/null"
-
+	"database/sql"
+	"fmt"
 	"time"
 
+	"github.com/lbryio/chainquery/model"
 	"github.com/lbryio/chainquery/util"
+	"github.com/lbryio/lbry.go/v2/extras/errors"
 	"github.com/sirupsen/logrus"
-	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/null/v8"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 // GetOutput makes creating,retrieving,updating the model type simplified.
@@ -18,48 +19,34 @@ func GetOutput(txHash string, vout uint) *model.Output {
 	defer util.TimeTrack(time.Now(), "GetOutput", "mysqlprofile")
 	txHashMatch := qm.Where(model.OutputColumns.TransactionHash+"=?", txHash)
 	vOutMatch := qm.And(model.OutputColumns.Vout+"=?", vout)
-	exists, err := model.Outputs(txHashMatch, vOutMatch).ExistsG()
+	output, err := model.Outputs(txHashMatch, vOutMatch).OneG()
 	if err != nil {
-		return nil
-	}
-	if exists {
-		output, err := model.Outputs(txHashMatch, vOutMatch).OneG()
-		if err != nil {
-			logrus.Error("Datastore(GETOUTPUT): ", err)
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil
 		}
-		return output
+		logrus.Error("Datastore(GETOUTPUT): ", err)
 	}
-
-	return nil
+	return output
 }
 
 // PutOutput makes creating,retrieving,updating the model type simplified.
 func PutOutput(output *model.Output, columns boil.Columns) error {
 	defer util.TimeTrack(time.Now(), "PutOutput", "mysqlprofile")
-	if output != nil {
-		txHashMatch := qm.Where(model.OutputColumns.TransactionHash+"=?", output.TransactionHash)
-		vOutMatch := qm.And(model.OutputColumns.Vout+"=?", output.Vout)
-		var err error
-		exists, err := model.Outputs(txHashMatch, vOutMatch).ExistsG()
-		if err != nil {
-			return errors.Prefix("Datastore(PUTOUTPUT): ", err)
-		}
-		if exists {
-			output.ModifiedAt = time.Now()
-			err = output.UpdateG(columns)
-		} else {
-			err = output.InsertG(boil.Infer())
-			if err != nil {
-				output.ModifiedAt = time.Now()
-				err = output.UpdateG(columns)
-			}
-		}
-		if err != nil {
-			err = errors.Prefix("Datastore(PUTOUTPUT): ", err)
-			return err
-		}
+	txHashMatch := qm.Where(model.OutputColumns.TransactionHash+"=?", output.TransactionHash)
+	vOutMatch := qm.And(model.OutputColumns.Vout+"=?", output.Vout)
+	existingOutput, err := model.Outputs(txHashMatch, vOutMatch).OneG()
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return errors.Prefix("Datastore(PUTOUTPUT)", err)
 	}
-
+	if existingOutput != nil {
+		output.ID = existingOutput.ID
+		err = output.UpdateG(columns)
+	} else {
+		err = output.InsertG(boil.Infer())
+	}
+	if err != nil {
+		return errors.Prefix("Datastore(PUTOUTPUT)", err)
+	}
 	return nil
 }
 
@@ -71,20 +58,14 @@ func GetInput(txHash string, isCoinBase bool, prevHash string, prevN uint) *mode
 	txCoinBaseMatch := qm.Where(model.InputColumns.IsCoinbase+"=?", isCoinBase)
 	prevHashMatch := qm.Where(model.InputColumns.PrevoutHash+"=?", prevHash)
 	prevNMatch := qm.And(model.InputColumns.PrevoutN+"=?", prevN)
-
-	exists, err := model.Inputs(txHashMatch, txCoinBaseMatch, prevHashMatch, prevNMatch).ExistsG()
+	input, err := model.Inputs(txHashMatch, txCoinBaseMatch, prevHashMatch, prevNMatch).OneG()
 	if err != nil {
-		logrus.Warning("Datastore(GETINPUT): ", err)
-	}
-	if exists {
-		input, err := model.Inputs(txHashMatch, txCoinBaseMatch, prevHashMatch, prevNMatch).OneG()
-		if err != nil {
-			logrus.Warning("Datastore(GETINPUT): ", err)
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil
 		}
-		return input
+		logrus.Error("Datastore(GETINPUT): ", err)
 	}
-
-	return nil
+	return input
 }
 
 //PutInput makes creating,retrieving,updating the model type simplified.
@@ -106,7 +87,7 @@ func PutInput(input *model.Input) error {
 		var err error
 		exists, err := model.Inputs(txHashMatch, txCoinBaseMatch, prevHashMatch, prevNMatch).ExistsG()
 		if err != nil {
-			return errors.Prefix("Datastore(PUTINPUT): ", err)
+			return errors.Prefix("Datastore(PUTINPUT)", err)
 		}
 		if exists {
 			input.Modified = time.Now()
@@ -116,7 +97,7 @@ func PutInput(input *model.Input) error {
 
 		}
 		if err != nil {
-			err = errors.Prefix("Datastore(PUTINPUT): ", err)
+			err = errors.Prefix("Datastore(PUTINPUT)", err)
 			return err
 		}
 	}
@@ -129,20 +110,14 @@ func GetAddress(addr string) *model.Address {
 	defer util.TimeTrack(time.Now(), "GetAddress", "mysqlprofile")
 	addrMatch := qm.Where(model.AddressColumns.Address+"=?", addr)
 
-	exists, err := model.Addresses(addrMatch).ExistsG()
+	address, err := model.Addresses(addrMatch).OneG()
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil
+		}
 		logrus.Warning("Datastore(GETADDRESS): ", err)
 	}
-	if exists {
-
-		address, err := model.Addresses(addrMatch).OneG()
-		if err != nil {
-			logrus.Warning("Datastore(GETADDRESS): ", err)
-		}
-		return address
-	}
-
-	return nil
+	return address
 }
 
 //PutAddress  makes creating,retrieving,updating the model type simplified.
@@ -153,7 +128,7 @@ func PutAddress(address *model.Address) error {
 		var err error
 		exists, err := model.AddressExistsG(address.ID)
 		if err != nil {
-			return errors.Prefix("Datastore(PUTADDRESS): ", err)
+			return errors.Prefix("Datastore(PUTADDRESS)", err)
 		}
 		if exists {
 			address.ModifiedAt = time.Now()
@@ -163,7 +138,7 @@ func PutAddress(address *model.Address) error {
 
 		}
 		if err != nil {
-			err = errors.Prefix("Datastore(PUTADDRESS): ", err)
+			err = errors.Prefix("Datastore(PUTADDRESS)", err)
 			return err
 		}
 	}
@@ -189,6 +164,17 @@ func GetTxAddress(txID uint64, addrID uint64) *model.TransactionAddress {
 	return nil
 }
 
+// UpdateTxAddressAmounts updates the credit and debit amounts
+func UpdateTxAddressAmounts(txAddress *model.TransactionAddress) error {
+	defer util.TimeTrack(time.Now(), "UpdateTxAddressAmounts", "mysqlprofile")
+	err := txAddress.UpdateG(boil.Infer())
+	if err != nil {
+		return errors.Prefix("Datastore(PUTTXADDRESS)", err)
+	}
+
+	return nil
+}
+
 // PutTxAddress makes creating,retrieving,updating the model type simplified.
 func PutTxAddress(txAddress *model.TransactionAddress) error {
 	defer util.TimeTrack(time.Now(), "PutTxAddres", "mysqlprofile")
@@ -196,7 +182,7 @@ func PutTxAddress(txAddress *model.TransactionAddress) error {
 		var err error
 		exists, err := model.TransactionAddressExistsG(txAddress.TransactionID, txAddress.AddressID)
 		if err != nil {
-			return errors.Prefix("Datastore(PUTTXADDRESS): ", err)
+			return errors.Prefix("Datastore(PUTTXADDRESS)", err)
 		}
 		if exists {
 			err = txAddress.UpdateG(boil.Infer())
@@ -204,7 +190,7 @@ func PutTxAddress(txAddress *model.TransactionAddress) error {
 			err = txAddress.InsertG(boil.Infer())
 		}
 		if err != nil {
-			err = errors.Prefix("Datastore(PUTTXADDRESS): ", err)
+			err = errors.Prefix("Datastore(PUTTXADDRESS)", err)
 			return err
 		}
 	}
@@ -241,7 +227,7 @@ func PutClaim(claim *model.Claim) error {
 		var err error
 		exists, err := model.ClaimExistsG(claim.ID)
 		if err != nil {
-			return errors.Prefix("Datastore(PUTCLAIM): ", err)
+			return errors.Prefix("Datastore(PUTCLAIM)", err)
 		}
 		if exists {
 			claim.ModifiedAt = time.Now()
@@ -254,7 +240,7 @@ func PutClaim(claim *model.Claim) error {
 			}
 		}
 		if err != nil {
-			err = errors.Prefix("Datastore(PUTCLAIM): ", err)
+			err = errors.Prefix("Datastore(PUTCLAIM)", err)
 			return err
 		}
 	}
@@ -266,86 +252,56 @@ func GetSupport(txHash string, vout uint) *model.Support {
 	defer util.TimeTrack(time.Now(), "GetSupport", "mysqlprofile")
 	txHashMatch := qm.Where(model.SupportColumns.TransactionHashID+"=?", txHash)
 	voutMatch := qm.Where(model.SupportColumns.Vout+"=?", vout)
-
-	exists, err := model.Supports(txHashMatch, voutMatch).ExistsG()
+	support, err := model.Supports(txHashMatch, voutMatch).OneG()
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil
+		}
 		logrus.Warning("Datastore(GETSUPPORT): ", err)
 	}
-	if exists {
-
-		support, err := model.Supports(txHashMatch, voutMatch).OneG()
-		if err != nil {
-			logrus.Warning("Datastore(GETSUPPORT): ", err)
-		}
-		return support
-	}
-	return nil
+	return support
 }
 
 // PutSupport makes creating,retrieving,updating the model type simplified.
 func PutSupport(support *model.Support) error {
-	defer util.TimeTrack(time.Now(), "PutSupport", "mysqlprofile")
-	if support != nil {
 
-		var err error
-		exists, err := model.ClaimExistsG(support.ID)
-		if err != nil {
-			return errors.Prefix("Datastore(PUTSUPPORT): ", err)
-		}
-		if exists {
-			support.ModifiedAt = time.Now()
-			err = support.UpdateG(boil.Infer())
-		} else {
-			err = support.InsertG(boil.Infer())
-		}
-		if err != nil {
-			err = errors.Prefix("Datastore(PUTSUPPORT): ", err)
-			return err
-		}
+	defer util.TimeTrack(time.Now(), "PutSupport", "mysqlprofile")
+	//using UpsertG fails because sqlboiler doesn't consider multi column unique keys as valid. hence the manual "upsert" logic here.
+	query := fmt.Sprintf(`INSERT INTO support (%s, %s, %s, %s, %s, %s) VALUES(?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE id=id`,
+		model.SupportColumns.SupportedClaimID,
+		model.SupportColumns.SupportAmount,
+		model.SupportColumns.BidState,
+		model.SupportColumns.TransactionHashID,
+		model.SupportColumns.Vout,
+		model.SupportColumns.SupportedByClaimID)
+	_, err := boil.GetDB().Exec(query, support.SupportedClaimID, support.SupportAmount, support.BidState, support.TransactionHashID, support.Vout, support.SupportedByClaimID)
+	if err != nil {
+		return errors.Prefix("Datastore(PUTSUPPORT)", err)
 	}
 	return nil
 }
 
 // GetTag makes creating,retrieving,updating the model type simplified.
-func GetTag(tag string) *model.Tag {
+func GetTag(tagName string) *model.Tag {
 	defer util.TimeTrack(time.Now(), "GetTag", "mysqlprofile")
-	tagMatch := qm.Where(model.TagColumns.Tag+"=?", tag)
-
-	exists, err := model.Tags(tagMatch).ExistsG()
+	tagMatch := qm.Where(model.TagColumns.Tag+"=?", tagName)
+	tag, err := model.Tags(tagMatch).OneG()
 	if err != nil {
-		logrus.Warning("Datastore(GETTAG): ", err)
-	}
-	if exists {
-
-		tag, err := model.Tags(tagMatch).OneG()
-		if err != nil {
-			logrus.Warning("Datastore(GETTAG): ", err)
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil
 		}
-		return tag
+		logrus.Warningf("Datastore(GETTAG): %s", err.Error())
 	}
-	return nil
+	return tag
 }
 
 // PutTag makes creating,retrieving,updating the model type simplified.
 func PutTag(tag *model.Tag) error {
 	defer util.TimeTrack(time.Now(), "PutTag", "mysqlprofile")
-	if tag != nil {
-
-		var err error
-		exists, err := model.TagExistsG(tag.ID)
-		if err != nil {
-			return errors.Prefix("Datastore(PUTTAG): ", err)
-		}
-		if exists {
-			tag.ModifiedAt = time.Now()
-			err = tag.UpdateG(boil.Infer())
-		} else {
-			err = tag.InsertG(boil.Infer())
-		}
-		if err != nil {
-			err = errors.Prefix("Datastore(PUTTAG): ", err)
-			return err
-		}
+	err := tag.UpsertG(boil.None(), boil.Infer())
+	if err != nil {
+		err = errors.Prefix("Datastore(PUTTAG)", err)
+		return err
 	}
 	return nil
 }
@@ -356,46 +312,24 @@ func GetClaimTag(tagID uint64, claimID string) *model.ClaimTag {
 	claimIDMatch := model.ClaimTagWhere.ClaimID.EQ(claimID)
 	tagIDMatch := model.ClaimTagWhere.TagID.EQ(null.Uint64From(tagID))
 
-	exists, err := model.ClaimTags(tagIDMatch, claimIDMatch).ExistsG()
+	claimTag, err := model.ClaimTags(tagIDMatch, claimIDMatch).OneG()
 	if err != nil {
-		logrus.Warning("Datastore(GETTAG): ", err)
-	}
-	if exists {
-
-		claimTag, err := model.ClaimTags(tagIDMatch, claimIDMatch).OneG()
-		if err != nil {
-			logrus.Warning("Datastore(GETTAG): ", err)
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil
 		}
-		return claimTag
+		logrus.Warningf("Datastore(GETCLAIMTAG): %s", err.Error())
 	}
-	return nil
+	return claimTag
 }
 
 // PutClaimTag makes creating,retrieving,updating the model type simplified.
 func PutClaimTag(claimTag *model.ClaimTag) error {
 	defer util.TimeTrack(time.Now(), "PutClaimTag", "mysqlprofile")
-	if claimTag != nil {
-
-		var err error
-		if !model.Claims(model.ClaimWhere.ClaimID.EQ(claimTag.ClaimID)).ExistsGP() {
-			logrus.Error("Failed to find claim ", claimTag.ClaimID)
-		}
-		claimIDMatch := model.ClaimTagWhere.ClaimID.EQ(claimTag.ClaimID)
-		tagIDMatch := model.ClaimTagWhere.TagID.EQ(claimTag.TagID)
-		exists, err := model.ClaimTags(claimIDMatch, tagIDMatch).ExistsG()
-		if err != nil {
-			return errors.Prefix("Datastore(PUTCLAIMTAG): ", err)
-		}
-		if exists {
-			claimTag.ModifiedAt = time.Now()
-			err = claimTag.UpdateG(boil.Infer())
-		} else {
-			err = claimTag.InsertG(boil.Infer())
-		}
-		if err != nil {
-			err = errors.Prefix("Datastore(PUTCLAIMTAG): ", err)
-			return err
-		}
+	//using UpsertG fails because sqlboiler doesn't consider multi column unique keys as valid. hence the manual "upsert" logic here.
+	query := fmt.Sprintf(`INSERT INTO claim_tag (%s, %s) VALUES(?, ?) ON DUPLICATE KEY UPDATE id=id`, model.ClaimTagColumns.TagID, model.ClaimTagColumns.ClaimID)
+	_, err := boil.GetDB().Exec(query, claimTag.TagID.Uint64, claimTag.ClaimID)
+	if err != nil {
+		return errors.Prefix("Datastore(PUTCLAIMTAG)", err)
 	}
 	return nil
 }
@@ -432,7 +366,7 @@ func PutPurchase(purchase *model.Purchase) error {
 		voutMatch := model.PurchaseWhere.Vout.EQ(purchase.Vout)
 		exists, err := model.Purchases(claimIDMatch, txHashMatch, voutMatch).ExistsG()
 		if err != nil {
-			return errors.Prefix("Datastore(PUTPURCHASE): ", err)
+			return errors.Prefix("Datastore(PUTPURCHASE)", err)
 		}
 		if exists {
 			purchase.Modified = time.Now()
@@ -441,7 +375,7 @@ func PutPurchase(purchase *model.Purchase) error {
 			err = purchase.InsertG(boil.Infer())
 		}
 		if err != nil {
-			err = errors.Prefix("Datastore(PUTPURCHASE): ", err)
+			err = errors.Prefix("Datastore(PUTPURCHASE)", err)
 			return err
 		}
 	}

@@ -7,6 +7,7 @@ import (
 	"runtime"
 	"strconv"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/lbryio/chainquery/datastore"
@@ -14,13 +15,13 @@ import (
 	"github.com/lbryio/chainquery/metrics"
 	"github.com/lbryio/chainquery/model"
 
-	"github.com/lbryio/lbry.go/extras/errors"
+	"github.com/lbryio/lbry.go/v2/extras/errors"
 	"github.com/lbryio/lbry.go/v2/extras/query"
 
 	"github.com/sirupsen/logrus"
-	"github.com/volatiletech/null"
-	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/null/v8"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 const claimTrieSyncJob = "claimtriesyncjob"
@@ -30,7 +31,7 @@ var expirationHardForkHeight uint = 400155    // https://github.com/lbryio/lbryc
 var hardForkBlocksToExpiration uint = 2102400 // https://github.com/lbryio/lbrycrd/pull/137
 var blockHeight uint64
 var blocksToExpiration uint = 262974 //Hardcoded! https://lbry.com/faq/claimtrie-implementation
-// ClaimTrieSyncRunning is a variable used to show whether or not the job is running already.
+// ClaimTrieSyncRunning is a variable used to show whether the job is running already.
 var claimTrieSyncRunning = false
 
 var lastSync *claimTrieSyncStatus
@@ -55,6 +56,9 @@ func ClaimTrieSync() {
 	metrics.JobLoad.WithLabelValues("claimtrie_sync").Inc()
 	defer metrics.JobLoad.WithLabelValues("claimtrie_sync").Dec()
 	defer metrics.Job(time.Now(), "claimtrie_sync")
+	defer func() {
+		claimTrieSyncRunning = false
+	}()
 	//defer util.TimeTrack(time.Now(), "ClaimTrieSync", "always")
 	printDebug("ClaimTrieSync: started... ")
 	if lastSync == nil {
@@ -65,6 +69,7 @@ func ClaimTrieSync() {
 		logrus.Error(err)
 		return
 	}
+	isFirstClaimTrieSync := jobStatus.LastSync.IsZero()
 	printDebug("ClaimTrieSync: updating spent claims")
 	//For Updating claims that are spent ( no longer in claimtrie )
 	if err := updateSpentClaims(); err != nil {
@@ -86,42 +91,101 @@ func ClaimTrieSync() {
 	lastSync.PreviousSyncTime = jobStatus.LastSync
 	lastSync.LastHeight = int64(blockHeight)
 
-	printDebug("ClaimTrieSync: getting updated claims...")
-	updatedClaims, err := getUpdatedClaims(jobStatus)
+	if isFirstClaimTrieSync {
+		logrus.Infof("first claimtriesync run detected. Boosters equipped for faster processing!")
+	}
+	claimsChan := make(chan *model.Claim, 50000)
+	success := false
+	processedClaims := int64(0)
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+	go func(claimsChan chan *model.Claim, currentHeight uint64, wg *sync.WaitGroup, success *bool) {
+		defer wg.Done()
+		err = reprocessUpdatedClaims(claimsChan, blockHeight, &processedClaims)
+		if err != nil {
+			logrus.Error("ClaimTrieSync:", err)
+			saveJobError(jobStatus, err)
+			*success = false
+			return
+		}
+		*success = true
+	}(claimsChan, blockHeight, wg, &success)
+
+	printDebug("ClaimTrieSync: getting modified claims since " + jobStatus.LastSync.String())
+	err = getModifiedClaims(jobStatus.LastSync, claimsChan)
 	if err != nil {
 		logrus.Error("ClaimTrieSync:", err)
 		saveJobError(jobStatus, err)
 		return
 	}
-	printDebug("ClaimTrieSync: Claims to update " + strconv.Itoa(len(updatedClaims)))
+	if !isFirstClaimTrieSync {
+		printDebug("ClaimTrieSync: getting newly supported claims since " + jobStatus.LastSync.String())
+		err = getSupportedClaims(jobStatus.LastSync, claimsChan)
+		if err != nil {
+			logrus.Error("ClaimTrieSync:", err)
+			saveJobError(jobStatus, err)
+			return
+		}
+		printDebug("ClaimTrieSync: getting new valid claims up to block height " + strconv.Itoa(int(lastSync.LastHeight)))
+		err = getNewValidClaims(uint(lastSync.LastHeight), claimsChan)
+		if err != nil {
+			logrus.Error("ClaimTrieSync:", err)
+			saveJobError(jobStatus, err)
+			return
+		}
+	}
+	close(claimsChan)
+	logrus.Infof("ClaimTrieSync: finished getting claims to reprocess. Now waiting on consumer")
+	wg.Wait()
+	if success {
+		jobStatus.LastSync = started
+		jobStatus.IsSuccess = true
+		jobStatus.ErrorMessage.Valid = false
+		bytes, err := json.Marshal(&lastSync)
+		if err != nil {
+			logrus.Error(err)
+			return
+		}
+		jobStatus.State.SetValid(bytes)
+		if err := jobStatus.UpdateG(boil.Infer()); err != nil {
+			logrus.Panic(err)
+		}
+		printDebug("ClaimTrieSync: Processed " + strconv.Itoa(int(atomic.LoadInt64(&processedClaims))) + " claims.")
+	}
+}
 
-	//For syncing the claims
-	if err := SyncClaims(updatedClaims); err != nil {
-		logrus.Error("ClaimTrieSync:", err)
-		saveJobError(jobStatus, err)
-		return
-	}
+func reprocessUpdatedClaims(claimsChan chan *model.Claim, currentHeight uint64, processedClaims *int64) error {
+	const BatchSize = 5000
+	reprocessedNamesMap := make(map[string]bool, 500000)
+	claimsBatch := make(model.ClaimSlice, 0, BatchSize)
+	for {
+		select {
+		case c, hasMore := <-claimsChan:
+			if hasMore && !reprocessedNamesMap[c.Name] {
+				claimsBatch = append(claimsBatch, c)
+				reprocessedNamesMap[c.Name] = true
+			}
+			if len(claimsBatch) > BatchSize || !hasMore {
+				printDebug("ClaimTrieSync: Claims to update " + strconv.Itoa(len(claimsBatch)))
+				//For syncing the claims
+				err := SyncClaims(claimsBatch)
+				if err != nil {
+					return err
+				}
 
-	//For Setting Controlling Claims
-	if err := SetControllingClaimForNames(updatedClaims, blockHeight); err != nil {
-		logrus.Error("ClaimTrieSync:", err)
-		saveJobError(jobStatus, err)
-		return
+				//For Setting Controlling Claims
+				err = SetControllingClaimForNames(claimsBatch, currentHeight)
+				if err != nil {
+					return err
+				}
+				atomic.AddInt64(processedClaims, int64(len(claimsBatch)))
+				claimsBatch = make(model.ClaimSlice, 0, BatchSize)
+			}
+			if !hasMore {
+				return nil
+			}
+		}
 	}
-
-	jobStatus.LastSync = started
-	jobStatus.IsSuccess = true
-	bytes, err := json.Marshal(&lastSync)
-	if err != nil {
-		logrus.Error(err)
-		return
-	}
-	jobStatus.State.SetValid(bytes)
-	if err := jobStatus.UpdateG(boil.Infer()); err != nil {
-		logrus.Panic(err)
-	}
-	printDebug("ClaimTrieSync: Processed " + strconv.Itoa(len(updatedClaims)) + " claims.")
-	claimTrieSyncRunning = false
 }
 
 func initSyncWorkers(nrWorkers int, jobs <-chan lbrycrd.Claim, wg *sync.WaitGroup) {
@@ -157,7 +221,7 @@ func controllingProcessor(names <-chan string, wg *sync.WaitGroup, atHeight uint
 // SetControllingClaimForNames sets the bid state for claims with these names.
 func SetControllingClaimForNames(claims model.ClaimSlice, atHeight uint64) error {
 	printDebug("ClaimTrieSync: controlling claim status update started... ")
-	controlwg := sync.WaitGroup{}
+	controlWg := sync.WaitGroup{}
 	names := make(map[string]string)
 	printDebug("ClaimTrieSync: Making name map...")
 	for _, claim := range claims {
@@ -165,12 +229,12 @@ func SetControllingClaimForNames(claims model.ClaimSlice, atHeight uint64) error
 	}
 	printDebug("ClaimTrieSync: Finished making name map...[", len(names), "]")
 	setControllingQueue := make(chan string, 1000)
-	initControllingWorkers(runtime.NumCPU()-1, setControllingQueue, &controlwg, atHeight)
+	initControllingWorkers(runtime.NumCPU()-1, setControllingQueue, &controlWg, atHeight)
 	for _, name := range names {
 		setControllingQueue <- name
 	}
 	close(setControllingQueue)
-	controlwg.Wait()
+	controlWg.Wait()
 	printDebug("ClaimTrieSync: controlling claim status update complete... ")
 
 	return nil
@@ -208,7 +272,7 @@ func setBidStateOfClaimsForName(name string, atHeight uint64) {
 
 // SyncClaims syncs the claims' with these names effective amount and valid at height with the lbrycrd claimtrie.
 func SyncClaims(claims model.ClaimSlice) error {
-	printDebug("ClaimTrieSync: claim  update started... ")
+	printDebug("ClaimTrieSync: claim update started... ")
 	claimNameMap := make(map[string]bool)
 	for _, claim := range claims {
 		claimNameMap[claim.Name] = true
@@ -223,11 +287,11 @@ func SyncClaims(claims model.ClaimSlice) error {
 	initSyncWorkers(runtime.NumCPU()-1, processingQueue, &syncwg)
 	for i, name := range names {
 		if i%1000 == 0 {
-			printDebug("ClaimTrieSync: syncing ", i, " of ", len(names), " queued - ", len(processingQueue))
+			printDebug("ClaimTrieSync: syncing ", i, " of ", len(names), " queued - queue size: ", len(processingQueue))
 		}
 		claims, err := lbrycrd.GetClaimsForName(name)
 		if err != nil {
-			logrus.Error("ClaimTrieSync: Could not get claims for name: ", name, " Error: ", err)
+			printDebug("ClaimTrieSync: Could not get claims for name: ", name, " Error: ", err)
 		}
 		for _, claimJSON := range claims.Claims {
 			processingQueue <- claimJSON
@@ -236,7 +300,7 @@ func SyncClaims(claims model.ClaimSlice) error {
 	close(processingQueue)
 	syncwg.Wait()
 
-	printDebug("ClaimTrieSync: claim  update complete... ")
+	printDebug("ClaimTrieSync: claim update complete... ")
 
 	return nil
 }
@@ -262,7 +326,7 @@ func syncClaim(claimJSON *lbrycrd.Claim) {
 	}
 	if claim.EffectiveAmount != claimJSON.EffectiveAmount {
 		if claimJSON.PendingAmount != 0 && claim.EffectiveAmount != claimJSON.PendingAmount {
-			claim.EffectiveAmount = claimJSON.EffectiveAmount
+			claim.EffectiveAmount = claimJSON.PendingAmount
 		} else {
 			claim.EffectiveAmount = claimJSON.EffectiveAmount
 		}
@@ -289,13 +353,13 @@ func getClaimStatus(claim *model.Claim, atHeight uint64) string {
 	}
 
 	if err != nil {
-		logrus.Error("could not find transaction ", claim.TransactionHashID, " : ", err)
+		logrus.Errorf("could not find transaction %s for claim id %d at height %d: %s", claim.TransactionHashID.String, claim.ID, atHeight, err.Error())
 		return status
 	}
 	o := model.OutputColumns
 	output, err := transaction.Outputs(qm.Select(o.ID, o.IsSpent), qm.Where(model.OutputColumns.Vout+"=?", claim.VoutUpdate)).OneG()
 	if err != nil {
-		logrus.Error("could not find output ", claim.TransactionHashID, "-", claim.Vout, " : ", err)
+		logrus.Errorf("could not find output %s - %d: %s", claim.TransactionHashID.String, claim.Vout, err)
 		return "ERROR"
 	}
 
@@ -337,203 +401,183 @@ func GetIsExpiredAtHeight(height, blockHeight uint) bool {
 	}
 	return false
 }
-
-func getUpdatedClaims(jobStatus *model.JobStatus) (model.ClaimSlice, error) {
-	prevNamesLength := 0
-	// CLAIMS THAT HAVE SUPPORTS THAT WERE MODIFIED [SELECT support.supported_claim_id FROM support WHERE support.modified_at >= '2019-11-03 19:48:58';]
+func getSupportedClaims(since time.Time, claimsChan chan *model.Claim) error {
+	// CLAIMS THAT HAVE SUPPORTS THAT WERE MODIFIED [SELECT DISTINCT support.supported_claim_id FROM support WHERE support.modified_at >= '2019-11-03 19:48:58';]
 	s := model.SupportColumns
-	supports, err := model.Supports(qm.Select(s.SupportedClaimID), model.SupportWhere.ModifiedAt.GTE(jobStatus.LastSync)).AllG()
+	supports, err := model.Supports(qm.Select("DISTINCT "+s.SupportedClaimID), model.SupportWhere.ModifiedAt.GTE(since)).AllG()
 	if err != nil {
-		return nil, errors.Err(err)
+		return errors.Err(err)
 	}
-	var claimids []interface{}
+	var claimIds []interface{}
 	for _, support := range supports {
-		claimids = append(claimids, support.SupportedClaimID)
+		claimIds = append(claimIds, support.SupportedClaimID)
 	}
 	c := model.ClaimColumns
-	upTo := 5000
-	var claims model.ClaimSlice
-	var namesMap map[string]bool
-	for len(claimids) > 0 {
-		if len(claimids) < upTo {
-			upTo = len(claimids)
-		}
-		var err error
-		toFind := claimids[:upTo]
-		claims, err = model.Claims(qm.Select("DISTINCT "+c.Name), qm.WhereIn(c.ClaimID+" IN ?", toFind...)).AllG()
-		if err != nil {
-			return nil, errors.Err(err)
-		}
-		namesMap = updateNameList(namesMap, claims)
-		claimids = claimids[upTo:]
-	}
 
-	prevNamesLength = len(namesMap)
-	logrus.Debugf("found %d new names from support modifications", prevNamesLength)
+	batch := 15000
+	for i := 0; i < len(claimIds); i += batch {
+		j := i + batch
+		if j > len(claimIds) {
+			j = len(claimIds)
+		}
+		claims, err := model.Claims(qm.Select("DISTINCT "+c.Name), qm.WhereIn(c.ClaimID+" IN ?", claimIds[i:j]...)).AllG()
+		if err != nil {
+			return errors.Err(err)
+		}
+		logrus.Debugf("sending %d claim for reprocessing - batch %d-%d/%d", len(claims), i, j, len(claimIds))
+		for _, c := range claims {
+			claimsChan <- c
+		}
+		logrus.Debugf("%d claimIds left to process", len(claimIds)-i)
+	}
+	return nil
+}
+func getModifiedClaims(since time.Time, claimsChan chan *model.Claim) error {
 	// CLAIMS THAT WERE MODIFIED [SELECT DISTINCT claim.name FROM claim WHERE claim.modified_at >= '2019-11-03 19:48:58';]
-	claims, err = model.Claims(qm.Select("DISTINCT "+c.Name), model.ClaimWhere.ModifiedAt.GTE(jobStatus.LastSync)).AllG()
-	if err != nil {
-		return nil, errors.Err(err)
-	}
-	namesMap = updateNameList(namesMap, claims)
-	logrus.Debugf("found %d new names from claims that were modified", len(namesMap)-prevNamesLength)
-	prevNamesLength = len(namesMap)
-	// CLAIMS THAT BECAME VALID SINCE [SELECT DISTINCT claim.name FROM claim WHERE claim.valid_at_height >= 852512;]
-	claims, err = model.Claims(qm.Select("DISTINCT "+c.Name), model.ClaimWhere.ValidAtHeight.GTE(uint(lastSync.LastHeight))).AllG()
-	if err != nil {
-		return nil, errors.Err(err)
-	}
-	namesMap = updateNameList(namesMap, claims)
-	logrus.Debugf("found %d new names from claims that became valid", len(namesMap)-prevNamesLength)
-	var namesToFind []interface{}
-	for name := range namesMap {
-		namesToFind = append(namesToFind, name)
-	}
-
-	upTo = 5000
-	var claimsToUpdate model.ClaimSlice
-	for len(namesToFind) > 0 {
-		if len(namesToFind) < upTo {
-			upTo = len(namesToFind)
-		}
-		toFind := namesToFind[:upTo]
-		claims, err := model.Claims(qm.Select(c.ID, c.Name), qm.WhereIn(c.Name+" IN ?", toFind...)).AllG()
-		if err != nil {
-			return nil, errors.Err(err)
-		}
-		claimsToUpdate = append(claimsToUpdate, claims...)
-		logrus.Debugf("found %d additional claims from name list", len(claims))
-		namesToFind = namesToFind[upTo:]
-	}
-	claimsToUpdate, err = populateClaimID(claimsToUpdate)
-	return claimsToUpdate, err
-}
-
-func populateClaimID(originalClaims model.ClaimSlice) (model.ClaimSlice, error) {
-	var idsToFind []interface{}
-	var idsOfClaims []uint64
-	IDMap := make(map[uint64]int)
-	for i, claim := range originalClaims {
-		idsToFind = append(idsToFind, claim.ID)
-		idsOfClaims = append(idsOfClaims, claim.ID)
-		IDMap[claim.ID] = i
-	}
-	upTo := 5000
 	c := model.ClaimColumns
-	for len(idsToFind) > 0 {
-		if len(idsToFind) < upTo {
-			upTo = len(idsToFind)
-		}
-		toFind := idsToFind[:upTo]
-		claims, err := model.Claims(qm.Select(c.ID, c.ClaimID), qm.WhereIn(c.ID+" IN ?", toFind...)).AllG()
+	prevID := -1
+	clauses := make([]qm.QueryMod, 0)
+	if !since.IsZero() {
+		clauses = append(clauses, model.ClaimWhere.ModifiedAt.GTE(since))
+	}
+	clauses = append(clauses, qm.Select(c.ID, c.Name), qm.Limit(15000))
+	for {
+		finalClauses := append(clauses, qm.Where(c.ID+">?", prevID))
+		claims, err := model.Claims(finalClauses...).AllG()
 		if err != nil {
-			return nil, errors.Err(err)
+			return errors.Err(err)
 		}
-		logrus.Debugf("found %d additional claims from claim_id list", len(claims))
-		for _, claim := range claims {
-			c := originalClaims[IDMap[claim.ID]]
-			c.ClaimID = claim.ClaimID
-			originalClaims[IDMap[claim.ID]] = c
+		oldPrevID := prevID
+		logrus.Debugf("[getModifiedClaims] sending claim %d claims for reprocessing - claim id batch: %d", len(claims), prevID)
+		for _, c := range claims {
+			claimsChan <- c
+			prevID = int(c.ID)
 		}
-		idsToFind = idsToFind[upTo:]
+		if oldPrevID == prevID {
+			break
+		}
 	}
-	return originalClaims, nil
+	return nil
+}
+func getNewValidClaims(lastHeight uint, claimsChan chan *model.Claim) error {
+	// CLAIMS THAT BECAME VALID SINCE [SELECT DISTINCT claim.name FROM claim WHERE claim.valid_at_height >= 852512;]
+	c := model.ClaimColumns
+	prevID := -1
+	for {
+		claims, err := model.Claims(qm.Select(c.ID, c.Name), qm.Where(c.ID+">?", prevID), model.ClaimWhere.ValidAtHeight.GTE(lastHeight), qm.Limit(15000)).AllG()
+		if err != nil {
+			return errors.Err(err)
+		}
+		oldPrevID := prevID
+		logrus.Debugf("[getNewValidClaims] sending claim %d claims for reprocessing - claim id batch: %d", len(claims), prevID)
+		for _, c := range claims {
+			claimsChan <- c
+			prevID = int(c.ID)
+		}
+		if oldPrevID == prevID {
+			break
+		}
+	}
+	return nil
 }
 
-func updateNameList(m map[string]bool, claims model.ClaimSlice) map[string]bool {
-	if m == nil {
-		m = make(map[string]bool)
-	}
-	for _, claim := range claims {
-		if _, ok := m[claim.Name]; !ok {
-			m[claim.Name] = true
-		}
-	}
-	return m
-}
-
-func getSpentClaimsToUpdate(hasUpdate bool) (model.ClaimSlice, error) {
+func getSpentClaimsToUpdate(hasUpdate bool, lastProcessed uint64) (model.ClaimSlice, uint64, error) {
 	w := model.OutputWhere
 	o := model.OutputColumns
 	outputMods := []qm.QueryMod{
 		qm.Select(o.ID, o.IsSpent, o.TransactionHash),
 		w.ModifiedAt.GTE(lastSync.PreviousSyncTime),
 		w.IsSpent.EQ(true),
-		qm.Limit(5000),
+		w.ID.GT(lastProcessed),
+		qm.Limit(15000),
 	}
 	var outputs model.OutputSlice
-	var claims model.ClaimSlice
-	var claimsToAdd model.ClaimSlice
 	var err error
 	outputs, err = model.Outputs(outputMods...).AllG()
-	for len(outputs) > 0 {
-		var txHashList []interface{}
-		for _, o := range outputs {
-			txHashList = append(txHashList, o.TransactionHash)
-		}
-		txHashCol := model.ClaimColumns.TransactionHashID
-		if hasUpdate {
-			txHashCol = model.ClaimColumns.TransactionHashUpdate
-		}
-		c := model.ClaimColumns
-		claimsToAdd, err = model.Claims(qm.Select(c.ID, c.ClaimID, txHashCol), qm.WhereIn(txHashCol+" IN ?", txHashList...)).AllG()
-		if err != nil {
-			return nil, errors.Err(err)
-		}
-		claims = append(claims, claimsToAdd...)
-		logrus.Debug("outputs found: ", len(outputs), " claims found up to: ", len(claims))
-		nextOutputMods := append(outputMods, w.ID.GT(outputs[len(outputs)-1].ID))
-		outputs, err = model.Outputs(nextOutputMods...).AllG()
-		if err != nil {
-			return nil, errors.Err(err)
-		}
+	if err != nil {
+		return nil, 0, errors.Err(err)
 	}
-	return claims, nil
+	if len(outputs) == 0 {
+		return nil, lastProcessed, nil
+	}
+
+	var txHashList []interface{}
+	for _, o := range outputs {
+		txHashList = append(txHashList, o.TransactionHash)
+	}
+	txHashCol := model.ClaimColumns.TransactionHashID
+	if hasUpdate {
+		txHashCol = model.ClaimColumns.TransactionHashUpdate
+	}
+	c := model.ClaimColumns
+	claims, err := model.Claims(qm.Select(c.ID, c.ClaimID, txHashCol), qm.WhereIn(txHashCol+" IN ?", txHashList...)).AllG()
+	if err != nil {
+		return nil, 0, errors.Err(err)
+	}
+	if len(claims) > 0 {
+		logrus.Debugf("found %d outputs, %d claims - last claim id: %d", len(outputs), len(claims), claims[len(claims)-1].ID)
+	}
+	lastProcessed = outputs[len(outputs)-1].ID
+
+	return claims, lastProcessed, nil
 }
 
 func updateSpentClaims() error {
+	var lastProcessed uint64
+	for {
+		//Claims without updates
+		claims, newLastProcessed, err := getSpentClaimsToUpdate(false, lastProcessed)
+		if err != nil {
+			return err
+		}
+		for _, claim := range claims {
+			if !claim.TransactionHashUpdate.IsZero() {
+				continue
+			}
+			claim.BidState = "Spent"
+			claim.ModifiedAt = time.Now()
+			if err := claim.UpdateG(boil.Whitelist(model.ClaimColumns.BidState, model.ClaimColumns.ModifiedAt)); err != nil {
+				return err
+			}
+		}
+		if lastProcessed == newLastProcessed {
+			break
+		}
+		lastProcessed = newLastProcessed
+	}
+	lastProcessed = 0
+	for {
+		//Claims without updates
+		claims, newLastProcessed, err := getSpentClaimsToUpdate(true, lastProcessed)
+		if err != nil {
+			return err
+		}
+		for _, claim := range claims {
+			claim.BidState = "Spent"
+			claim.ModifiedAt = time.Now()
+		}
 
-	//Claims without updates
-	claims, err := getSpentClaimsToUpdate(false)
-	if err != nil {
-		return err
-	}
-	for _, claim := range claims {
-		if !claim.TransactionHashUpdate.IsZero() {
-			continue
+		batch := 15000
+		for i := 0; i < len(claims); i += batch {
+			j := i + batch
+			if j > len(claims) {
+				j = len(claims)
+			}
+			args := []interface{}{time.Now()}
+			for _, c := range claims[i:j] {
+				args = append(args, c.ID)
+			}
+			updateQuery := fmt.Sprintf(`UPDATE claim use index(id) SET bid_state="Spent", modified_at = ? WHERE id IN (%s)`, query.Qs(len(claims[i:j])))
+			if _, err := boil.GetDB().Exec(updateQuery, args...); err != nil {
+				return err
+			}
+			logrus.Debugf("%d claims left to update", len(claims)-i)
 		}
-		claim.BidState = "Spent"
-		claim.ModifiedAt = time.Now()
-		if err := claim.UpdateG(boil.Whitelist(model.ClaimColumns.BidState, model.ClaimColumns.ModifiedAt)); err != nil {
-			return err
+
+		if lastProcessed == newLastProcessed {
+			break
 		}
-	}
-	//Claims without updates
-	claims, err = getSpentClaimsToUpdate(true)
-	if err != nil {
-		return err
-	}
-	for _, claim := range claims {
-		claim.BidState = "Spent"
-		claim.ModifiedAt = time.Now()
-	}
-	upTo := 1000
-	logrus.Debugf("%d claims left to update", len(claims))
-	for len(claims) > 0 {
-		if len(claims) < upTo {
-			upTo = len(claims)
-		}
-		toUpdate := claims[:upTo]
-		args := []interface{}{time.Now()}
-		for _, c := range toUpdate {
-			args = append(args, c.ID)
-		}
-		updateQuery := fmt.Sprintf(`UPDATE claim SET bid_state="Spent", modified_at = ? WHERE id IN (%s)`, query.Qs(len(toUpdate)))
-		if _, err := boil.GetDB().Exec(updateQuery, args...); err != nil {
-			return err
-		}
-		logrus.Debugf("%d claims left to update", len(claims))
-		claims = claims[upTo:]
+		lastProcessed = newLastProcessed
 	}
 	return nil
 }

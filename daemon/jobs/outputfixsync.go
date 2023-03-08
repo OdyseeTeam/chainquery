@@ -1,15 +1,17 @@
 package jobs
 
 import (
+	"runtime"
+	"sync"
 	"time"
 
 	"github.com/lbryio/lbry.go/v2/extras/errors"
 
 	"github.com/lbryio/chainquery/model"
 	"github.com/sirupsen/logrus"
-	"github.com/volatiletech/null"
-	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/null/v8"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 // const outputFixSyncJob = "outputfixsync"
@@ -23,51 +25,69 @@ func OutputFixSync() {
 }
 
 func fixOutputs() error {
-	lastClaimRecordID := uint64(0)
+	wg := sync.WaitGroup{}
+	spentClaimsChan := make(chan *model.Claim, 100)
+	errorsChan := make(chan error, runtime.NumCPU())
 	c := model.ClaimColumns
+	for i := 0; i < runtime.NumCPU()-1; i++ {
+		wg.Add(1)
+		go func(spentClaims chan *model.Claim, errorsChan chan error) {
+			defer wg.Done()
+			for claim := range spentClaims {
+				where := model.OutputWhere
+				isSpent, err := model.Outputs(
+					where.ClaimID.EQ(null.StringFrom(claim.ClaimID)),
+					where.TransactionHash.EQ(claim.TransactionHashUpdate.String),
+					where.Vout.EQ(claim.VoutUpdate.Uint),
+					where.IsSpent.EQ(true)).ExistsG()
+				if err != nil {
+					errorsChan <- errors.Err(err)
+					return
+				}
+				if !isSpent {
+					logrus.Debugf("%s is not really spent", claim.ClaimID)
+					claim.BidState = "Active"
+					claim.ModifiedAt = time.Now()
+					err := claim.UpdateG(boil.Whitelist(c.BidState, c.ModifiedAt))
+					if err != nil {
+						errorsChan <- errors.Err(err)
+						return
+					}
+				}
+			}
+		}(spentClaimsChan, errorsChan)
+	}
+
+	lastClaimRecordID := uint64(0)
 	claims, err := model.Claims(
 		qm.Select(c.ID, c.ClaimID, c.TransactionHashID, c.TransactionHashUpdate, c.VoutUpdate),
 		model.ClaimWhere.BidState.EQ("Spent"),
 		model.ClaimWhere.ID.GT(lastClaimRecordID),
-		qm.Limit(1000)).AllG()
+		qm.Limit(15000)).AllG()
 	if err != nil {
 		return errors.Err(err)
 	}
-	if len(claims) == 0 {
-		return nil
-	}
 
 	for len(claims) != 0 {
-		logrus.Debugf("check claim from %d to %d", claims[0].ID, claims[len(claims)-1].ID)
+		logrus.Debugf("enqueing claims from %d to %d", claims[0].ID, claims[len(claims)-1].ID)
 		for _, claim := range claims {
+			spentClaimsChan <- claim
 			lastClaimRecordID = claim.ID
-			where := model.OutputWhere
-			isSpent, err := model.Outputs(
-				where.ClaimID.EQ(null.StringFrom(claim.ClaimID)),
-				where.TransactionHash.EQ(claim.TransactionHashUpdate.String),
-				where.Vout.EQ(claim.VoutUpdate.Uint),
-				where.IsSpent.EQ(true)).ExistsG()
-			if err != nil {
-				return errors.Err(err)
-			}
-			if !isSpent {
-				logrus.Debugf("%s is not really spent", claim.ClaimID)
-				claim.BidState = "Active"
-				claim.ModifiedAt = time.Now()
-				err := claim.UpdateG(boil.Whitelist(c.BidState, c.ModifiedAt))
-				if err != nil {
-					return errors.Err(err)
-				}
-			}
 		}
 		claims, err = model.Claims(
 			qm.Select(c.ID, c.ClaimID, c.TransactionHashID, c.TransactionHashUpdate, c.VoutUpdate),
 			model.ClaimWhere.BidState.EQ("Spent"),
 			model.ClaimWhere.ID.GT(lastClaimRecordID),
-			qm.Limit(1000)).AllG()
+			qm.Limit(15000)).AllG()
 		if err != nil {
 			return errors.Err(err)
 		}
+	}
+	close(spentClaimsChan)
+	wg.Wait()
+	close(errorsChan)
+	for e := range errorsChan {
+		logrus.Errorf("a worker incurrred in an error: %s", e.Error())
 	}
 	return nil
 }

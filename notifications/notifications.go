@@ -56,10 +56,19 @@ func Notify(t string, values url.Values) {
 func (s subscriber) notify(values url.Values) {
 	res, err := http.PostForm(s.URL, values)
 	if err != nil {
-		logrus.Error(errors.Prefix("Notify:", errors.Err(err)))
+		logrus.Error(errors.Prefix("Notify", errors.Err(err)))
 	}
-	err = res.Body.Close()
-	if err != nil {
-		logrus.Error(errors.Prefix("Notify:", errors.Err(err)))
-	}
+	defer func() {
+		err = res.Body.Close()
+		if err != nil {
+			logrus.Error(errors.Prefix("Notify", errors.Err(err)))
+		}
+	}()
+	//b, err := io.ReadAll(res.Body)
+	//if err != nil {
+	//	logrus.Error(errors.Prefix("Notify", errors.Err(err)))
+	//}
+	//if res.StatusCode != http.StatusOK {
+	//	logrus.Errorln(string(b))
+	//}
 }

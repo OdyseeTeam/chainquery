@@ -6,10 +6,10 @@ import (
 	"github.com/lbryio/chainquery/daemon/jobs"
 	"github.com/lbryio/chainquery/lbrycrd"
 	"github.com/lbryio/chainquery/model"
-	"github.com/lbryio/lbry.go/extras/errors"
+	"github.com/lbryio/lbry.go/v2/extras/errors"
 	"github.com/sirupsen/logrus"
-	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 const (
@@ -27,7 +27,7 @@ func RunUpgradesForVersion() {
 	if !model.ApplicationStatusExistsGP(1) {
 		appStatus = &model.ApplicationStatus{AppVersion: appVersion, APIVersion: apiVersion, DataVersion: dataVersion}
 		if err := appStatus.InsertG(boil.Infer()); err != nil {
-			err := errors.Prefix("App Status Error: ", err)
+			err := errors.Prefix("App Status Error", err)
 			panic(err)
 		}
 	} else {
@@ -59,7 +59,7 @@ func RunUpgradesForVersion() {
 		appStatus.APIVersion = apiVersion
 	}
 	if err := appStatus.UpdateG(boil.Infer()); err != nil {
-		err := errors.Prefix("App Status Error: ", err)
+		err := errors.Prefix("App Status Error", err)
 		panic(err)
 	}
 	logrus.Debug("All necessary upgrades are finished!")

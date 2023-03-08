@@ -7,9 +7,9 @@ import (
 	"github.com/lbryio/chainquery/model"
 	"github.com/lbryio/lbry.go/v2/extras/errors"
 	"github.com/sirupsen/logrus"
-	"github.com/volatiletech/null"
-	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/null/v8"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 const syncTransactionValues = "SyncTransactionValues: "
@@ -147,7 +147,7 @@ func SyncTransactionValue() (int64, error) {
 		return 0, errors.Prefix(syncTransactionValues, err)
 	}
 	if latestBlock.Height == 0 {
-		return 0, errors.Prefix(syncTransactionValues, errors.Err("latest height = 0 "))
+		return 0, errors.Prefix(syncTransactionValues, errors.Err("latest height = 0"))
 	}
 	latestHeight := int(latestBlock.Height)
 	updateIncrement := 5000
@@ -182,30 +182,23 @@ func SyncTransactionValue() (int64, error) {
 // SyncClaimCntInChannel will sync up the number of claims that are part of a particular channel. This can be used as a
 // calculated column in the claim table to get this figure fast in a query.
 func SyncClaimCntInChannel() error {
-
-	t := model.TableNames
-	c := model.ClaimColumns
-
-	query := `SELECT COUNT(*) FROM ` + t.Claim + ` WHERE ` + t.Claim + `.` + c.PublisherID + ` = ?`
-
-	var from int
-	var to int
-
 	latestBlock, err := model.Blocks(qm.Select(model.BlockColumns.Height), qm.OrderBy(model.BlockColumns.Height+" DESC")).OneG()
 	if err != nil {
 		return errors.Prefix(syncClaimsInChannel, err)
 	}
+	logrus.Infof("running SyncClaimCntInChannel for latest height of %d", latestBlock.Height)
 	if latestBlock.Height == 0 {
-		return errors.Prefix(syncClaimsInChannel, errors.Err("latest height = 0 "))
+		return errors.Prefix(syncClaimsInChannel, errors.Err("latest height = 0"))
 	}
 	latestHeight := int(latestBlock.Height)
 	updateIncrement := 5000
-	if updateIncrement >= latestHeight {
-		updateIncrement = latestHeight
-	}
-	for i := 0; i < latestHeight/updateIncrement; i++ {
-		from = i * updateIncrement
-		to = (i + 1) * updateIncrement
+
+	t := model.TableNames
+	c := model.ClaimColumns
+	query := `SELECT COUNT(*) FROM ` + t.Claim + ` WHERE ` + t.Claim + `.` + c.PublisherID + ` = ?`
+	for i := 0; i < latestHeight; i = i + updateIncrement {
+		from := i
+		to := i + updateIncrement
 		if to > latestHeight {
 			to = latestHeight
 		}
@@ -216,6 +209,7 @@ func SyncClaimCntInChannel() error {
 		if err != nil {
 			return errors.Prefix(syncClaimsInChannel, err)
 		}
+		logrus.Debugf("processing %d channels in batch from height %d to height %d", len(channelsToProcess), from, to)
 		for _, channel := range channelsToProcess {
 			result := boil.GetDB().QueryRow(query, channel.ClaimID)
 			if err != nil {

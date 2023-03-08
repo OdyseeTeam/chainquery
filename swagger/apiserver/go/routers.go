@@ -13,7 +13,7 @@ import (
 	"strings"
 
 	. "github.com/lbryio/chainquery/apiactions"
-	. "github.com/lbryio/lbry.go/extras/api"
+	. "github.com/lbryio/lbry.go/v2/extras/api"
 
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus/promhttp"

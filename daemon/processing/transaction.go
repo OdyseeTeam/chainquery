@@ -16,11 +16,11 @@ import (
 	"github.com/lbryio/chainquery/model"
 	"github.com/lbryio/chainquery/util"
 
-	"github.com/lbryio/lbry.go/extras/errors"
-	"github.com/lbryio/lbry.go/extras/stop"
+	"github.com/lbryio/lbry.go/v2/extras/errors"
+	"github.com/lbryio/lbry.go/v2/extras/stop"
 
-	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 //MaxParallelTxProcessing sets the maximum concurrent transactions to process in a block.
@@ -62,9 +62,9 @@ func txProcessor(s *stop.Group, jobs <-chan txToProcess, results chan<- txProces
 			err := ProcessTx(job.tx, job.blockTime, job.blockHeight)
 			if err != nil {
 				metrics.ProcessingFailures.WithLabelValues("transaction").Inc()
-				logrus.Debugf("processing tx failed %d times %s", job.failcount+1, job.tx.Hash)
+				logrus.Debugf("processing tx failed %d times %s: %s", job.failcount+1, job.tx.Txid, err.Error())
 			} else if job.failcount > 0 {
-				logrus.Debugf("processing tx success after %d times %s", job.failcount, job.tx.Hash)
+				logrus.Debugf("processing tx success after %d times %s", job.failcount, job.tx.Txid)
 			}
 			result := txProcessResult{
 				tx:          job.tx,
@@ -139,7 +139,7 @@ func ProcessTx(jsonTx *lbrycrd.TxRawResult, blockTime uint64, blockHeight uint64
 	defer metrics.Processing(time.Now(), "transaction")
 	defer util.TimeTrack(time.Now(), "processTx "+jsonTx.Txid+" -- ", "daemonprofile")
 
-	//Save transaction before the id is used any where else otherwise it will be 0
+	//Save transaction before the id is used anywhere else otherwise it will be 0
 	transaction, err := saveUpdateTransaction(jsonTx)
 	if err != nil {
 		return err
@@ -149,11 +149,11 @@ func ProcessTx(jsonTx *lbrycrd.TxRawResult, blockTime uint64, blockHeight uint64
 
 	_, err = createUpdateVoutAddresses(transaction, &jsonTx.Vout, blockTime)
 	if err != nil {
-		return errors.Prefix("Vout Address Creation Error: ", err)
+		return errors.Prefix("Vout Address Creation Error", err)
 	}
 	_, err = createUpdateVinAddresses(transaction, &jsonTx.Vin, blockTime)
 	if err != nil {
-		return errors.Prefix("Vin Address Creation Error: ", err)
+		return errors.Prefix("Vin Address Creation Error", err)
 	}
 
 	// Process the inputs of the tranasction
@@ -190,15 +190,20 @@ func saveUpdateTransaction(jsonTx *lbrycrd.TxRawResult) (*model.Transaction, err
 	if foundTx != nil {
 		transaction = foundTx
 	}
-	transaction.Hash = jsonTx.Txid
-	transaction.Version = int(jsonTx.Version)
 	transaction.BlockHashID.SetValid(jsonTx.BlockHash)
-	transaction.CreatedTime = time.Unix(jsonTx.Blocktime, 0)
-	transaction.TransactionTime.SetValid(uint64(jsonTx.Time))
-	transaction.LockTime = uint(jsonTx.LockTime)
 	transaction.InputCount = uint(len(jsonTx.Vin))
 	transaction.OutputCount = uint(len(jsonTx.Vout))
+	transaction.TransactionTime.SetValid(uint64(jsonTx.Time))
 	transaction.TransactionSize = uint64(jsonTx.Size)
+	transaction.Hash = jsonTx.Txid
+	transaction.Version = int(jsonTx.Version)
+	transaction.LockTime = uint(jsonTx.LockTime)
+	transaction.CreatedTime = time.Unix(jsonTx.Blocktime, 0)
+	transactionAmount := 0.0
+	for _, vout := range jsonTx.Vout {
+		transactionAmount += vout.Value
+	}
+	transaction.Value = transactionAmount
 
 	if foundTx != nil {
 		if err := transaction.UpdateG(boil.Infer()); err != nil {
@@ -327,8 +332,8 @@ func setSendReceive(transaction *model.Transaction, txDbCrAddrMap *txDebitCredit
 
 		txAddr.CreditAmount = DC.Credits()
 		txAddr.DebitAmount = DC.Debits()
-
-		if err := datastore.PutTxAddress(txAddr); err != nil {
+		err := datastore.UpdateTxAddressAmounts(txAddr)
+		if err != nil {
 			return err //Should never happen or something is wrong
 		}
 	}

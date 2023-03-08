@@ -6,8 +6,8 @@ import (
 	"github.com/lbryio/chainquery/auth"
 	"github.com/lbryio/chainquery/daemon/jobs"
 
-	"github.com/lbryio/lbry.go/extras/api"
-	"github.com/lbryio/lbry.go/extras/errors"
+	"github.com/lbryio/lbry.go/v2/extras/api"
+	"github.com/lbryio/lbry.go/v2/extras/errors"
 
 	v "github.com/lbryio/ozzo-validation"
 )

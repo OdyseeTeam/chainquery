@@ -5,16 +5,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pkg/profile"
-	"github.com/spf13/viper"
-
 	"github.com/lbryio/chainquery/config"
 	"github.com/lbryio/chainquery/daemon/jobs"
 	"github.com/lbryio/chainquery/db"
 	"github.com/lbryio/chainquery/lbrycrd"
+	"github.com/lbryio/lbry.go/v2/extras/errors"
 
+	"github.com/pkg/profile"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 func init() {
@@ -22,6 +22,12 @@ func init() {
 }
 
 var jobsMap = map[string]func(){
+	"claimcount": func() {
+		err := jobs.SyncClaimCntInChannel()
+		if err != nil {
+			logrus.Errorf("failure in running claimcount job: %s", errors.FullTrace(err))
+		}
+	},
 	"claimtrie":        jobs.ClaimTrieSync,
 	"certificate":      jobs.CertificateSync,
 	"mempool":          jobs.MempoolSync,

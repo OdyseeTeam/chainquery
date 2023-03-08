@@ -3,7 +3,7 @@ package config
 import (
 	"time"
 
-	"github.com/lbryio/lbry.go/extras/errors"
+	"github.com/lbryio/lbry.go/v2/extras/errors"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -27,7 +27,7 @@ func GetLBRYcrdURL() string {
 	}
 	url, err := getLbrycrdURLFromConfFile()
 	if err != nil {
-		err = errors.Prefix("LBRYcrd conf file error: ", err)
+		err = errors.Prefix("LBRYcrd conf file error", err)
 		logrus.Panic(err)
 	}
 	return url
