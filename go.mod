@@ -1,11 +1,8 @@
 module github.com/lbryio/chainquery
 
-go 1.18
+go 1.19
 
-replace (
-	github.com/btcsuite/btcd => github.com/lbryio/lbrycrd.go v0.0.0-20200203050410-e1076f12bf19
-	github.com/lbryio/lbry.go/v2 => github.com/OdyseeTeam/lbry.go/v2 v2.7.2-0.20230307181431-a01aa6dc0629
-)
+replace github.com/btcsuite/btcd => github.com/lbryio/lbrycrd.go v0.0.0-20200203050410-e1076f12bf19
 
 require (
 	github.com/btcsuite/btcd v0.0.0-20190213025234-306aecffea32
@@ -19,8 +16,8 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/johntdyer/slackrus v0.0.0-20220912135606-861993969176
-	github.com/kevinburke/go-bindata v3.24.0+incompatible
-	github.com/lbryio/lbry.go/v2 v2.7.2-0.20220610161826-365d23f0e273
+	github.com/kevinburke/go-bindata/v4 v4.0.2
+	github.com/lbryio/lbry.go/v2 v2.7.2-0.20230307181431-a01aa6dc0629
 	github.com/lbryio/ozzo-validation v3.0.3-0.20170512160344-202201e212ec+incompatible
 	github.com/lbryio/sockety v0.0.0-20210909191732-78446d3e9eab
 	github.com/lbryio/types v0.0.0-20220224142228-73610f6654a6

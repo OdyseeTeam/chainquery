@@ -6,7 +6,7 @@ import (
 
 	_ "github.com/go-sql-driver/mysql" // import mysql
 	"github.com/jmoiron/sqlx"
-	_ "github.com/kevinburke/go-bindata" // so it's detected by `dep ensure`
+	_ "github.com/kevinburke/go-bindata/v4" // so it's detected by `dep ensure`
 	migrate "github.com/rubenv/sql-migrate"
 	log "github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/v4/boil"
@@ -14,7 +14,7 @@ import (
 
 // Init initializes a database connection based on the dsn provided. It also sets it as the global db connection.
 func Init(dsn string, debug bool) (*QueryLogger, error) {
-	dsn += "?parseTime=1&collation=utf8mb4_unicode_ci"
+	dsn += "?parseTime=1&collation=utf8mb4_unicode_ci&loc=Local"
 	dbConn, err := sqlx.Connect("mysql", dsn)
 	if err != nil {
 		return nil, errors.Err(err)
@@ -47,7 +47,7 @@ func Init(dsn string, debug bool) (*QueryLogger, error) {
 }
 
 func dbInitConnection(dsn string, driverName string, debug bool) (*sqlx.DB, *QueryLogger, error) {
-	dsn += "?parseTime=1&collation=utf8mb4_unicode_ci"
+	dsn += "?parseTime=1&collation=utf8mb4_unicode_ci&loc=Local"
 	dbConn, err := sqlx.Connect(driverName, dsn)
 	if err != nil {
 		return nil, nil, errors.Err(err)

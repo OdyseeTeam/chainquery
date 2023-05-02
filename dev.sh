@@ -10,7 +10,7 @@ APP_DIR="$DIR"
   hash reflex 2>/dev/null || go get github.com/cespare/reflex
   hash reflex 2>/dev/null || { echo >&2 'Make sure $GOPATH/bin is in your $PATH'; exit 1;  }
 
-  go install github.com/kevinburke/go-bindata/...@latest
+  go install github.com/kevinburke/go-bindata/v4/...@latest
 
   cd "$APP_DIR"
 

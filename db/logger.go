@@ -8,7 +8,7 @@ import (
 	querytools "github.com/lbryio/lbry.go/v2/extras/query"
 
 	"github.com/jmoiron/sqlx"
-	_ "github.com/kevinburke/go-bindata" // so it's detected by `dep ensure`
+	_ "github.com/kevinburke/go-bindata/v4" // so it's detected by `dep ensure`
 	log "github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 )

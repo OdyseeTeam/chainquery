@@ -8,7 +8,7 @@ language: go
 # development version of Go. This can warn you that your code will break
 # in the next version of Go. Don't worry! Later we declare that test runs
 # are allowed to fail on Go tip.
-go: 1.18.x
+go: 1.19.x
 
 # Skip the install step. Don't `go get` dependencies. Only build with the
 # code in vendor/

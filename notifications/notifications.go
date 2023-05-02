@@ -57,6 +57,7 @@ func (s subscriber) notify(values url.Values) {
 	res, err := http.PostForm(s.URL, values)
 	if err != nil {
 		logrus.Error(errors.Prefix("Notify", errors.Err(err)))
+		return
 	}
 	defer func() {
 		err = res.Body.Close()

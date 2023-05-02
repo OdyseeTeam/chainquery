@@ -115,6 +115,9 @@ func processClaimNameScript(script *[]byte, vout model.Output, tx model.Transact
 			IDs:     IDs,
 			Data:    map[string]interface{}{"claim": claim},
 		})
+		if claim.Height > 0 {
+			notifications.ClaimEvent(claim, tx, helper)
+		}
 	}
 
 	return name, claimid, pkscript, err
@@ -229,9 +232,6 @@ func processClaim(helper *c.StakeHelper, claim *model.Claim, value []byte, outpu
 
 	if helper.LegacyClaim != nil && helper.LegacyClaim.GetVersion().String() != "" {
 		claim.Version.SetValid(helper.LegacyClaim.GetVersion().String())
-	}
-	if claim.Height > 0 {
-		notifications.ClaimEvent(claim, tx, helper)
 	}
 
 	return claim, nil
