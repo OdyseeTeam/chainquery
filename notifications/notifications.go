@@ -9,6 +9,8 @@ import (
 	"github.com/lbryio/lbry.go/v2/extras/errors"
 
 	"github.com/sirupsen/logrus"
+	"golang.org/x/net/context"
+	"golang.org/x/sync/semaphore"
 )
 
 type subscriber struct {
@@ -39,8 +41,16 @@ func ClearSubscribers() {
 	subscriptions = make(map[string][]subscriber)
 }
 
+var notificationSem = semaphore.NewWeighted(20)
+
 // Notify notifies the list of subscribers for a type
 func Notify(t string, values url.Values) {
+	err := notificationSem.Acquire(context.Background(), 1)
+	if err != nil {
+		logrus.Error(errors.Prefix("Notify", errors.Err(err)))
+		return
+	}
+	defer notificationSem.Release(1)
 	subs, ok := subscriptions[t]
 	if ok {
 		for _, s := range subs {

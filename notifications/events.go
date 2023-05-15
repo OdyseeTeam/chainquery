@@ -69,15 +69,17 @@ func ClaimEvent(claim *model.Claim, tx model.Transaction, claimData *c.StakeHelp
 	}
 
 	isProtected := false
+	isUnlisted := false
 	for _, t := range claimData.Claim.GetTags() {
 		if strings.Contains(t, string(jsonrpc.ProtectedContentTag)) {
 			isProtected = true
-			break
+		}
+		if strings.Contains(t, string(jsonrpc.UnlistedContentTag)) {
+			isUnlisted = true
 		}
 	}
 	values.Add("is_protected", strconv.FormatBool(isProtected))
 
-	//skip channels or claims without a channel
 	if claim.ClaimType != 2 && !claim.PublisherID.IsZero() {
 		signingChannel, err := model.Claims(qm.Where("claim_id=?", claim.PublisherID.String)).OneG()
 		if err != nil {
@@ -90,6 +92,9 @@ func ClaimEvent(claim *model.Claim, tx model.Transaction, claimData *c.StakeHelp
 			}
 		}
 	}
-
+	//skip unlisted claims from being broadcast
+	if isUnlisted {
+		return
+	}
 	go Notify(newClaim, values)
 }
