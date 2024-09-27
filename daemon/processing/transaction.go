@@ -5,25 +5,23 @@ import (
 	"sync"
 	"time"
 
-	"github.com/lbryio/chainquery/sockety"
-	"github.com/lbryio/sockety/socketyapi"
-
-	"github.com/sirupsen/logrus"
-
 	"github.com/lbryio/chainquery/datastore"
 	"github.com/lbryio/chainquery/lbrycrd"
 	"github.com/lbryio/chainquery/metrics"
 	"github.com/lbryio/chainquery/model"
+	"github.com/lbryio/chainquery/sockety"
 	"github.com/lbryio/chainquery/util"
 
 	"github.com/lbryio/lbry.go/v2/extras/errors"
 	"github.com/lbryio/lbry.go/v2/extras/stop"
 
+	"github.com/OdyseeTeam/sockety/socketyapi"
+	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
-//MaxParallelTxProcessing sets the maximum concurrent transactions to process in a block.
+// MaxParallelTxProcessing sets the maximum concurrent transactions to process in a block.
 var MaxParallelTxProcessing int
 
 type txToProcess struct {

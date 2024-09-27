@@ -10,8 +10,8 @@ import (
 
 	"github.com/lbryio/lbry.go/v2/extras/jsonrpc"
 	c "github.com/lbryio/lbry.go/v2/schema/stake"
-	"github.com/lbryio/sockety/socketyapi"
 
+	"github.com/OdyseeTeam/sockety/socketyapi"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cast"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"

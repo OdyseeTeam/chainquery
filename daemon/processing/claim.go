@@ -21,10 +21,10 @@ import (
 	util "github.com/lbryio/lbry.go/v2/lbrycrd"
 	"github.com/lbryio/lbry.go/v2/schema/address/base58"
 	c "github.com/lbryio/lbry.go/v2/schema/stake"
-	"github.com/lbryio/sockety/socketyapi"
 	legacy_pb "github.com/lbryio/types/v1/go"
 	pb "github.com/lbryio/types/v2/go"
 
+	"github.com/OdyseeTeam/sockety/socketyapi"
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"

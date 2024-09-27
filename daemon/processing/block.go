@@ -14,12 +14,13 @@ import (
 	"github.com/lbryio/chainquery/sockety"
 	"github.com/lbryio/chainquery/twilio"
 	"github.com/lbryio/chainquery/util"
+
 	"github.com/lbryio/lbry.go/v2/extras/errors"
 	"github.com/lbryio/lbry.go/v2/extras/stop"
-	"github.com/lbryio/sockety/socketyapi"
-	"github.com/volatiletech/null/v8"
 
+	"github.com/OdyseeTeam/sockety/socketyapi"
 	"github.com/sirupsen/logrus"
+	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
@@ -102,7 +103,7 @@ func ProcessBlock(height uint64, stopper *stop.Group, jsonBlock *lbrycrd.GetBloc
 	return block, syncTransactionsOfBlock(stopper, txs, block.BlockTime, block.Height)
 }
 
-//setPreviousBlockInfo sets the NextBlockHash field from the previous block
+// setPreviousBlockInfo sets the NextBlockHash field from the previous block
 func setPreviousBlockInfo(currentHeight uint64, currentBLockHash string) error {
 	if currentHeight < 1 {
 		return nil
@@ -244,7 +245,7 @@ func syncTransactionsOfBlock(stopper *stop.Group, txs []string, blockTime uint64
 	return err
 }
 
-//q enables extensive logging on the concurrency of Chainquery. If there is every a deadlock and it's reproducible
+// q enables extensive logging on the concurrency of Chainquery. If there is every a deadlock and it's reproducible
 // you can use this to debug it. Don't get stuck on the 'q' name either. It was literally a rare single letter that
 // I chose, thats' it.
 func q(a string) {
@@ -350,7 +351,7 @@ func queueTx(txs []string, blockTime uint64, blockHeight uint64, manager *txSync
 	q("QUEUE: end of queuing...passed nil to errorCh")
 }
 
-//flush is a helper function for handling the results.
+// flush is a helper function for handling the results.
 func flush(channel <-chan txProcessResult) {
 	for range channel {
 	}
