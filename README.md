@@ -121,8 +121,7 @@ Chainquery consists of 4 main parts. The API Server, the Daemon, the Job Schedul
 ### API Server
 
 The API Server services either structured queries via defined APIs or raw SQL against 
-the Chainquery MySQL database. The APIs are documented via [Chainquery APIs](https://lbryio.github.io/chainquery/),
-a work in progress :) . 
+the Chainquery MySQL database. 
 
 ### Daemon
 
