@@ -1,7 +1,7 @@
 ## Get the latest source and extract it for the app container.
 ## Design choices, two RUN layers intended to keep builds faster, the zipped
 FROM ubuntu:18.04 as prep
-LABEL MAINTAINER="beamer@lbry.io"
+LABEL maintainer="beamer@lbry.io"
 RUN apt-get update && \
   apt-get -y install unzip curl telnet wait-for-it && \
   apt-get autoclean -y && \
