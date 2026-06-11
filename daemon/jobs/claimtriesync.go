@@ -10,6 +10,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/lbryio/chainquery/daemon/processing"
 	"github.com/lbryio/chainquery/datastore"
 	"github.com/lbryio/chainquery/lbrycrd"
 	"github.com/lbryio/chainquery/metrics"
@@ -31,8 +32,7 @@ var expirationHardForkHeight uint = 400155    // https://github.com/lbryio/lbryc
 var hardForkBlocksToExpiration uint = 2102400 // https://github.com/lbryio/lbrycrd/pull/137
 var blockHeight uint64
 var blocksToExpiration uint = 262974 //Hardcoded! https://lbry.com/faq/claimtrie-implementation
-// ClaimTrieSyncRunning is a variable used to show whether the job is running already.
-var claimTrieSyncRunning = false
+var claimTrieSyncRunning atomic.Bool
 
 var lastSync *claimTrieSyncStatus
 
@@ -44,8 +44,7 @@ type claimTrieSyncStatus struct {
 
 // ClaimTrieSyncAsync synchronizes claimtrie information that is calculated and enforced by lbrycrd.
 func ClaimTrieSyncAsync() {
-	if !claimTrieSyncRunning {
-		claimTrieSyncRunning = true
+	if claimTrieSyncRunning.CompareAndSwap(false, true) {
 		//Run in background so the application can shutdown properly.
 		go ClaimTrieSync()
 	}
@@ -56,9 +55,7 @@ func ClaimTrieSync() {
 	metrics.JobLoad.WithLabelValues("claimtrie_sync").Inc()
 	defer metrics.JobLoad.WithLabelValues("claimtrie_sync").Dec()
 	defer metrics.Job(time.Now(), "claimtrie_sync")
-	defer func() {
-		claimTrieSyncRunning = false
-	}()
+	defer claimTrieSyncRunning.Store(false)
 	//defer util.TimeTrack(time.Now(), "ClaimTrieSync", "always")
 	printDebug("ClaimTrieSync: started... ")
 	if lastSync == nil {
@@ -95,26 +92,15 @@ func ClaimTrieSync() {
 		logrus.Infof("first claimtriesync run detected. Boosters equipped for faster processing!")
 	}
 	claimsChan := make(chan *model.Claim, 50000)
-	success := false
 	processedClaims := int64(0)
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
-	go func(claimsChan chan *model.Claim, currentHeight uint64, wg *sync.WaitGroup, success *bool) {
-		defer wg.Done()
-		err = reprocessUpdatedClaims(claimsChan, blockHeight, &processedClaims)
-		if err != nil {
-			logrus.Error("ClaimTrieSync:", err)
-			saveJobError(jobStatus, err)
-			*success = false
-			return
-		}
-		*success = true
-	}(claimsChan, blockHeight, wg, &success)
+	reprocessResult := make(chan error, 1)
+	go reprocessUpdatedClaimsAsync(claimsChan, blockHeight, &processedClaims, reprocessResult)
 
 	printDebug("ClaimTrieSync: getting modified claims since " + jobStatus.LastSync.String())
 	err = getModifiedClaims(jobStatus.LastSync, claimsChan)
 	if err != nil {
 		logrus.Error("ClaimTrieSync:", err)
+		stopClaimReprocess(claimsChan, reprocessResult)
 		saveJobError(jobStatus, err)
 		return
 	}
@@ -123,6 +109,7 @@ func ClaimTrieSync() {
 		err = getSupportedClaims(jobStatus.LastSync, claimsChan)
 		if err != nil {
 			logrus.Error("ClaimTrieSync:", err)
+			stopClaimReprocess(claimsChan, reprocessResult)
 			saveJobError(jobStatus, err)
 			return
 		}
@@ -130,27 +117,43 @@ func ClaimTrieSync() {
 		err = getNewValidClaims(uint(lastSync.LastHeight), claimsChan)
 		if err != nil {
 			logrus.Error("ClaimTrieSync:", err)
+			stopClaimReprocess(claimsChan, reprocessResult)
 			saveJobError(jobStatus, err)
 			return
 		}
 	}
 	close(claimsChan)
 	logrus.Infof("ClaimTrieSync: finished getting claims to reprocess. Now waiting on consumer")
-	wg.Wait()
-	if success {
-		jobStatus.LastSync = started
-		jobStatus.IsSuccess = true
-		jobStatus.ErrorMessage.Valid = false
-		bytes, err := json.Marshal(&lastSync)
-		if err != nil {
-			logrus.Error(err)
-			return
-		}
-		jobStatus.State.SetValid(bytes)
-		if err := jobStatus.UpdateG(boil.Infer()); err != nil {
-			logrus.Panic(err)
-		}
-		printDebug("ClaimTrieSync: Processed " + strconv.Itoa(int(atomic.LoadInt64(&processedClaims))) + " claims.")
+	err = <-reprocessResult
+	if err != nil {
+		logrus.Error("ClaimTrieSync:", err)
+		saveJobError(jobStatus, err)
+		return
+	}
+	jobStatus.LastSync = started
+	jobStatus.IsSuccess = true
+	jobStatus.ErrorMessage.Valid = false
+	bytes, err := json.Marshal(&lastSync)
+	if err != nil {
+		logrus.Error(err)
+		return
+	}
+	jobStatus.State.SetValid(bytes)
+	if err := jobStatus.UpdateG(boil.Infer()); err != nil {
+		logrus.Panic(err)
+	}
+	printDebug("ClaimTrieSync: Processed " + strconv.Itoa(int(atomic.LoadInt64(&processedClaims))) + " claims.")
+}
+
+func reprocessUpdatedClaimsAsync(claimsChan chan *model.Claim, currentHeight uint64, processedClaims *int64, result chan<- error) {
+	result <- reprocessUpdatedClaims(claimsChan, currentHeight, processedClaims)
+}
+
+func stopClaimReprocess(claimsChan chan *model.Claim, result <-chan error) {
+	close(claimsChan)
+	err := <-result
+	if err != nil {
+		logrus.Error("ClaimTrieSync:", err)
 	}
 }
 
@@ -214,7 +217,10 @@ func syncProcessor(jobs <-chan lbrycrd.Claim, wg *sync.WaitGroup) {
 func controllingProcessor(names <-chan string, wg *sync.WaitGroup, atHeight uint64) {
 	defer wg.Done()
 	for name := range names {
-		setBidStateOfClaimsForName(name, atHeight)
+		err := setBidStateOfClaimsForName(name, atHeight)
+		if err != nil {
+			logrus.Error("ClaimTrieSync:", err)
+		}
 	}
 }
 
@@ -240,20 +246,25 @@ func SetControllingClaimForNames(claims model.ClaimSlice, atHeight uint64) error
 	return nil
 }
 
-func setBidStateOfClaimsForName(name string, atHeight uint64) {
-	claims, _ := model.Claims(
+func setBidStateOfClaimsForName(name string, atHeight uint64) error {
+	claims, err := model.Claims(
 		qm.Where(model.ClaimColumns.Name+"=?", name),
 		qm.Where(model.ClaimColumns.ValidAtHeight+"<=?", atHeight),
 		qm.OrderBy(model.ClaimColumns.EffectiveAmount+" DESC")).AllG()
+	if err != nil {
+		return errors.Err(err)
+	}
 	printDebug("ClaimTrieSync: found ", len(claims), " claims matching the name ", name)
 	foundControlling := false
 	for _, claim := range claims {
 		if !foundControlling && getClaimStatus(claim, atHeight) == "Active" {
 			if claim.BidState != "Controlling" {
 				claim.BidState = "Controlling"
+				unlockClaim := processing.LockClaim(claim.ClaimID)
 				err := datastore.PutClaim(claim)
+				unlockClaim()
 				if err != nil {
-					panic(err)
+					return errors.Err(err)
 				}
 			}
 			foundControlling = true
@@ -261,13 +272,16 @@ func setBidStateOfClaimsForName(name string, atHeight uint64) {
 			status := getClaimStatus(claim, atHeight)
 			if status != claim.BidState {
 				claim.BidState = status
+				unlockClaim := processing.LockClaim(claim.ClaimID)
 				err := datastore.PutClaim(claim)
+				unlockClaim()
 				if err != nil {
-					panic(err)
+					return errors.Err(err)
 				}
 			}
 		}
 	}
+	return nil
 }
 
 // SyncClaims syncs the claims' with these names effective amount and valid at height with the lbrycrd claimtrie.
@@ -333,6 +347,8 @@ func syncClaim(claimJSON *lbrycrd.Claim) {
 		hasChanges = true
 	}
 	if hasChanges {
+		unlockClaim := processing.LockClaim(claim.ClaimID)
+		defer unlockClaim()
 		err := claim.UpdateG(boil.Whitelist(c.ValidAtHeight, c.EffectiveAmount))
 		if err != nil {
 			logrus.Error("ClaimTrieSync: unable to sync claim ", claim.ClaimID, ". JSON-", claimJSON)
@@ -379,7 +395,7 @@ func getClaimStatus(claim *model.Claim, atHeight uint64) string {
 	return status
 }
 
-//GetIsExpiredAtHeight checks the claim height compared to the current height to determine expiration.
+// GetIsExpiredAtHeight checks the claim height compared to the current height to determine expiration.
 func GetIsExpiredAtHeight(height, blockHeight uint) bool {
 	if height == 0 {
 		return false
@@ -536,9 +552,12 @@ func updateSpentClaims() error {
 			}
 			claim.BidState = "Spent"
 			claim.ModifiedAt = time.Now()
+			unlockClaim := processing.LockClaim(claim.ClaimID)
 			if err := claim.UpdateG(boil.Whitelist(model.ClaimColumns.BidState, model.ClaimColumns.ModifiedAt)); err != nil {
+				unlockClaim()
 				return err
 			}
+			unlockClaim()
 		}
 		if lastProcessed == newLastProcessed {
 			break

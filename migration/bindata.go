@@ -37,6 +37,7 @@
 // migration/033_vin_vout_changes.sql (120B)
 // migration/034_support_uniq_index.sql (234B)
 // migration/035_add_tx_count.sql (129B)
+// migration/036_add_block_processing_state.sql (140B)
 
 package migration
 
@@ -844,6 +845,26 @@ func migration035_add_tx_countSql() (*asset, error) {
 	return a, nil
 }
 
+var _migration036_add_block_processing_stateSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x6c\x8d\xb1\x0a\x02\x41\x0c\x05\xfb\xfd\x8a\x57\x2a\x72\x20\xb6\x76\x82\x5f\x20\xd6\x47\x2e\x1b\xd7\xc5\x5c\xf6\xc8\xe6\xc4\xcf\x17\xad\x2c\x2c\x07\x66\x98\x61\xc0\x6e\xae\xc5\x29\x04\xd7\x25\xfd\xe2\x25\x28\x64\x16\x8b\x93\x94\x6a\x89\x34\xc4\x11\x34\xa9\x60\xd2\xc6\x0f\x50\xce\x58\xbc\xb1\xf4\x5e\xad\x8c\xfd\xe3\xe3\x49\xce\x77\xf2\xcd\x61\xbf\x85\xad\xaa\xa0\xdb\xb7\x7b\x8d\xdc\x56\x8b\xe3\xff\xc5\xd9\x72\x4a\xef\x00\x00\x00\xff\xff\xde\x02\xc8\x76\x8c\x00\x00\x00")
+
+func migration036_add_block_processing_stateSqlBytes() ([]byte, error) {
+	return bindataRead(
+		_migration036_add_block_processing_stateSql,
+		"migration/036_add_block_processing_state.sql",
+	)
+}
+
+func migration036_add_block_processing_stateSql() (*asset, error) {
+	bytes, err := migration036_add_block_processing_stateSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "migration/036_add_block_processing_state.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x2d, 0x58, 0x24, 0x22, 0x5a, 0x3c, 0x71, 0x65, 0xdb, 0x7, 0x33, 0x4a, 0xcb, 0x1d, 0x69, 0x6, 0xad, 0x59, 0xdf, 0xee, 0x64, 0x7b, 0xe6, 0x2e, 0x33, 0xe1, 0x61, 0x33, 0x99, 0x28, 0x56, 0x37}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -972,6 +993,7 @@ var _bindata = map[string]func() (*asset, error){
 	"migration/033_vin_vout_changes.sql":              migration033_vin_vout_changesSql,
 	"migration/034_support_uniq_index.sql":            migration034_support_uniq_indexSql,
 	"migration/035_add_tx_count.sql":                  migration035_add_tx_countSql,
+	"migration/036_add_block_processing_state.sql":    migration036_add_block_processing_stateSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -1058,6 +1080,7 @@ var _bintree = &bintree{nil, map[string]*bintree{
 		"033_vin_vout_changes.sql":              {migration033_vin_vout_changesSql, map[string]*bintree{}},
 		"034_support_uniq_index.sql":            {migration034_support_uniq_indexSql, map[string]*bintree{}},
 		"035_add_tx_count.sql":                  {migration035_add_tx_countSql, map[string]*bintree{}},
+		"036_add_block_processing_state.sql":    {migration036_add_block_processing_stateSql, map[string]*bintree{}},
 	}},
 }}
 

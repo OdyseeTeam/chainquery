@@ -3,6 +3,7 @@ package config
 import (
 	"flag"
 	"fmt"
+	"net/http"
 	"os"
 	"runtime"
 	"time"
@@ -16,6 +17,7 @@ import (
 	"github.com/lbryio/chainquery/daemon"
 	"github.com/lbryio/chainquery/daemon/jobs"
 	"github.com/lbryio/chainquery/daemon/processing"
+	"github.com/lbryio/chainquery/db"
 	"github.com/lbryio/chainquery/global"
 	"github.com/lbryio/chainquery/lbrycrd"
 	server "github.com/lbryio/chainquery/swagger/apiserver/go"
@@ -37,11 +39,20 @@ const ( // config setting keys
 	debugquerymode            = "debugquerymode"
 	mysqldsn                  = "mysqldsn"
 	apimysqldsn               = "apimysqldsn"
+	mysqlmaxopenconns         = "mysqlmaxopenconns"
+	mysqlmaxidleconns         = "mysqlmaxidleconns"
+	mysqlconnmaxlifetime      = "mysqlconnmaxlifetime"
+	mysqlconnecttimeout       = "mysqlconnecttimeout"
+	mysqlreadtimeout          = "mysqlreadtimeout"
+	mysqlwritetimeout         = "mysqlwritetimeout"
 	lbrycrdurl                = "lbrycrdurl"
 	profilemode               = "profilemode"
 	daemonmode                = "daemonmode"
 	processingdelay           = "processingdelay"
 	daemondelay               = "daemondelay"
+	blockprocessingtimeout    = "blockprocessingtimeout"
+	blockprocessingdumpdelay  = "blockprocessingdumpdelay"
+	exitonblocktimeout        = "exitonblocktimeout"
 	defaultclienttimeout      = "defaultclienttimeout"
 	daemonprofile             = "daemonprofile"
 	lbrycrdprofile            = "lbrycrdprofile"
@@ -152,12 +163,21 @@ func initDefaults() {
 	viper.SetDefault(debugquerymode, false)
 	viper.SetDefault(mysqldsn, "chainquery:chainquery@tcp(localhost:3306)/chainquery")
 	viper.SetDefault(apimysqldsn, "chainquery:chainquery@tcp(localhost:3306)/chainquery")
+	viper.SetDefault(mysqlmaxopenconns, runtime.NumCPU()*4)
+	viper.SetDefault(mysqlmaxidleconns, runtime.NumCPU())
+	viper.SetDefault(mysqlconnmaxlifetime, 5*time.Minute)
+	viper.SetDefault(mysqlconnecttimeout, 20*time.Second)
+	viper.SetDefault(mysqlreadtimeout, 2*time.Minute)
+	viper.SetDefault(mysqlwritetimeout, 2*time.Minute)
 	viper.SetDefault(lbrycrdurl, "rpc://lbry:lbry@localhost:9245")
 	viper.SetDefault(profilemode, false)
 	viper.SetDefault(daemonmode, 0) //BEASTMODE
 	viper.SetDefault(defaultclienttimeout, 20*time.Second)
 	viper.SetDefault(daemondelay, 1)       //Seconds
 	viper.SetDefault(processingdelay, 100) //Milliseconds
+	viper.SetDefault(blockprocessingtimeout, 10*time.Minute)
+	viper.SetDefault(blockprocessingdumpdelay, 10*time.Minute)
+	viper.SetDefault(exitonblocktimeout, false)
 	viper.SetDefault(daemonprofile, false)
 	viper.SetDefault(lbrycrdprofile, false)
 	viper.SetDefault(mysqlprofile, false)
@@ -193,13 +213,28 @@ func processConfiguration() {
 	}
 
 	settings := global.DaemonSettings{
-		DaemonMode:      GetDaemonMode(),
-		ProcessingDelay: GetProcessingDelay(),
-		DaemonDelay:     GetDaemonDelay(),
-		IsReIndex:       viper.GetBool(reindexflag)}
+		DaemonMode:                   GetDaemonMode(),
+		ProcessingDelay:              GetProcessingDelay(),
+		DaemonDelay:                  GetDaemonDelay(),
+		BlockProcessingTimeout:       GetBlockProcessingTimeout(),
+		BlockProcessingDumpInterval:  GetBlockProcessingDumpDelay(),
+		ExitOnBlockProcessingTimeout: viper.GetBool(exitonblocktimeout),
+		IsReIndex:                    viper.GetBool(reindexflag)}
 
 	daemon.ApplySettings(settings)
+	db.ConfigureConnection(
+		viper.GetInt(mysqlmaxopenconns),
+		viper.GetInt(mysqlmaxidleconns),
+		getDuration(mysqlconnmaxlifetime, time.Second),
+		getDuration(mysqlconnecttimeout, time.Second),
+		getDuration(mysqlreadtimeout, time.Second),
+		getDuration(mysqlwritetimeout, time.Second),
+	)
 	lbrycrd.LBRYcrdURL = GetLBRYcrdURL()
+	lbrycrd.DefaultClientTimeout = GetDefaultClientTimeout()
+	http.DefaultClient.Timeout = GetDefaultClientTimeout()
+	notifications.Timeout = GetDefaultClientTimeout()
+	sockety.Timeout = GetDefaultClientTimeout()
 	auth.APIKeys = viper.GetStringSlice(apikeys)
 	processing.MaxFailures = viper.GetInt(maxfailures)
 	processing.MaxParallelTxProcessing = viper.GetInt(maxparalleltxprocessing)

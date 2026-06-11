@@ -27,8 +27,7 @@ var e2eCmd = &cobra.Command{
 		}
 		defer db.CloseDB(dbInstance)
 
-		lbrycrdClient := lbrycrd.Init()
-		defer lbrycrdClient.Shutdown()
+		lbrycrd.Init()
 		e2e.StartE2ETesting()
 	},
 }

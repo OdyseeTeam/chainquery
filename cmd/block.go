@@ -38,9 +38,11 @@ var blockCmd = &cobra.Command{
 		if err != nil {
 			logrus.Panic(errors.Prefix("Could not parse block height passed", err))
 		}
-		lbrycrdClient := lbrycrd.Init()
-		defer lbrycrdClient.Shutdown()
-		blockHash, err := lbrycrdClient.GetBlockHash(blockHeight)
+		lbrycrd.Init()
+		if blockHeight < 0 {
+			logrus.Panic("block height cannot be negative")
+		}
+		blockHash, err := lbrycrd.GetBlockHash(uint64(blockHeight))
 		if err != nil {
 			logrus.Panic(errors.Prefix(fmt.Sprintf("Could not get block hash @ height %d", blockHeight), err))
 		}
@@ -50,8 +52,8 @@ var blockCmd = &cobra.Command{
 			logrus.Panic(err)
 		}
 		defer db.CloseDB(dbInstance)
-		logrus.Infof("Running processor on block %d with hash %s", blockHeight, blockHash)
-		block, err := model.Blocks(model.BlockWhere.Hash.EQ(blockHash.String())).OneG()
+		logrus.Infof("Running processor on block %d with hash %s", blockHeight, *blockHash)
+		block, err := model.Blocks(model.BlockWhere.Hash.EQ(*blockHash)).OneG()
 		if err != nil && !errors.Is(err, sql.ErrNoRows) {
 			logrus.Panic(errors.Err(err))
 		}
@@ -62,7 +64,7 @@ var blockCmd = &cobra.Command{
 			}
 			logrus.Info("Block successfully removed")
 		}
-		jsonBlock, err := lbrycrd.GetBlock(blockHash.String())
+		jsonBlock, err := lbrycrd.GetBlock(*blockHash)
 		if err != nil {
 			logrus.Fatal(errors.Err(err))
 		}

@@ -29,6 +29,8 @@ var MaxParallelVoutProcessing int
 // MaxParallelVinProcessing max concurrently processing inputs
 var MaxParallelVinProcessing int
 
+var processVin = ProcessVin
+
 type vinToProcess struct {
 	jsonVin *lbrycrd.Vin
 	tx      *m.Transaction
@@ -46,49 +48,77 @@ type voutToProcess struct {
 func initVinWorkers(s *stop.Group, nrWorkers int, jobs <-chan vinToProcess, results chan<- error) {
 	for i := 0; i < nrWorkers; i++ {
 		s.Add(1)
-		go func(worker int) {
-			defer s.Done()
-			vinProcessor(worker, jobs, results)
-		}(i)
+		go runVinProcessor(s, i, jobs, results)
 	}
 }
 
-func vinProcessor(worker int, jobs <-chan vinToProcess, results chan<- error) {
-	for job := range jobs {
-		q(strconv.Itoa(worker) + " - WORKER VIN start new job " + strconv.Itoa(int(job.jsonVin.Sequence)))
-		err := ProcessVin(job.jsonVin, job.tx, job.txDC, job.vin)
-		if err != nil {
-			metrics.ProcessingFailures.WithLabelValues("vin").Inc()
+func runVinProcessor(s *stop.Group, worker int, jobs <-chan vinToProcess, results chan<- error) {
+	defer s.Done()
+	vinProcessor(s, worker, jobs, results)
+}
+
+func vinProcessor(s *stop.Group, worker int, jobs <-chan vinToProcess, results chan<- error) {
+	for {
+		select {
+		case <-s.Ch():
+			return
+		case job, ok := <-jobs:
+			if !ok {
+				q(strconv.Itoa(worker) + " - WORKER VIN finished all jobs")
+				return
+			}
+			q(strconv.Itoa(worker) + " - WORKER VIN start new job " + strconv.Itoa(int(job.jsonVin.Sequence)))
+			err := processVin(job.jsonVin, job.tx, job.txDC, job.vin)
+			if err != nil {
+				metrics.ProcessingFailures.WithLabelValues("vin").Inc()
+			}
+			q(strconv.Itoa(worker) + " - WORKER VIN passing result " + strconv.Itoa(int(job.jsonVin.Sequence)))
+			select {
+			case results <- err:
+				q(strconv.Itoa(worker) + " - WORKER VIN passed result " + strconv.Itoa(int(job.jsonVin.Sequence)))
+			case <-s.Ch():
+				return
+			}
 		}
-		q(strconv.Itoa(worker) + " - WORKER VIN passing result " + strconv.Itoa(int(job.jsonVin.Sequence)))
-		results <- err
-		q(strconv.Itoa(worker) + " - WORKER VIN passed result " + strconv.Itoa(int(job.jsonVin.Sequence)))
 	}
-	q(strconv.Itoa(worker) + " - WORKER VIN finished all jobs")
 }
 
 func initVoutWorkers(s *stop.Group, nrWorkers int, jobs <-chan voutToProcess, results chan<- error) {
 	for i := 0; i < nrWorkers; i++ {
 		s.Add(1)
-		go func(worker int) {
-			defer s.Done()
-			voutProcessor(worker, jobs, results)
-		}(i)
+		go runVoutProcessor(s, i, jobs, results)
 	}
 }
 
-func voutProcessor(worker int, jobs <-chan voutToProcess, results chan<- error) {
-	for job := range jobs {
-		err := ProcessVout(job.jsonVout, job.tx, job.txDC, job.blockHeight)
-		if err != nil {
-			metrics.ProcessingFailures.WithLabelValues("vin").Inc()
+func runVoutProcessor(s *stop.Group, worker int, jobs <-chan voutToProcess, results chan<- error) {
+	defer s.Done()
+	voutProcessor(s, worker, jobs, results)
+}
+
+func voutProcessor(s *stop.Group, worker int, jobs <-chan voutToProcess, results chan<- error) {
+	for {
+		select {
+		case <-s.Ch():
+			return
+		case job, ok := <-jobs:
+			if !ok {
+				q(strconv.Itoa(worker) + " - WORKER VOUT finished all jobs")
+				return
+			}
+			err := ProcessVout(job.jsonVout, job.tx, job.txDC, job.blockHeight)
+			if err != nil {
+				metrics.ProcessingFailures.WithLabelValues("vout").Inc()
+			}
+			select {
+			case results <- err:
+			case <-s.Ch():
+				return
+			}
 		}
-		results <- err
 	}
-	q(strconv.Itoa(worker) + " - WORKER VOUT finished all jobs")
 }
 
-//ProcessVin handles the processing of an input to a transaction.
+// ProcessVin handles the processing of an input to a transaction.
 func ProcessVin(jsonVin *lbrycrd.Vin, tx *m.Transaction, txDC *txDebitCredits, n uint64) error {
 	defer metrics.Processing(time.Now(), "vin")
 	isVinCoinbase := len(jsonVin.Coinbase) > 0

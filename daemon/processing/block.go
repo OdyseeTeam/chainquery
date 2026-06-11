@@ -1,6 +1,7 @@
 package processing
 
 import (
+	"database/sql"
 	"fmt"
 	"sort"
 	"strconv"
@@ -30,6 +31,17 @@ var BlockLock = sync.Mutex{}
 
 // ManualShutDownError Error with special handling. Used to stop the concurrency pipeline for processing blocks midway.
 var ManualShutDownError = errors.Err("Daemon stopped manually!")
+
+const (
+	BlockProcessingStateComplete   = "complete"
+	BlockProcessingStateProcessing = "processing"
+	BlockProcessingStateIncomplete = "incomplete"
+	MempoolBlockHash               = "MEMPOOL"
+	LegacyBlockBackfillBatchSize   = 100
+	blockDeleteRetryAttempts       = 3
+)
+
+var blockDeleteRetryDelay = time.Second
 
 // RunBlockProcessing runs the processing of a block at a specific height. While any height can be passed in it is
 // important to note that if the previous block is not processed it will panic to prevent corruption because blocks
@@ -69,9 +81,11 @@ func RunBlockProcessing(stopper *stop.Group, height uint64) uint64 {
 	if err != nil {
 		metrics.ProcessingFailures.WithLabelValues("block").Inc()
 		rollBackHeight := height - 1
-		blockRemovalError := block.DeleteG()
-		if blockRemovalError != nil {
-			logrus.Panicf("Could not delete block with bad data. Data corruption imminent at height %d. The block must be remove manually to continue.", height)
+		if block != nil {
+			blockRemovalError := deleteBlockWithRetry(block)
+			if blockRemovalError != nil {
+				logrus.Errorf("could not delete block with bad data at height %d: %s", height, blockRemovalError.Error())
+			}
 		}
 		if err.Error() == ManualShutDownError.Error() {
 			return rollBackHeight
@@ -88,19 +102,30 @@ func RunBlockProcessing(stopper *stop.Group, height uint64) uint64 {
 // ProcessBlock processing a specific block and returns an error. Use this to process a block having a custom handling
 // of the error.
 func ProcessBlock(height uint64, stopper *stop.Group, jsonBlock *lbrycrd.GetBlockResponse) (*model.Block, error) {
-	block := parseBlockInfo(height, jsonBlock)
-	err := setPreviousBlockInfo(height, jsonBlock.Hash)
+	block, err := parseBlockInfo(height, jsonBlock)
 	if err != nil {
-		logrus.Errorf("failed to set previous block next hash: %s", err.Error())
+		return nil, errors.Err(err)
+	}
+	err = setPreviousBlockInfo(height, jsonBlock.Hash)
+	if err != nil {
+		return block, errors.Err(err)
 	}
 	txs := jsonBlock.Tx
-	go sockety.SendNotification(socketyapi.SendNotificationArgs{
+	err = syncTransactionsOfBlock(stopper, txs, block.BlockTime, block.Height)
+	if err != nil {
+		return block, errors.Err(err)
+	}
+	err = markBlockProcessingState(block, BlockProcessingStateComplete)
+	if err != nil {
+		return block, errors.Err(err)
+	}
+	sockety.SendNotification(socketyapi.SendNotificationArgs{
 		Service: socketyapi.BlockChain,
 		Type:    "new_block",
 		IDs:     []string{"blocks", strconv.Itoa(int(height))},
 		Data:    map[string]interface{}{"block": jsonBlock},
 	})
-	return block, syncTransactionsOfBlock(stopper, txs, block.BlockTime, block.Height)
+	return block, nil
 }
 
 // setPreviousBlockInfo sets the NextBlockHash field from the previous block
@@ -117,8 +142,8 @@ func setPreviousBlockInfo(currentHeight uint64, currentBLockHash string) error {
 	return errors.Err(err)
 }
 
-func parseBlockInfo(blockHeight uint64, jsonBlock *lbrycrd.GetBlockResponse) (block *model.Block) {
-	block = &model.Block{}
+func parseBlockInfo(blockHeight uint64, jsonBlock *lbrycrd.GetBlockResponse) (*model.Block, error) {
+	block := &model.Block{}
 	foundBlock, _ := model.Blocks(qm.Where(model.BlockColumns.Hash+"=?", jsonBlock.Hash)).OneG()
 	if foundBlock != nil {
 		block = foundBlock
@@ -140,6 +165,7 @@ func parseBlockInfo(blockHeight uint64, jsonBlock *lbrycrd.GetBlockResponse) (bl
 	block.Version = uint64(jsonBlock.Version)
 	block.VersionHex = jsonBlock.VersionHex
 	block.TXCount = int(jsonBlock.NTx)
+	block.ProcessingState.SetValid(BlockProcessingStateProcessing)
 	//block.TransactionHashes.SetValid(strings.Join(jsonBlock.Tx, ",")) //we don't need this, it's extremely redundant and heavy
 
 	var err error
@@ -149,10 +175,10 @@ func parseBlockInfo(blockHeight uint64, jsonBlock *lbrycrd.GetBlockResponse) (bl
 		err = block.InsertG(boil.Infer())
 	}
 	if err != nil {
-		logrus.Panic(err)
+		return nil, errors.Err(err)
 	}
 
-	return block
+	return block, nil
 }
 
 func processGenesisBlock() error {
@@ -164,7 +190,10 @@ func processGenesisBlock() error {
 	// mempool sync.
 	BlockLock.Lock()
 	defer BlockLock.Unlock()
-	block := parseBlockInfo(0, genesis)
+	block, err := parseBlockInfo(0, genesis)
+	if err != nil {
+		return errors.Err(err)
+	}
 	for _, tx := range genesisVerbose.Tx {
 		tx.BlockHash = genesis.Hash
 		err := ProcessTx(&tx, block.BlockTime, 0)
@@ -172,7 +201,157 @@ func processGenesisBlock() error {
 			return errors.Err(err)
 		}
 	}
+	return errors.Err(markBlockProcessingState(block, BlockProcessingStateComplete))
+}
+
+func CleanupIncompleteHead() error {
+	return errors.Err(cleanupIncompleteHead())
+}
+
+func cleanupIncompleteHead() error {
+	BlockLock.Lock()
+	defer BlockLock.Unlock()
+
+	head, err := chainHeadBlock()
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil
+		}
+		return errors.Err(err)
+	}
+
+	complete, err := blockHasExpectedTransactions(head)
+	if err != nil {
+		return errors.Err(err)
+	}
+	if !complete || head.ProcessingState.String == BlockProcessingStateProcessing || head.ProcessingState.String == BlockProcessingStateIncomplete {
+		head.ProcessingState.SetValid(BlockProcessingStateIncomplete)
+		err = markBlockProcessingState(head, BlockProcessingStateIncomplete)
+		if err != nil {
+			return errors.Err(err)
+		}
+		return errors.Err(deleteBlockWithRetry(head))
+	}
+	if !head.ProcessingState.Valid {
+		return errors.Err(markBlockProcessingState(head, BlockProcessingStateComplete))
+	}
 	return nil
+}
+
+func MarkIncompleteBlockHeight(height uint64) error {
+	BlockLock.Lock()
+	defer BlockLock.Unlock()
+	block, err := model.Blocks(
+		model.BlockWhere.Height.EQ(height),
+		model.BlockWhere.Hash.NEQ(MempoolBlockHash),
+		qm.OrderBy(model.BlockColumns.ID+" DESC"),
+		qm.Limit(1),
+	).OneG()
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil
+		}
+		return errors.Err(err)
+	}
+	return errors.Err(markBlockProcessingState(block, BlockProcessingStateIncomplete))
+}
+
+func backfillLegacyBlockStates(limit int) (int, error) {
+	if limit <= 0 {
+		limit = LegacyBlockBackfillBatchSize
+	}
+	head, err := chainHeadBlock()
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return 0, nil
+		}
+		return 0, errors.Err(err)
+	}
+	blocks, err := model.Blocks(
+		model.BlockWhere.ProcessingState.IsNull(),
+		model.BlockWhere.Hash.NEQ(MempoolBlockHash),
+		model.BlockWhere.ID.NEQ(head.ID),
+		qm.OrderBy(model.BlockColumns.Height+" ASC"),
+		qm.Limit(limit),
+	).AllG()
+	if err != nil {
+		return 0, errors.Err(err)
+	}
+	for _, block := range blocks {
+		complete, err := blockHasExpectedTransactions(block)
+		if err != nil {
+			return 0, errors.Err(err)
+		}
+		if !complete {
+			return 0, errors.Base("legacy block %d (%s) failed transaction consistency validation", block.Height, block.Hash)
+		}
+		err = markBlockProcessingState(block, BlockProcessingStateComplete)
+		if err != nil {
+			return 0, errors.Err(err)
+		}
+	}
+	return len(blocks), nil
+}
+
+func BackfillLegacyBlockStates(limit int) (int, error) {
+	return backfillLegacyBlockStates(limit)
+}
+
+func chainHeadBlock() (*model.Block, error) {
+	return model.Blocks(
+		model.BlockWhere.Hash.NEQ(MempoolBlockHash),
+		qm.OrderBy(model.BlockColumns.Height+" DESC"),
+		qm.Limit(1),
+	).OneG()
+}
+
+func blockHasExpectedTransactions(block *model.Block) (bool, error) {
+	transactions, err := model.Transactions(model.TransactionWhere.BlockHashID.EQ(null.StringFrom(block.Hash))).AllG()
+	if err != nil {
+		return false, errors.Err(err)
+	}
+	if len(transactions) != block.TXCount {
+		return false, nil
+	}
+	for _, transaction := range transactions {
+		complete, err := transactionHasExpectedChildren(transaction)
+		if err != nil {
+			return false, errors.Err(err)
+		}
+		if !complete {
+			return false, nil
+		}
+	}
+	return true, nil
+}
+
+func transactionHasExpectedChildren(transaction *model.Transaction) (bool, error) {
+	inputCount, err := model.Inputs(model.InputWhere.TransactionHash.EQ(transaction.Hash)).CountG()
+	if err != nil {
+		return false, errors.Err(err)
+	}
+	outputCount, err := model.Outputs(model.OutputWhere.TransactionHash.EQ(transaction.Hash)).CountG()
+	if err != nil {
+		return false, errors.Err(err)
+	}
+	return inputCount == int64(transaction.InputCount) && outputCount == int64(transaction.OutputCount), nil
+}
+
+func markBlockProcessingState(block *model.Block, state string) error {
+	block.ProcessingState.SetValid(state)
+	return errors.Err(block.UpdateG(boil.Whitelist(model.BlockColumns.ProcessingState)))
+}
+
+func deleteBlockWithRetry(block *model.Block) error {
+	var err error
+	for attempt := 0; attempt < blockDeleteRetryAttempts; attempt++ {
+		err = block.DeleteG()
+		if err == nil {
+			return nil
+		}
+		time.Sleep(time.Duration(attempt+1) * blockDeleteRetryDelay)
+	}
+	return errors.Err(err)
 }
 
 type txSyncManager struct {
@@ -215,19 +394,44 @@ func syncTransactionsOfBlock(stopper *stop.Group, txs []string, blockTime uint64
 	go handleTxResults(len(txs), &manager)
 	q("SYNC: launched handling")
 	// Check for queueing errors ( ie. lbrycrd fetch)
-	err := <-manager.errorsCh
+	err, ok := waitForTxSyncError(&manager)
+	if !ok {
+		stopTxSyncManager(&manager, blockHeight)
+		return ManualShutDownError
+	}
 	if err != nil {
+		stopTxSyncManager(&manager, blockHeight)
 		return errors.Err(err)
 	}
 	q("SYNC: received 1st on errorCh")
 
 	// Wait for first handling error/nil first error is sent when tx fails x times or daemon is shutdown
-	err = <-manager.errorsCh
+	err, ok = waitForTxSyncError(&manager)
+	if !ok {
+		err = ManualShutDownError
+	}
 	q("SYNC: received 2nd on errorCh")
+	stopTxSyncManager(&manager, blockHeight)
+	return err
+}
+
+func waitForTxSyncError(manager *txSyncManager) (error, bool) {
+	select {
+	case err := <-manager.errorsCh:
+		return err, true
+	case <-manager.daemonStopper.Ch():
+		return nil, false
+	}
+}
+
+func stopTxSyncManager(manager *txSyncManager, blockHeight uint64) {
 	q("SYNC: stop workers...")
+	manager.queueStopper.Stop()
 	manager.workerStopper.Stop()
 	q("SYNC: stop sync...")
 	manager.syncStopper.Stop()
+	q("SYNC: wait for queue... - " + strconv.Itoa(int(blockHeight)))
+	manager.queueStopper.StopAndWait()
 	q("SYNC: wait for workers... - " + strconv.Itoa(int(blockHeight)))
 	manager.workerStopper.StopAndWait()
 	q("SYNC: wait for sync - " + strconv.Itoa(int(blockHeight)))
@@ -242,7 +446,6 @@ func syncTransactionsOfBlock(stopper *stop.Group, txs []string, blockTime uint64
 	q("SYNC: closing jobs channel")
 	close(manager.jobsCh)
 	q("SYNC: finished - " + strconv.Itoa(int(blockHeight)))
-	return err
 }
 
 // q enables extensive logging on the concurrency of Chainquery. If there is every a deadlock and it's reproducible
@@ -285,15 +488,23 @@ func handleTxResults(nrToHandle int, manager *txSyncManager) {
 			}
 			if txResult.err != nil { // Try again if fails this time.
 				leftToProcess++
+				logrus.Warnf("retrying transaction %s for block %d after failure %d/%d: %s", txResult.tx.Txid, txResult.blockHeight, txResult.failcount+1, MaxFailures, txResult.err.Error())
 				q("HANDLE: start sending to worker..." + txResult.tx.Txid)
-				manager.redoJobsCh <- txToProcess{tx: txResult.tx, blockTime: txResult.blockTime, failcount: txResult.failcount, blockHeight: txResult.blockHeight}
+				select {
+				case manager.redoJobsCh <- txToProcess{tx: txResult.tx, blockTime: txResult.blockTime, failcount: txResult.failcount, blockHeight: txResult.blockHeight}:
+				case <-manager.syncStopper.Ch():
+					return
+				case <-manager.daemonStopper.Ch():
+					handleFailure(ManualShutDownError, manager)
+					return
+				}
 				q("HANDLE: end sending to worker..." + txResult.tx.Txid)
 				q("HANDLE: finish handling new result.." + txResult.tx.Txid)
 				//continue
 			}
 			if leftToProcess == 0 {
 				q("HANDLE: start passing done..")
-				manager.errorsCh <- nil
+				sendTxSyncError(manager, nil)
 				q("HANDLE: end passing done..")
 				q("HANDLE: end handling..")
 				return
@@ -308,28 +519,26 @@ func queueTx(txs []string, blockTime uint64, blockHeight uint64, manager *txSync
 	defer manager.queueStopper.Done()
 	q("QUEUE: start of queuing")
 	txRawMap := make(map[string]*lbrycrd.TxRawResult)
-	depthMap := make(map[string]int, len(txs))
 	txSlice := make([]*lbrycrd.TxRawResult, len(txs))
 	for i := range txs {
 		select {
 		case <-manager.queueStopper.Ch():
 			q("QUEUE: stopping lbrycrd getting...")
-			manager.errorsCh <- nil
+			sendTxSyncError(manager, nil)
 			return
 		default:
 			q("QUEUE:  start getting lbrycrd transaction..." + txs[i])
 			jsonTx, err := lbrycrd.GetRawTransactionResponse(txs[i])
 			if err != nil {
-				manager.errorsCh <- errors.Prefix("GetRawTxError"+txs[i], err)
+				sendTxSyncError(manager, errors.Prefix("GetRawTxError"+txs[i], err))
 				return
 			}
 			txRawMap[jsonTx.Txid] = jsonTx
 			txSlice[i] = jsonTx
-			depthMap[jsonTx.Txid] = 1
 			q("QUEUE:  end getting lbrycrd transaction..." + txs[i])
 		}
 	}
-	txSet, ok := optimizeOrderToProcess(txRawMap, depthMap)
+	txSet, ok := optimizeOrderToProcess(txRawMap)
 	q("QUEUE: start interaction of " + strconv.Itoa(len(txSet)) + " transactions")
 	if !ok {
 		txSet = txSlice
@@ -338,16 +547,19 @@ func queueTx(txs []string, blockTime uint64, blockHeight uint64, manager *txSync
 		select {
 		case <-manager.queueStopper.Ch():
 			q("QUEUE:  stopping processing " + jsonTx.Txid)
-			manager.errorsCh <- nil
+			sendTxSyncError(manager, nil)
 			return
-		default:
+		case <-manager.daemonStopper.Ch():
+			q("QUEUE: daemon stopping processing " + jsonTx.Txid)
+			sendTxSyncError(manager, ManualShutDownError)
+			return
+		case manager.jobsCh <- txToProcess{tx: jsonTx, blockTime: blockTime, blockHeight: blockHeight}:
 			q("QUEUE: start processing..." + jsonTx.Txid)
-			manager.jobsCh <- txToProcess{tx: jsonTx, blockTime: blockTime, blockHeight: blockHeight}
 			q("QUEUE: end processing..." + jsonTx.Txid)
 		}
 	}
 	q("QUEUE: end of queuing")
-	manager.errorsCh <- nil
+	sendTxSyncError(manager, nil)
 	q("QUEUE: end of queuing...passed nil to errorCh")
 }
 
@@ -370,8 +582,19 @@ func handleFailure(err error, manager *txSyncManager) {
 	q("HANDLE: stopping workers...")
 	manager.workerStopper.Stop()
 	q("HANDLE: stopped workers...")
-	manager.errorsCh <- err
+	sendTxSyncError(manager, err)
 	q("HANDLE: finish passing error...")
+}
+
+func sendTxSyncError(manager *txSyncManager, err error) bool {
+	select {
+	case manager.errorsCh <- err:
+		return true
+	case <-manager.daemonStopper.Ch():
+		return false
+	case <-manager.syncStopper.Ch():
+		return false
+	}
 }
 
 func getBlockToProcess(height *uint64) (*lbrycrd.GetBlockResponse, error) {
@@ -393,6 +616,10 @@ func checkHandleReorg(height uint64, chainPrevHash string) (uint64, error) {
 	if height > 0 {
 		prevBlock, err := model.Blocks(qm.Where(model.BlockColumns.Height+"=?", prevHeight), qm.Load("BlockHashTransactions")).OneG()
 		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				logrus.Warningf("missing previous block at height %d while processing %d; stepping back to fill the gap", prevHeight, height)
+				return prevHeight, nil
+			}
 			return height, errors.Prefix("error getting block@"+strconv.Itoa(int(prevHeight)), err)
 		}
 		//Recursively delete blocks until they match or a reorg of depth 100 == failure of logic.
@@ -422,8 +649,15 @@ func checkHandleReorg(height uint64, chainPrevHash string) (uint64, error) {
 			prevHeight--
 			prevBlock, err = model.Blocks(qm.Where(model.BlockColumns.Height+"=?", prevHeight)).OneG()
 			if err != nil {
+				if errors.Is(err, sql.ErrNoRows) {
+					logrus.Warningf("missing previous block at height %d while handling reorg at %d; stepping back to fill the gap", prevHeight, height)
+					return prevHeight, nil
+				}
 				return height, errors.Prefix("error getting previous block@"+strconv.Itoa(int(prevHeight)), err)
 			}
+		}
+		if prevBlock.Hash != chainPrevHash {
+			return height, errors.Base("reorg search exceeded limit at height %d without finding previous hash %s", height, chainPrevHash)
 		}
 		if depth > 0 {
 			message := fmt.Sprintf("Reorg detected of depth %d at height %d,(last matching height %d) handling reorg processing!", depth, height, prevHeight)
@@ -444,52 +678,69 @@ func reprocessQueue(manager *txSyncManager) {
 		case <-manager.syncStopper.Ch():
 			q("REDO: stopping redo jobs")
 			return
-		case redoJob := <-manager.redoJobsCh:
+		case redoJob, ok := <-manager.redoJobsCh:
+			if !ok {
+				return
+			}
 			q("REDO: start send new redo job - " + redoJob.tx.Txid)
-			manager.jobsCh <- redoJob
+			select {
+			case manager.jobsCh <- redoJob:
+			case <-manager.syncStopper.Ch():
+				return
+			}
 			q("REDO: end send new redo job - " + redoJob.tx.Txid)
 		}
 	}
 }
-func checkDepth(tx *lbrycrd.TxRawResult, txMap map[string]*lbrycrd.TxRawResult, depthMap map[string]int, start time.Time) bool {
-	if time.Since(start) > 5*time.Second {
-		return false
+func optimizeOrderToProcess(txMap map[string]*lbrycrd.TxRawResult) ([]*lbrycrd.TxRawResult, bool) {
+	txIDs := make([]string, 0, len(txMap))
+	inDegree := make(map[string]int, len(txMap))
+	children := make(map[string][]string, len(txMap))
+	for txID := range txMap {
+		txIDs = append(txIDs, txID)
+		inDegree[txID] = 0
 	}
-	for _, vin := range tx.Vin {
-		if txchild, ok := txMap[vin.TxID]; ok {
-			depthMap[vin.TxID]++
-			return checkDepth(txchild, txMap, depthMap, start)
+	sort.Strings(txIDs)
+	for _, txID := range txIDs {
+		tx := txMap[txID]
+		for _, vin := range tx.Vin {
+			if _, ok := txMap[vin.TxID]; !ok {
+				continue
+			}
+			children[vin.TxID] = append(children[vin.TxID], txID)
+			inDegree[txID]++
 		}
 	}
-	return true
-}
-
-func optimizeOrderToProcess(txMap map[string]*lbrycrd.TxRawResult, depthMap map[string]int) ([]*lbrycrd.TxRawResult, bool) {
-	start := time.Now()
-	successful := false
-	for _, tx := range txMap {
-		successful = checkDepth(tx, txMap, depthMap, start)
+	for parent := range children {
+		sort.Strings(children[parent])
 	}
 
-	type depthPair struct {
-		TxID  string
-		Count int
+	ready := make([]string, 0, len(txIDs))
+	for _, txID := range txIDs {
+		if inDegree[txID] == 0 {
+			ready = append(ready, txID)
+		}
 	}
-
-	var list []depthPair
-	for k, v := range depthMap {
-		list = append(list, depthPair{k, v})
+	orderedTx := make([]*lbrycrd.TxRawResult, 0, len(txMap))
+	for len(ready) > 0 {
+		txID := ready[0]
+		ready = ready[1:]
+		orderedTx = append(orderedTx, txMap[txID])
+		q("Tx " + txID + " ordered")
+		for _, childID := range children[txID] {
+			inDegree[childID]--
+			if inDegree[childID] == 0 {
+				ready = append(ready, childID)
+				sort.Strings(ready)
+			}
+		}
 	}
-
-	sort.Slice(list, func(i, j int) bool {
-		return list[i].Count > list[j].Count
-	})
-
-	orderedTx := make([]*lbrycrd.TxRawResult, len(list))
-	for i := range list {
-		orderedTx[i] = txMap[list[i].TxID]
-		//Additional debugging to output the order in which transactions are processed.
-		q("Tx " + list[i].TxID + " Count " + strconv.Itoa(list[i].Count))
+	if len(orderedTx) != len(txMap) {
+		orderedTx = orderedTx[:0]
+		for _, txID := range txIDs {
+			orderedTx = append(orderedTx, txMap[txID])
+		}
+		return orderedTx, false
 	}
-	return orderedTx, successful
+	return orderedTx, true
 }

@@ -87,7 +87,7 @@ func newStreamClaim(title, description string) (*c.StakeHelper, error) {
 
 func addClaimToTx(rawTx *wire.MsgTx, claim *c.StakeHelper, name string) error {
 
-	address, err := lbrycrd.LBRYcrdClient.GetNewAddress("")
+	address, err := lbrycrd.GetNewAddress("")
 	if err != nil {
 		return errors.Err(err)
 	}

@@ -4,8 +4,9 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"testing"
+	"time"
 
-	util "github.com/lbryio/lbry.go/v2/lbrycrd"
+	"github.com/lbryio/chainquery/lbrycrd"
 	legacy_pb "github.com/lbryio/types/v1/go"
 	"github.com/sirupsen/logrus"
 )
@@ -51,7 +52,7 @@ var claimIDTests = []claimIDMatch{
 func TestGetClaimIDFromOutput(t *testing.T) {
 
 	for _, claimMatch := range claimIDTests {
-		claimID, err := util.ClaimIDFromOutpoint(claimMatch.TxHash, int(claimMatch.N))
+		claimID, err := lbrycrd.ClaimIDFromOutpoint(claimMatch.TxHash, int(claimMatch.N))
 		if err != nil {
 			t.Error(err)
 		}
@@ -84,5 +85,48 @@ func TestGetCertificate(t *testing.T) {
 	expected := `{"version":0,"keyType":3,"publicKey":"MFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAE+DmCzZztuP1uyBUk/OsLeexlcl3KD4uEmd70rS88+v1AbhUYTB4GB9P+p/Wlrnh3NaiRc5Tm3ldtcwhM6WFmbQ=="}`
 	if string(certBytes) != expected {
 		t.Error("values don't match")
+	}
+}
+
+func TestLockClaimSerializesSameClaim(t *testing.T) {
+	const claimID = "same-claim"
+
+	firstUnlock := LockClaim(claimID)
+	acquired := make(chan struct{})
+	release := make(chan struct{})
+	done := make(chan struct{})
+	go lockClaimForTest(claimID, acquired, release, done)
+
+	if waitForClaimLockSignal(acquired, 20*time.Millisecond) {
+		close(release)
+		waitForClaimLockSignal(done, time.Second)
+		t.Fatal("expected second same-claim lock to block")
+	}
+
+	firstUnlock()
+
+	if !waitForClaimLockSignal(acquired, time.Second) {
+		t.Fatal("timed out waiting for same-claim lock")
+	}
+	close(release)
+	if !waitForClaimLockSignal(done, time.Second) {
+		t.Fatal("timed out waiting for same-claim lock release")
+	}
+}
+
+func lockClaimForTest(claimID string, acquired chan<- struct{}, release <-chan struct{}, done chan<- struct{}) {
+	unlock := LockClaim(claimID)
+	acquired <- struct{}{}
+	<-release
+	unlock()
+	done <- struct{}{}
+}
+
+func waitForClaimLockSignal(ch <-chan struct{}, timeout time.Duration) bool {
+	select {
+	case <-ch:
+		return true
+	case <-time.After(timeout):
+		return false
 	}
 }

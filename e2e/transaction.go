@@ -12,7 +12,7 @@ import (
 
 func createBaseRawTx(inputs []btcjson.TransactionInput, change float64) (*wire.MsgTx, error) {
 	addresses := make(map[btcutil.Address]btcutil.Amount)
-	changeAddress, err := lbrycrd.LBRYcrdClient.GetNewAddress("")
+	changeAddress, err := lbrycrd.GetNewAddress("")
 	if err != nil {
 		return nil, errors.Err(err)
 	}
@@ -22,12 +22,12 @@ func createBaseRawTx(inputs []btcjson.TransactionInput, change float64) (*wire.M
 	}
 	addresses[changeAddress] = changeAmount
 	lockTime := int64(0)
-	return lbrycrd.LBRYcrdClient.CreateRawTransaction(inputs, addresses, &lockTime)
+	return lbrycrd.CreateRawTransaction(inputs, addresses, &lockTime)
 }
 
 func getEmptyTx(totalOutputSpend float64) (*wire.MsgTx, error) {
 	totalFees := 0.1
-	unspentResults, err := lbrycrd.LBRYcrdClient.ListUnspentMin(1)
+	unspentResults, err := lbrycrd.ListUnspentMin(1)
 	if err != nil {
 		return nil, errors.Err(err)
 	}
@@ -52,7 +52,7 @@ func getEmptyTx(totalOutputSpend float64) (*wire.MsgTx, error) {
 }
 
 func signTxAndSend(rawTx *wire.MsgTx) (*chainhash.Hash, error) {
-	signedTx, allInputsSigned, err := lbrycrd.LBRYcrdClient.SignRawTransactionWithWallet(rawTx)
+	signedTx, allInputsSigned, err := lbrycrd.SignRawTransactionWithWallet(rawTx)
 	if err != nil {
 		return nil, errors.Err(err)
 	}
@@ -60,5 +60,5 @@ func signTxAndSend(rawTx *wire.MsgTx) (*chainhash.Hash, error) {
 		return nil, errors.Err("Not all inputs for the tx could be signed!")
 	}
 
-	return lbrycrd.LBRYcrdClient.SendRawTransaction(signedTx, false)
+	return lbrycrd.SendRawTransaction(signedTx, false)
 }

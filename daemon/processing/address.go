@@ -89,11 +89,14 @@ func createUpdateVinAddresses(tx *model.Transaction, inputs *[]lbrycrd.Vin, bloc
 		for _, address := range addresses {
 			addr := datastore.GetAddress(address)
 			if addr == nil {
-				addr := &model.Address{Address: address}
+				addr = &model.Address{Address: address}
 				err := datastore.PutAddress(addr)
 				if err != nil {
 					return nil, errors.Prefix("Could not create missing address", err)
 				}
+			}
+			if addr == nil {
+				return nil, errors.Base("address %s could not be loaded or created", address)
 			}
 			addressIDMap[address] = addr.ID
 			err := createTxAddressIfNotExist(tx.ID, addr.ID)

@@ -3,14 +3,14 @@ package notifications
 import (
 	"net/http"
 	"net/url"
+	"sync"
+	"time"
 
 	"github.com/lbryio/chainquery/metrics"
 
 	"github.com/lbryio/lbry.go/v2/extras/errors"
 
 	"github.com/sirupsen/logrus"
-	"golang.org/x/net/context"
-	"golang.org/x/sync/semaphore"
 )
 
 type subscriber struct {
@@ -20,9 +20,23 @@ type subscriber struct {
 }
 
 var subscriptions map[string][]subscriber
+var subscriptionsMu sync.RWMutex
+var notificationWorkerOnce sync.Once
+var notificationQueue chan notificationJob
+var notificationClient *http.Client
+var notificationClientTimeout time.Duration
+var notificationClientMu sync.Mutex
+var Timeout = 20 * time.Second
+
+type notificationJob struct {
+	Type   string
+	Values url.Values
+}
 
 // AddSubscriber adds a subscriber to the subscribers list for a type
 func AddSubscriber(address, subType string, params map[string]interface{}) {
+	subscriptionsMu.Lock()
+	defer subscriptionsMu.Unlock()
 	if subscriptions == nil {
 		subscriptions = make(map[string][]subscriber)
 	}
@@ -38,33 +52,51 @@ func AddSubscriber(address, subType string, params map[string]interface{}) {
 
 // ClearSubscribers clears the list of subscribers
 func ClearSubscribers() {
+	subscriptionsMu.Lock()
+	defer subscriptionsMu.Unlock()
 	subscriptions = make(map[string][]subscriber)
 }
 
-var notificationSem = semaphore.NewWeighted(20)
-
 // Notify notifies the list of subscribers for a type
 func Notify(t string, values url.Values) {
-	err := notificationSem.Acquire(context.Background(), 1)
-	if err != nil {
-		logrus.Error(errors.Prefix("Notify", errors.Err(err)))
-		return
+	notificationWorkerOnce.Do(startNotificationWorkers)
+	job := notificationJob{Type: t, Values: copyValues(values)}
+	select {
+	case notificationQueue <- job:
+	default:
+		logrus.Warn("notification queue full; dropping notification")
 	}
-	defer notificationSem.Release(1)
-	subs, ok := subscriptions[t]
-	if ok {
-		for _, s := range subs {
-			for param, value := range s.Params {
-				values.Set(param, value[0])
-			}
-			s.notify(values)
-			metrics.Notifications.WithLabelValues(t).Inc()
+}
+
+func startNotificationWorkers() {
+	notificationQueue = make(chan notificationJob, 1000)
+	for worker := 0; worker < 20; worker++ {
+		go notificationWorker()
+	}
+}
+
+func notificationWorker() {
+	for job := range notificationQueue {
+		processNotification(job)
+	}
+}
+
+func processNotification(job notificationJob) {
+	subscriptionsMu.RLock()
+	subs := append([]subscriber(nil), subscriptions[job.Type]...)
+	subscriptionsMu.RUnlock()
+	for _, s := range subs {
+		values := copyValues(job.Values)
+		for param, value := range s.Params {
+			values.Set(param, value[0])
 		}
+		s.notify(values)
+		metrics.Notifications.WithLabelValues(job.Type).Inc()
 	}
 }
 
 func (s subscriber) notify(values url.Values) {
-	res, err := http.PostForm(s.URL, values)
+	res, err := notificationHTTPClient().PostForm(s.URL, values)
 	if err != nil {
 		logrus.Error(errors.Prefix("Notify", errors.Err(err)))
 		return
@@ -82,4 +114,22 @@ func (s subscriber) notify(values url.Values) {
 	//if res.StatusCode != http.StatusOK {
 	//	logrus.Errorln(string(b))
 	//}
+}
+
+func notificationHTTPClient() *http.Client {
+	notificationClientMu.Lock()
+	defer notificationClientMu.Unlock()
+	if notificationClient == nil || notificationClientTimeout != Timeout {
+		notificationClient = &http.Client{Timeout: Timeout}
+		notificationClientTimeout = Timeout
+	}
+	return notificationClient
+}
+
+func copyValues(values url.Values) url.Values {
+	copied := make(url.Values, len(values))
+	for key, value := range values {
+		copied[key] = append([]string(nil), value...)
+	}
+	return copied
 }

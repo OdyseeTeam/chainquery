@@ -53,8 +53,7 @@ var runCmd = &cobra.Command{
 			logrus.Infof("Incorrect usage, should be: run <jobname>. Possible jobs are: %s", strings.Join(jobs, ", "))
 			return
 		}
-		lbrycrdClient := lbrycrd.Init()
-		defer lbrycrdClient.Shutdown()
+		lbrycrd.Init()
 		//Main Chainquery DB connection
 		dbInstance, err := db.Init(config.GetMySQLDSN(), config.GetDebugQueryMode())
 		if err != nil {

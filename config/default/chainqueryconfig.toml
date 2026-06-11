@@ -15,6 +15,20 @@
 #SUGGESTED: "chainquery:chainquery@unix(/var/run/mysqld/mysqld.sock)/chainquery"
 #mysqldsn=
 
+#MySQL connection pool and timeout settings. Duration values accept either bare seconds or Go duration strings like "20s".
+#DEFAULT: NumCPU*4
+#mysqlmaxopenconns=
+#DEFAULT: NumCPU
+#mysqlmaxidleconns=
+#DEFAULT: "5m"
+#mysqlconnmaxlifetime=
+#DEFAULT: "20s"
+#mysqlconnecttimeout=
+#DEFAULT: "2m"
+#mysqlreadtimeout=
+#DEFAULT: "2m"
+#mysqlwritetimeout=
+
 #API MySQL DSN is required for chainquery to expose a SQL query service
 #DEFAULT: "chainquery:chainquery@tcp(localhost:3306)/chainquery"
 #SUGGESTED: "chainquery:chainquery@unix(/var/run/mysqld/mysqld.sock)/chainquery"
@@ -36,8 +50,9 @@
 #DEFAULT: 0
 #deamonmode=
 
-#Default client timeout is for communication with the api of chainquery
-#DEFAULT: 20 #Measured in seconds
+#Default client timeout is used for lbrycrd RPC, sockety, notifications, and chainquery API clients.
+#Duration values accept either bare seconds or Go duration strings like "20s".
+#DEFAULT: "20s"
 #defaultclienttimeout=
 
 #Processing delay is used to determine how frequently chainquery should process a block
@@ -48,6 +63,20 @@
 #Daemon delay is the frequency at which chainquery checks for work to do.
 #DEFAULT: 1 #Measured in seconds
 #daemondelay=
+
+#Block processing timeout controls how long the daemon waits for a block processing result before declaring the processor unhealthy.
+#Duration values accept either bare seconds or Go duration strings like "10m".
+#DEFAULT: "10m"
+#blockprocessingtimeout=
+
+#Block processing dump delay controls how often goroutine dumps are emitted while the daemon is parked after a block timeout.
+#Duration values accept either bare seconds or Go duration strings like "10m".
+#DEFAULT: "10m"
+#blockprocessingdumpdelay=
+
+#Exit on block timeout lets an external supervisor restart chainquery after the timeout dump is emitted.
+#DEFAULT: false
+#exitonblocktimeout=
 
 #Profiling options - will output the time take for certain opertions related to the below category
 #DEFAULT: false (for all 4 params)

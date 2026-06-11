@@ -68,7 +68,7 @@ func GetInput(txHash string, isCoinBase bool, prevHash string, prevN uint) *mode
 	return input
 }
 
-//PutInput makes creating,retrieving,updating the model type simplified.
+// PutInput makes creating,retrieving,updating the model type simplified.
 func PutInput(input *model.Input) error {
 	defer util.TimeTrack(time.Now(), "PutInput", "mysqlprofile")
 	if input != nil {
@@ -120,7 +120,7 @@ func GetAddress(addr string) *model.Address {
 	return address
 }
 
-//PutAddress  makes creating,retrieving,updating the model type simplified.
+// PutAddress  makes creating,retrieving,updating the model type simplified.
 func PutAddress(address *model.Address) error {
 	defer util.TimeTrack(time.Now(), "PutAddress", "mysqlprofile")
 	if address != nil {
@@ -225,19 +225,25 @@ func PutClaim(claim *model.Claim) error {
 	if claim != nil {
 
 		var err error
-		exists, err := model.ClaimExistsG(claim.ID)
-		if err != nil {
-			return errors.Prefix("Datastore(PUTCLAIM)", err)
+		var existingClaim *model.Claim
+		if claim.ID > 0 {
+			existingClaim, err = model.FindClaimG(claim.ID)
+			if err != nil && !errors.Is(err, sql.ErrNoRows) {
+				return errors.Prefix("Datastore(PUTCLAIM)", err)
+			}
 		}
-		if exists {
+		if existingClaim == nil && claim.ClaimID != "" {
+			existingClaim, err = model.Claims(model.ClaimWhere.ClaimID.EQ(claim.ClaimID)).OneG()
+			if err != nil && !errors.Is(err, sql.ErrNoRows) {
+				return errors.Prefix("Datastore(PUTCLAIM)", err)
+			}
+		}
+		if existingClaim != nil {
+			claim.ID = existingClaim.ID
 			claim.ModifiedAt = time.Now()
 			err = claim.UpdateG(boil.Infer())
 		} else {
 			err = claim.InsertG(boil.Infer())
-			if err != nil {
-				claim.ModifiedAt = time.Now()
-				err = claim.UpdateG(boil.Infer())
-			}
 		}
 		if err != nil {
 			err = errors.Prefix("Datastore(PUTCLAIM)", err)

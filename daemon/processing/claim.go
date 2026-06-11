@@ -4,7 +4,9 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"hash/crc32"
 	"strings"
+	"sync"
 	"time"
 	"unicode/utf8"
 
@@ -18,7 +20,6 @@ import (
 	util2 "github.com/lbryio/chainquery/util"
 
 	"github.com/lbryio/lbry.go/v2/extras/errors"
-	util "github.com/lbryio/lbry.go/v2/lbrycrd"
 	"github.com/lbryio/lbry.go/v2/schema/address/base58"
 	c "github.com/lbryio/lbry.go/v2/schema/stake"
 	legacy_pb "github.com/lbryio/types/v1/go"
@@ -29,6 +30,22 @@ import (
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 )
+
+const claimLockStripeCount = 1024
+
+var claimLocks [claimLockStripeCount]sync.Mutex
+
+func LockClaim(claimID string) func() {
+	lock := claimLockFor(claimID)
+	lock.Lock()
+	return lock.Unlock
+}
+
+func claimLockFor(claimID string) *sync.Mutex {
+	checksum := crc32.ChecksumIEEE([]byte(claimID))
+	index := int(checksum % claimLockStripeCount)
+	return &claimLocks[index]
+}
 
 func processAsClaim(script []byte, vout model.Output, tx model.Transaction, blockHeight uint64) (address *string, claimID *string, err error) {
 	defer metrics.Processing(time.Now(), "claim")
@@ -60,7 +77,7 @@ func processAsClaim(script []byte, vout model.Output, tx model.Transaction, bloc
 }
 
 func processClaimNameScript(script *[]byte, vout model.Output, tx model.Transaction, blockHeight uint64) (name string, claimid string, pkscript []byte, err error) {
-	claimid, err = util.ClaimIDFromOutpoint(vout.TransactionHash, int(vout.Vout))
+	claimid, err = lbrycrd.ClaimIDFromOutpoint(vout.TransactionHash, int(vout.Vout))
 	if err != nil {
 		return name, "", pkscript, err
 	}
@@ -75,6 +92,8 @@ func processClaimNameScript(script *[]byte, vout model.Output, tx model.Transact
 		saveUnknownClaim(name, claimid, false, value, vout, tx)
 		return name, claimid, pkscript, nil
 	}
+	unlockClaim := LockClaim(claimid)
+	defer unlockClaim()
 	if helper.Claim == nil {
 		err := errors.Base("Produced null pbClaim-> " + name + " " + claimid)
 		return name, claimid, pkscript, err
@@ -109,7 +128,7 @@ func processClaimNameScript(script *[]byte, vout model.Output, tx model.Transact
 		if !claim.PublisherID.IsZero() {
 			IDs = append(IDs, "channel-"+claim.PublisherID.String)
 		}
-		go sockety.SendNotification(socketyapi.SendNotificationArgs{
+		sockety.SendNotification(socketyapi.SendNotificationArgs{
 			Service: socketyapi.BlockChain,
 			Type:    "new_claim",
 			IDs:     IDs,
@@ -133,13 +152,12 @@ func processClaimSupportScript(script *[]byte, vout model.Output, tx model.Trans
 	support := datastore.GetSupport(tx.Hash, vout.Vout)
 	support, err = processSupport(claimid, value, support, vout, tx)
 	if err != nil {
-		err = nil
-		//logrus.Error(fmt.Sprintf("[outpoint:%s:%d]", tx.Hash, vout.Vout), "could not decode support value: ", err)
+		return name, claimid, pubkeyscript, err
 	}
 	if err := datastore.PutSupport(support); err != nil {
 		logrus.Debugf("error while adding support for claim_id %s: %s", claimid, err.Error())
 	} else {
-		go sockety.SendNotification(socketyapi.SendNotificationArgs{
+		sockety.SendNotification(socketyapi.SendNotificationArgs{
 			Service: socketyapi.BlockChain,
 			Type:    "support",
 			IDs:     []string{"supports", claimid, name},
@@ -163,6 +181,8 @@ func processClaimUpdateScript(script *[]byte, vout model.Output, tx model.Transa
 		return name, claimID, pubkeyscript, nil
 	}
 	if helper.Claim != nil && err == nil {
+		unlockClaim := LockClaim(claimID)
+		defer unlockClaim()
 		claim := datastore.GetClaim(claimID)
 		claim, err := processUpdateClaim(helper, claim, value)
 		if err != nil {
@@ -193,7 +213,7 @@ func processClaimUpdateScript(script *[]byte, vout model.Output, tx model.Transa
 				logrus.WithError(err)
 			}
 		} else {
-			go sockety.SendNotification(socketyapi.SendNotificationArgs{
+			sockety.SendNotification(socketyapi.SendNotificationArgs{
 				Service: socketyapi.BlockChain,
 				Type:    "claim_update",
 				IDs:     []string{"claims", "claimupdates", claim.ClaimID, name},

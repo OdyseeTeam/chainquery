@@ -5,8 +5,10 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	runtimedebug "runtime/debug"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	util2 "github.com/lbryio/chainquery/util"
@@ -27,7 +29,7 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
-var chainSyncRunning = false
+var chainSyncRunning atomic.Bool
 var chainSync *chainSyncStatus
 
 // ChainSyncRunDuration specifies the duration, in seconds, the chain sync job will run at a time before stopping and
@@ -35,23 +37,24 @@ var chainSync *chainSyncStatus
 var ChainSyncRunDuration int
 
 // ChainSyncDelay Specifies the duration, in milliseconds, between each block it synchronizes. Depending on the usage of
-//the database you will want to add some delay between blocks so it does not overload the db server.
+// the database you will want to add some delay between blocks so it does not overload the db server.
 var ChainSyncDelay int
 
 const chainSyncJob = "chainsync"
+const maxChainSyncErrors = 1000
 
-//ChainSyncAsync triggers the chain sync job in the background and returns
+// ChainSyncAsync triggers the chain sync job in the background and returns
 func ChainSyncAsync() {
-	if !chainSyncRunning {
-		chainSyncRunning = true
+	if chainSyncRunning.CompareAndSwap(false, true) {
 		go ChainSync()
 	}
 }
 
 func endChainSync() {
-	chainSyncRunning = false
+	chainSyncRunning.Store(false)
 	if r := recover(); r != nil {
 		logrus.Error("Recovered From: ", r)
+		logrus.Error(string(runtimedebug.Stack()))
 	}
 }
 
@@ -109,42 +112,77 @@ type syncError struct {
 	Area        string  `json:"area"`
 }
 
+type chainSyncTx struct {
+	Hash string
+	Raw  *lbrycrd.TxRawResult
+}
+
 func (c *chainSyncStatus) processNextBlock() error {
 	c.LastHeight = c.LastHeight + 1
-	blockHash, err := lbrycrd.LBRYcrdClient.GetBlockHash(c.LastHeight)
+	blockHash, err := lbrycrd.GetBlockHash(uint64(c.LastHeight))
 	if err != nil {
 		return c.recordAndReturnError(c.LastHeight, "lbrycrd-getblockhash", err)
 	}
-	lbrycrdBlock, err := lbrycrd.GetBlock(blockHash.String())
+	lbrycrdBlock, err := lbrycrd.GetBlock(*blockHash)
 	if err != nil {
 		return c.recordAndReturnError(c.LastHeight, "mysql-getblock", err)
 	}
-	recordedBlock, err := model.Blocks(model.BlockWhere.Hash.EQ(blockHash.String())).OneG()
+	recordedBlock, err := model.Blocks(model.BlockWhere.Hash.EQ(*blockHash)).OneG()
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			logrus.Warningf("Missing block %d, populating it now", c.LastHeight)
-			_, err = processing.ProcessBlock(uint64(c.LastHeight), nil, lbrycrdBlock)
-			if err != nil {
-				return c.recordAndReturnError(c.LastHeight, "daemon-process-block", err)
+			processedHeight := processing.RunBlockProcessing(nil, uint64(c.LastHeight))
+			if processedHeight != uint64(c.LastHeight) {
+				return c.recordAndReturnError(c.LastHeight, "daemon-process-block", errors.Base("processed height %d while filling missing height %d", processedHeight, c.LastHeight))
 			}
+			recordedBlock, err = model.Blocks(model.BlockWhere.Hash.EQ(*blockHash)).OneG()
+			if err != nil {
+				return c.recordAndReturnError(c.LastHeight, "mysql-getblock", err)
+			}
+		} else {
+			return c.recordAndReturnError(c.LastHeight, "mysql-getblock", err)
 		}
+	}
+	lbrycrdTxs, err := c.fetchBlockTransactions(lbrycrdBlock.Tx)
+	if err != nil {
+		return c.recordAndReturnError(c.LastHeight, "tx-hash-creation", err)
+	}
+	processing.BlockLock.Lock()
+	defer processing.BlockLock.Unlock()
+	recordedBlock, err = model.Blocks(model.BlockWhere.Hash.EQ(*blockHash)).OneG()
+	if err != nil {
 		return c.recordAndReturnError(c.LastHeight, "mysql-getblock", err)
 	}
 	c.Block = recordedBlock
-	if err := c.alignBlock(lbrycrdBlock); err != nil {
+	err = c.alignBlock(lbrycrdBlock)
+	if err != nil {
 		return c.recordAndReturnError(c.LastHeight, "block-alignment", err)
 	}
-	if err := c.alignTxs(recordedBlock, lbrycrdBlock.Tx); err != nil {
+	err = c.alignTxs(recordedBlock, lbrycrdTxs)
+	if err != nil {
 		return c.recordAndReturnError(c.LastHeight, "tx-alignment", err)
 	}
 	return nil
 }
 
-func (c *chainSyncStatus) alignTxs(block *model.Block, txHashes []string) error {
+func (c *chainSyncStatus) fetchBlockTransactions(txHashes []string) ([]chainSyncTx, error) {
+	lbrycrdTxs := make([]chainSyncTx, 0, len(txHashes))
 	for _, txHash := range txHashes {
 		lbrycrdTx, err := lbrycrd.GetRawTransactionResponse(txHash)
 		if err != nil {
-			return c.recordAndReturnError(c.LastHeight, "tx-hash-creation", err)
+			return nil, errors.Err(err)
+		}
+		lbrycrdTxs = append(lbrycrdTxs, chainSyncTx{Hash: txHash, Raw: lbrycrdTx})
+	}
+	return lbrycrdTxs, nil
+}
+
+func (c *chainSyncStatus) alignTxs(block *model.Block, lbrycrdTxs []chainSyncTx) error {
+	for _, chainTx := range lbrycrdTxs {
+		txHash := chainTx.Hash
+		lbrycrdTx := chainTx.Raw
+		if lbrycrdTx == nil {
+			return errors.Base("missing lbrycrd transaction payload for %s", txHash)
 		}
 		w := model.TransactionWhere
 		recordedTx, err := model.Transactions(w.BlockHashID.EQ(null.StringFrom(block.Hash)), w.Hash.EQ(txHash)).OneG()
@@ -155,12 +193,35 @@ func (c *chainSyncStatus) alignTxs(block *model.Block, txHashes []string) error 
 					c.recordError(c.LastHeight, "tx-processing", err)
 					continue
 				}
+				recordedTx, err = model.Transactions(w.BlockHashID.EQ(null.StringFrom(block.Hash)), w.Hash.EQ(txHash)).OneG()
+				if err != nil {
+					return c.recordAndReturnError(c.LastHeight, "mysql-tx", err)
+				}
+			} else {
+				return c.recordAndReturnError(c.LastHeight, "mysql-tx", err)
 			}
-			return c.recordAndReturnError(c.LastHeight, "mysql-tx", err)
 		}
 		c.Tx = recordedTx
+		missingParts, err := c.txPartsMissing(lbrycrdTx)
+		if err != nil {
+			return c.recordAndReturnError(c.LastHeight, "tx-part-count", err)
+		}
+		if missingParts {
+			err = processing.ProcessTx(lbrycrdTx, block.BlockTime, uint64(c.LastHeight))
+			if err != nil {
+				return c.recordAndReturnError(c.LastHeight, "tx-reprocessing", err)
+			}
+			recordedTx, err = model.Transactions(w.BlockHashID.EQ(null.StringFrom(block.Hash)), w.Hash.EQ(txHash)).OneG()
+			if err != nil {
+				return c.recordAndReturnError(c.LastHeight, "mysql-tx", err)
+			}
+			c.Tx = recordedTx
+		}
 		if err := c.alignTx(lbrycrdTx); err != nil {
 			return c.recordAndReturnError(c.LastHeight, "tx-alignment", err)
+		}
+		if err := c.alignVouts(lbrycrdTx.Vout); err != nil {
+			return c.recordAndReturnError(c.LastHeight, "vout-alignment", err)
 		}
 		if err := c.alignVins(lbrycrdTx.Vin); err != nil {
 			return c.recordAndReturnError(c.LastHeight, "vin-alignment", err)
@@ -169,14 +230,23 @@ func (c *chainSyncStatus) alignTxs(block *model.Block, txHashes []string) error 
 	return nil
 }
 
+func (c *chainSyncStatus) txPartsMissing(lbrycrdTx *lbrycrd.TxRawResult) (bool, error) {
+	inputCount, err := model.Inputs(model.InputWhere.TransactionHash.EQ(c.Tx.Hash)).CountG()
+	if err != nil {
+		return false, errors.Err(err)
+	}
+	outputCount, err := model.Outputs(model.OutputWhere.TransactionHash.EQ(c.Tx.Hash)).CountG()
+	if err != nil {
+		return false, errors.Err(err)
+	}
+	return inputCount < int64(len(lbrycrdTx.Vin)) || outputCount < int64(len(lbrycrdTx.Vout)), nil
+}
+
 func (c chainSyncStatus) alignVouts(vouts []lbrycrd.Vout) error {
 	for i, vout := range vouts {
 		output := datastore.GetOutput(c.Tx.Hash, uint(vout.N))
 		if output == nil {
-			err := processing.ProcessVout(&vout, c.Tx, nil, uint64(i))
-			if err != nil {
-				return errors.Err(err)
-			}
+			return errors.Base("missing vout %s:%d after transaction reprocessing", c.Tx.Hash, i)
 		} else {
 			c.Vout = output
 			err := c.alignVout(vout)
@@ -286,10 +356,7 @@ func (c *chainSyncStatus) alignVins(vins []lbrycrd.Vin) error {
 			input = datastore.GetInput(c.Tx.Hash, true, vin.TxID, uint(vin.Vout))
 		}
 		if input == nil {
-			err := processing.ProcessVin(&vin, c.Tx, nil, uint64(i))
-			if err != nil {
-				return err
-			}
+			return errors.Base("missing vin %s:%d after transaction reprocessing", c.Tx.Hash, i)
 		} else {
 			c.Vin = input
 			err := c.alignVin(vin)
@@ -451,9 +518,14 @@ func (c *chainSyncStatus) alignBlock(l *lbrycrd.GetBlockResponse) error {
 }
 
 func (c *chainSyncStatus) recordAndReturnError(height int64, area string, err error) error {
-	for _, e := range c.Errors {
+	if err == nil {
+		err = errors.Base("nil error recorded for %s at height %d", area, height)
+	}
+	for i := range c.Errors {
+		e := &c.Errors[i]
 		if area == e.Area && e.Error == err.Error() {
 			e.HeightFound = append(e.HeightFound, height)
+			return err
 		}
 	}
 	c.Errors = append(c.Errors, syncError{
@@ -461,6 +533,9 @@ func (c *chainSyncStatus) recordAndReturnError(height int64, area string, err er
 		Error:       err.Error(),
 		Area:        area,
 	})
+	if len(c.Errors) > maxChainSyncErrors {
+		c.Errors = c.Errors[len(c.Errors)-maxChainSyncErrors:]
+	}
 
 	return err
 }

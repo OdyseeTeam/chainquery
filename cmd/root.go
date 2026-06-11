@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"os"
 
-	"net/http"
-
 	"github.com/lbryio/chainquery/config"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -21,7 +19,6 @@ const ( // config setting keys
 func init() {
 	cobra.OnInitialize(config.InitializeConfiguration)
 	log.SetFormatter(&log.TextFormatter{FullTimestamp: true})
-	http.DefaultClient.Timeout = config.GetDefaultClientTimeout()
 	rootCmd.PersistentFlags().String(configpathflag, "", "Specify non-default location of the configuration of chainquery. The precedence is $HOME, working directory, and lastly the branch path to the default configuration 'path/to/chainquery/config/default/'")
 	rootCmd.PersistentFlags().BoolP(debugmodeflag, "d", false, "turns on debug mode for the application command.")
 	rootCmd.PersistentFlags().BoolP(tracemodeflag, "t", false, "turns on trace mode for the application command, very verbose logging.")

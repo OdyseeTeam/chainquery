@@ -46,6 +46,22 @@ var (
 		Help:      "The durations of the individual processing by type",
 	}, []string{"type"})
 
+	// LBRYcrdRPCInflight tracks active lbrycrd JSON-RPC wrapper calls by method.
+	LBRYcrdRPCInflight = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: "chainquery",
+		Subsystem: "lbrycrd",
+		Name:      "rpc_inflight",
+		Help:      "Number of in-flight lbrycrd JSON-RPC calls by method",
+	}, []string{"method"})
+
+	// LBRYcrdRPCLatency tracks lbrycrd JSON-RPC wrapper latency by method and result.
+	LBRYcrdRPCLatency = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: "chainquery",
+		Subsystem: "lbrycrd",
+		Name:      "rpc_duration",
+		Help:      "The durations of lbrycrd JSON-RPC calls by method and result",
+	}, []string{"method", "result"})
+
 	// SocketyNotifications metric for processing failure count by type
 	SocketyNotifications = promauto.NewCounterVec(prometheus.CounterOpts{
 		Namespace: "chainquery",
@@ -55,13 +71,13 @@ var (
 	}, []string{"type", "category", "subcategory"})
 )
 
-//Job helper function to make tracking metric one line deferral
+// Job helper function to make tracking metric one line deferral
 func Job(start time.Time, name string) {
 	duration := time.Since(start).Seconds()
 	jobs.WithLabelValues(name).Observe(duration)
 }
 
-//Processing helper function to make tracking metric one line deferral
+// Processing helper function to make tracking metric one line deferral
 func Processing(start time.Time, name string) {
 	duration := time.Since(start).Seconds()
 	processing.WithLabelValues(name).Observe(duration)

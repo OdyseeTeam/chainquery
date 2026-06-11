@@ -32,8 +32,7 @@ var apiCmd = &cobra.Command{
 		}
 		defer db.CloseDB(dbInstance)
 
-		lbrycrdClient := lbrycrd.Init()
-		defer lbrycrdClient.Shutdown()
+		lbrycrd.Init()
 		swagger.InitApiServer(config.GetAPIHostAndPort())
 	},
 }

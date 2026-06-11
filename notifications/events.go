@@ -27,8 +27,8 @@ func PaymentEvent(lbc float64, address, txid string, vout uint) {
 	values.Add("tx_id", txid)
 	values.Add("vout", cast.ToString(vout))
 	values.Add("address", address)
-	go Notify(payment, values)
-	go sockety.SendNotification(socketyapi.SendNotificationArgs{
+	Notify(payment, values)
+	sockety.SendNotification(socketyapi.SendNotificationArgs{
 		Service: socketyapi.BlockChain,
 		Type:    "payments",
 		IDs:     []string{"payments", address, strconv.Itoa(int(lbc * 0.001))},
@@ -96,5 +96,5 @@ func ClaimEvent(claim *model.Claim, tx model.Transaction, claimData *c.StakeHelp
 	if isUnlisted {
 		return
 	}
-	go Notify(newClaim, values)
+	Notify(newClaim, values)
 }

@@ -42,12 +42,14 @@ type txProcessResult struct {
 func initTxWorkers(s *stop.Group, nrWorkers int, jobs <-chan txToProcess, results chan<- txProcessResult) {
 	for i := 0; i < nrWorkers; i++ {
 		s.Add(1)
-		go func(worker int) {
-			defer s.Done()
-			txProcessor(s, jobs, results, worker)
-			q(strconv.Itoa(worker) + " - WORKER TX - Finished all jobs")
-		}(i)
+		go runTxProcessor(s, jobs, results, i)
 	}
+}
+
+func runTxProcessor(s *stop.Group, jobs <-chan txToProcess, results chan<- txProcessResult, worker int) {
+	defer s.Done()
+	txProcessor(s, jobs, results, worker)
+	q(strconv.Itoa(worker) + " - WORKER TX - Finished all jobs")
 }
 
 func txProcessor(s *stop.Group, jobs <-chan txToProcess, results chan<- txProcessResult, worker int) {
@@ -55,7 +57,10 @@ func txProcessor(s *stop.Group, jobs <-chan txToProcess, results chan<- txProces
 		select {
 		case <-s.Ch():
 			return
-		case job := <-jobs:
+		case job, ok := <-jobs:
+			if !ok {
+				return
+			}
 			q(strconv.Itoa(worker) + " - WORKER TX - Start new job " + job.tx.Txid)
 			err := ProcessTx(job.tx, job.blockTime, job.blockHeight)
 			if err != nil {
@@ -72,13 +77,11 @@ func txProcessor(s *stop.Group, jobs <-chan txToProcess, results chan<- txProces
 				failcount:   job.failcount + 1}
 			q(strconv.Itoa(worker) + " - WORKER TX - Finished new job " + job.tx.Txid)
 			select {
+			case results <- result:
+				q(strconv.Itoa(worker) + " - WORKER TX - End sending result of job " + job.tx.Txid)
 			case <-s.Ch():
 				q(strconv.Itoa(worker) + " - WORKER TX - discard finished job and stop " + job.tx.Txid)
 				return
-			default:
-				q(strconv.Itoa(worker) + " - WORKER TX - Start sending result of job " + job.tx.Txid)
-				results <- result
-				q(strconv.Itoa(worker) + " - WORKER TX - End sending result of job " + job.tx.Txid)
 			}
 		}
 	}
@@ -171,7 +174,7 @@ func ProcessTx(jsonTx *lbrycrd.TxRawResult, blockTime uint64, blockHeight uint64
 		return err
 	}
 
-	go sockety.SendNotification(socketyapi.SendNotificationArgs{
+	sockety.SendNotification(socketyapi.SendNotificationArgs{
 		Service: socketyapi.BlockChain,
 		Type:    "new_tx",
 		IDs:     []string{"transactions", jsonTx.Txid},
@@ -226,45 +229,31 @@ func saveUpdateInputs(transaction *model.Transaction, jsonTx *lbrycrd.TxRawResul
 	// Queue
 	q("VIN SYNC started")
 	sQ.Add(1)
-	go func() {
-		defer sQ.Done()
-		//q("VIN start queueing")
-		for i := range vins {
-			select {
-			case <-sQ.Ch():
-				return
-			default:
-				//q("VIN start passing new job")
-				vinjobs <- vinToProcess{jsonVin: &vins[i], tx: transaction, txDC: txDbCrAddrMap, vin: uint64(i)}
-				//q("VIN end pass new job")
-			}
-		}
-		//q("VIN end queueing")
-		close(vinjobs)
-	}()
+	go queueVinJobs(sQ, vins, transaction, txDbCrAddrMap, vinjobs)
 
 	//Error check
 	leftToProcess := len(vins)
-	for err := range errorchan {
+	if leftToProcess == 0 {
+		sQ.StopAndWait()
+		return nil
+	}
+	var vinErr error
+	for leftToProcess > 0 {
+		err := <-errorchan
 		leftToProcess--
 		if err != nil {
 			q("VIN error..stopping")
-			sQ.StopAndWait()
-			q("VIN error..stopped")
-			return errors.Prefix("Vin Error->", err)
+			if vinErr == nil {
+				vinErr = errors.Prefix("Vin Error->", err)
+			}
 		}
 		q("VIN processing..." + strconv.Itoa(leftToProcess))
-		if leftToProcess == 0 {
-			q("VIN stopping...")
-			sQ.StopAndWait()
-			q("VIN stopped...")
-			q("VIN returning")
-			return nil
-		}
-		continue
 	}
-	q("VIN SYNC ended")
-	return nil
+	q("VIN stopping...")
+	sQ.StopAndWait()
+	q("VIN stopped...")
+	q("VIN returning")
+	return vinErr
 }
 
 func saveUpdateOutputs(transaction *model.Transaction, jsonTx *lbrycrd.TxRawResult, txDbCrAddrMap *txDebitCredits, blockHeight uint64) error {
@@ -277,27 +266,17 @@ func saveUpdateOutputs(transaction *model.Transaction, jsonTx *lbrycrd.TxRawResu
 	// Queue
 	q("VOUT SYNC started")
 	sQ.Add(1)
-	go func() {
-		defer sQ.Done()
-		q("VOUT start queueing")
-		for i := range vouts {
-			select {
-			case <-sQ.Ch():
-				return
-			default:
-				q("VOUT start passing new job")
-				voutjobs <- voutToProcess{jsonVout: &vouts[i], tx: transaction, txDC: txDbCrAddrMap, blockHeight: blockHeight}
-				q("VOUT end pass new job")
-			}
-		}
-		q("VOUT SYNC finished")
-		close(voutjobs)
-	}()
+	go queueVoutJobs(sQ, vouts, transaction, txDbCrAddrMap, blockHeight, voutjobs)
 
 	//Error check
 	leftToProcess := len(vouts)
+	if leftToProcess == 0 {
+		sQ.StopAndWait()
+		return nil
+	}
 	var voutErr error
-	for err := range errorchan {
+	for leftToProcess > 0 {
+		err := <-errorchan
 		leftToProcess--
 		if err != nil {
 			q("VOUT error found...")
@@ -312,10 +291,35 @@ func saveUpdateOutputs(transaction *model.Transaction, jsonTx *lbrycrd.TxRawResu
 			q("VOUT returning")
 			return voutErr
 		}
-		continue
 	}
 	q("VOUT SYNC ended")
 	return voutErr
+}
+
+func queueVinJobs(s *stop.Group, vins []lbrycrd.Vin, tx *model.Transaction, txDC *txDebitCredits, jobs chan<- vinToProcess) {
+	defer s.Done()
+	defer close(jobs)
+	for i := range vins {
+		job := vinToProcess{jsonVin: &vins[i], tx: tx, txDC: txDC, vin: uint64(i)}
+		select {
+		case jobs <- job:
+		case <-s.Ch():
+			return
+		}
+	}
+}
+
+func queueVoutJobs(s *stop.Group, vouts []lbrycrd.Vout, tx *model.Transaction, txDC *txDebitCredits, blockHeight uint64, jobs chan<- voutToProcess) {
+	defer s.Done()
+	defer close(jobs)
+	for i := range vouts {
+		job := voutToProcess{jsonVout: &vouts[i], tx: tx, txDC: txDC, blockHeight: blockHeight}
+		select {
+		case jobs <- job:
+		case <-s.Ch():
+			return
+		}
+	}
 }
 
 func setSendReceive(transaction *model.Transaction, txDbCrAddrMap *txDebitCredits) error {

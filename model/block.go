@@ -40,6 +40,7 @@ type Block struct {
 	Version           uint64      `boil:"version" json:"version" toml:"version" yaml:"version"`
 	VersionHex        string      `boil:"version_hex" json:"version_hex" toml:"version_hex" yaml:"version_hex"`
 	TXCount           int         `boil:"tx_count" json:"tx_count" toml:"tx_count" yaml:"tx_count"`
+	ProcessingState   null.String `boil:"processing_state" json:"processing_state,omitempty" toml:"processing_state" yaml:"processing_state,omitempty"`
 	CreatedAt         time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 	ModifiedAt        time.Time   `boil:"modified_at" json:"modified_at" toml:"modified_at" yaml:"modified_at"`
 
@@ -65,6 +66,7 @@ var BlockColumns = struct {
 	Version           string
 	VersionHex        string
 	TXCount           string
+	ProcessingState   string
 	CreatedAt         string
 	ModifiedAt        string
 }{
@@ -85,6 +87,7 @@ var BlockColumns = struct {
 	Version:           "version",
 	VersionHex:        "version_hex",
 	TXCount:           "tx_count",
+	ProcessingState:   "processing_state",
 	CreatedAt:         "created_at",
 	ModifiedAt:        "modified_at",
 }
@@ -107,6 +110,7 @@ var BlockTableColumns = struct {
 	Version           string
 	VersionHex        string
 	TXCount           string
+	ProcessingState   string
 	CreatedAt         string
 	ModifiedAt        string
 }{
@@ -127,6 +131,7 @@ var BlockTableColumns = struct {
 	Version:           "block.version",
 	VersionHex:        "block.version_hex",
 	TXCount:           "block.tx_count",
+	ProcessingState:   "block.processing_state",
 	CreatedAt:         "block.created_at",
 	ModifiedAt:        "block.modified_at",
 }
@@ -151,6 +156,7 @@ var BlockWhere = struct {
 	Version           whereHelperuint64
 	VersionHex        whereHelperstring
 	TXCount           whereHelperint
+	ProcessingState   whereHelpernull_String
 	CreatedAt         whereHelpertime_Time
 	ModifiedAt        whereHelpertime_Time
 }{
@@ -171,6 +177,7 @@ var BlockWhere = struct {
 	Version:           whereHelperuint64{field: "`block`.`version`"},
 	VersionHex:        whereHelperstring{field: "`block`.`version_hex`"},
 	TXCount:           whereHelperint{field: "`block`.`tx_count`"},
+	ProcessingState:   whereHelpernull_String{field: "`block`.`processing_state`"},
 	CreatedAt:         whereHelpertime_Time{field: "`block`.`created_at`"},
 	ModifiedAt:        whereHelpertime_Time{field: "`block`.`modified_at`"},
 }
@@ -203,8 +210,8 @@ func (r *blockR) GetBlockHashTransactions() TransactionSlice {
 type blockL struct{}
 
 var (
-	blockAllColumns            = []string{"id", "bits", "chainwork", "confirmations", "difficulty", "hash", "height", "merkle_root", "name_claim_root", "nonce", "previous_block_hash", "next_block_hash", "block_size", "block_time", "version", "version_hex", "tx_count", "created_at", "modified_at"}
-	blockColumnsWithoutDefault = []string{"bits", "chainwork", "confirmations", "difficulty", "hash", "height", "merkle_root", "name_claim_root", "nonce", "previous_block_hash", "next_block_hash", "block_size", "block_time", "version", "version_hex", "tx_count"}
+	blockAllColumns            = []string{"id", "bits", "chainwork", "confirmations", "difficulty", "hash", "height", "merkle_root", "name_claim_root", "nonce", "previous_block_hash", "next_block_hash", "block_size", "block_time", "version", "version_hex", "tx_count", "processing_state", "created_at", "modified_at"}
+	blockColumnsWithoutDefault = []string{"bits", "chainwork", "confirmations", "difficulty", "hash", "height", "merkle_root", "name_claim_root", "nonce", "previous_block_hash", "next_block_hash", "block_size", "block_time", "version", "version_hex", "tx_count", "processing_state"}
 	blockColumnsWithDefault    = []string{"id", "created_at", "modified_at"}
 	blockPrimaryKeyColumns     = []string{"id"}
 	blockGeneratedColumns      = []string{}
