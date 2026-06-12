@@ -1,0 +1,171 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - "v*"
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GOFLAGS: -mod=readonly
+  GOPRIVATE: github.com/OdyseeTeam/*
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-24.04
+    container: golang:1.26.4-bookworm
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: chainquery
+          MYSQL_USER: chainquery
+          MYSQL_PASSWORD: chainquery
+          MYSQL_ROOT_PASSWORD: root
+        options: >-
+          --health-cmd "mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      CHAINQUERY_TEST_DSN: chainquery:chainquery@tcp(mysql:3306)/chainquery
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install MySQL client
+        run: |
+          apt-get update
+          apt-get install -y default-mysql-client
+
+      - name: Configure MySQL
+        run: mysql --host=mysql --port=3306 --user=root --password=root --execute="SET GLOBAL log_bin_trust_function_creators = 1;"
+
+      - name: Configure private Go module access
+        env:
+          GO_MODULES_TOKEN: ${{ secrets.GO_MODULES_TOKEN || github.token }}
+        run: |
+          git config --global url."https://x-access-token:${GO_MODULES_TOKEN}@github.com/".insteadOf "https://github.com/"
+
+      - name: Download modules
+        run: go mod download
+
+      - name: Verify modules
+        run: go mod verify
+
+      - name: Test
+        run: go test -race ./...
+
+  build:
+    name: Build chainquery
+    runs-on: ubuntu-24.04
+    needs:
+      - test
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.26.4"
+          cache: true
+
+      - name: Configure private Go module access
+        env:
+          GO_MODULES_TOKEN: ${{ secrets.GO_MODULES_TOKEN || github.token }}
+        run: |
+          git config --global url."https://x-access-token:${GO_MODULES_TOKEN}@github.com/".insteadOf "https://github.com/"
+
+      - name: Build
+        run: ./scripts/build.sh
+        env:
+          CHAINQUERY_COMMIT: ${{ github.sha }}
+
+      - name: Check generated migration bindata
+        run: git diff --exit-code -- migration/bindata.go
+
+      - name: Upload chainquery artifact
+        if: ${{ env.ACT != 'true' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: chainquery-linux-amd64
+          path: |
+            bin/chainquery
+            bin/chainquery.txt
+          if-no-files-found: error
+
+  release:
+    name: Publish GitHub release
+    runs-on: ubuntu-24.04
+    needs:
+      - build
+    if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') }}
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.26.4"
+          cache: true
+
+      - name: Configure private Go module access
+        env:
+          GO_MODULES_TOKEN: ${{ secrets.GO_MODULES_TOKEN || github.token }}
+        run: |
+          git config --global url."https://x-access-token:${GO_MODULES_TOKEN}@github.com/".insteadOf "https://github.com/"
+
+      - name: Build Linux binary
+        run: ./scripts/build.sh
+        env:
+          CHAINQUERY_COMMIT: ${{ github.sha }}
+
+      - name: Prepare release assets
+        run: |
+          cp bin/chainquery bin/chainquery-linux-amd64
+          chmod +x bin/chainquery-linux-amd64
+          sha256sum bin/chainquery-linux-amd64 > bin/chainquery-linux-amd64.sha256
+
+      - name: Publish release
+        if: ${{ env.ACT != 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          if gh release view "${TAG_NAME}" >/dev/null 2>&1; then
+            gh release upload "${TAG_NAME}" \
+              bin/chainquery-linux-amd64 \
+              bin/chainquery-linux-amd64.sha256 \
+              --clobber
+          else
+            gh release create "${TAG_NAME}" \
+              bin/chainquery-linux-amd64 \
+              bin/chainquery-linux-amd64.sha256 \
+              --title "${TAG_NAME}" \
+              --generate-notes
+          fi

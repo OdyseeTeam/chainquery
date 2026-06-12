@@ -3,7 +3,6 @@ package processing
 import (
 	"encoding/hex"
 	"encoding/json"
-	"strconv"
 	"time"
 
 	"github.com/lbryio/chainquery/datastore"
@@ -68,7 +67,7 @@ func createUpdateVinAddresses(tx *model.Transaction, inputs *[]lbrycrd.Vin, bloc
 			if input.Coinbase != "" {
 				continue //No addresses for coinbase inputs.
 			}
-			return nil, errors.Base("Missing source output for " + input.TxID + ":" + strconv.Itoa(int(input.Vout)))
+			return nil, errors.Base("Missing source output for %s:%d", input.TxID, input.Vout)
 		}
 		var addresses []string
 		if !srcOutput.AddressList.Valid {

@@ -68,7 +68,7 @@ func processAsClaim(script []byte, vout model.Output, tx model.Transaction, bloc
 			return nil, nil, err
 		}
 	} else {
-		return nil, nil, errors.Base("Not a claim -- " + hex.EncodeToString(script))
+		return nil, nil, errors.Base("Not a claim -- %s", hex.EncodeToString(script))
 	}
 	pksAddress := lbrycrd.GetAddressFromPublicKeyScript(pubkeyscript)
 	address = &pksAddress
@@ -95,7 +95,7 @@ func processClaimNameScript(script *[]byte, vout model.Output, tx model.Transact
 	unlockClaim := LockClaim(claimid)
 	defer unlockClaim()
 	if helper.Claim == nil {
-		err := errors.Base("Produced null pbClaim-> " + name + " " + claimid)
+		err := errors.Base("Produced null pbClaim-> %s %s", name, claimid)
 		return name, claimid, pkscript, err
 	}
 	claim := datastore.GetClaim(claimid)

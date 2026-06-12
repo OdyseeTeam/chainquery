@@ -1,8 +1,8 @@
 module github.com/lbryio/chainquery
 
-go 1.22
+go 1.26
 
-toolchain go1.22.7
+toolchain go1.26.4
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.4.1

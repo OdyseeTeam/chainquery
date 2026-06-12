@@ -3,16 +3,12 @@ package apiactions
 import (
 	"fmt"
 	"net/http"
-	"os/exec"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/lbryio/chainquery/db"
-	"github.com/lbryio/chainquery/meta"
 	"github.com/lbryio/lbry.go/v2/extras/api"
 	"github.com/lbryio/lbry.go/v2/extras/errors"
-	"github.com/lbryio/lbry.go/v2/extras/travis"
 
 	v "github.com/lbryio/ozzo-validation"
 	"github.com/sirupsen/logrus"
@@ -46,7 +42,7 @@ func AddressSummaryAction(r *http.Request) api.Response {
 	return api.Response{Data: summary}
 }
 
-//MaxSQLAPITimeout sets a timeout, in seconds, on queries placed against the SQL API.
+// MaxSQLAPITimeout sets a timeout, in seconds, on queries placed against the SQL API.
 var MaxSQLAPITimeout int
 
 // SQLQueryAction returns an array of structured data matching the queried results.
@@ -71,64 +67,4 @@ func SQLQueryAction(r *http.Request) api.Response {
 // IndexAction returns Hello World!
 func IndexAction(r *http.Request) api.Response {
 	return api.Response{Data: "Hello World!"}
-}
-
-// AutoUpdateCommand is the path of the shell script to run in the environment chainquery is installed on. It should
-// stop the service, download and replace the new binary from https://github.com/lbryio/chainquery/releases, start the
-// service.
-var AutoUpdateCommand = ""
-
-// AutoUpdateAction takes a travis webhook for a successful deployment and runs an environment script to self update.
-func AutoUpdateAction(r *http.Request) api.Response {
-	err := travis.ValidateSignature(true, r)
-	if err != nil {
-		logrus.Error(err)
-		return api.Response{Error: err, Status: http.StatusBadRequest}
-	}
-
-	webHook, err := travis.NewFromRequest(r)
-	if err != nil {
-		logrus.Error(err)
-		return api.Response{Error: err}
-	}
-
-	if webHook.Commit == meta.GetVersion() {
-		logrus.Warning("same commit version, skipping automatic update.")
-		return api.Response{Data: "same commit version, skipping automatic update."}
-	}
-	isMatch := webHook.IsMatch("master", "chainquery", "lbryio")
-	if !isMatch {
-		logrus.Warning("skipping...webhook does not match")
-		return api.Response{}
-	}
-	logrus.Info("Received Update Webhook:", fmt.Sprintf(" branch %s, repo %s, owner %s, isMatch %t", webHook.Branch, webHook.Repository.Name, webHook.Repository.OwnerName, isMatch))
-	shouldUpdate := webHook.Status == 0 && !webHook.PullRequest
-	if shouldUpdate { // webHook.ShouldDeploy() doesn't work for chainquery autoupdate.
-		if AutoUpdateCommand == "" {
-			err := errors.Base("auto-update triggered, but no auto-update command configured")
-			logrus.Error(err)
-			return api.Response{Error: err}
-		}
-		logrus.Info("chainquery is auto-updating...prepare for shutdown")
-		// run auto-update asynchronously
-		go func() {
-			time.Sleep(1 * time.Second) // leave time for handler to send response
-			cmd := exec.Command(AutoUpdateCommand)
-			out, err := cmd.Output()
-			if err != nil {
-				errMsg := "auto-update error: " + errors.FullTrace(err) + "\nStdout: " + string(out)
-				if exitErr, ok := err.(*exec.ExitError); ok {
-					errMsg = errMsg + "\nStderr: " + string(exitErr.Stderr)
-				}
-				logrus.Error(errMsg)
-			}
-		}()
-		return api.Response{Data: "Successful launch of auto update"}
-
-	}
-	message := "Auto-Update should not be deployed for one of the following:" +
-		" CI Status-" + webHook.StatusMessage +
-		", IsPullRequest-" + strconv.FormatBool(webHook.PullRequest) +
-		", TagName-" + webHook.Tag
-	return api.Response{Data: message}
 }

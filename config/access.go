@@ -110,8 +110,3 @@ func GetDebugMode() bool {
 func GetDebugQueryMode() bool {
 	return viper.GetBool(debugquerymode)
 }
-
-// GetAutoUpdateCommand returns the command that should be executed to trigger a self update of the software.
-func GetAutoUpdateCommand() string {
-	return viper.GetString(autoupdatecommand)
-}

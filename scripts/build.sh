@@ -9,8 +9,8 @@
 
 
 echo "== Installing dependencies =="
-go install golang.org/x/tools/cmd/goimports@latest
-go install github.com/kevinburke/go-bindata/v4/...@latest
+go install golang.org/x/tools/cmd/goimports@v0.28.0
+go install github.com/kevinburke/go-bindata/v4/...@v4.0.2
 go mod download
 
 
@@ -20,12 +20,15 @@ set -e
 
  echo "== Compiling =="
  export IMPORTPATH="github.com/lbryio/chainquery"
+ export GOOS=linux
+ export GOARCH=amd64
+ export CGO_ENABLED=0
  mkdir -p "$DIR/bin"
  go generate -v
- export VERSIONSHORT="${TRAVIS_COMMIT:-"$(git describe --tags --always --dirty)"}"
- export VERSIONLONG="${TRAVIS_COMMIT:-"$(git describe --tags --always --dirty --long)"}"
- export COMMITMSG="$(echo ${TRAVIS_COMMIT_MESSAGE:-"$(git show -s --format=%s)"} | tr -d '"' | head -n 1)"
- CGO_ENABLED=0 go build -v -o "./bin/chainquery" -asmflags -trimpath="$DIR" -ldflags "-X ${IMPORTPATH}/meta.version=${VERSIONSHORT} -X ${IMPORTPATH}/meta.versionLong=${VERSIONLONG} -X \"${IMPORTPATH}/meta.commitMsg=${COMMITMSG}\""
+ export VERSIONSHORT="${CHAINQUERY_COMMIT:-"$(git describe --tags --always --dirty)"}"
+ export VERSIONLONG="${CHAINQUERY_COMMIT:-"$(git describe --tags --always --dirty --long)"}"
+ export COMMITMSG="$(echo ${CHAINQUERY_COMMIT_MESSAGE:-"$(git show -s --format=%s)"} | tr -d '"' | head -n 1)"
+ go build -v -o "./bin/chainquery" -asmflags -trimpath="$DIR" -ldflags "-X ${IMPORTPATH}/meta.version=${VERSIONSHORT} -X ${IMPORTPATH}/meta.versionLong=${VERSIONLONG} -X \"${IMPORTPATH}/meta.commitMsg=${COMMITMSG}\""
 
  echo "== Done building linux version $("$DIR/bin/chainquery" version) =="
  echo "$(git describe --tags --always --dirty)" > ./bin/chainquery.txt

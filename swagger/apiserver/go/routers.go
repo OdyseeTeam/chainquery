@@ -56,13 +56,6 @@ var routes = Routes{
 	},
 
 	Route{
-		"AutoUpdate",
-		strings.ToUpper("Post"),
-		"/api/autoupdate",
-		AutoUpdateAction,
-	},
-
-	Route{
 		"SQLQuery",
 		strings.ToUpper("Get"),
 		"/api/sql",

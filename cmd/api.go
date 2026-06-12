@@ -3,7 +3,6 @@ package cmd
 import (
 	"log"
 
-	"github.com/lbryio/chainquery/apiactions"
 	"github.com/lbryio/chainquery/config"
 	"github.com/lbryio/chainquery/db"
 	"github.com/lbryio/chainquery/lbrycrd"
@@ -24,7 +23,6 @@ var apiCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		config.InitSlack()
 		twilio.InitTwilio()
-		apiactions.AutoUpdateCommand = config.GetAutoUpdateCommand()
 		//Main Chainquery DB connection
 		dbInstance, err := db.Init(config.GetMySQLDSN(), config.GetDebugQueryMode())
 		if err != nil {

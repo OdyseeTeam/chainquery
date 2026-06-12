@@ -3,7 +3,6 @@ package cmd
 import (
 	"log"
 
-	"github.com/lbryio/chainquery/apiactions"
 	"github.com/lbryio/chainquery/config"
 	"github.com/lbryio/chainquery/daemon"
 	"github.com/lbryio/chainquery/db"
@@ -31,7 +30,6 @@ var serveCmd = &cobra.Command{
 		}
 		config.InitSlack()
 		twilio.InitTwilio()
-		apiactions.AutoUpdateCommand = config.GetAutoUpdateCommand()
 		//Main Chainquery DB connection
 		dbInstance, err := db.Init(config.GetMySQLDSN(), config.GetDebugQueryMode())
 		if err != nil {

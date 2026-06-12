@@ -10,8 +10,14 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
+const defaultTestDSN = "chainquery:chainquery@tcp(localhost:3306)/chainquery"
+
 func TestMain(m *testing.M) {
-	dbInstance, err := Init("chainquery:chainquery@tcp(localhost:3306)/chainquery", false)
+	dsn := os.Getenv("CHAINQUERY_TEST_DSN")
+	if dsn == "" {
+		dsn = defaultTestDSN
+	}
+	dbInstance, err := Init(dsn, false)
 	if err != nil {
 		panic(errors.FullTrace(err))
 	}

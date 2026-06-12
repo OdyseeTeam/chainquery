@@ -61,7 +61,6 @@ const ( // config setting keys
 	slackhookurl              = "slackhookurl"
 	slackchannel              = "slackchannel"
 	slackloglevel             = "slackloglevel"
-	autoupdatecommand         = "autoupdatecommand"
 	twiliosid                 = "twiliosid"
 	twilioauthtoken           = "twilioauthtoken"
 	smsrecipients             = "smsrecipients"
