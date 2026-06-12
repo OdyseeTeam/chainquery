@@ -58,9 +58,14 @@ jobs:
 
       - name: Configure private Go module access
         env:
-          GO_MODULES_TOKEN: ${{ secrets.GO_MODULES_TOKEN || github.token }}
+          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
         run: |
-          git config --global url."https://x-access-token:${GO_MODULES_TOKEN}@github.com/".insteadOf "https://github.com/"
+          mkdir -p ~/.ssh
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+          ssh-agent -a $SSH_AUTH_SOCK > /dev/null
+          printf '%s\n' "${{ secrets.GO_MODULE_PRIVATE_KEY }}" | ssh-add -
+          echo "SSH_AUTH_SOCK=$SSH_AUTH_SOCK" >> $GITHUB_ENV
+          git config --global url."ssh://git@github.com/".insteadOf https://github.com/
 
       - name: Download modules
         run: go mod download
@@ -91,9 +96,14 @@ jobs:
 
       - name: Configure private Go module access
         env:
-          GO_MODULES_TOKEN: ${{ secrets.GO_MODULES_TOKEN || github.token }}
+          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
         run: |
-          git config --global url."https://x-access-token:${GO_MODULES_TOKEN}@github.com/".insteadOf "https://github.com/"
+          mkdir -p ~/.ssh
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+          ssh-agent -a $SSH_AUTH_SOCK > /dev/null
+          printf '%s\n' "${{ secrets.GO_MODULE_PRIVATE_KEY }}" | ssh-add -
+          echo "SSH_AUTH_SOCK=$SSH_AUTH_SOCK" >> $GITHUB_ENV
+          git config --global url."ssh://git@github.com/".insteadOf https://github.com/
 
       - name: Build
         run: ./scripts/build.sh
@@ -136,9 +146,14 @@ jobs:
 
       - name: Configure private Go module access
         env:
-          GO_MODULES_TOKEN: ${{ secrets.GO_MODULES_TOKEN || github.token }}
+          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
         run: |
-          git config --global url."https://x-access-token:${GO_MODULES_TOKEN}@github.com/".insteadOf "https://github.com/"
+          mkdir -p ~/.ssh
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+          ssh-agent -a $SSH_AUTH_SOCK > /dev/null
+          printf '%s\n' "${{ secrets.GO_MODULE_PRIVATE_KEY }}" | ssh-add -
+          echo "SSH_AUTH_SOCK=$SSH_AUTH_SOCK" >> $GITHUB_ENV
+          git config --global url."ssh://git@github.com/".insteadOf https://github.com/
 
       - name: Build Linux binary
         run: ./scripts/build.sh
