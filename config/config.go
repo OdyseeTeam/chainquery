@@ -21,13 +21,11 @@ import (
 	"github.com/lbryio/chainquery/global"
 	"github.com/lbryio/chainquery/lbrycrd"
 	server "github.com/lbryio/chainquery/swagger/apiserver/go"
-	"github.com/lbryio/chainquery/twilio"
 
 	"github.com/lbryio/lbry.go/v2/extras/errors"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/go-ini/ini"
-	"github.com/johntdyer/slackrus"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -58,13 +56,9 @@ const ( // config setting keys
 	lbrycrdprofile            = "lbrycrdprofile"
 	mysqlprofile              = "mysqlprofile"
 	apihostport               = "apihostport"
-	slackhookurl              = "slackhookurl"
+	slackbottoken             = "slackbottoken"
 	slackchannel              = "slackchannel"
 	slackloglevel             = "slackloglevel"
-	twiliosid                 = "twiliosid"
-	twilioauthtoken           = "twilioauthtoken"
-	smsrecipients             = "smsrecipients"
-	smsfromphonenumber        = "smsfromphonenumber"
 	apikeys                   = "apikeys"
 	maxfailures               = "maxfailures"
 	blockchainname            = "blockchainname"
@@ -103,22 +97,6 @@ func InitializeConfiguration() {
 	})
 }
 
-// InitSlack initializes the slack connection and posts info level or greater to the set channel.
-func InitSlack() {
-	slackURL := viper.GetString(slackhookurl)
-	slackChannel := viper.GetString(slackchannel)
-	slackLogLevel := viper.GetInt(slackloglevel)
-	if slackURL != "" && slackChannel != "" {
-		logrus.AddHook(&slackrus.SlackrusHook{
-			HookURL:        slackURL,
-			AcceptedLevels: slackrus.LevelThreshold(logrus.Level(slackLogLevel)),
-			Channel:        slackChannel,
-			IconEmoji:      ":golang:",
-			Username:       "Chainquery",
-		})
-	}
-}
-
 func initFlags() {
 	// using standard library "flag" package
 	pflag.BoolP(reindexflag, "r", false, "Rebuilds the database from the 1st block. Does not wipe the database")
@@ -144,16 +122,12 @@ func readConfig() {
 	if err != nil {                                      // Handle errors reading the config file
 		logrus.Warning("Error reading config file...defaults will be used: ", err)
 	}
-	twilio.RecipientList = viper.GetStringSlice(smsrecipients)
 	notifications.ClearSubscribers()
 	subscriptions := viper.GetStringMap("subscription")
 	err = applySubscribers(subscriptions)
 	if err != nil {
 		logrus.Error("could not apply subsribers: ", err)
 	}
-	twilio.FromNumber = viper.GetString(smsfromphonenumber)
-	twilio.TwilioAuthToken = viper.GetString(twilioauthtoken)
-	twilio.TwilioSID = viper.GetString(twiliosid)
 }
 
 func initDefaults() {
@@ -182,9 +156,7 @@ func initDefaults() {
 	viper.SetDefault(mysqlprofile, false)
 	viper.SetDefault("codeprofile", false)
 	viper.SetDefault(apihostport, "0.0.0.0:6300")
-	viper.SetDefault(slackloglevel, 0)
-	viper.SetDefault(smsrecipients, []string{})
-	viper.SetDefault(smsfromphonenumber, "")
+	viper.SetDefault(slackloglevel, int(logrus.WarnLevel))
 	viper.SetDefault(maxfailures, 1000)
 	viper.SetDefault(blockchainname, "lbrycrd_main")
 	viper.SetDefault(chainsyncrunduration, 60)

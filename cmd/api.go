@@ -7,7 +7,6 @@ import (
 	"github.com/lbryio/chainquery/db"
 	"github.com/lbryio/chainquery/lbrycrd"
 	swagger "github.com/lbryio/chainquery/swagger/apiserver"
-	"github.com/lbryio/chainquery/twilio"
 
 	"github.com/spf13/cobra"
 )
@@ -22,7 +21,6 @@ var apiCmd = &cobra.Command{
 	Long:  `This runs the API Server for chainquery only. The daemon does not run, however, the db is still required and all APIs are available.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		config.InitSlack()
-		twilio.InitTwilio()
 		//Main Chainquery DB connection
 		dbInstance, err := db.Init(config.GetMySQLDSN(), config.GetDebugQueryMode())
 		if err != nil {

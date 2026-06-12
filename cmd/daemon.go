@@ -7,7 +7,6 @@ import (
 	"github.com/lbryio/chainquery/daemon"
 	"github.com/lbryio/chainquery/db"
 	"github.com/lbryio/chainquery/lbrycrd"
-	"github.com/lbryio/chainquery/twilio"
 	"github.com/spf13/cobra"
 )
 
@@ -21,7 +20,6 @@ var daemonCmd = &cobra.Command{
 	Long:  `Run only Daemon routines, without the API Server. Check github.com/lbryio/chainquery#what-does-chainquery-consist-of`,
 	Run: func(cmd *cobra.Command, args []string) {
 		config.InitSlack()
-		twilio.InitTwilio()
 		//Main Chainquery DB connection
 		dbInstance, err := db.Init(config.GetMySQLDSN(), config.GetDebugQueryMode())
 		if err != nil {

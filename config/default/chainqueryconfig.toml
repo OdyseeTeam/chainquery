@@ -85,33 +85,18 @@
 #mysqlprofile=
 #codeprofile=
 
-#Slack Hook URL allows slack integration. All logging info level and above is posted to a slack channel.
+#Slack Bot Token allows Slack app integration through chat.postMessage. The app needs the chat:write scope.
 #DEFAULT: ""
-#slackhookurl=
+#slackbottoken=
 
-#Slack Channel is the channel that you want the messages to appear. Works together with the hook url.
+#Slack Channel is the channel ID or name that you want the messages to appear in. Works together with the bot token.
 #DEFAULT: ""
 #slackchannel=
 
-#Slack Log Level tells chainquery what level of logging will be sent to the slack channel. It will log all levels below
-# it as well. Panic=0,Fatal=1,Error=2,Warning=3,Info=4,Debug=5
-#DEFAULT: 0
+#Slack Log Level tells chainquery what level of logging will be sent to the slack channel. It will log that level and
+# anything more severe. Panic=0,Fatal=1,Error=2,Warning=3,Info=4,Debug=5
+#DEFAULT: 3
 #slackloglevel=
-
-#The command that should be executed to trigger a self update of the software. For linux, for example, `<yourscript>.sh`
-#DEFAULT: ""
-#autoupdatecommand=
-
-#Twilio service of chainquery to send specifically important information to key users of the Chainquery install.
-#DEFAULT:
-##twiliosid=""
-##twilioauthtoken=""
-##smsrecipients=["",""]
-##smsfromphonenumber=""
-#twiliosid=
-#twilioauthtoken=
-#smsrecipients=
-#smsfromphonenumber=
 
 #API Keys - Disallowed by default unless keys are entered.
 #DEFAULT: []

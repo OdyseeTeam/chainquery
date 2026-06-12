@@ -8,7 +8,6 @@ import (
 	"github.com/lbryio/chainquery/db"
 	"github.com/lbryio/chainquery/lbrycrd"
 	swagger "github.com/lbryio/chainquery/swagger/apiserver"
-	"github.com/lbryio/chainquery/twilio"
 
 	"github.com/pkg/profile"
 	"github.com/spf13/cobra"
@@ -29,7 +28,6 @@ var serveCmd = &cobra.Command{
 			defer profile.Start(profile.NoShutdownHook).Stop()
 		}
 		config.InitSlack()
-		twilio.InitTwilio()
 		//Main Chainquery DB connection
 		dbInstance, err := db.Init(config.GetMySQLDSN(), config.GetDebugQueryMode())
 		if err != nil {

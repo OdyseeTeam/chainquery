@@ -13,7 +13,6 @@ import (
 	"github.com/lbryio/chainquery/metrics"
 	"github.com/lbryio/chainquery/model"
 	"github.com/lbryio/chainquery/sockety"
-	"github.com/lbryio/chainquery/twilio"
 	"github.com/lbryio/chainquery/util"
 
 	"github.com/lbryio/lbry.go/v2/extras/errors"
@@ -610,11 +609,13 @@ func getBlockToProcess(height *uint64) (*lbrycrd.GetBlockResponse, error) {
 	return jsonBlock, nil
 }
 
+var fetchBlockForReorg = getBlockToProcess
+
 func checkHandleReorg(height uint64, chainPrevHash string) (uint64, error) {
 	prevHeight := height - 1
 	depth := 0
 	if height > 0 {
-		prevBlock, err := model.Blocks(qm.Where(model.BlockColumns.Height+"=?", prevHeight), qm.Load("BlockHashTransactions")).OneG()
+		prevBlock, err := model.Blocks(qm.Where(model.BlockColumns.Height+"=?", prevHeight), qm.Load(model.BlockRels.BlockHashTransactions)).OneG()
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				logrus.Warningf("missing previous block at height %d while processing %d; stepping back to fill the gap", prevHeight, height)
@@ -639,7 +640,7 @@ func checkHandleReorg(height uint64, chainPrevHash string) (uint64, error) {
 			depth++
 
 			// Set chainPrevHash to new previous blocks prevhash to check next depth
-			jsonBlock, err := getBlockToProcess(&prevHeight)
+			jsonBlock, err := fetchBlockForReorg(&prevHeight)
 			if err != nil {
 				return height, errors.Prefix("error getting block@"+strconv.Itoa(int(prevHeight))+" from lbrycrd", err)
 			}
@@ -647,7 +648,7 @@ func checkHandleReorg(height uint64, chainPrevHash string) (uint64, error) {
 
 			// Decrement height and set prevBlock to the new previous
 			prevHeight--
-			prevBlock, err = model.Blocks(qm.Where(model.BlockColumns.Height+"=?", prevHeight)).OneG()
+			prevBlock, err = model.Blocks(qm.Where(model.BlockColumns.Height+"=?", prevHeight), qm.Load(model.BlockRels.BlockHashTransactions)).OneG()
 			if err != nil {
 				if errors.Is(err, sql.ErrNoRows) {
 					logrus.Warningf("missing previous block at height %d while handling reorg at %d; stepping back to fill the gap", prevHeight, height)
@@ -661,10 +662,11 @@ func checkHandleReorg(height uint64, chainPrevHash string) (uint64, error) {
 		}
 		if depth > 0 {
 			message := fmt.Sprintf("Reorg detected of depth %d at height %d,(last matching height %d) handling reorg processing!", depth, height, prevHeight)
-			logrus.Warning(message)
-			if depth > 2 {
-				twilio.SendSMS(message)
-			}
+			logrus.WithFields(logrus.Fields{
+				"depth":                depth,
+				"height":               height,
+				"last_matching_height": prevHeight,
+			}).Warning(message)
 			return prevHeight, nil
 		}
 	}

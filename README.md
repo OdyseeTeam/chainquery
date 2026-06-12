@@ -42,8 +42,8 @@ processes every block above the last height it stored.
   depth (`optimizeOrderToProcess`) so parents tend to run before children.
 - **Reorgs are handled automatically.** Before processing a block, the daemon
   compares the stored previous-block hash against the chain. On a mismatch it
-  recursively deletes diverged blocks (up to depth 100) and reprocesses from the
-  divergence height. Reorgs deeper than 2 blocks trigger a Twilio SMS alert.
+  recursively deletes diverged blocks (up to depth 100), logs the reorg depth,
+  and reprocesses from the divergence height.
 - **Processing modes** control throttling (`daemonmode`): beast (0, no delay),
   slow-and-steady (1, 100ms/block), delay (2, configurable), and daemon (3,
   one block per daemon iteration).
@@ -119,8 +119,8 @@ Chainquery can emit real-time events:
 - **Sockety** (`socketyurl` / `socketytoken`) — a `new_block` notification is
   sent on every processed block.
 - **Subscribers** (`config`) — webhook URLs for `payment` and `new_claim` events.
-- **Twilio** (`twiliosid`, etc.) — SMS for important events such as deep reorgs.
-- **Slack** (`slackhookurl`, `slackchannel`, `slackloglevel`) — log forwarding.
+- **Slack** (`slackbottoken`, `slackchannel`, `slackloglevel`) — Slack app log
+  forwarding via `chat.postMessage`, including reorg depth warnings.
 
 ## Prerequisites
 
