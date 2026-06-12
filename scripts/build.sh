@@ -28,7 +28,7 @@ set -e
  export VERSIONSHORT="${CHAINQUERY_COMMIT:-"$(git describe --tags --always --dirty)"}"
  export VERSIONLONG="${CHAINQUERY_COMMIT:-"$(git describe --tags --always --dirty --long)"}"
  export COMMITMSG="$(echo ${CHAINQUERY_COMMIT_MESSAGE:-"$(git show -s --format=%s)"} | tr -d '"' | head -n 1)"
- go build -v -o "./bin/chainquery" -asmflags -trimpath="$DIR" -ldflags "-X ${IMPORTPATH}/meta.version=${VERSIONSHORT} -X ${IMPORTPATH}/meta.versionLong=${VERSIONLONG} -X \"${IMPORTPATH}/meta.commitMsg=${COMMITMSG}\""
+ go build -v -buildvcs=false -o "./bin/chainquery" -asmflags -trimpath="$DIR" -ldflags "-X ${IMPORTPATH}/meta.version=${VERSIONSHORT} -X ${IMPORTPATH}/meta.versionLong=${VERSIONLONG} -X \"${IMPORTPATH}/meta.commitMsg=${COMMITMSG}\""
 
  echo "== Done building linux version $("$DIR/bin/chainquery" version) =="
  echo "$(git describe --tags --always --dirty)" > ./bin/chainquery.txt

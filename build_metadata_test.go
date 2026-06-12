@@ -13,7 +13,7 @@ func TestBuiltBinaryReportsInjectedVersion(t *testing.T) {
 	ldflags := "-X github.com/lbryio/chainquery/meta.version=" + commit +
 		" -X github.com/lbryio/chainquery/meta.versionLong=" + commit
 
-	build := exec.Command("go", "build", "-o", binary, "-ldflags", ldflags, ".")
+	build := exec.Command("go", "build", "-buildvcs=false", "-o", binary, "-ldflags", ldflags, ".")
 	buildOutput, err := build.CombinedOutput()
 	if err != nil {
 		t.Fatalf("build failed: %s\n%s", err, buildOutput)
