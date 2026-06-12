@@ -62,7 +62,7 @@ func txProcessor(s *stop.Group, jobs <-chan txToProcess, results chan<- txProces
 				return
 			}
 			q(strconv.Itoa(worker) + " - WORKER TX - Start new job " + job.tx.Txid)
-			err := ProcessTx(job.tx, job.blockTime, job.blockHeight)
+			err := processTx(job.tx, job.blockTime, job.blockHeight)
 			if err != nil {
 				metrics.ProcessingFailures.WithLabelValues("transaction").Inc()
 				logrus.Debugf("processing tx failed %d times %s: %s", job.failcount+1, job.tx.Txid, err.Error())
@@ -135,6 +135,8 @@ func (txDC *txDebitCredits) add(address string, value float64) {
 	txDC.mutex.Unlock()
 }
 
+var processTx = ProcessTx
+
 // ProcessTx processes an individual transaction from a block.
 func ProcessTx(jsonTx *lbrycrd.TxRawResult, blockTime uint64, blockHeight uint64) error {
 	defer metrics.Processing(time.Now(), "transaction")
@@ -154,6 +156,7 @@ func ProcessTx(jsonTx *lbrycrd.TxRawResult, blockTime uint64, blockHeight uint64
 	}
 	_, err = createUpdateVinAddresses(transaction, &jsonTx.Vin, blockTime)
 	if err != nil {
+		err = enrichMissingSourceOutput(err, jsonTx.Txid, blockHeight)
 		return errors.Prefix("Vin Address Creation Error", err)
 	}
 

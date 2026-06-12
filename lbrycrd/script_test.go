@@ -1,11 +1,13 @@
 package lbrycrd
 
 import (
+	"bytes"
+	"encoding/binary"
 	"encoding/hex"
-	"fmt"
 	"testing"
 
 	"github.com/lbryio/chainquery/util"
+	c "github.com/lbryio/lbry.go/v2/schema/stake"
 
 	"github.com/btcsuite/btcd/txscript"
 
@@ -172,7 +174,7 @@ func TestPurchaseScriptParse(t *testing.T) {
 }
 
 func TestParseClaimSupportScript(t *testing.T) {
-	scriptHex := "b609405363694669344d6514cf5290ec6c4eebbd5c2fcf833944335526a0a63f4c550189e52371184a4100f40f786a151d13be53a97ecb168c690ebb97199b3a1a4aae3ba078f1c2b3bd8cc057e6a8d91078f8a09a6f945dabacd12faed9f4b2649e1ae55eb02a294d907447a6f5e12ac76a1c5ad278a46d6d76a9140e570ed0ef92cd798e6dabc05d6b4923eb0049a988ac"
+	scriptHex := "b6145468652d53756d657269616e2d5377696e646c651422a75764171b82c9c58add656a56969b13719f924c5501e958e5435e4872539347b4c9d4cd767d0e3d05f78cbcdff06beddf5953b29a897d239c86813d9c9eee4799ecf07c35c3d0d4d14f65904c0fd871324b27375d49b48a9e1a2a84d4a26c4dad1f8142829f15117f3d6d6d76a914a7560ace5454e30dc32621fcae8563617bfbf90d88ac"
 	scriptBytes, err := hex.DecodeString(scriptHex)
 	if err != nil {
 		t.Fatal(err)
@@ -181,5 +183,128 @@ func TestParseClaimSupportScript(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	println(fmt.Sprintf("Name: %s\n ClaimID: %s\n ValueHex: %x\n PKSCriptHex: %x", name, claimid, value, pkscript))
+	if name != "The-Sumerian-Swindle" {
+		t.Fatalf("expected support name The-Sumerian-Swindle, got %s", name)
+	}
+	expectedClaimID := "929f71139b96566a65dd8ac5c9821b176457a722"
+	if claimid != expectedClaimID {
+		t.Fatalf("expected claim ID %s, got %s", expectedClaimID, claimid)
+	}
+	if len(value) != 85 {
+		t.Fatalf("expected 85 value bytes, got %d", len(value))
+	}
+	helper, err := c.DecodeSupportBytes(value, lbrycrdMain)
+	if err != nil {
+		t.Fatal(err)
+	}
+	supportedByClaimID := hex.EncodeToString(util.ReverseBytes(helper.ClaimID))
+	expectedSupportedByClaimID := "f7053d0e7d76cdd4c9b447935372485e43e558e9"
+	if supportedByClaimID != expectedSupportedByClaimID {
+		t.Fatalf("expected supported-by claim ID %s, got %s", expectedSupportedByClaimID, supportedByClaimID)
+	}
+	expectedPKScript := "76a914a7560ace5454e30dc32621fcae8563617bfbf90d88ac"
+	if hex.EncodeToString(pkscript) != expectedPKScript {
+		t.Fatalf("expected pubkey script %s, got %x", expectedPKScript, pkscript)
+	}
+}
+
+func TestParseClaimSupportScriptPushdata4Value(t *testing.T) {
+	const testOpDrop = 0x75
+	claimID := "00112233445566778899aabbccddeeff00112233"
+	claimIDBytes, err := hex.DecodeString(claimID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	value := []byte{1, 2, 3, 4}
+	pkscript := []byte{0x76, 0xa9}
+	script := []byte{opSupportClaim, 1, 'x', 20}
+	script = append(script, util.ReverseBytes(claimIDBytes)...)
+	script = append(script, opPushdata4)
+	valueSize := make([]byte, 4)
+	binary.LittleEndian.PutUint32(valueSize, uint32(len(value)))
+	script = append(script, valueSize...)
+	script = append(script, value...)
+	script = append(script, op2drop, testOpDrop)
+	script = append(script, pkscript...)
+
+	name, parsedClaimID, parsedValue, parsedPKScript, err := ParseClaimSupportScript(script)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if name != "x" {
+		t.Fatalf("expected support name x, got %s", name)
+	}
+	if parsedClaimID != claimID {
+		t.Fatalf("expected claim ID %s, got %s", claimID, parsedClaimID)
+	}
+	if !bytes.Equal(parsedValue, value) {
+		t.Fatalf("expected value %x, got %x", value, parsedValue)
+	}
+	if !bytes.Equal(parsedPKScript, pkscript) {
+		t.Fatalf("expected pubkey script %x, got %x", pkscript, parsedPKScript)
+	}
+}
+
+func TestParseClaimNameScriptPushdata4Value(t *testing.T) {
+	const testOpDrop = 0x75
+	value := []byte{1, 2, 3, 4}
+	pkscript := []byte{0x76, 0xa9}
+	script := []byte{opClaimName, 1, 'x', opPushdata4}
+	valueSize := make([]byte, 4)
+	binary.LittleEndian.PutUint32(valueSize, uint32(len(value)))
+	script = append(script, valueSize...)
+	script = append(script, value...)
+	script = append(script, op2drop, testOpDrop)
+	script = append(script, pkscript...)
+
+	name, parsedValue, parsedPKScript, err := ParseClaimNameScript(script)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if name != "x" {
+		t.Fatalf("expected claim name x, got %s", name)
+	}
+	if !bytes.Equal(parsedValue, value) {
+		t.Fatalf("expected value %x, got %x", value, parsedValue)
+	}
+	if !bytes.Equal(parsedPKScript, pkscript) {
+		t.Fatalf("expected pubkey script %x, got %x", pkscript, parsedPKScript)
+	}
+}
+
+func TestParseClaimUpdateScriptPushdata4Value(t *testing.T) {
+	const testOpDrop = 0x75
+	claimID := "00112233445566778899aabbccddeeff00112233"
+	claimIDBytes, err := hex.DecodeString(claimID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	value := []byte{1, 2, 3, 4}
+	pkscript := []byte{0x76, 0xa9}
+	script := []byte{opUpdateClaim, 1, 'x', 20}
+	script = append(script, util.ReverseBytes(claimIDBytes)...)
+	script = append(script, opPushdata4)
+	valueSize := make([]byte, 4)
+	binary.LittleEndian.PutUint32(valueSize, uint32(len(value)))
+	script = append(script, valueSize...)
+	script = append(script, value...)
+	script = append(script, op2drop, testOpDrop)
+	script = append(script, pkscript...)
+
+	name, parsedClaimID, parsedValue, parsedPKScript, err := ParseClaimUpdateScript(script)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if name != "x" {
+		t.Fatalf("expected claim name x, got %s", name)
+	}
+	if parsedClaimID != claimID {
+		t.Fatalf("expected claim ID %s, got %s", claimID, parsedClaimID)
+	}
+	if !bytes.Equal(parsedValue, value) {
+		t.Fatalf("expected value %x, got %x", value, parsedValue)
+	}
+	if !bytes.Equal(parsedPKScript, pkscript) {
+		t.Fatalf("expected pubkey script %x, got %x", pkscript, parsedPKScript)
+	}
 }

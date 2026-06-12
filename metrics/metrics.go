@@ -39,6 +39,22 @@ var (
 		Help:      "processing failure count by type",
 	}, []string{"type"})
 
+	// ProcessingSchedulerEvents tracks dependency-aware block scheduler events.
+	ProcessingSchedulerEvents = promauto.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "chainquery",
+		Subsystem: "processing",
+		Name:      "scheduler_events",
+		Help:      "dependency-aware block scheduler events",
+	}, []string{"event"})
+
+	// ProcessingSchedulerDependencyEdges tracks same-block dependency edges by reason.
+	ProcessingSchedulerDependencyEdges = promauto.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "chainquery",
+		Subsystem: "processing",
+		Name:      "scheduler_dependency_edges",
+		Help:      "same-block dependency edges by reason",
+	}, []string{"reason"})
+
 	processing = promauto.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: "chainquery",
 		Subsystem: "processing",

@@ -81,7 +81,7 @@ var regTestNetParams = chaincfg.Params{
 
 var paramsMap = map[string]chaincfg.Params{lbrycrdMain: mainNetParams, lbrycrdTestnet: testNetParams, lbrycrdRegtest: regTestNetParams}
 
-//GetChainParams returns the currently set blockchain name as the chain parameters. Set in the config.
+// GetChainParams returns the currently set blockchain name as the chain parameters. Set in the config.
 func GetChainParams() (*chaincfg.Params, error) {
 	chainParams, ok := paramsMap[global.BlockChainName]
 	if !ok {
@@ -159,7 +159,7 @@ func ParseClaimNameScript(script []byte) (name string, value []byte, pubkeyscrip
 		valueBytesToRead = int(binary.LittleEndian.Uint16(script[nameEnd+1 : valueStart]))
 	} else if dataPushType == opPushdata4 {
 		valueStart = nameEnd + 5
-		valueBytesToRead = int(binary.LittleEndian.Uint32(script[nameEnd+2 : valueStart]))
+		valueBytesToRead = int(binary.LittleEndian.Uint32(script[nameEnd+1 : valueStart]))
 	}
 	valueEnd := valueStart + valueBytesToRead
 	value = script[valueStart:valueEnd]
@@ -196,19 +196,23 @@ func ParseClaimSupportScript(script []byte) (name string, claimid string, value 
 	//OP_SUPPORT_CLAIM vchName vchClaimId OP_2DROP OP_DROP pubkeyscript
 	pksStart := claimidEnd + 2 // +2 to ignore OP_2DROP and OP_DROP
 
-	if script[claimidEnd+1] != op2drop {
-		var vSize uint64
-		vSize, _, err = readCompactSize(bytes.NewBuffer(script[claimidEnd+1:]))
-		if err != nil {
-			return
+	if script[claimidEnd] != op2drop {
+		dataPushType := int(script[claimidEnd])
+		valueBytesToRead := int(script[claimidEnd])
+		valueStart := claimidEnd + 1
+		if dataPushType == opPushdata1 {
+			valueBytesToRead = int(script[claimidEnd+1])
+			valueStart = claimidEnd + 2
+		} else if dataPushType == opPushdata2 {
+			valueStart = claimidEnd + 3
+			valueBytesToRead = int(binary.LittleEndian.Uint16(script[claimidEnd+1 : valueStart]))
+		} else if dataPushType == opPushdata4 {
+			valueStart = claimidEnd + 5
+			valueBytesToRead = int(binary.LittleEndian.Uint32(script[claimidEnd+1 : valueStart]))
 		}
-		if len(script) < claimidEnd+1+int(vSize) {
-			//log.Error("intended support for claim ", claimid, " is invalid")
-		} else {
-			value = script[claimidEnd+1 : claimidEnd+1+int(vSize)]
-			//OP_SUPPORT_CLAIM vchName vchClaimId vchValue OP_2DROP OP_2DROP pubkeyscript
-			pksStart = claimidEnd + 1 + int(vSize)
-		}
+		valueEnd := valueStart + valueBytesToRead
+		value = script[valueStart:valueEnd]
+		pksStart = valueEnd + 2
 	}
 
 	//PubKeyScript
@@ -252,7 +256,7 @@ func ParseClaimUpdateScript(script []byte) (name string, claimid string, value [
 		valueBytesToRead = int(binary.LittleEndian.Uint16(script[claimidEnd+1 : valueStart]))
 	} else if dataPushType == opPushdata4 {
 		valueStart = claimidEnd + 5
-		valueBytesToRead = int(binary.LittleEndian.Uint32(script[claimidEnd+2 : valueStart]))
+		valueBytesToRead = int(binary.LittleEndian.Uint32(script[claimidEnd+1 : valueStart]))
 	}
 	valueEnd := valueStart + valueBytesToRead
 	value = script[valueStart:valueEnd]
@@ -264,7 +268,7 @@ func ParseClaimUpdateScript(script []byte) (name string, claimid string, value [
 	return name, claimid, value, pubkeyscript, err
 }
 
-//ErrNotClaimScript is a base error for when a script cannot be parsed as a claim script.
+// ErrNotClaimScript is a base error for when a script cannot be parsed as a claim script.
 var ErrNotClaimScript = errors.Base("Script is not a claim script!")
 
 // GetPubKeyScriptFromClaimPKS gets the public key script at the end of a claim script.

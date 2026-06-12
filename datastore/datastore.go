@@ -126,6 +126,14 @@ func PutAddress(address *model.Address) error {
 	if address != nil {
 
 		var err error
+		if address.ID == 0 && address.Address != "" {
+			err = address.UpsertG(boil.None(), boil.Infer())
+			if err != nil {
+				err = errors.Prefix("Datastore(PUTADDRESS)", err)
+				return err
+			}
+			return nil
+		}
 		exists, err := model.AddressExistsG(address.ID)
 		if err != nil {
 			return errors.Prefix("Datastore(PUTADDRESS)", err)
