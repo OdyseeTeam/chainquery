@@ -150,14 +150,17 @@ func ProcessTx(jsonTx *lbrycrd.TxRawResult, blockTime uint64, blockHeight uint64
 
 	txDbCrAddrMap := newTxDebitCredits()
 
-	_, err = createUpdateVoutAddresses(transaction, &jsonTx.Vout, blockTime)
+	addressIDs, err := createUpdateVoutAddresses(transaction, &jsonTx.Vout, blockTime)
 	if err != nil {
 		return errors.Prefix("Vout Address Creation Error", err)
 	}
-	_, err = createUpdateVinAddresses(transaction, &jsonTx.Vin, blockTime)
+	vinAddressIDs, err := createUpdateVinAddresses(transaction, &jsonTx.Vin, blockTime)
 	if err != nil {
 		err = enrichMissingSourceOutput(err, jsonTx.Txid, blockHeight)
 		return errors.Prefix("Vin Address Creation Error", err)
+	}
+	for address, addressID := range vinAddressIDs {
+		addressIDs[address] = addressID
 	}
 
 	// Process the inputs of the tranasction
@@ -172,7 +175,7 @@ func ProcessTx(jsonTx *lbrycrd.TxRawResult, blockTime uint64, blockHeight uint64
 		return err
 	}
 	//Set the send and receive values for the transaction
-	err = setSendReceive(transaction, txDbCrAddrMap)
+	err = setSendReceive(transaction, txDbCrAddrMap, addressIDs)
 	if err != nil {
 		return err
 	}
@@ -325,16 +328,21 @@ func queueVoutJobs(s *stop.Group, vouts []lbrycrd.Vout, tx *model.Transaction, t
 	}
 }
 
-func setSendReceive(transaction *model.Transaction, txDbCrAddrMap *txDebitCredits) error {
+func setSendReceive(transaction *model.Transaction, txDbCrAddrMap *txDebitCredits, addressIDs map[string]uint64) error {
 	for addr, DC := range txDbCrAddrMap.addrDCMap {
 
-		address := datastore.GetAddress(addr)
-		if address == nil {
-			return errors.Err("missing address for setting amounts!")
+		addressID := addressIDs[addr]
+		if addressID == 0 {
+			address := datastore.GetAddress(addr)
+			if address == nil {
+				return errors.Err("missing address for setting amounts!")
+			}
+			addressID = address.ID
 		}
 
-		txAddr := datastore.GetTxAddress(transaction.ID, address.ID)
-
+		txAddr := &model.TransactionAddress{}
+		txAddr.TransactionID = transaction.ID
+		txAddr.AddressID = addressID
 		txAddr.CreditAmount = DC.Credits()
 		txAddr.DebitAmount = DC.Debits()
 		err := datastore.UpdateTxAddressAmounts(txAddr)

@@ -110,13 +110,11 @@ func createUpdateVinAddresses(tx *model.Transaction, inputs *[]lbrycrd.Vin, bloc
 }
 
 func createTxAddressIfNotExist(txID uint64, addressID uint64) error {
-	if datastore.GetTxAddress(txID, addressID) == nil {
-		txAddress := model.TransactionAddress{}
-		txAddress.TransactionID = txID
-		txAddress.AddressID = addressID
-		if err := datastore.PutTxAddress(&txAddress); err != nil {
-			return errors.Err(err) //Should never happen.
-		}
+	txAddress := model.TransactionAddress{}
+	txAddress.TransactionID = txID
+	txAddress.AddressID = addressID
+	if err := datastore.PutTxAddress(&txAddress); err != nil {
+		return errors.Err(err)
 	}
 	return nil
 }

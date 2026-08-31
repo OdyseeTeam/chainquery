@@ -194,12 +194,6 @@ func ProcessVin(jsonVin *lbrycrd.Vin, tx *m.Transaction, txDC *txDebitCredits, n
 	if err != nil {
 		return err
 	}
-
-	//Make sure there is a transaction address
-
-	if ds.GetTxAddress(tx.ID, vin.InputAddressID.Uint64) == nil {
-		return errors.Err("Missing txAddress for Tx: " + strconv.Itoa(int(tx.ID)) + " - Addr: " + strconv.Itoa(int(vin.InputAddressID.Uint64)) + "[" + address.Address + "]")
-	}
 	return nil
 }
 
@@ -257,12 +251,6 @@ func ProcessVout(jsonVout *lbrycrd.Vout, tx *m.Transaction, txDC *txDebitCredits
 	err = ds.PutOutput(vout, boil.Infer())
 	if err != nil {
 		return err
-	}
-
-	//Make sure there is a transaction address
-	txAddress := ds.GetTxAddress(tx.ID, address.ID)
-	if txAddress == nil {
-		return errors.Base("Missing txAddress for Tx:%d- Addr:%d", tx.ID, address.ID)
 	}
 
 	notifications.PaymentEvent(vout.Value.Float64, address.Address, tx.Hash, vout.Vout)

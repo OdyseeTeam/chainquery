@@ -2,9 +2,11 @@ package datastore
 
 import (
 	"database/sql"
+	stderrors "errors"
 	"fmt"
 	"time"
 
+	"github.com/go-sql-driver/mysql"
 	"github.com/lbryio/chainquery/model"
 	"github.com/lbryio/chainquery/util"
 	"github.com/lbryio/lbry.go/v2/extras/errors"
@@ -13,6 +15,16 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
+
+const mysqlErrorDuplicateEntry = 1062
+
+func isDuplicateEntryError(err error) bool {
+	var mysqlErr *mysql.MySQLError
+	if stderrors.As(err, &mysqlErr) {
+		return mysqlErr.Number == mysqlErrorDuplicateEntry
+	}
+	return false
+}
 
 // GetOutput makes creating,retrieving,updating the model type simplified.
 func GetOutput(txHash string, vout uint) *model.Output {
@@ -32,17 +44,22 @@ func GetOutput(txHash string, vout uint) *model.Output {
 // PutOutput makes creating,retrieving,updating the model type simplified.
 func PutOutput(output *model.Output, columns boil.Columns) error {
 	defer util.TimeTrack(time.Now(), "PutOutput", "mysqlprofile")
-	txHashMatch := qm.Where(model.OutputColumns.TransactionHash+"=?", output.TransactionHash)
-	vOutMatch := qm.And(model.OutputColumns.Vout+"=?", output.Vout)
-	existingOutput, err := model.Outputs(txHashMatch, vOutMatch).OneG()
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		return errors.Prefix("Datastore(PUTOUTPUT)", err)
+	if output.ID != 0 {
+		err := output.UpdateG(columns)
+		if err != nil {
+			return errors.Prefix("Datastore(PUTOUTPUT)", err)
+		}
+		return nil
 	}
-	if existingOutput != nil {
+
+	err := output.InsertG(boil.Infer())
+	if isDuplicateEntryError(err) {
+		existingOutput := GetOutput(output.TransactionHash, output.Vout)
+		if existingOutput == nil {
+			return errors.Prefix("Datastore(PUTOUTPUT)", err)
+		}
 		output.ID = existingOutput.ID
 		err = output.UpdateG(columns)
-	} else {
-		err = output.InsertG(boil.Infer())
 	}
 	if err != nil {
 		return errors.Prefix("Datastore(PUTOUTPUT)", err)
@@ -72,6 +89,14 @@ func GetInput(txHash string, isCoinBase bool, prevHash string, prevN uint) *mode
 func PutInput(input *model.Input) error {
 	defer util.TimeTrack(time.Now(), "PutInput", "mysqlprofile")
 	if input != nil {
+		if input.ID != 0 {
+			input.Modified = time.Now()
+			err := input.UpdateG(boil.Infer())
+			if err != nil {
+				return errors.Prefix("Datastore(PUTINPUT)", err)
+			}
+			return nil
+		}
 		//Unique
 		txHashMatch := qm.Where(model.InputColumns.TransactionHash+"=?", input.TransactionHash)
 		txCoinBaseMatch := qm.Where(model.InputColumns.IsCoinbase+"=?", input.IsCoinbase)
@@ -134,17 +159,8 @@ func PutAddress(address *model.Address) error {
 			}
 			return nil
 		}
-		exists, err := model.AddressExistsG(address.ID)
-		if err != nil {
-			return errors.Prefix("Datastore(PUTADDRESS)", err)
-		}
-		if exists {
-			address.ModifiedAt = time.Now()
-			err = address.UpdateG(boil.Infer())
-		} else {
-			err = address.InsertG(boil.Infer())
-
-		}
+		address.ModifiedAt = time.Now()
+		err = address.UpdateG(boil.Infer())
 		if err != nil {
 			err = errors.Prefix("Datastore(PUTADDRESS)", err)
 			return err
@@ -187,15 +203,9 @@ func UpdateTxAddressAmounts(txAddress *model.TransactionAddress) error {
 func PutTxAddress(txAddress *model.TransactionAddress) error {
 	defer util.TimeTrack(time.Now(), "PutTxAddres", "mysqlprofile")
 	if txAddress != nil {
-		var err error
-		exists, err := model.TransactionAddressExistsG(txAddress.TransactionID, txAddress.AddressID)
-		if err != nil {
-			return errors.Prefix("Datastore(PUTTXADDRESS)", err)
-		}
-		if exists {
-			err = txAddress.UpdateG(boil.Infer())
-		} else {
-			err = txAddress.InsertG(boil.Infer())
+		err := txAddress.InsertG(boil.Infer())
+		if isDuplicateEntryError(err) {
+			return nil
 		}
 		if err != nil {
 			err = errors.Prefix("Datastore(PUTTXADDRESS)", err)
